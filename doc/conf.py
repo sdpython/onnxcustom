@@ -12,7 +12,7 @@ sys.path.insert(
 sys.path.append(
     os.path.abspath(os.path.dirname(__file__)))
 from onnxcustom import __version__  # noqa
-from github_link import make_linkcode_resolve
+from github_link import make_linkcode_resolve  # noqa
 
 extensions = [
     'nbsphinx',
