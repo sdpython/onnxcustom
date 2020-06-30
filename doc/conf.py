@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-from github_link import make_linkcode_resolve
 import os
 import sys
 sys.path.insert(
@@ -13,6 +12,7 @@ sys.path.insert(
 sys.path.append(
     os.path.abspath(os.path.dirname(__file__)))
 from onnxcustom import __version__  # noqa
+from github_link import make_linkcode_resolve
 
 extensions = [
     'nbsphinx',
