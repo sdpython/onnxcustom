@@ -128,7 +128,8 @@ sphinx_gallery_conf = {
         'binderhub_url': 'https://mybinder.org',
         'branch': 'master',
         'dependencies': os.path.abspath(
-            os.path.join(os.path.dirname(__file__), 'requirements-dev.txt')),
+            os.path.join(
+                os.path.dirname(__file__), '..', 'requirements-dev.txt')),
         'use_jupyter_lab': True
     },
 }
