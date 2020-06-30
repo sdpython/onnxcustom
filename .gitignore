@@ -1,0 +1,8 @@
+*.pyc
+coverage.html/*
+.coverage
+dist/*
+build/*
+*egg-info/*
+doc/auto_examples/*
+examples/dot_pyinstrument.html
