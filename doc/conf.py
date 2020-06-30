@@ -127,7 +127,7 @@ sphinx_gallery_conf = {
         'repo': 'onnxcustom',
         'binderhub_url': 'https://mybinder.org',
         'branch': 'master',
-        'dependencies': './binder/requirements-dev.txt',
+        'dependencies': './requirements-dev.txt',
         'use_jupyter_lab': True
     },
 }
