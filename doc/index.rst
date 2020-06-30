@@ -9,7 +9,7 @@ onnxcustom: deploy machine learned models
     :target: https://travis-ci.org/sdpython/onnxcustom
     :alt: Build status
 
-.. image:: https://ci.appveyor.com/api/projects/status/ffne8nhh96jdqo4p?svg=true
+.. image:: https://ci.appveyor.com/api/projects/status/a3sn45a2fayoxb5q?svg=true
     :target: https://ci.appveyor.com/project/sdpython/onnxcustom
     :alt: Build Status Windows
 
