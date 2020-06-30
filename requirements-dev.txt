@@ -15,7 +15,6 @@ pyquickhelper>=1.9.3359
 pytest
 pytest-cov
 scikit-learn
-sklearn-onnx
 sphinx
 sphinx-gallery
 tqdm
