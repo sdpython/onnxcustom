@@ -15,16 +15,17 @@ a different runtime.
 Training a pipeline
 +++++++++++++++++++
 """
-from mlprodict.onnxrt import OnnxInference
-from onnxruntime import InferenceSession
-from skl2onnx import to_onnx
 import numpy
+from onnxruntime import InferenceSession
 from sklearn.datasets import load_diabetes
 from sklearn.ensemble import (
     GradientBoostingRegressor, RandomForestRegressor,
     VotingRegressor)
 from sklearn.linear_model import LinearRegression
 from sklearn.model_selection import train_test_split
+from sklearn.pipeline import Pipeline
+from skl2onnx import to_onnx
+from mlprodict.onnxrt import OnnxInference
 
 
 X, y = load_diabetes(return_X_y=True)
@@ -35,9 +36,10 @@ reg1 = GradientBoostingRegressor(random_state=1)
 reg2 = RandomForestRegressor(random_state=1)
 reg3 = LinearRegression()
 
-ereg = VotingRegressor([('gb', reg1), ('rf', reg2), ('lr', reg3)])
+ereg = Pipeline(steps=[
+    ('voting', VotingRegressor([('gb', reg1), ('rf', reg2), ('lr', reg3)])),
+])
 ereg.fit(X_train, y_train)
-
 
 #################################
 # Converts the model

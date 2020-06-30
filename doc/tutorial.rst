@@ -9,4 +9,4 @@ involving operator not actually implemented in
 
 .. toctree::
 
-    hh
+    auto_examples/plot_convert_pipeline

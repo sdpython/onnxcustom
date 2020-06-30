@@ -128,7 +128,7 @@ sphinx_gallery_conf = {
         'binderhub_url': 'https://mybinder.org',
         'branch': 'master',
         'dependencies': os.path.abspath(
-            os.path.join(os.path.dirname(__file__))),
+            os.path.join(os.path.dirname(__file__), 'requirements.txt')),
         'use_jupyter_lab': True
     },
 }
@@ -138,9 +138,11 @@ epkg_dictionary = {
     'C++': 'https://en.wikipedia.org/wiki/C%2B%2B',
     'cython': 'https://cython.org/',
     'DOT': 'https://www.graphviz.org/doc/info/lang.html',
+    'mlprodict':
+        'http://www.xavierdupre.fr/app/mlprodict/helpsphinx/index.html',
+    'numpy': 'https://numpy.org/',
     'onnx': 'https://github.com/onnx/onnx',
     'ONNX': 'https://onnx.ai/',
-    'numpy': 'https://numpy.org/',
     'ONNX operators':
         'https://github.com/onnx/onnx/blob/master/docs/Operators.md',
     'ONNX ML operators':
