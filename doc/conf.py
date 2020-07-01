@@ -155,5 +155,6 @@ epkg_dictionary = {
     'pyinstrument': 'https://github.com/joerick/pyinstrument',
     'python': 'https://www.python.org/',
     'scikit-learn': 'https://scikit-learn.org/stable/',
+    'sklearn-onnx': 'https://github.com/onnx/sklearn-onnx',
     'sphinx-gallery': 'https://github.com/sphinx-gallery/sphinx-gallery',
 }
