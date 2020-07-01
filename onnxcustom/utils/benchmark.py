@@ -20,7 +20,7 @@ def measure_time(stmt, context, repeat=10, number=50, div_by_number=False):
     .. runpython::
         :showcode:
 
-        from onnxcustom.tools import measure_time
+        from onnxcustom.utils import measure_time
         from math import cos
 
         res = measure_time("cos(x)", context=dict(cos=cos, x=5.))
