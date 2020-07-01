@@ -11,3 +11,5 @@ involving operator not actually implemented in
     :maxdepth: 2
 
     tutorial_1_simple
+    tutorial_2_new_converter
+    tutorial_3_new_operator

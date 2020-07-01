@@ -45,6 +45,7 @@ operators.
     api
     auto_examples/index
     dev
+    versions
 
 Sources available on
 `github/onnxcustom <https://github.com/sdpython/onnxcustom>`_.

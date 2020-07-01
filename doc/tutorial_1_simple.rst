@@ -14,5 +14,9 @@ used in the ONNX graph.
 .. toctree::
     :maxdepth: 1
 
-    auto_examples/plot_convert_pipeline
-    auto_examples/plot_measure_time
+    auto_examples/plot_begin_convert_pipeline
+    auto_examples/plot_begin_measure_time
+    auto_examples/plot_begin_opset
+    auto_examples/plot_begin_options
+    auto_examples/plot_begin_float_double
+    auto_examples/plot_begin_investigate

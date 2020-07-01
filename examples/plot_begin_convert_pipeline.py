@@ -67,6 +67,8 @@ pred_skl = ereg.predict(X_test.astype(numpy.float32))
 pred_ort[:5], pred_skl[:5]
 
 ####################################
+# .. _l-diff-dicrepencies:
+#
 # Comparison
 # ++++++++++
 #
