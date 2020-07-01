@@ -16,6 +16,7 @@ pytest
 pytest-cov
 scikit-learn
 sphinx
+sphinxcontrib-blockdiag
 sphinx-gallery
 tqdm
 wheel

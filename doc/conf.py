@@ -35,6 +35,7 @@ extensions = [
     'pyquickhelper.sphinxext.sphinx_faqref_extension',
     'pyquickhelper.sphinxext.sphinx_gdot_extension',
     'pyquickhelper.sphinxext.sphinx_runpython_extension',
+    'sphinxcontrib.blockdiag',
 ]
 
 templates_path = ['_templates']
