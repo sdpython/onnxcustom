@@ -147,6 +147,9 @@ epkg_dictionary = {
         'https://github.com/onnx/onnx/blob/master/docs/Operators.md',
     'ONNX ML operators':
         'https://github.com/onnx/onnx/blob/master/docs/Operators-ml.md',
+    'OnnxPipeline':
+        'http://www.xavierdupre.fr/app/mlprodict/helpsphinx/mlprodict/'
+        'sklapi/onnx_pipeline.html?highlight=onnxpipeline',
     'onnxruntime': 'https://microsoft.github.io/onnxruntime/',
     'pyinstrument': 'https://github.com/joerick/pyinstrument',
     'python': 'https://www.python.org/',

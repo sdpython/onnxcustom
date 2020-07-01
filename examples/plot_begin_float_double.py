@@ -46,9 +46,10 @@ However, the probability that both comparisons give
 different results is not null. The following shows
 the discord areas.
 """
+from mlprodict.sklapi import OnnxPipeline
+from skl2onnx.sklapi import CastTransformer
 from skl2onnx import to_onnx
 from onnxruntime import InferenceSession
-from mlprodict.onnxrt import OnnxInference
 from sklearn.model_selection import train_test_split
 from sklearn.tree import DecisionTreeRegressor
 from sklearn.preprocessing import StandardScaler
@@ -112,8 +113,8 @@ X_train, X_test, y_train, y_test = train_test_split(X, y)
 Xi_train, yi_train = X_train.copy(), y_train.copy()
 Xi_test, yi_test = X_test.copy(), y_test.copy()
 for i in range(X.shape[1]):
-    Xi_train[:, i] = (Xi_train[:, i]).astype(numpy.int64)
-    Xi_test[:, i] = (Xi_test[:, i]).astype(numpy.int64)
+    Xi_train[:, i] = (Xi_train[:, i] * 2 ** i).astype(numpy.int64)
+    Xi_test[:, i] = (Xi_test[:, i] * 2 ** i).astype(numpy.int64)
 
 max_depth = 10
 
@@ -140,7 +141,7 @@ def diff(p1, p2):
     return d.max(), (d / numpy.abs(p1)).max()
 
 
-onx = to_onnx(model, X_train[:1].astype(numpy.float32))
+onx = to_onnx(model, Xi_train[:1].astype(numpy.float32))
 
 sess = InferenceSession(onx.SerializeToString())
 
@@ -153,3 +154,128 @@ print(diff(skl, ort))
 
 ###################################
 # The discrepencies are significant.
+# The ONNX model keeps float at every step.
+#
+# .. blockdiag::
+#
+#    diagram {
+#      float32 -> normalizer -> float32 -> dtree -> float32
+#    }
+#
+# In :epkg:`scikit-learn`:
+#
+# .. blockdiag::
+#
+#    diagram {
+#      float32 -> normalizer -> double -> dtree -> double
+#    }
+#
+# CastTransformer
+# +++++++++++++++
+#
+# We could try to use double everywhere. Unfortunately,
+# :epkg:`ONNX ML Operators` only allows float coefficients
+# for the operator *TreeEnsembleRegressor*. We may want
+# to compromise by casting the output of the normalizer into
+# float in the :epkg:`scikit-learn` pipeline.
+#
+# .. blockdiag::
+#
+#    diagram {
+#      float32 -> normalizer -> double -> cast -> float -> dtree -> float
+#    }
+#
+
+
+model2 = Pipeline([
+    ('scaler', StandardScaler()),
+    ('cast', CastTransformer()),
+    ('dt', DecisionTreeRegressor(max_depth=max_depth))
+])
+
+model2.fit(Xi_train, yi_train)
+
+##########################################
+# The discrepencies.
+
+onx2 = to_onnx(model2, Xi_train[:1].astype(numpy.float32))
+
+sess2 = InferenceSession(onx2.SerializeToString())
+
+skl2 = model2.predict(X32)
+ort2 = sess2.run(None, {'X': X32})[0]
+
+print(diff(skl2, ort2))
+
+######################################
+# That still fails because the normalizer
+# in :epkg:`scikit-learn` and in :epkg:`ONNX`
+# use different types. The cast still happens and
+# the *dx* is still here. To remove it, we need to use
+# double in ONNX normalizer.
+
+model3 = Pipeline([
+    ('cast64', CastTransformer(dtype=numpy.float64)),
+    ('scaler', StandardScaler()),
+    ('cast', CastTransformer()),
+    ('dt', DecisionTreeRegressor(max_depth=max_depth))
+])
+
+model3.fit(Xi_train, yi_train)
+onx3 = to_onnx(model3, Xi_train[:1].astype(numpy.float32),
+               options={StandardScaler: {'div': 'div_cast'}})
+
+sess3 = InferenceSession(onx3.SerializeToString())
+
+skl3 = model3.predict(X32)
+ort3 = sess3.run(None, {'X': X32})[0]
+
+print(diff(skl3, ort3))
+
+#################################
+# It works. That also means that it is difficult to change
+# the computation type when a pipeline includes a discontinuous
+# function. It is better to keep the same types all along
+# before using a decision tree.
+#
+# Sledgehammer
+# ++++++++++++
+#
+# The idea here is to always train the next step based
+# on ONNX output. That way, every step of the pipeline
+# is trained based on ONNX output.
+#
+# * Trains the first step.
+# * Converts the step into ONNX
+# * Computes ONNX outputs.
+# * Trains the second step on these outputs.
+# * Converts the second step into ONNX.
+# * Merges it with the first step.
+# * Computes ONNX outputs of the merged two first steps.
+# * ...
+#
+# It is implemented in
+# class :epkg:`OnnxPipeline`.
+
+
+model_onx = OnnxPipeline([
+    ('scaler', StandardScaler()),
+    ('dt', DecisionTreeRegressor(max_depth=max_depth))
+])
+
+model_onx.fit(Xi_train, yi_train)
+
+#############################################
+# The conversion.
+
+onx4 = to_onnx(model_onx, Xi_train[:1].astype(numpy.float32))
+
+sess4 = InferenceSession(onx4.SerializeToString())
+
+skl4 = model_onx.predict(X32)
+ort4 = sess4.run(None, {'X': X32})[0]
+
+print(diff(skl4, ort4))
+
+#################################
+# It works too in a more simple way.
