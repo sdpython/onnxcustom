@@ -8,5 +8,6 @@ involving operator not actually implemented in
 :epkg:`ONNX operators` or :epkg:`ONNX ML operators`.
 
 .. toctree::
+    :maxdepth: 2
 
-    auto_examples/plot_convert_pipeline
+    tutorial_1_simple
