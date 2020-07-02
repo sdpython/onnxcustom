@@ -36,7 +36,8 @@ onnxcustom: custom ONNX
 
 `documentation <http://www.xavierdupre.fr/app/onnxcustom/helpsphinx/index.html>`_
 
-Tools, tries about COVID epidemics.
+Tutorial on how to convert machine learned models into ONNX,
+implement your own converter or runtime.
 The module must be compiled to be used inplace:
 
 ::
