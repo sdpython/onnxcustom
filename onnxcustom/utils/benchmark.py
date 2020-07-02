@@ -1,7 +1,6 @@
 """
 Tools to help benchmarking.
 """
-import sys
 from timeit import Timer
 import numpy
 
@@ -41,11 +40,4 @@ def measure_time(stmt, context, repeat=10, number=50, div_by_number=False):
     dev = (dev - mean**2) ** 0.5
     mes = dict(average=mean, deviation=dev, min_exec=numpy.min(res),
                max_exec=numpy.max(res), repeat=repeat, number=number)
-    if 'values' in context:
-        if hasattr(context['values'], 'shape'):
-            mes['size'] = context['values'].shape[0]
-        else:
-            mes['size'] = len(context['values'])
-    else:
-        mes['context_size'] = sys.getsizeof(context)
     return mes

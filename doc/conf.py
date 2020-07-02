@@ -105,6 +105,10 @@ linkcode_resolve = make_linkcode_resolve(
     'https://github.com/sdpython/onnxcustom/blob/{revision}/'
     '{package}/{path}#L{lineno}')
 
+custom_preamble = """\n
+\\newcommand{\\norm}[1]{\\left\\Vert#1\\right\\Vert}
+"""
+
 intersphinx_mapping = {
     'python': ('https://docs.python.org/{.major}'.format(
         sys.version_info), None),
@@ -141,6 +145,9 @@ epkg_dictionary = {
     'DOT': 'https://www.graphviz.org/doc/info/lang.html',
     'mlprodict':
         'http://www.xavierdupre.fr/app/mlprodict/helpsphinx/index.html',
+    'NMF':
+        'https://scikit-learn.org/stable/modules/generated/'
+        'sklearn.decomposition.NMF.html',
     'numpy': 'https://numpy.org/',
     'onnx': 'https://github.com/onnx/onnx',
     'ONNX': 'https://onnx.ai/',
@@ -152,6 +159,7 @@ epkg_dictionary = {
         'http://www.xavierdupre.fr/app/mlprodict/helpsphinx/mlprodict/'
         'sklapi/onnx_pipeline.html?highlight=onnxpipeline',
     'onnxruntime': 'https://microsoft.github.io/onnxruntime/',
+    'openmp': 'https://en.wikipedia.org/wiki/OpenMP',
     'pyinstrument': 'https://github.com/joerick/pyinstrument',
     'python': 'https://www.python.org/',
     'scikit-learn': 'https://scikit-learn.org/stable/',

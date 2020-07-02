@@ -14,7 +14,7 @@ That assumption is usually true if the prediction
 function is continuous, :math:`y = f(x)`, then
 :math:`dy = f'(x) dx`. We can determine an upper bound
 to the discrepencies :
-:math:`\\Delta(y) \\legslant \\sup_x \\norm{f'(x)} dx`.
+:math:`\\Delta(y) \\leqslant \\sup_x \\norm{f'(x)} dx`.
 *dx* is the discrepency introduced by a float conversion,
 ``dx = x - numpy.float32(x)``.
 
@@ -159,7 +159,7 @@ print(diff(skl, ort))
 # .. blockdiag::
 #
 #    diagram {
-#      float32 -> normalizer -> float32 -> dtree -> float32
+#      x_float32 -> normalizer -> y_float32 -> dtree -> z_float32
 #    }
 #
 # In :epkg:`scikit-learn`:
@@ -167,7 +167,7 @@ print(diff(skl, ort))
 # .. blockdiag::
 #
 #    diagram {
-#      float32 -> normalizer -> double -> dtree -> double
+#      x_float32 -> normalizer -> y_double -> dtree -> z_double
 #    }
 #
 # CastTransformer
@@ -182,7 +182,8 @@ print(diff(skl, ort))
 # .. blockdiag::
 #
 #    diagram {
-#      float32 -> normalizer -> double -> cast -> float -> dtree -> float
+#      x_float32 -> normalizer -> y_double ->
+#      cast -> y_float -> dtree -> z_float
 #    }
 #
 
