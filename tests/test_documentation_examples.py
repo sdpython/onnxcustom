@@ -40,6 +40,7 @@ class TestDocumentationExample(unittest.TestCase):
                     continue
                 if __name__ == "__main__":
                     print("run %r" % name)
+                sys.path.insert(0, fold)
                 try:
                     mod = import_source(fold, os.path.splitext(name)[0])
                     assert mod is not None
@@ -79,6 +80,9 @@ class TestDocumentationExample(unittest.TestCase):
                                 "Example '{}' (cmd: {} - exec_prefix='{}') "
                                 "failed due to\n{}"
                                 "".format(name, cmds, sys.exec_prefix, st))
+                finally:
+                    if sys.path[0] == fold:
+                        del sys.path[0]
                 tested += 1
         if tested == 0:
             raise RuntimeError("No example was tested.")
