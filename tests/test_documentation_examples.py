@@ -17,8 +17,9 @@ def import_source(module_file_path, module_name):
         module_name, module_file_path)
     if module_spec is None:
         raise FileNotFoundError(
-            "Unable to find '{}' in '{}'.".format(
-                module_name, module_file_path))
+            "Unable to find '{}' in '{}', cwd='{}'.".format(
+                module_name, module_file_path,
+                os.path.abspath(__file__)))
     module = importlib.util.module_from_spec(module_spec)
     return module_spec.loader.exec_module(module)
 

@@ -20,3 +20,4 @@ used in the ONNX graph.
     auto_examples/plot_begin_options
     auto_examples/plot_begin_float_double
     auto_examples/plot_begin_investigate
+    auto_examples/plot_begin_transfer_learning
