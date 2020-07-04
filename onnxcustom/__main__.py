@@ -1,5 +1,5 @@
 """
-Implements command line ``python -m aftercovid <command> <args>``.
+Implements command line ``python -m onnxcustom <command> <args>``.
 """
 import fire
 from onnxcustom import check

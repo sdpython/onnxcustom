@@ -33,5 +33,6 @@ Following section shows how to create a custom converter.
 
     auto_examples/plot_custom_converter
     auto_examples/plot_custom_syntax
+    auto_examples/plot_custom_converter_wrapper
     auto_examples/plot_custom_options
     auto_examples/plot_custom_parser
