@@ -4,6 +4,7 @@ flake8
 joblib
 loky
 matplotlib
+mlinsights
 mlprodict
 nbsphinx
 onnx

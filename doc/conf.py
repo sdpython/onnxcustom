@@ -3,6 +3,7 @@
 
 import os
 import sys
+import warnings
 sys.path.insert(
     0,
     os.path.abspath(
@@ -94,6 +95,13 @@ latex_documents = [
      'manual'),
 ]
 
+latex_engine = 'xelatex'
+latex_elements = {
+    'preamble': """\n
+\\newcommand{\\norm}[1]{\\left\\Vert#1\\right\\Vert}
+"""
+}
+
 texinfo_documents = [
     (master_doc, 'onnxcustom', 'onnxcustom Documentation',
      author, 'onnxcustom', 'One line description of project.',
@@ -104,10 +112,6 @@ linkcode_resolve = make_linkcode_resolve(
     'onnxcustom',
     'https://github.com/sdpython/onnxcustom/blob/{revision}/'
     '{package}/{path}#L{lineno}')
-
-custom_preamble = """\n
-\\newcommand{\\norm}[1]{\\left\\Vert#1\\right\\Vert}
-"""
 
 intersphinx_mapping = {
     'python': ('https://docs.python.org/{.major}'.format(
@@ -162,7 +166,11 @@ epkg_dictionary = {
     'openmp': 'https://en.wikipedia.org/wiki/OpenMP',
     'pyinstrument': 'https://github.com/joerick/pyinstrument',
     'python': 'https://www.python.org/',
+    'pytorch': 'https://pytorch.org/',
     'scikit-learn': 'https://scikit-learn.org/stable/',
+    'skorch': 'https://skorch.readthedocs.io/en/stable/',
     'sklearn-onnx': 'https://github.com/onnx/sklearn-onnx',
     'sphinx-gallery': 'https://github.com/sphinx-gallery/sphinx-gallery',
 }
+
+warnings.filterwarnings("ignore", category=FutureWarning)

@@ -16,7 +16,6 @@ Training a pipeline
 """
 import numpy
 from pandas import DataFrame
-import matplotlib.pyplot as plt
 from tqdm import tqdm
 from sklearn import config_context
 from sklearn.datasets import make_regression
@@ -134,5 +133,3 @@ df.set_index('size')[['skl', 'ort', 'pyrt']].plot(
 # :epkg:`scikit-learn` and ONNX runtimes seem to converge
 # for big batches. They use similar implementation,
 # parallelization and languages (:epkg:`C++`, :epkg:`openmp`).
-
-plt.show()
