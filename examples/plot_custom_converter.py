@@ -1,4 +1,7 @@
 """
+
+.. _l-plot-custom-converter:
+
 Implement a new converter
 =========================
 
@@ -231,5 +234,4 @@ got = sess.run(None, {'X': X.astype(numpy.float64)})[0]
 print(diff(exp, got))
 
 #############################################
-# The differences are smaller with double as
-# expected.
+# The differences are smaller with double as expected.

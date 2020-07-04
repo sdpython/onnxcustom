@@ -30,7 +30,7 @@ from sklearn.decomposition import PCA
 from sklearn.pipeline import Pipeline
 from mlinsights.plotting.gallery import plot_gallery_images
 import matplotlib.pyplot as plt
-from imagenet_classes import classes
+from onnxcustom.utils.imagenet_classes import classes
 import numpy
 from PIL import Image
 from onnxruntime import InferenceSession
