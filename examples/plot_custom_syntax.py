@@ -23,12 +23,10 @@ Custom model
 It basically copies what is in example
 `:ref:`l-plot-custom-converter`.
 """
+from skl2onnx.common.data_types import guess_proto_type
 from onnxconverter_common.onnx_ops import apply_sub
-from skl2onnx.proto import onnx_proto
 from onnxruntime import InferenceSession
 from skl2onnx import update_registered_converter
-from skl2onnx.common.data_types import (
-    FloatTensorType, DoubleTensorType)
 from skl2onnx import to_onnx
 import numpy
 from sklearn.base import TransformerMixin, BaseEstimator
@@ -99,16 +97,7 @@ def decorrelate_transformer_shape_calculator(operator):
 # The converter is different.
 
 
-def guess_numpy_type(data_type):
-    if isinstance(data_type, FloatTensorType):
-        return onnx_proto.TensorProto.FLOAT
-    if isinstance(data_type, DoubleTensorType):
-        return onnx_proto.TensorProto.DOUBLE
-    raise NotImplementedError(
-        "Unsupported data_type '{}'.".format(data_type))
-
-
-def decorrelate_transformer_convertor(scope, operator, container):
+def decorrelate_transformer_converter(scope, operator, container):
     op = operator.raw_operator
     out = operator.outputs
 
@@ -119,7 +108,7 @@ def decorrelate_transformer_convertor(scope, operator, container):
     # But it might be with double. ONNX is very strict
     # about types, every constant should have the same
     # type as the input.
-    proto_dtype = guess_numpy_type(X.type)
+    proto_dtype = guess_proto_type(X.type)
 
     mean_name = scope.get_unique_variable_name('mean')
     container.add_initializer(mean_name, proto_dtype,
@@ -150,7 +139,7 @@ def decorrelate_transformer_convertor(scope, operator, container):
 update_registered_converter(
     DecorrelateTransformer, "SklearnDecorrelateTransformer",
     decorrelate_transformer_shape_calculator,
-    decorrelate_transformer_convertor)
+    decorrelate_transformer_converter)
 
 
 onx = to_onnx(dec, X.astype(numpy.float32))

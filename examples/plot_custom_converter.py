@@ -31,18 +31,17 @@ which decorrelates correlated random variables.
 If *X* is a matrix of features, :math:`V=\frac{1}{n}X'X`
 is the covariance matrix. We compute :math:`X V^{1/2}`.
 """
-from onnxruntime import InferenceSession
-from skl2onnx import update_registered_converter
-from skl2onnx.algebra.onnx_ops import OnnxMatMul, OnnxSub
-from skl2onnx.common.data_types import (
-    FloatTensorType, DoubleTensorType)
-from skl2onnx import to_onnx
 import pickle
 from io import BytesIO
 import numpy
 from numpy.testing import assert_almost_equal
+from onnxruntime import InferenceSession
 from sklearn.base import TransformerMixin, BaseEstimator
 from sklearn.datasets import load_iris
+from skl2onnx.common.data_types import guess_numpy_type
+from skl2onnx import to_onnx
+from skl2onnx import update_registered_converter
+from skl2onnx.algebra.onnx_ops import OnnxMatMul, OnnxSub
 
 
 class DecorrelateTransformer(TransformerMixin, BaseEstimator):
@@ -163,16 +162,7 @@ def decorrelate_transformer_shape_calculator(operator):
 # specifications of that opset.
 
 
-def guess_numpy_type(data_type):
-    if isinstance(data_type, FloatTensorType):
-        return numpy.float32
-    if isinstance(data_type, DoubleTensorType):
-        return numpy.float64
-    raise NotImplementedError(
-        "Unsupported data_type '{}'.".format(data_type))
-
-
-def decorrelate_transformer_convertor(scope, operator, container):
+def decorrelate_transformer_converter(scope, operator, container):
     op = operator.raw_operator
     opv = container.target_opset
     out = operator.outputs
@@ -202,7 +192,7 @@ def decorrelate_transformer_convertor(scope, operator, container):
 update_registered_converter(
     DecorrelateTransformer, "SklearnDecorrelateTransformer",
     decorrelate_transformer_shape_calculator,
-    decorrelate_transformer_convertor)
+    decorrelate_transformer_converter)
 
 
 onx = to_onnx(dec, X.astype(numpy.float32))
