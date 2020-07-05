@@ -1,4 +1,6 @@
 """
+.. _l-plot-custom-options:
+
 A new converter with options
 ============================
 
