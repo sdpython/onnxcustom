@@ -30,7 +30,7 @@ from sklearn.decomposition import PCA
 from sklearn.pipeline import Pipeline
 from mlinsights.plotting.gallery import plot_gallery_images
 import matplotlib.pyplot as plt
-from onnxcustom.utils.imagenet_classes import classes
+from onnxcustom.utils.imagenet_classes import class_names
 import numpy
 from PIL import Image
 from onnxruntime import InferenceSession
@@ -107,7 +107,7 @@ print(out[0, :5])
 # Interpretation
 
 
-res = list(sorted((r, classes[i]) for i, r in enumerate(out[0])))
+res = list(sorted((r, class_names[i]) for i, r in enumerate(out[0])))
 print(res[-5:])
 
 ##########################################
@@ -128,7 +128,7 @@ def classify(imgs):
         X = im2array(img)
         probs = sess.run(None, {'data': X.astype(numpy.float32)})[0]
         pl = list(sorted(
-            ((r, classes[i]) for i, r in enumerate(probs[0])),
+            ((r, class_names[i]) for i, r in enumerate(probs[0])),
             reverse=True))
         labels.append((angle, pl))
     return labels
