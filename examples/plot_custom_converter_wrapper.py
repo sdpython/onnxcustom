@@ -1,4 +1,6 @@
 """
+.. _l-plot-custom-converter-wrapper:
+
 Implement a new converter using other converters
 ================================================
 
@@ -9,7 +11,6 @@ shows how to do that. Example :ref:`l-plot-custom-converter`
 can be rewritten by using a `PCA <https://scikit-learn.org/
 stable/modules/generated/sklearn.decomposition.PCA.html>`_.
 We could then reuse the converter associated to this model.
-
 
 .. contents::
     :local:
@@ -143,8 +144,6 @@ def decorrelate_transformer_converter(scope, operator, container):
     subop = OnnxSubOperator(op.pca_, X, op_version=opv)
     Y = OnnxIdentity(subop, op_version=opv, output_names=out[:1])
     Y.add_to(scope, container)
-    print(operator.inputs)
-    print(operator.outputs)
 
 
 ##########################################

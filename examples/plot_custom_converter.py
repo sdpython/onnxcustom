@@ -1,5 +1,4 @@
 """
-
 .. _l-plot-custom-converter:
 
 Implement a new converter
