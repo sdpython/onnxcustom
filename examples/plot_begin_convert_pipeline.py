@@ -15,6 +15,7 @@ a different runtime.
 Training a pipeline
 +++++++++++++++++++
 """
+from pyquickhelper.helpgen.graphviz_helper import plot_graphviz
 import numpy
 from onnxruntime import InferenceSession
 from sklearn.datasets import load_diabetes
@@ -111,3 +112,11 @@ print(oinf)
 
 pred_pyrt = oinf.run({'X': X_test.astype(numpy.float32)})['variable']
 print(diff(pred_skl, pred_pyrt))
+
+#############################
+# Final graph
+# +++++++++++
+
+ax = plot_graphviz(oinf.to_dot())
+ax.get_xaxis().set_visible(False)
+ax.get_yaxis().set_visible(False)

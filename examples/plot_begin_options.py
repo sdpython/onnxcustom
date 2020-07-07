@@ -73,6 +73,7 @@ a way to specify which classifier should keep its *ZipMap*
 and which is not. So it is possible to specify options by id.
 """
 
+from pyquickhelper.helpgen.graphviz_helper import plot_graphviz
 from sklearn.mixture import GaussianMixture
 from pprint import pformat
 from skl2onnx.common._registration import _converter_pool
@@ -96,6 +97,14 @@ model_def = to_onnx(clr, X_train.astype(numpy.float32),
 oinf = OnnxInference(model_def, runtime='python_compiled')
 print(oinf)
 
+##################################
+# Visually.
+
+ax = plot_graphviz(oinf.to_dot())
+ax.get_xaxis().set_visible(False)
+ax.get_yaxis().set_visible(False)
+
+
 ##########################################
 # We need to compare that kind of visualisation to
 # what it would give with operator *ZipMap*.
@@ -103,6 +112,14 @@ print(oinf)
 model_def = to_onnx(clr, X_train.astype(numpy.float32))
 oinf = OnnxInference(model_def, runtime='python_compiled')
 print(oinf)
+
+##################################
+# Visually.
+
+ax = plot_graphviz(oinf.to_dot())
+ax.get_xaxis().set_visible(False)
+ax.get_yaxis().set_visible(False)
+
 
 #######################################
 # Using function *id* has one flaw: it is not pickable.
@@ -112,6 +129,15 @@ model_def = to_onnx(clr, X_train.astype(numpy.float32),
                     options={'zipmap': False})
 oinf = OnnxInference(model_def, runtime='python_compiled')
 print(oinf)
+
+
+##################################
+# Visually.
+
+ax = plot_graphviz(oinf.to_dot())
+ax.get_xaxis().set_visible(False)
+ax.get_yaxis().set_visible(False)
+
 
 #######################################
 # Option in a pipeline
@@ -131,6 +157,14 @@ model_def = to_onnx(pipe, X_train.astype(numpy.float32),
                     options={'clr__zipmap': False})
 oinf = OnnxInference(model_def, runtime='python_compiled')
 print(oinf)
+
+##################################
+# Visually.
+
+ax = plot_graphviz(oinf.to_dot())
+ax.get_xaxis().set_visible(False)
+ax.get_yaxis().set_visible(False)
+
 
 #######################################
 # Option *raw_scores*
@@ -166,6 +200,7 @@ model_def = to_onnx(
 oinf = OnnxInference(model_def, runtime='python_compiled')
 print(oinf.run({'X': X.astype(numpy.float32)[:5]}))
 
+
 #########################################
 # It did not seem to work... We need to tell
 # that applies on a specific part of the pipeline
@@ -188,6 +223,7 @@ model_def = to_onnx(
 
 oinf = OnnxInference(model_def, runtime='python_compiled')
 print(oinf.run({'X': X.astype(numpy.float32)[:5]}))
+
 
 #########################################
 # Negative figures. We still have raw scores.

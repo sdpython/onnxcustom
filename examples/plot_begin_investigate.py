@@ -22,6 +22,7 @@ through every step of the pipeline. If the pipeline
 has *n* steps, it converts the pipeline with step 1,
 then the pipeline with steps 1, 2, then 1, 2, 3...
 """
+from pyquickhelper.helpgen.graphviz_helper import plot_graphviz
 from mlprodict.onnxrt import OnnxInference
 import numpy
 from onnxruntime import InferenceSession
@@ -96,3 +97,11 @@ oinf.run({'X': X[:2].astype(numpy.float32)},
 
 oinf.run({'X': X[:2].astype(numpy.float32)},
          verbose=3, fLOG=print)
+
+#################################
+# Final graph
+# +++++++++++
+
+ax = plot_graphviz(oinf.to_dot())
+ax.get_xaxis().set_visible(False)
+ax.get_yaxis().set_visible(False)
