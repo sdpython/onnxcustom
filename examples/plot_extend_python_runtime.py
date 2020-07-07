@@ -2,8 +2,8 @@
 
 .. _l-extend-python-runtime:
 
-Extend a python runtime
-=======================
+Fast design with a python runtime
+=================================
 
 :epkg:`ONNX operators` does not contain operator
 from :epkg:`numpy`. There is no operator for

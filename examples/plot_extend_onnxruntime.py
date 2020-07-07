@@ -1,6 +1,6 @@
 """
-Extend onnxruntime
-==================
+Fast runtime with onnxruntime
+=============================
 
 :epkg:`ONNX operators` does not contain operator
 from :epkg:`numpy`. There is no operator for
