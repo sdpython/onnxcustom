@@ -35,9 +35,10 @@ from sklearn.datasets import load_iris
 
 class DecorrelateTransformer(TransformerMixin, BaseEstimator):
     """
-    Decorrelates correlated gaussiance features.
+    Decorrelates correlated gaussian features.
 
     :param alpha: avoids non inversible matrices
+        by adding *alpha* identity matrix
 
     *Attributes*
 

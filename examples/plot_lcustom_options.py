@@ -1,30 +1,31 @@
 """
-Change the number of outputs by adding a parser
-===============================================
+.. _l-plot-custom-options:
 
-By default, :epkg:`sklearn-onnx` assumes that a classifier
-has two outputs (label and probabilities), a regressor
-has one output (prediction), a transform has one output
-(the transformed data). What if it is not the case?
-The following example creates a custom converter
-and a custom parser which defines the number of outputs
-expected by the converted model.
+A new converter with options
+============================
 
-Example :ref:`l-plot-custom-options` shows a converter
-which selects two ways to compute the same outputs.
-In this one, the converter produces both. That would not
-be a very efficient converter but that's just for the sake
-of using a parser. By default, a transformer only returns
-one output and but both are needed.
+Options are used to implement different conversion
+for a same model. The options can be used to replace
+an operator by the Einsum operator and compare the
+processing time for both graph. Let's see how to retrieve
+the options within a converter.
+
+Example :ref:`l-plot-custom-converter` implements a converter
+which uses operator *MatMul*. We would like to compare
+with operator *Gemm*. That's a different way to convert
+the same transformer, it is selected by option *use_gemm*.
 
 .. contents::
     :local:
 
-A new transformer
-+++++++++++++++++
+Custom model
+++++++++++++
+
 """
-from pyquickhelper.helpgen.graphviz_helper import plot_graphviz
 from mlprodict.onnxrt import OnnxInference
+from pyquickhelper.helpgen.graphviz_helper import plot_graphviz
+from pandas import DataFrame
+from onnxcustom.utils import measure_time
 import numpy
 from onnxruntime import InferenceSession
 from sklearn.base import TransformerMixin, BaseEstimator
@@ -33,14 +34,15 @@ from skl2onnx import update_registered_converter
 from skl2onnx.common.data_types import guess_numpy_type
 from skl2onnx.algebra.onnx_ops import (
     OnnxSub, OnnxMatMul, OnnxGemm)
-from skl2onnx import to_onnx, get_model_alias
+from skl2onnx import to_onnx
 
 
 class DecorrelateTransformer(TransformerMixin, BaseEstimator):
     """
-    Decorrelates correlated gaussiance features.
+    Decorrelates correlated gaussian features.
 
     :param alpha: avoids non inversible matrices
+        by adding *alpha* identity matrix
 
     *Attributes*
 
@@ -83,8 +85,8 @@ print(pred)
 
 
 ############################################
-# Conversion into ONNX with two outputs
-# +++++++++++++++++++++++++++++++++++++
+# Conversion into ONNX
+# ++++++++++++++++++++
 #
 # Let's try to convert it to see what happens.
 
@@ -105,38 +107,22 @@ def decorrelate_transformer_converter(scope, operator, container):
     X = operator.inputs[0]
 
     dtype = guess_numpy_type(X.type)
+    options = container.get_options(op, dict(use_gemm=False))
+    use_gemm = options['use_gemm']
+    print('conversion: use_gemm=', use_gemm)
 
-    Y1 = OnnxMatMul(
-        OnnxSub(X, op.mean_.astype(dtype), op_version=opv),
-        op.coef_.astype(dtype),
-        op_version=opv, output_names=out[:1])
+    if use_gemm:
+        Y = OnnxGemm(X, op.coef_.astype(dtype),
+                     (- op.mean_ @ op.coef_).astype(dtype),
+                     op_version=opv, alpha=1., beta=1.,
+                     output_names=out[:1])
+    else:
+        Y = OnnxMatMul(
+            OnnxSub(X, op.mean_.astype(dtype), op_version=opv),
+            op.coef_.astype(dtype),
+            op_version=opv, output_names=out[:1])
+    Y.add_to(scope, container)
 
-    Y2 = OnnxGemm(X, op.coef_.astype(dtype),
-                  (- op.mean_ @ op.coef_).astype(dtype),
-                  op_version=opv, alpha=1., beta=1.,
-                  output_names=out[1:2])
-
-    Y1.add_to(scope, container)
-    Y2.add_to(scope, container)
-
-
-def decorrelate_transformer_parser(
-        scope, model, inputs, custom_parsers=None):
-    alias = get_model_alias(type(model))
-    this_operator = scope.declare_local_operator(alias, model)
-
-    # inputs
-    this_operator.inputs.append(inputs[0])
-
-    # outputs
-    cls_type = inputs[0].type.__class__
-    val_y1 = scope.declare_local_variable('nogemm', cls_type())
-    val_y2 = scope.declare_local_variable('gemm', cls_type())
-    this_operator.outputs.append(val_y1)
-    this_operator.outputs.append(val_y2)
-
-    # ends
-    return this_operator.outputs
 
 ###################################
 # The registration needs to declare the options
@@ -147,20 +133,15 @@ update_registered_converter(
     DecorrelateTransformer, "SklearnDecorrelateTransformer",
     decorrelate_transformer_shape_calculator,
     decorrelate_transformer_converter,
-    parser=decorrelate_transformer_parser)
+    options={'use_gemm': [True, False]})
 
-
-#############################################
-# And conversion.
 
 onx = to_onnx(dec, X.astype(numpy.float32))
 
 sess = InferenceSession(onx.SerializeToString())
 
 exp = dec.transform(X.astype(numpy.float32))
-results = sess.run(None, {'X': X.astype(numpy.float32)})
-y1 = results[0]
-y2 = results[1]
+got = sess.run(None, {'X': X.astype(numpy.float32)})[0]
 
 
 def diff(p1, p2):
@@ -170,20 +151,53 @@ def diff(p1, p2):
     return d.max(), (d / numpy.abs(p1)).max()
 
 
-print(diff(exp, y1))
-print(diff(exp, y2))
+print(diff(exp, got))
+
+############################################
+# We try the non default option, use_pca: False.
+
+onx2 = to_onnx(dec, X.astype(numpy.float32),
+               options={'use_gemm': True})
+
+sess2 = InferenceSession(onx2.SerializeToString())
+
+exp = dec.transform(X.astype(numpy.float32))
+got2 = sess2.run(None, {'X': X.astype(numpy.float32)})[0]
+
+print(diff(exp, got2))
+
+##############################
+# Visually.
 
 
-################################
-# It works. The final looks like the following.
-
-oinf = OnnxInference(onx, runtime="python_compiled")
-print(oinf)
-
-#############################
-# Final graph
-# +++++++++++
-
+oinf = OnnxInference(onx2)
 ax = plot_graphviz(oinf.to_dot())
 ax.get_xaxis().set_visible(False)
 ax.get_yaxis().set_visible(False)
+
+
+#########################################
+# Time comparison
+# +++++++++++++++
+#
+# Let's compare the two computation.
+
+
+X32 = X.astype(numpy.float32)
+obs = []
+
+context = {'sess': sess, 'X32': X32}
+mt = measure_time(
+    "sess.run(None, {'X': X32})", context, div_by_number=True,
+    number=100, repeat=1000)
+mt['use_gemm'] = False
+obs.append(mt)
+
+context = {'sess2': sess2, 'X32': X32}
+mt2 = measure_time(
+    "sess2.run(None, {'X': X32})", context, div_by_number=True,
+    number=10, repeat=100)
+mt2['use_gemm'] = True
+obs.append(mt2)
+
+DataFrame(obs).T

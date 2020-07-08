@@ -31,8 +31,8 @@ Following section shows how to create a custom converter.
 .. toctree::
     :maxdepth: 1
 
-    auto_examples/plot_custom_converter
-    auto_examples/plot_custom_syntax
-    auto_examples/plot_custom_converter_wrapper
-    auto_examples/plot_custom_options
-    auto_examples/plot_custom_parser
+    auto_examples/plot_icustom_converter
+    auto_examples/plot_jcustom_syntax
+    auto_examples/plot_kcustom_converter_wrapper
+    auto_examples/plot_lcustom_options
+    auto_examples/plot_mcustom_parser

@@ -42,9 +42,10 @@ from skl2onnx import to_onnx
 
 class DecorrelateTransformer(TransformerMixin, BaseEstimator):
     """
-    Decorrelates correlated gaussiance features.
+    Decorrelates correlated gaussian features.
 
     :param alpha: avoids non inversible matrices
+        by adding *alpha* identity matrix
 
     *Attributes*
 
