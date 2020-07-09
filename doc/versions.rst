@@ -26,3 +26,7 @@ Dependencies
 History
 +++++++
 
+**0.1**
+
+First version with almost all examples for the tutorial.
+Missing: example with a custom operator with :epkg:`onnxruntime`.

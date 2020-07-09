@@ -5,7 +5,7 @@ joblib
 loky
 matplotlib
 mlinsights
-mlprodict
+mlprodict>=0.4
 nbsphinx
 onnx
 onnxruntime
