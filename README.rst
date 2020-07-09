@@ -24,6 +24,18 @@
     :alt: MIT License
     :target: http://opensource.org/licenses/MIT
 
+.. image:: https://pepy.tech/badge/onnxcustom/month
+    :target: https://pepy.tech/project/onnxcustom/month
+    :alt: Downloads
+
+.. image:: https://img.shields.io/github/forks/sdpython/onnxcustom.svg
+    :target: https://github.com/sdpython/onnxcustom/
+    :alt: Forks
+
+.. image:: https://img.shields.io/github/stars/sdpython/onnxcustom.svg
+    :target: https://github.com/sdpython/onnxcustom/
+    :alt: Stars
+
 .. image:: https://img.shields.io/github/repo-size/sdpython/onnxcustom
     :target: https://github.com/sdpython/onnxcustom/
     :alt: size
