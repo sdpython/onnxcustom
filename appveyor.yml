@@ -18,6 +18,8 @@ init:
 install:
   - "%PYTHON%\\python -m pip install -r requirements.txt"
   - "%PYTHON%\\python -m pip install -r requirements-dev.txt"
+  - "%PYTHON%\\Scripts\\pip install pymyinstall"
+  - "%PYTHON%\\Scripts\\pymy_install3 --task=tool --source=zip graphviz"
 build: off
 
 before_test:
