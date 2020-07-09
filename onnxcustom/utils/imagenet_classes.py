@@ -1,3 +1,7 @@
+"""
+Informations related to the :epkg:`ImageNet` competition.
+"""
+
 class_names = {
     0: 'tench, Tinca tinca',
     1: 'goldfish, Carassius auratus',

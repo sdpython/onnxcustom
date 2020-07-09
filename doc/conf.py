@@ -147,6 +147,7 @@ epkg_dictionary = {
     'C++': 'https://en.wikipedia.org/wiki/C%2B%2B',
     'cython': 'https://cython.org/',
     'DOT': 'https://www.graphviz.org/doc/info/lang.html',
+    'ImageNet': 'http://www.image-net.org/',
     'mlprodict':
         'http://www.xavierdupre.fr/app/mlprodict/helpsphinx/index.html',
     'NMF':
