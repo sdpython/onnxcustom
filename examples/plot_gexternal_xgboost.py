@@ -27,16 +27,20 @@ from pyquickhelper.helpgen.graphviz_helper import plot_graphviz
 from mlprodict.onnxrt import OnnxInference
 import numpy
 import onnxruntime as rt
-from sklearn.datasets import load_iris
+from sklearn.datasets import load_iris, load_diabetes, make_classification
+from sklearn.model_selection import train_test_split
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
-from xgboost import XGBClassifier
+from xgboost import XGBClassifier, XGBRegressor, DMatrix, train as train_xgb
 from skl2onnx.common.data_types import FloatTensorType
-from skl2onnx import convert_sklearn, update_registered_converter
+from skl2onnx import convert_sklearn, to_onnx, update_registered_converter
 from skl2onnx.common.shape_calculator import (
-    calculate_linear_classifier_output_shapes)
+    calculate_linear_classifier_output_shapes,
+    calculate_linear_regressor_output_shapes)
 from onnxmltools.convert.xgboost.operator_converters.XGBoost import (
     convert_xgboost)
+from onnxmltools.convert import convert_xgboost as convert_xgboost_booster
+
 
 data = load_iris()
 X = data.data[:, :2]
@@ -48,7 +52,7 @@ X = X[ind, :].copy()
 y = y[ind].copy()
 
 pipe = Pipeline([('scaler', StandardScaler()),
-                 ('lgbm', XGBClassifier(n_estimators=3))])
+                 ('xgb', XGBClassifier(n_estimators=3))])
 pipe.fit(X, y)
 
 # The conversion fails but it is expected.
@@ -125,3 +129,66 @@ oinf = OnnxInference(model_onnx)
 ax = plot_graphviz(oinf.to_dot())
 ax.get_xaxis().set_visible(False)
 ax.get_yaxis().set_visible(False)
+
+
+#######################################
+# Same example with XGBRegressor
+# ++++++++++++++++++++++++++++++
+
+update_registered_converter(
+    XGBRegressor, 'XGBoostXGBRegressor',
+    calculate_linear_regressor_output_shapes, convert_xgboost)
+
+
+data = load_diabetes()
+x = data.data
+y = data.target
+X_train, X_test, y_train, _ = train_test_split(x, y, test_size=0.5)
+
+pipe = Pipeline([('scaler', StandardScaler()),
+                 ('xgb', XGBRegressor(n_estimators=3))])
+pipe.fit(X_train, y_train)
+
+print("predict", pipe.predict(X_test[:5]))
+
+#############################
+# ONNX
+
+onx = to_onnx(pipe, X_train.astype(numpy.float32))
+
+sess = rt.InferenceSession(onx.SerializeToString())
+pred_onx = sess.run(None, {"X": X_test[:5].astype(numpy.float32)})
+print("predict", pred_onx[0].ravel())
+
+#################################
+# Some discrepencies may appear. In that case,
+# you should read :ref:`l-example-discrepencies-float-double`.
+
+#################################################
+# Same with a Booster
+# +++++++++++++++++++
+#
+# A booster cannot be inserted in a pipeline. It requires
+# a different conversion function because it does not
+# follow :epkg:`scikit-learn` API.
+
+x, y = make_classification(n_classes=2, n_features=5,
+                           n_samples=100,
+                           random_state=42, n_informative=3)
+X_train, X_test, y_train, _ = train_test_split(x, y, test_size=0.5,
+                                               random_state=42)
+
+dtrain = DMatrix(X_train, label=y_train)
+
+param = {'objective': 'multi:softmax', 'num_class': 3}
+bst = train_xgb(param, dtrain, 10)
+
+initial_type = [('float_input', FloatTensorType([None, X_train.shape[1]]))]
+onx = convert_xgboost_booster(bst, "name", initial_types=initial_type)
+
+sess = rt.InferenceSession(onx.SerializeToString())
+input_name = sess.get_inputs()[0].name
+label_name = sess.get_outputs()[0].name
+pred_onx = sess.run(
+    [label_name], {input_name: X_test.astype(numpy.float32)})[0]
+print(pred_onx)

@@ -1,4 +1,6 @@
 """
+.. _l-example-discrepencies-float-double:
+
 Issues when switching to float
 ==============================
 
