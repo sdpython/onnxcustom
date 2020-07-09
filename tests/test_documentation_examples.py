@@ -31,7 +31,7 @@ class TestDocumentationExample(unittest.TestCase):
         this = os.path.abspath(os.path.dirname(__file__))
         onxc = os.path.normpath(os.path.join(this, '..'))
         pypath = os.environ.get('PYTHONPATH', None)
-        sep =  ";" if sys.platform == 'win32' else ':'
+        sep = ";" if sys.platform == 'win32' else ':'
         pypath = "" if pypath in (None, "") else (pypath + sep)
         pypath += onxc
         os.environ['PYTHONPATH'] = pypath
