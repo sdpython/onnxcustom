@@ -5,6 +5,8 @@
 Fast design with a python runtime
 =================================
 
+.. index:: custom python runtime
+
 :epkg:`ONNX operators` does not contain operator
 from :epkg:`numpy`. There is no operator for
 `solve <https://numpy.org/doc/stable/reference/

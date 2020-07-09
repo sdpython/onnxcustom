@@ -4,6 +4,8 @@
 A new converter with options
 ============================
 
+.. index:: options
+
 Options are used to implement different conversion
 for a same model. The options can be used to replace
 an operator by the Einsum operator and compare the

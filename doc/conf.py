@@ -148,6 +148,8 @@ epkg_dictionary = {
     'cython': 'https://cython.org/',
     'DOT': 'https://www.graphviz.org/doc/info/lang.html',
     'ImageNet': 'http://www.image-net.org/',
+    'LightGBM': 'https://lightgbm.readthedocs.io/en/latest/',
+    'lightgbm': 'https://lightgbm.readthedocs.io/en/latest/',
     'mlprodict':
         'http://www.xavierdupre.fr/app/mlprodict/helpsphinx/index.html',
     'NMF':
@@ -160,6 +162,7 @@ epkg_dictionary = {
         'https://github.com/onnx/onnx/blob/master/docs/Operators.md',
     'ONNX ML operators':
         'https://github.com/onnx/onnx/blob/master/docs/Operators-ml.md',
+    'onnxmltools': 'https://github.com/onnx/onnxmltools',
     'OnnxPipeline':
         'http://www.xavierdupre.fr/app/mlprodict/helpsphinx/mlprodict/'
         'sklapi/onnx_pipeline.html?highlight=onnxpipeline',
@@ -172,6 +175,8 @@ epkg_dictionary = {
     'skorch': 'https://skorch.readthedocs.io/en/stable/',
     'sklearn-onnx': 'https://github.com/onnx/sklearn-onnx',
     'sphinx-gallery': 'https://github.com/sphinx-gallery/sphinx-gallery',
+    'xgboost': 'https://xgboost.readthedocs.io/en/latest/',
+    'XGBoost': 'https://xgboost.readthedocs.io/en/latest/',
 }
 
 warnings.filterwarnings("ignore", category=FutureWarning)

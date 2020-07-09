@@ -2,6 +2,8 @@
 Train and deploy a scikit-learn pipeline
 ========================================
 
+.. index:: pipeline, deployment
+
 This program starts from an example in :epkg:`scikit-learn`
 documentation: `Plot individual and voting regression predictions
 <https://scikit-learn.org/stable/auto_examples/ensemble/plot_voting_regressor.html>`_,

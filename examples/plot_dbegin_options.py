@@ -2,6 +2,8 @@
 One model, many possible conversions with options
 =================================================
 
+.. index:: options
+
 There is not one way to convert a model. A new operator
 might have been added in a newer version of :epkg:`ONNX`
 and that speeds up the converted model. The rational choice

@@ -2,6 +2,8 @@
 What is the opset number?
 =========================
 
+.. index:: opset, target opset, version
+
 Every library is versioned. :epkg:`scikit-learn` may change
 the implementation of a specific model. That happens
 for example with the `SVC <https://scikit-learn.org/stable/

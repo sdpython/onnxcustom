@@ -2,6 +2,8 @@
 Change the number of outputs by adding a parser
 ===============================================
 
+.. index:: parser
+
 By default, :epkg:`sklearn-onnx` assumes that a classifier
 has two outputs (label and probabilities), a regressor
 has one output (prediction), a transform has one output

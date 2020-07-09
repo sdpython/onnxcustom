@@ -2,6 +2,8 @@
 Intermediate results and investigation
 ======================================
 
+.. index:: investigate, intermediate results
+
 There are many reasons why a user wants more than using
 the converted model into ONNX. Intermediate results may be
 needed, the output of every node in the graph. The ONNX

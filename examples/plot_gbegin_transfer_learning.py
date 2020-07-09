@@ -2,6 +2,8 @@
 Transfer Learning with ONNX
 ===========================
 
+.. index:: transfer learning, deep learning
+
 Transfer learning is common with deep learning.
 A deep learning model is used as preprocessing before
 the output is sent to a final classifier or regressor.

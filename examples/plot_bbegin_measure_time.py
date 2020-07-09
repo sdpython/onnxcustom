@@ -2,6 +2,8 @@
 Benchmark ONNX conversion
 =========================
 
+.. index:: benchmark
+
 Example :ref:`l-simple-deploy-1` converts a simple model.
 This example takes a similar example but on random data
 and compares the processing time required by each option

@@ -2,6 +2,8 @@
 Two ways to implement a converter
 =================================
 
+.. index:: syntax
+
 There are two ways to write a converter. The first one
 is very verbose (see `ada_boost.py <https://github.com/onnx/
 sklearn-onnx/blob/master/skl2onnx/operator_converters/ada_boost.py>`_

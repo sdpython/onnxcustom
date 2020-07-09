@@ -2,6 +2,8 @@
 Issues when switching to float
 ==============================
 
+.. index:: float, double, discrepencies
+
 Most models in :epkg:`scikit-learn` compute with double,
 not float. Most models in deep learning use float because
 that's the most common situation with GPU. ONNX was initially
