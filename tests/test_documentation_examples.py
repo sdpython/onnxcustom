@@ -29,6 +29,11 @@ class TestDocumentationExample(unittest.TestCase):
     def test_documentation_examples(self):
 
         this = os.path.abspath(os.path.dirname(__file__))
+        onxc = os.path.normpath(os.path.join(this, '..'))
+        if sys.platform == 'win32':
+            os.environ['PYTHONPATH'] += ";" + onxc
+        else:
+            os.environ['PYTHONPATH'] += ":" + onxc
         fold = os.path.normpath(os.path.join(this, '..', 'examples'))
         found = os.listdir(fold)
         tested = 0
