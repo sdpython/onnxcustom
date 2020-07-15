@@ -21,4 +21,5 @@ used in the ONNX graph.
     auto_examples/plot_dbegin_options_list
     auto_examples/plot_ebegin_float_double
     auto_examples/plot_fbegin_investigate
+    auto_examples/plot_gbegin_dataframe
     auto_examples/plot_gbegin_transfer_learning
