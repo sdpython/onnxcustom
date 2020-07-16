@@ -27,7 +27,7 @@ from skl2onnx import to_onnx
 from pandas import DataFrame
 from sklearn.pipeline import Pipeline
 from sklearn.compose import ColumnTransformer
-from sklearn.preprocessing import OneHotEncoder, StandardScaler
+from sklearn.preprocessing import OneHotEncoder
 from sklearn.ensemble import RandomForestClassifier
 
 
@@ -44,7 +44,6 @@ cat_cols = ['CAT1', 'CAT2']
 train_data = data.drop('y', axis=1)
 
 
-numeric_transformer = Pipeline(steps=[('scaler', StandardScaler())])
 categorical_transformer = Pipeline([
     ('onehot', OneHotEncoder(sparse=False, handle_unknown='ignore'))])
 preprocessor = ColumnTransformer(
@@ -62,7 +61,6 @@ dot = pipeline2dot(pipe, train_data)
 ax = plot_graphviz(dot)
 ax.get_xaxis().set_visible(False)
 ax.get_yaxis().set_visible(False)
-
 
 #######################################
 # Conversion to ONNX
