@@ -13,9 +13,9 @@ It is not quite easy in this case to mix framework,
 `tf.keras.wrappers.scikit_learn
 <https://www.tensorflow.org/api_docs/python/tf/
 keras/wrappers/scikit_learn>`_. Every combination
-requires work. ONNX reduces the number of platform to
+requires work. ONNX reduces the number of platforms to
 support. Once the model is converted into ONNX,
-it can be inserted in a :epkg:`scikit-learn` pipeline.
+it can be inserted in any :epkg:`scikit-learn` pipeline.
 
 .. contents::
     :local:
@@ -23,7 +23,8 @@ it can be inserted in a :epkg:`scikit-learn` pipeline.
 Retrieve and load a model
 +++++++++++++++++++++++++
 
-We download one model from the :epkg:`ONNX Zoo`.
+We download one model from the :epkg:`ONNX Zoo` but the model
+could be trained and produced by another converter library.
 """
 from io import BytesIO
 import onnx
@@ -73,7 +74,7 @@ for inp in sess.get_inputs():
 
 #####################################
 # The model expects a series of images of size
-# [3, 224, 224].
+# `[3, 224, 224]`.
 
 ##########################################
 # Classifying an image
@@ -206,7 +207,7 @@ selected = outputs[-3]
 print("selected", selected)
 
 #################################
-# And we tell OnnxTransformer to use that
+# And we tell *OnnxTransformer* to use that
 # specific one and to flatten the output
 # as the dimension is not a matrix.
 
@@ -224,7 +225,7 @@ pipe2.fit(X_train)
 # We check that it is different.
 # The following values are the shape of the
 # PCA components. The number of column is the number
-# of dimensions of the outputs of the transfered
+# of dimensions of the outputs of the transferred
 # neural network.
 
 print(pipe.steps[1][1].components_.shape,
