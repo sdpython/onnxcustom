@@ -184,7 +184,7 @@ epkg_dictionary = {
     'ONNX': 'https://onnx.ai/',
     'ONNX operators':
         'https://github.com/onnx/onnx/blob/master/docs/Operators.md',
-    'ONNX ML operators':
+    'ONNX ML Operators':
         'https://github.com/onnx/onnx/blob/master/docs/Operators-ml.md',
     'onnxmltools': 'https://github.com/onnx/onnxmltools',
     'OnnxPipeline':
@@ -199,6 +199,9 @@ epkg_dictionary = {
     'skorch': 'https://skorch.readthedocs.io/en/stable/',
     'sklearn-onnx': 'https://github.com/onnx/sklearn-onnx',
     'sphinx-gallery': 'https://github.com/sphinx-gallery/sphinx-gallery',
+    'TreeEnsembleRegressor':
+        'https://github.com/onnx/onnx/blob/master/docs/Operators-ml.md'
+        '#ai.onnx.ml.TreeEnsembleRegressor',
     'xgboost': 'https://xgboost.readthedocs.io/en/latest/',
     'XGBoost': 'https://xgboost.readthedocs.io/en/latest/',
 }
