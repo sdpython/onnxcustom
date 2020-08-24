@@ -225,7 +225,7 @@ pipe2.fit(X_train)
 # We check that it is different.
 # The following values are the shape of the
 # PCA components. The number of column is the number
-# of dimensions of the outputs of the transferred
+# of dimensions of the outputs of the transfered
 # neural network.
 
 print(pipe.steps[1][1].components_.shape,
