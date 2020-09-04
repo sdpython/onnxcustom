@@ -186,6 +186,7 @@ epkg_dictionary = {
         'https://github.com/onnx/onnx/blob/master/docs/Operators.md',
     'ONNX ML Operators':
         'https://github.com/onnx/onnx/blob/master/docs/Operators-ml.md',
+    'ONNX Zoo': 'https://github.com/onnx/models',
     'onnxmltools': 'https://github.com/onnx/onnxmltools',
     'OnnxPipeline':
         'http://www.xavierdupre.fr/app/mlprodict/helpsphinx/mlprodict/'
