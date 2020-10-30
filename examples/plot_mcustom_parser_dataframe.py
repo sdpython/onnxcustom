@@ -16,6 +16,8 @@ may contain different types.
 
 A transformer taking a dataframe as input
 +++++++++++++++++++++++++++++++++++++++++
+
+Some imports...
 """
 from pprint import pprint
 from pyquickhelper.helpgen.graphviz_helper import plot_graphviz
@@ -25,11 +27,21 @@ from pandas import DataFrame
 from onnxruntime import InferenceSession
 from sklearn.base import TransformerMixin, BaseEstimator
 from sklearn.preprocessing import OrdinalEncoder
-from skl2onnx import update_registered_converter, to_onnx
+from sklearn.tree import DecisionTreeRegressor
+from onnxconverter_common.onnx_ops import apply_cast
+from skl2onnx.proto import onnx_proto
+from skl2onnx import (
+    update_registered_converter, to_onnx, get_model_alias)
 from skl2onnx._parse import _parse_sklearn_simple_model
 from skl2onnx.common.data_types import (
     Int64TensorType, StringTensorType, FloatTensorType,
     _guess_numpy_type)
+
+#########################################
+# Later a discretizer is needed. The most efficient way
+# to represent it in ONNX is to use a tree. We could
+# directly convert the discretizer or train a decision tree
+# to predict the bins. The second approach is followed.
 
 
 class DiscretizeTransformer(TransformerMixin, BaseEstimator):
@@ -45,7 +57,58 @@ class DiscretizeTransformer(TransformerMixin, BaseEstimator):
         return self
 
     def transform(self, X):
-        return numpy.digitize(X, self.thresholds).reshape((-1, 1))
+        return numpy.digitize(
+            X, self.thresholds, right=True).reshape((-1, 1))
+
+    def astree(self):
+        "Converters the discretizer as a tree."
+        X = []
+        y = []
+        for i, th in enumerate(self.thresholds):
+            if i == 0:
+                th_ = th - (self.thresholds[1] - th) * 0.1
+                X.append(th_)
+                y.append(i)
+                X.append(th)
+                y.append(i + 1)
+            else:
+                th_ = th - (th - self.thresholds[i - 1]) * 0.1
+                X.append(th_)
+                y.append(i)
+                X.append(th)
+                y.append(i + 1)
+        tree = DecisionTreeRegressor()
+        tree.fit(numpy.array(X).reshape((-1, 1)),
+                 numpy.array(y))
+        # We need to make sure the threshold in three are
+        # exactly the same.
+        for i in range(0, len(tree.tree_.threshold)):
+            if (tree.tree_.children_left[i] > 0 and
+                    tree.tree_.children_right[i] > 0):
+                # not a leave, let's find the closest threshold
+                th = tree.tree_.threshold[i]
+                dist = numpy.abs(self.thresholds - th)
+                arg = numpy.argmin(dist)
+                tree.tree_.threshold[i] = self.thresholds[arg]
+        return tree
+
+
+X = numpy.array([-1, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+                dtype=numpy.float32).reshape((-1, 1))
+bins = numpy.array([0, 2, 4, 9], numpy.float32)
+disc = DiscretizeTransformer(bins)
+got = disc.transform(X)
+print(got.ravel())
+
+##########################################
+# Now with the tree.
+
+tree = disc.astree()
+pred = tree.predict(X)
+print(pred.ravel().astype(numpy.int64))
+
+##########################################
+# That works.
 
 
 class PreprocessDataframeTransformer(TransformerMixin, BaseEstimator):
@@ -226,40 +289,24 @@ def discretizer_transformer_shape_calculator(operator):
 
 def discretizer_transformer_converter(scope, operator, container):
     op = operator.raw_operator
-
     th = op.thresholds
-    nth = th.shape[0]
-    if nth != 4:
-        raise RuntimeError(
-            "The following cod is written only for four bins.")
 
-    th = [th[1], th[0], th[2], th[3]]  # bin4, bin5, bin6, bin7
+    # We convert the discretizer into a tree.
+    model = op.astree()
 
-    attrs = dict(
-        aggregate_function='SUM',
-        base_values=[0.],
-        n_targets=1,
-        nodes_featureids=[0 for i in range(nth * 2)],
-        nodes_hitrates=[0. for i in range(nth * 2)],
-        # nodes_missing_value_tracks_true=
-        nodes_modes=(['BRANCH_LEQ' for i in range(nth)] +
-                     ['LEAF' for i in range(nth)]),
-        nodes_treeids=[0 for i in range(nth * 2)],
-        nodes_nodeids=numpy.arange(8).tolist(),
-        nodes_falsenodeids=[1, 4, 5, 6, 0, 0, 0, 0],
-        nodes_truenodeids=[2, 5, 3, 7, 0, 0, 0, 0],
-        nodes_values=th + [0. for i in range(nth)],
-        # post_transform='NONE',
-        target_ids=[0 for i in range(nth)],
-        target_nodeids=(numpy.arange(4) + 4).astype(int).tolist(),
-        target_treeids=[0 for i in range(nth)],
-        target_weights=numpy.arange(nth).astype(numpy.float32).tolist())
+    # We add a placeholder to call the converter for
+    # this model.
+    alias = get_model_alias(type(model))
+    op = scope.declare_local_operator(alias)
+    op.inputs = operator.inputs
+    op.raw_operator = model
+    tree_out = scope.declare_local_variable(
+        'treeout', operator.inputs[0].type.__class__())
+    op.outputs.append(tree_out)
 
-    container.add_node(
-        'TreeEnsembleRegressor',
-        operator.inputs[0].full_name, operator.outputs[0].full_name,
-        name=scope.get_unique_operator_name('TreeEnsembleRegressor'),
-        op_domain='ai.onnx.ml', op_version=1, **attrs)
+    out_name = operator.outputs[0].full_name
+    apply_cast(scope, tree_out.full_name, out_name, container,
+               to=onnx_proto.TensorProto.INT64)
 
 
 update_registered_converter(
