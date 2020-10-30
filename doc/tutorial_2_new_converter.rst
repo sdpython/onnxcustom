@@ -36,3 +36,4 @@ Following section shows how to create a custom converter.
     auto_examples/plot_kcustom_converter_wrapper
     auto_examples/plot_lcustom_options
     auto_examples/plot_mcustom_parser
+    auto_examples/plot_mcustom_parser_dataframe

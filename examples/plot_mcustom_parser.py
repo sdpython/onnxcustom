@@ -1,4 +1,6 @@
 """
+.. _l-custom-parser:
+
 Change the number of outputs by adding a parser
 ===============================================
 
