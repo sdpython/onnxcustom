@@ -289,7 +289,6 @@ def discretizer_transformer_shape_calculator(operator):
 
 def discretizer_transformer_converter(scope, operator, container):
     op = operator.raw_operator
-    th = op.thresholds
 
     # We convert the discretizer into a tree.
     model = op.astree()
