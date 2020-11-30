@@ -94,3 +94,6 @@ time for a couple of functions or simply:
 
     import onnxcustom
     onnxcustom.check()
+
+This tutorial has been merged into `sklearn-onnx documentation
+<http://onnx.ai/sklearn-onnx/index_tutorial.html>`_.
