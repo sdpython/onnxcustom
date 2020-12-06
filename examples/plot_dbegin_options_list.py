@@ -30,6 +30,8 @@ from sklearn.datasets import load_iris
 from sklearn.model_selection import train_test_split
 from skl2onnx import to_onnx
 
+TARGET_OPSET = 12
+
 data = load_iris()
 X_train, X_test = train_test_split(data.data)
 model = GaussianMixture()
@@ -42,7 +44,7 @@ model.fit(X_train)
 model_onnx = to_onnx(
     model, X_train[:1].astype(numpy.float32),
     options={id(model): {'score_samples': True}},
-    target_opset=12)
+    target_opset=TARGET_OPSET)
 sess = InferenceSession(model_onnx.SerializeToString())
 
 xt = X_test[:5].astype(numpy.float32)
@@ -71,7 +73,7 @@ model_onnx2 = to_onnx(
     model, X_train[:1].astype(numpy.float32),
     options={id(model): {'score_samples': True}},
     black_op={'ReduceLogSumExp'},
-    target_opset=12)
+    target_opset=TARGET_OPSET)
 sess2 = InferenceSession(model_onnx2.SerializeToString())
 
 xt = X_test[:5].astype(numpy.float32)
@@ -114,6 +116,6 @@ try:
         model, X_train[:1].astype(numpy.float32),
         options={id(model): {'score_samples': True}},
         black_op={'ReduceLogSumExp', 'Add'},
-        target_opset=12)
+        target_opset=TARGET_OPSET)
 except RuntimeError as e:
     print('Error:', e)
