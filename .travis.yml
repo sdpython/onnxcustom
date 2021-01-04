@@ -1,8 +1,7 @@
-dist: bionic
+dist: focal
 sudo: true
 language: python
 python:
-    - "3.7"
     - "3.8"
 addons:
   apt:
@@ -25,6 +24,4 @@ script:
 after_script:
   - export
   - python -m codecov
-
-  
 

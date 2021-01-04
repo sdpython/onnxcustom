@@ -1,4 +1,4 @@
 fire
 numpy
-onnx
+onnx>=1.8.0
 scipy
