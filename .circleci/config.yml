@@ -43,7 +43,7 @@ jobs:
           name: run on tests
           command: |
             . venv/bin/activate
-            python -u tests/test_documentation_examples.py --short
+            python -u tests/test_documentation_examples.py -v
 
       - run:
           name: run tests
