@@ -5,8 +5,10 @@ dist/*
 build/*
 *egg-info/*
 doc/auto_examples/*
-examples/dot_pyinstrument.html
 doc/_static/viz.js
+examples/dot_pyinstrument.html
 examples/East_Coker_elm,_2.jpg
 examples/East_Coker_elm.jpg
 examples/squeezenet1.1-7.onnx
+tests/pipeline*.onnx
+temp_*

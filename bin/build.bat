@@ -5,8 +5,8 @@ cd %root%
 @echo ##################
 @echo Compile
 @echo ##################
-set pythonexe="c:\Python372_x64\python.exe"
-if not exist %pythonexe% set pythonexe="c:\Python370_x64\python.exe"
+set pythonexe="c:\Python387_x64\python.exe"
+if not exist %pythonexe% set pythonexe="c:\Python372_x64\python.exe"
 
 @echo running %root%\setup.py build_ext --inplace
 %pythonexe% -u %root%\setup.py build_ext --inplace

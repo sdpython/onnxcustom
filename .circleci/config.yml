@@ -40,10 +40,16 @@ jobs:
             python setup.py build_ext --inplace
 
       - run:
+          name: run on tests
+          command: |
+            . venv/bin/activate
+            python -u tests/test_documentation_examples.py
+
+      - run:
           name: run tests
           command: |
             . venv/bin/activate
-            coverage run  --omit=tests/test_*.py -m unittest discover tests -v -v
+            coverage run  --omit=tests/test_*.py -m unittest discover tests -v
 
       - run:
           name: flake8
