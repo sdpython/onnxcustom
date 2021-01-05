@@ -15,6 +15,11 @@ jobs:
           - v2-dependencies-
 
       - run:
+          name: Install graphviz
+          command: |
+                    sudo apt-get install -y graphviz
+
+      - run:
           name: install dependencies
           command: |
             python3 -m venv venv
