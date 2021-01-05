@@ -42,7 +42,7 @@ class TestDocumentationExample(unittest.TestCase):
         for name in sorted(found):
 
             if '-v' in sys.argv:
-                if name.endwith('plot_bbegin_measure_time.py'):
+                if name.endswith('plot_bbegin_measure_time.py'):
                     if __name__ == "__main__":
                         print("%s: skip %r" % (
                             datetime.now().strftime("%d-%m-%y %H:%M:%S"),
