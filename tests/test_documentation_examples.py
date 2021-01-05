@@ -41,9 +41,12 @@ class TestDocumentationExample(unittest.TestCase):
         tested = 0
         for name in sorted(found):
 
-            if '--short' in sys.argv:
+            if '-v' in sys.argv:
                 if name.endwith('plot_bbegin_measure_time.py'):
-                    # too long
+                    if __name__ == "__main__":
+                        print("%s: skip %r" % (
+                            datetime.now().strftime("%d-%m-%y %H:%M:%S"),
+                            name))
                     continue
 
             with self.subTest(name=name):
