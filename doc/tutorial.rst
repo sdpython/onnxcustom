@@ -22,6 +22,7 @@ The tutorial was tested with following version:
 .. runpython::
     :showcode:
 
+    import sys
     import numpy
     import scipy
     import sklearn
@@ -35,6 +36,7 @@ The tutorial was tested with following version:
     import onnxcustom
     import pyquickhelper
 
+    print("python %s" % sys.version_info)
     mods = [numpy, scipy, sklearn, lightgbm, xgboost,
             onnx, onnxmltools, onnxruntime, onnxcustom,
             skl2onnx, mlprodict, pyquickhelper]
