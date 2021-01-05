@@ -39,7 +39,13 @@ class TestDocumentationExample(unittest.TestCase):
         fold = os.path.normpath(os.path.join(this, '..', 'examples'))
         found = os.listdir(fold)
         tested = 0
-        for name in found:
+        for name in sorted(found):
+
+            if '--short' in sys.argv:
+                if name.endwith('plot_bbegin_measure_time.py'):
+                    # too long
+                    continue
+
             with self.subTest(name=name):
                 if name.startswith("plot_") and name.endswith(".py"):
                     if (name == "plot_pipeline_lightgbm.py" and
