@@ -81,6 +81,9 @@ class TestDocumentationExample(unittest.TestCase):
                             # onnxruntime datasets changed in master branch,
                             # still the same in released version on pypi
                             pass
+                        elif 'dot: graph is too large' in st:
+                            # graph is too big
+                            pass
                         else:
                             raise RuntimeError(
                                 "Example '{}' (cmd: {} - exec_prefix='{}') "
