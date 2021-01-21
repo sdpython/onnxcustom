@@ -74,6 +74,12 @@ model_onnx = convert_sklearn(
     pipe, 'pipeline_lightgbm',
     [('input', FloatTensorType([None, 2]))],
     target_opset=12, options={'lgbm__zipmap': False})
+if 'ZipMap' in str(model_onnx):
+    from skl2onnx import __version__
+    raise RuntimeError(
+        "skl2onnx.__version__ = %r\n"
+        "Conversion failed to remove operator ZipMap."
+        "\n%s" % (__version__, str(model_onnx)))
 
 # And save.
 with open("pipeline_lightgbm.onnx", "wb") as f:
@@ -91,12 +97,9 @@ print("predict_proba", pipe.predict_proba(X[:1]))
 ##########################
 # Predictions with onnxruntime.
 
-try:
-    sess = rt.InferenceSession("pipeline_lightgbm.onnx")
-except Exception as e:
-    raise RuntimeError(str(model_onnx)) from e
-
+sess = rt.InferenceSession("pipeline_lightgbm.onnx")
 pred_onx = sess.run(None, {"input": X[:5].astype(numpy.float32)})
+
 print("predict", pred_onx[0])
 print("predict_proba", pred_onx[1][:1])
 
