@@ -74,6 +74,7 @@ model_onnx = convert_sklearn(
     pipe, 'pipeline_lightgbm',
     [('input', FloatTensorType([None, 2]))],
     target_opset=12, options={'lgbm__zipmap': False})
+print(model_onnx)
 
 # And save.
 with open("pipeline_lightgbm.onnx", "wb") as f:
