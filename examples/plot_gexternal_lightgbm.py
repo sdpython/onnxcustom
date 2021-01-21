@@ -74,7 +74,6 @@ model_onnx = convert_sklearn(
     pipe, 'pipeline_lightgbm',
     [('input', FloatTensorType([None, 2]))],
     target_opset=12, options={'lgbm__zipmap': False})
-print(model_onnx)
 
 # And save.
 with open("pipeline_lightgbm.onnx", "wb") as f:
@@ -92,7 +91,10 @@ print("predict_proba", pipe.predict_proba(X[:1]))
 ##########################
 # Predictions with onnxruntime.
 
-sess = rt.InferenceSession("pipeline_lightgbm.onnx")
+try:
+    sess = rt.InferenceSession("pipeline_lightgbm.onnx")
+except Exception as e:
+    raise RuntimeError(str(model_onnx)) from e
 
 pred_onx = sess.run(None, {"input": X[:5].astype(numpy.float32)})
 print("predict", pred_onx[0])
