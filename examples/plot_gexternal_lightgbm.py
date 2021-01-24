@@ -73,13 +73,7 @@ update_registered_converter(
 model_onnx = convert_sklearn(
     pipe, 'pipeline_lightgbm',
     [('input', FloatTensorType([None, 2]))],
-    target_opset=12, options={'lgbm__zipmap': False})
-if 'ZipMap' in str(model_onnx):
-    from skl2onnx import __version__
-    raise RuntimeError(
-        "skl2onnx.__version__ = %r\n"
-        "Conversion failed to remove operator ZipMap."
-        "\n%s" % (__version__, str(model_onnx)))
+    target_opset=12, options={'lgbm__zipmap': True})
 
 # And save.
 with open("pipeline_lightgbm.onnx", "wb") as f:
