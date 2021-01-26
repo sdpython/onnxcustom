@@ -36,12 +36,12 @@ The tutorial was tested with following version:
     import onnxcustom
     import pyquickhelper
 
-    print("python %s" % sys.version_info)
+    print("python {}".format(sys.version_info))
     mods = [numpy, scipy, sklearn, lightgbm, xgboost,
             onnx, onnxmltools, onnxruntime, onnxcustom,
             skl2onnx, mlprodict, pyquickhelper]
     mods = [(m.__name__, m.__version__) for m in mods]
     mx = max(len(_[0]) for _ in mods) + 1
     for name, vers in sorted(mods):
-        print("%s%s%s" % (name, " " * (mx - len(name)), vers))
+        print("{}{}{}".format(name, " " * (mx - len(name)), vers))
 

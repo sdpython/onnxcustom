@@ -25,8 +25,8 @@ jobs:
             python3 -m venv venv
             . venv/bin/activate
             pip install -r requirements.txt
-            pip install scikit-learn
             pip install -r requirements-dev.txt
+            pip install git+https://github.com/xadupre/onnxmltools.git@jenkins --no-deps
 
       - save_cache:
           paths:
