@@ -165,7 +165,7 @@ class OnnxEig(OnnxOperator):
     """
 
     since_version = 1  # last changed in this version
-    expected_inputs = ['X']  # imput names
+    expected_inputs = [('X', 'T')]  # (imput names, type), T means any type
     expected_outputs = ['EigenValues', 'EigenVectors']  # output names
     input_range = [1, 1]  # only one input is allowed
     output_range = [1, 2]  # 1 or 2 outputs are produced
