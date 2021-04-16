@@ -44,4 +44,3 @@ The tutorial was tested with following version:
     mx = max(len(_[0]) for _ in mods) + 1
     for name, vers in sorted(mods):
         print("{}{}{}".format(name, " " * (mx - len(name)), vers))
-

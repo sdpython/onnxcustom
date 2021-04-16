@@ -15,16 +15,14 @@ it displays an error message telling it misses a converter.
     from sklearn.linear_model import LogisticRegression
     from skl2onnx import to_onnx
 
-
     class MyLogisticRegression(LogisticRegression):
         pass
-
 
     X = numpy.array([[0, 0.1]])
     try:
         to_onnx(MyLogisticRegression(), X)
     except Exception as e:
-        print(e)    
+        print(e)
 
 Following section shows how to create a custom converter.
 
