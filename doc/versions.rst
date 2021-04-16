@@ -18,7 +18,7 @@ Dependencies
     import onnxconverter_common
     import skl2onnx
     import mlprodict
-    
+
     for mod in [numpy, onnx, onnxruntime, sklearn,
                 onnxconverter_common, skl2onnx, mlprodict]:
         print("%s: %s" % (mod.__name__, mod.__version__))

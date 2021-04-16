@@ -48,7 +48,6 @@ standard pipeline and pipeline including custom pieces.
 It shows how to create a custom converter, needing custom
 operators.
 
-
 .. toctree::
     :maxdepth: 1
 
