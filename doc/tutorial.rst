@@ -16,6 +16,7 @@ involving operator not actually implemented in
     tutorial_1-5_external
     tutorial_2_new_converter
     tutorial_3_new_operator
+    tutorial_4_complex
 
 The tutorial was tested with following version:
 
