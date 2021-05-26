@@ -4,30 +4,43 @@
 TfIdf and sparse matrices
 =========================
 
-.. index:: XGBoost, lightgbm, RandomForest
+.. index:: xgboost, lightgbm, sparse, ensemble
 
+`TfidfVectorizer <https://scikit-learn.org/stable/modules/
+generated/sklearn.feature_extraction.text.TfidfVectorizer.html>`_
+usually creates sparse data. If the data is sparse enough, matrices
+usually stays as sparse all along the pipeline until the predictor
+is trained. Sparse matrices do not consider null and missing values
+as they are not present in the datasets. Because some predictors
+do the difference, this ambiguity may introduces discrepencies
+when converter into ONNX. This example looks into several configurations.
 
 .. contents::
     :local:
 
-Train a RandomForestClassifier after sparse
-+++++++++++++++++++++++++++++++++++++++++++
+Imports, setups
++++++++++++++++
+
+All imports. It also registered onnx converters for :epgk:`xgboost`
+and :epkg:`lightgbm`.
 """
-from pyquickhelper.helpgen.graphviz_helper import plot_graphviz
-from mlprodict.onnxrt import OnnxInference
+import warnings
 import numpy
 import pandas
 import onnxruntime as rt
+from tqdm import tqdm
 from sklearn.compose import ColumnTransformer
 from sklearn.datasets import load_iris
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
 from sklearn.feature_extraction.text import CountVectorizer, TfidfTransformer
-from sklearn.ensemble import RandomForestClassifier
+from sklearn.ensemble import (
+    RandomForestClassifier, HistGradientBoostingClassifier)
 from xgboost import XGBClassifier
 from lightgbm import LGBMClassifier
 from skl2onnx.common.data_types import FloatTensorType, StringTensorType
-from skl2onnx import convert_sklearn, update_registered_converter
+from skl2onnx import to_onnx, update_registered_converter
+from skl2onnx.sklapi import CastTransformer, ReplaceTransformer
 from skl2onnx.common.shape_calculator import (
     calculate_linear_classifier_output_shapes)
 from onnxmltools.convert.xgboost.operator_converters.XGBoost import (
@@ -46,6 +59,12 @@ update_registered_converter(
     options={'nocl': [True, False], 'zipmap': [True, False]})
 
 
+##########################################
+# Artificial datasets
+# +++++++++++++++++++++++++++
+#
+# Iris + a text column.
+
 cst = ['class zero', 'class one', 'class two']
 
 data = load_iris()
@@ -62,138 +81,220 @@ X = X[ind, :].copy()
 y = y[ind].copy()
 
 
-pipe = Pipeline([
-    ('union', ColumnTransformer([
-        ('scale1', StandardScaler(), [0, 1]),
-        ('subject',
-         Pipeline([
-             ('count', CountVectorizer()),
-             ('tfidf', TfidfTransformer())
-         ]), "text"),
-    ], sparse_threshold=1.)),
-    ('cls', RandomForestClassifier(n_estimators=5, max_depth=3)),
-])
-
-pipe.fit(df, y)
+##########################################
+# Train ensemble after sparse
+# +++++++++++++++++++++++++++
+#
+# The example use the Iris datasets with artifical text datasets
+# preprocessed with a tf-idf. `sparse_threshold=1.` avoids
+# sparse matrices to be converted into dense matrices.
 
 
-# Convert
+def make_pipelines(df_train, y_train, models=None,
+                   sparse_threshold=1., replace_nan=False,
+                   insert_replace=False, verbose=False):
 
-model_onnx = convert_sklearn(
-    pipe, 'pipeline_xgboost',
-    [('input', FloatTensorType([None, 2])),
-     ('text', StringTensorType([None, 1]))],
-    target_opset=12,
-    options={RandomForestClassifier: {'zipmap': False}})
+    if models is None:
+        models = [
+            RandomForestClassifier, HistGradientBoostingClassifier,
+            XGBClassifier, LGBMClassifier]
+
+    pipes = []
+    for model in tqdm(models):
+
+        if model == HistGradientBoostingClassifier:
+            kwargs = dict(max_iter=5)
+        elif model == XGBClassifier:
+            kwargs = dict(n_estimators=5, use_label_encoder=False)
+        else:
+            kwargs = dict(n_estimators=5)
+
+        if insert_replace:
+            pipe = Pipeline([
+                ('union', ColumnTransformer([
+                    ('scale1', StandardScaler(), [0, 1]),
+                    ('subject',
+                     Pipeline([
+                         ('count', CountVectorizer()),
+                         ('tfidf', TfidfTransformer()),
+                         ('repl', ReplaceTransformer()),
+                     ]), "text"),
+                ], sparse_threshold=sparse_threshold)),
+                ('cast', CastTransformer()),
+                ('cls', model(max_depth=3, **kwargs)),
+            ])
+        else:
+            pipe = Pipeline([
+                ('union', ColumnTransformer([
+                    ('scale1', StandardScaler(), [0, 1]),
+                    ('subject',
+                     Pipeline([
+                         ('count', CountVectorizer()),
+                         ('tfidf', TfidfTransformer())
+                     ]), "text"),
+                ], sparse_threshold=sparse_threshold)),
+                ('cast', CastTransformer()),
+                ('cls', model(max_depth=3, **kwargs)),
+            ])
+
+        try:
+            pipe.fit(df_train, y_train)
+        except TypeError as e:
+            obs = dict(model=model.__name__, pipe=pipe, error=e)
+            pipes.append(obs)
+            continue
+
+        options = {model: {'zipmap': False}}
+        if replace_nan:
+            options[TfidfTransformer] = {'nan': True}
+
+        # convert
+        with warnings.catch_warnings(record=False):
+            warnings.simplefilter("ignore", (FutureWarning, UserWarning))
+            model_onnx = to_onnx(
+                pipe,
+                initial_types=[('input', FloatTensorType([None, 2])),
+                               ('text', StringTensorType([None, 1]))],
+                target_opset=12, options=options)
+
+        with open('model.onnx', 'wb') as f:
+            f.write(model_onnx.SerializeToString())
+
+        sess = rt.InferenceSession(model_onnx.SerializeToString())
+        inputs = {"input": df[[0, 1]].values.astype(numpy.float32),
+                  "text": df[["text"]].values}
+        pred_onx = sess.run(None, inputs)
+
+        diff = numpy.abs(
+            pred_onx[1].ravel() -
+            pipe.predict_proba(df).ravel()).sum()
+
+        if verbose:
+            from mlprodict.onnxrt import OnnxInference
+
+            def td(a):
+                if hasattr(a, 'todense'):
+                    b = a.todense()
+                    ind = set(a.indices)
+                    for i in range(b.shape[1]):
+                        if i not in ind:
+                            b[0, i] = numpy.nan
+                    return b
+                return a
+
+            oinf = OnnxInference(model_onnx)
+            pred_onx2 = oinf.run(inputs)
+            diff2 = numpy.abs(
+                pred_onx2['probabilities'].ravel() -
+                pipe.predict_proba(df).ravel()).sum()
+
+        if diff > 0.1:
+            for i, (l1, l2) in enumerate(
+                    zip(pipe.predict_proba(df), pred_onx[1])):
+                d = numpy.abs(l1 - l2).sum()
+                if verbose and d > 0.1:
+                    print("\nDISCREPENCY DETAILS")
+                    print(d, i, l1, l2)
+                    pre = pipe.steps[0][-1].transform(df)
+                    print("idf", pre[i].dtype, td(pre[i]))
+                    pre2 = pipe.steps[1][-1].transform(pre)
+                    print("cas", pre2[i].dtype, td(pre2[i]))
+                    inter = oinf.run(inputs, intermediate=True)
+                    onx = inter['tfidftr_norm']
+                    print("onx", onx.dtype, onx[i])
+                    onx = inter['variable3']
+
+        obs = dict(model=model.__name__,
+                   discrepencies=diff,
+                   model_onnx=model_onnx, pipe=pipe)
+        if verbose:
+            obs['discrepency2'] = diff2
+        pipes.append(obs)
+
+    return pipes
 
 
-# Compare the predictions
+data_sparse = make_pipelines(df, y)
+stat = pandas.DataFrame(data_sparse).drop(['model_onnx', 'pipe'], axis=1)
+if 'error' in stat.columns:
+    print(stat.drop('error', axis=1))
+stat
 
-print("predict", pipe.predict(df[:5]))
-print("predict_proba", pipe.predict_proba(df[:2]))
-
-# Predictions with onnxruntime.
-
-sess = rt.InferenceSession(model_onnx.SerializeToString())
-pred_onx = sess.run(None, {
-    "input": df[[0, 1]].values.astype(numpy.float32),
-    "text": df[["text"]].values})
-print("predict", pred_onx[0][:5])
-print("predict_proba", pred_onx[1][:2])
-
-print("%s differences:" % pipe.steps[-1][-1].__class__.__name__,
-      numpy.abs(pred_onx[1].ravel() - pipe.predict_proba(df).ravel()).sum())
-
-############################################
-# Train a XGBoost after sparse
-# ++++++++++++++++++++++++++++
-
-pipe = Pipeline([
-    ('union', ColumnTransformer([
-        ('scale1', StandardScaler(), [0, 1]),
-        ('subject',
-         Pipeline([
-             ('count', CountVectorizer(ngram_range=(1, 2))),
-             ('tfidf', TfidfTransformer())
-         ]), "text"),
-    ], sparse_threshold=1.)),
-    ('cls', XGBClassifier(n_estimators=5, max_depth=3)),
-])
-
-pipe.fit(df, y)
-
-model_onnx = convert_sklearn(
-    pipe, 'pipeline_xgboost',
-    [('input', FloatTensorType([None, 2])),
-     ('text', StringTensorType([None, 1]))],
-    target_opset=12,
-    options={XGBClassifier: {'zipmap': False}})
-
-print("predict", pipe.predict(df[:5]))
-print("predict_proba", pipe.predict_proba(df[:2]))
-
-with open('model.onnx', 'wb') as f:
-    f.write(model_onnx.SerializeToString())
-
-sess = rt.InferenceSession(model_onnx.SerializeToString())
-pred_onx = sess.run(None, {
-    "input": df[[0, 1]].values.astype(numpy.float32),
-    "text": df[["text"]].values})
-print("predict", pred_onx[0][:5])
-print("predict_proba", pred_onx[1][:2])
-
-print("%s differences:" % pipe.steps[-1][-1].__class__.__name__,
-      numpy.abs(pred_onx[1].ravel() - pipe.predict_proba(df).ravel()).sum())
+############################
+# Sparse data hurts.
+#
+# Dense data
+# ++++++++++
+#
+# Let's replace sparse data with dense by using `sparse_threshold=0.`
 
 
-############################################
-# Train a LightGBM after sparse
-# +++++++++++++++++++++++++++++
+data_dense = make_pipelines(df, y, sparse_threshold=0.)
+stat = pandas.DataFrame(data_dense).drop(['model_onnx', 'pipe'], axis=1)
+if 'error' in stat.columns:
+    print(stat.drop('error', axis=1))
+stat
 
-pipe = Pipeline([
-    ('union', ColumnTransformer([
-        ('scale1', StandardScaler(), [0, 1]),
-        ('subject',
-         Pipeline([
-             ('count', CountVectorizer(ngram_range=(1, 2))),
-             ('tfidf', TfidfTransformer())
-         ]), "text"),
-    ], sparse_threshold=1.)),
-    ('cls', LGBMClassifier(n_estimators=5, max_depth=3)),
-])
+####################################
+# This is much better. Let's compare how the preprocessing
+# applies on the data.
 
-pipe.fit(df, y)
+print("sparse")
+print(data_sparse[-1]['pipe'].steps[0][-1].transform(df)[:2])
+print()
+print("dense")
+print(data_dense[-1]['pipe'].steps[0][-1].transform(df)[:2])
 
-model_onnx = convert_sklearn(
-    pipe, 'pipeline_lgb',
-    [('input', FloatTensorType([None, 2])),
-     ('text', StringTensorType([None, 1]))],
-    target_opset=12,
-    options={LGBMClassifier: {'zipmap': False}})
+####################################
+# This shows `RandomForestClassifier
+# <https://scikit-learn.org/stable/modules/generated/
+# sklearn.ensemble.RandomForestClassifier.html>`_,
+# `XGBClassifier <https://xgboost.readthedocs.io/
+# en/latest/python/python_api.html>`_ do not process
+# the same way sparse and
+# dense matrix as opposed to `LGBMClassifier
+# <https://lightgbm.readthedocs.io/en/latest/
+# pythonapi/lightgbm.LGBMClassifier.html>`_.
+# And `HistGradientBoostingClassifier
+# <https://scikit-learn.org/stable/modules/generated/
+# sklearn.ensemble.HistGradientBoostingClassifier.html>`_
+# fails.
+#
+# Dense data with nan
+# +++++++++++++++++++
+#
+# Let's keep sparse data in the scikit-learn pipeline but
+# replace null values by nan in the onnx graph.
 
-print("predict", pipe.predict(df[:5]))
-print("predict_proba", pipe.predict_proba(df[:2]))
-
-with open('model.onnx', 'wb') as f:
-    f.write(model_onnx.SerializeToString())
-
-sess = rt.InferenceSession(model_onnx.SerializeToString())
-pred_onx = sess.run(None, {
-    "input": df[[0, 1]].values.astype(numpy.float32),
-    "text": df[["text"]].values})
-print("predict", pred_onx[0][:5])
-print("predict_proba", pred_onx[1][:2])
-
-print("%s differences:" % pipe.steps[-1][-1].__class__.__name__,
-      numpy.abs(pred_onx[1].ravel() - pipe.predict_proba(df).ravel()).sum())
-
-
-#############################
-# Final graph
-# +++++++++++
+data_dense = make_pipelines(df, y, sparse_threshold=1., replace_nan=True)
+stat = pandas.DataFrame(data_dense).drop(['model_onnx', 'pipe'], axis=1)
+if 'error' in stat.columns:
+    print(stat.drop('error', axis=1))
+stat
 
 
-oinf = OnnxInference(model_onnx)
-ax = plot_graphviz(oinf.to_dot())
-ax.get_xaxis().set_visible(False)
-ax.get_yaxis().set_visible(False)
+##############################
+# Dense, 0 replaced by nan
+# ++++++++++++++++++++++++
+#
+# Instead of using a specific options to replace null values
+# into nan values, a custom transformer called
+# ReplaceTransformer is explicitely inserted into the pipeline.
+# A new converter is added to the list of supported models.
+# It is equivalent to the previous options except it is
+# more explicit.
+
+data_dense = make_pipelines(df, y, sparse_threshold=1., replace_nan=False,
+                            insert_replace=True)
+stat = pandas.DataFrame(data_dense).drop(['model_onnx', 'pipe'], axis=1)
+if 'error' in stat.columns:
+    print(stat.drop('error', axis=1))
+stat
+
+######################################
+# Conclusion
+# ++++++++++
+#
+# Unless dense arrays are used, because :epkg:`onnxruntime`
+# ONNX does not support sparse yet, the conversion needs to be
+# tuned depending on the model which follows the TfIdf preprocessing.
