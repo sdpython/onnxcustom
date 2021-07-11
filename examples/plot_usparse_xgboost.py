@@ -27,7 +27,6 @@ and :epkg:`lightgbm`.
 import warnings
 import numpy
 import pandas
-import onnxruntime as rt
 from tqdm import tqdm
 from sklearn.compose import ColumnTransformer
 from sklearn.datasets import load_iris
@@ -48,6 +47,7 @@ from onnxmltools.convert.xgboost.operator_converters.XGBoost import (
     convert_xgboost)
 from onnxmltools.convert.lightgbm.operator_converters.LightGbm import (
     convert_lightgbm)
+from mlprodict.onnxrt import OnnxInference
 
 
 update_registered_converter(
@@ -161,18 +161,16 @@ def make_pipelines(df_train, y_train, models=None,
         with open('model.onnx', 'wb') as f:
             f.write(model_onnx.SerializeToString())
 
-        sess = rt.InferenceSession(model_onnx.SerializeToString())
+        oinf = OnnxInference(model_onnx)
         inputs = {"input": df[[0, 1]].values.astype(numpy.float32),
                   "text": df[["text"]].values}
-        pred_onx = sess.run(None, inputs)
+        pred_onx = oinf.run(inputs)
 
         diff = numpy.abs(
-            pred_onx[1].ravel() -
+            pred_onx['probabilities'].ravel() -
             pipe.predict_proba(df).ravel()).sum()
 
         if verbose:
-            from mlprodict.onnxrt import OnnxInference
-
             def td(a):
                 if hasattr(a, 'todense'):
                     b = a.todense()
@@ -191,7 +189,8 @@ def make_pipelines(df_train, y_train, models=None,
 
         if diff > 0.1:
             for i, (l1, l2) in enumerate(
-                    zip(pipe.predict_proba(df), pred_onx[1])):
+                    zip(pipe.predict_proba(df),
+                    pred_onx['probabilities'])):
                 d = numpy.abs(l1 - l2).sum()
                 if verbose and d > 0.1:
                     print("\nDISCREPENCY DETAILS")
