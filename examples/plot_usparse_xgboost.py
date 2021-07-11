@@ -34,6 +34,7 @@ from sklearn.datasets import load_iris
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
 from sklearn.feature_extraction.text import CountVectorizer, TfidfTransformer
+from sklearn.experimental import enable_hist_gradient_boosting 
 from sklearn.ensemble import (
     RandomForestClassifier, HistGradientBoostingClassifier)
 from xgboost import XGBClassifier
