@@ -9,6 +9,7 @@ import importlib
 import subprocess
 from datetime import datetime
 import onnxruntime
+from pyquickhelper.pycode import skipif_circleci
 
 
 def import_source(module_file_path, module_name):
@@ -27,6 +28,7 @@ def import_source(module_file_path, module_name):
 
 class TestDocumentationExample2(unittest.TestCase):
 
+    @skipif_circleci('too long')
     def test_documentation_examples2(self):
 
         this = os.path.abspath(os.path.dirname(__file__))
