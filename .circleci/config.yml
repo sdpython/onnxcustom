@@ -2,7 +2,7 @@ version: 2
 jobs:
   build:
     docker:
-      - image: circleci/python:3.8.7
+      - image: circleci/python:3.9.5
     
     working_directory: ~/repo
     
@@ -40,18 +40,18 @@ jobs:
             python setup.py build_ext --inplace
 
       - run:
-          name: run tests
-          command: |
-            . venv/bin/activate
-            coverage run  --omit=tests/test_*.py -m unittest discover tests -v
-
-      - run:
           name: flake8
           command: |
             . venv/bin/activate
             python -m flake8 tests
             python -m flake8 onnxcustom
             python -m flake8 examples
+
+      - run:
+          name: run tests
+          command: |
+            . venv/bin/activate
+            coverage run  --omit=tests/test_*.py -m unittest discover tests -v
 
       - run:
           name: coverage

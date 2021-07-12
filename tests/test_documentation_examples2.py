@@ -9,6 +9,7 @@ import importlib
 import subprocess
 from datetime import datetime
 import onnxruntime
+from pyquickhelper.pycode import skipif_circleci
 
 
 def import_source(module_file_path, module_name):
@@ -25,9 +26,10 @@ def import_source(module_file_path, module_name):
     return module_spec.loader.exec_module(module)
 
 
-class TestDocumentationExample(unittest.TestCase):
+class TestDocumentationExample2(unittest.TestCase):
 
-    def test_documentation_examples(self):
+    @skipif_circleci('too long')
+    def test_documentation_examples2(self):
 
         this = os.path.abspath(os.path.dirname(__file__))
         onxc = os.path.normpath(os.path.join(this, '..'))
@@ -40,6 +42,8 @@ class TestDocumentationExample(unittest.TestCase):
         found = os.listdir(fold)
         tested = 0
         for name in sorted(found):
+            if name < "plot_u":
+                continue
 
             if '-v' in sys.argv:
                 if name.endswith('plot_bbegin_measure_time.py'):

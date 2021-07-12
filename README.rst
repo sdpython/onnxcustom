@@ -2,8 +2,8 @@
 .. image:: https://circleci.com/gh/sdpython/onnxcustom/tree/master.svg?style=svg
     :target: https://circleci.com/gh/sdpython/onnxcustom/tree/master
 
-.. image:: https://travis-ci.org/sdpython/onnxcustom.svg?branch=master
-    :target: https://travis-ci.org/sdpython/onnxcustom
+.. image:: https://travis-ci.com/sdpython/onnxcustom.svg?branch=master
+    :target: https://travis-ci.com/sdpython/onnxcustom
     :alt: Build status
 
 .. image:: https://ci.appveyor.com/api/projects/status/a3sn45a2fayoxb5q?svg=true

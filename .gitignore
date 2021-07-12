@@ -13,3 +13,5 @@ examples/squeezenet1.1-7.onnx
 tests/pipeline*.onnx
 temp_*
 examples/pipeline_lightgbm.onnx
+examples/model.onnx
+tests/model.onnx

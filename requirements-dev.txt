@@ -6,11 +6,10 @@ lightgbm
 loky
 matplotlib
 mlinsights
-mlprodict>=0.5
+mlprodict>=0.6
 nbsphinx
-onnx>=1.8.0
-git+https://github.com/xadupre/onnxconverter-common.git@jenkins
-onnxruntime>=1.6.0
+onnxconverter-common
+onnxruntime>=1.8.0
 pillow
 py-spy
 pandas
@@ -19,7 +18,7 @@ pyquickhelper>=1.10
 pytest
 pytest-cov
 scikit-learn>=0.24
-git+https://github.com/xadupre/sklearn-onnx.git@jenkins
+skl2onnx>=1.9.0
 sphinx
 sphinxcontrib-blockdiag
 sphinx-gallery
