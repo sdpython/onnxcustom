@@ -40,7 +40,7 @@ class TestDocumentationExample1(unittest.TestCase):
         found = os.listdir(fold)
         tested = 0
         for name in sorted(found):
-            if name.replace("\\", "/").split("/")[-1] >= "m":
+            if name >= "plot_u":
                 break
 
             if '-v' in sys.argv:
