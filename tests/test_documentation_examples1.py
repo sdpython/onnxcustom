@@ -25,9 +25,9 @@ def import_source(module_file_path, module_name):
     return module_spec.loader.exec_module(module)
 
 
-class TestDocumentationExample(unittest.TestCase):
+class TestDocumentationExample1(unittest.TestCase):
 
-    def test_documentation_examples(self):
+    def test_documentation_examples1(self):
 
         this = os.path.abspath(os.path.dirname(__file__))
         onxc = os.path.normpath(os.path.join(this, '..'))
@@ -40,6 +40,8 @@ class TestDocumentationExample(unittest.TestCase):
         found = os.listdir(fold)
         tested = 0
         for name in sorted(found):
+            if name.replace("\\", "/").split("/")[-1] >= "m":
+                break
 
             if '-v' in sys.argv:
                 if name.endswith('plot_bbegin_measure_time.py'):
