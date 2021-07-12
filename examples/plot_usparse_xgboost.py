@@ -33,7 +33,7 @@ from sklearn.datasets import load_iris
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
 from sklearn.feature_extraction.text import CountVectorizer, TfidfTransformer
-from sklearn.experimental import enable_hist_gradient_boosting 
+from sklearn.experimental import enable_hist_gradient_boosting  # pylint: disable=F401
 from sklearn.ensemble import (
     RandomForestClassifier, HistGradientBoostingClassifier)
 from xgboost import XGBClassifier
@@ -190,7 +190,7 @@ def make_pipelines(df_train, y_train, models=None,
         if diff > 0.1:
             for i, (l1, l2) in enumerate(
                     zip(pipe.predict_proba(df),
-                    pred_onx['probabilities'])):
+                        pred_onx['probabilities'])):
                 d = numpy.abs(l1 - l2).sum()
                 if verbose and d > 0.1:
                     print("\nDISCREPENCY DETAILS")
