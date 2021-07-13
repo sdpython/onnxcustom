@@ -9,6 +9,7 @@ mlinsights
 mlprodict>=0.6
 nbsphinx
 onnxconverter-common
+onnxmltools
 onnxruntime>=1.8.0
 pillow
 py-spy
