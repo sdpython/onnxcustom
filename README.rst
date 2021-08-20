@@ -3,7 +3,7 @@
     :target: https://circleci.com/gh/sdpython/onnxcustom/tree/master
 
 .. image:: https://travis-ci.com/sdpython/onnxcustom.svg?branch=master
-    :target: https://travis-ci.com/sdpython/onnxcustom
+    :target: https://app.travis-ci.com/github/sdpython/onnxcustom
     :alt: Build status
 
 .. image:: https://ci.appveyor.com/api/projects/status/a3sn45a2fayoxb5q?svg=true
