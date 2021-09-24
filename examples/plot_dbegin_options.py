@@ -201,7 +201,6 @@ model_def = to_onnx(
 oinf = OnnxInference(model_def, runtime='python_compiled')
 print(oinf.run({'X': X.astype(numpy.float32)[:5]}))
 
-
 #########################################
 # It did not seem to work... We need to tell
 # that applies on a specific part of the pipeline
@@ -228,6 +227,35 @@ print(oinf.run({'X': X.astype(numpy.float32)[:5]}))
 
 #########################################
 # Negative figures. We still have raw scores.
+
+#######################################
+# Option *decision_path*
+# ++++++++++++++++++++++
+#
+# *scikit-learn* implements a function to retrieve the
+# decision path. It can be enabled by option *decision_path*.
+
+clrrf = RandomForestClassifier(n_estimators=2, max_depth=2)
+clrrf.fit(X_train, y_train)
+clrrf.predict(X_test[:2])
+paths, n_nodes_ptr = clrrf.decision_path(X_test[:2])
+print(paths.todense())
+
+model_def = to_onnx(clrrf, X_train.astype(numpy.float32),
+                    options={id(clrrf): {'decision_path': True,
+                                         'zipmap': False}})
+sess = InferenceSession(model_def.SerializeToString())
+
+##########################################
+# The model produces 3 outputs.
+
+print([o.name for o in sess.get_outputs()])
+
+##########################################
+# Let's display the last one.
+
+res = sess.run(None, {'X': X_test[:2].astype(numpy.float32)})
+print(res[-1])
 
 ############################################################
 # List of available options
