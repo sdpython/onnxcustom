@@ -15,3 +15,5 @@ temp_*
 examples/pipeline_lightgbm.onnx
 examples/model.onnx
 tests/model.onnx
+*.jpg
+*.onnx
