@@ -140,10 +140,10 @@ print("max discrepancies split node", disc_split, "ratio:", disc / disc_split)
 
 print("processing time no split",
       timeit.timeit(
-        lambda: sess.run(None, {'X': X32})[0], number=150))
+          lambda: sess.run(None, {'X': X32})[0], number=150))
 print("processing time split",
       timeit.timeit(
-        lambda: sess_split.run(None, {'X': X32})[0], number=150))
+          lambda: sess_split.run(None, {'X': X32})[0], number=150))
 
 #############################################
 # Split influence
