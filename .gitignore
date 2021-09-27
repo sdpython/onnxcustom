@@ -3,6 +3,7 @@ coverage.html/*
 .coverage
 dist/*
 build/*
+data/*
 *egg-info/*
 doc/auto_examples/*
 doc/_static/viz.js
@@ -17,3 +18,5 @@ examples/model.onnx
 tests/model.onnx
 *.jpg
 *.onnx
+*.pt
+

@@ -13,7 +13,7 @@ A simple example
 
 """
 
-from numpy.testing import assert_allclose
+import time
 from onnxruntime.capi.ort_trainer import (
     ORTTrainer, IODescription, ModelDescription)
 import torch
@@ -40,15 +40,8 @@ def my_loss(x, target):
     return F.nll_loss(F.log_softmax(x, dim=1), target)
 
 
-def get_ort_trainer(model, model_desc, device):
-    return ORTTrainer(
-        model, my_loss, model_desc, "SGDOptimizer", None,
-        IODescription('Learning_Rate', [1, ], torch.float32),
-        device, _opset_version=12)
-
-
 class TorchTrainer:
-    
+
     def __init__(self, model, loss, model_desc, optimizer, something,
                  param_names, device):
         self.model = model
@@ -58,18 +51,56 @@ class TorchTrainer:
         self.param_names = param_names
         self.device = device
         if optimizer == 'SGDOptimizer':
-            self.optimizer = torch.optim.SGD(self.model.parameters(), lr=1.0)
+            self.optimizer = torch.optim.SGD(
+                self.model.parameters(), lr=0.01, momentum=0.5)
         else:
             raise NotImplementedError("Unexpected optimizer %r." % optimizer)
 
+    def _update_parameters(self, param_values):
+        replaces = {'learning_rate': 'lr',
+                    'Learning_Rate': 'lr'}
+        for gr in self.optimizer.param_groups:
+            for k, v in param_values.items():
+                if k in replaces:
+                    pin, pout = k, replaces[k]
+                else:
+                    pin, pout = k, k
+                gr[pout] = param_values[pin][0]
+
     def train_step(self, data, target, *params):
-        param_value = {k: v for k, v in zip(self.param_names, params)}
-        
+        param_values = {k: v for k, v in zip(self.param_names, params)}
+        self._update_parameters(param_values)
+
         y = self.model(data)
         loss = self.loss(y, target)
         loss.backward()
         self.optimizer.step()
         return loss, None
+
+    def eval_step(self, data, fetches=None):
+        "fetches is ignored in this case"
+        out = self.model(data)
+        return out
+
+    def state_dict(self):
+        return self.optimizer.state_dict()
+
+    def save_as_onnx(self, filename, target_opset=14, batch_size=1):
+        size = (batch_size, ) + tuple(self.model_desc.inputs_[0].shape_[1:])
+        x = torch.randn(size, requires_grad=True)
+        torch.onnx.export(
+            self.model, x, filename, export_params=True,
+            do_constant_folding=True,
+            input_names=['input'], output_names=['output'],
+            dynamic_axes={'input': {0: 'batch_size'},
+                          'output': {0: 'batch_size'}})
+
+
+def get_ort_trainer(model, model_desc, device):
+    return ORTTrainer(
+        model, my_loss, model_desc, "SGDOptimizer", None,
+        IODescription('Learning_Rate', [1, ], torch.float32),
+        device, _opset_version=12)
 
 
 def get_torch_trainer(model, model_desc, device):
@@ -78,63 +109,67 @@ def get_torch_trainer(model, model_desc, device):
         ['learning_rate'], device=device)
 
 
-class MNISTWrapper():
+def train_with_trainer(learning_rate, trainer, device,
+                       train_loader, epoch):
+    actual_losses = []
+    for batch_idx, (data, target) in enumerate(train_loader):
+        data, target = data.to(device), target.to(device)
+        data = data.reshape(data.shape[0], -1)
 
-    def train_with_trainer(self, learningRate, trainer, device, train_loader,
-                           epoch):
-        actual_losses = []
-        for batch_idx, (data, target) in enumerate(train_loader):
+        loss, _ = trainer.train_step(
+            data, target, torch.tensor(
+                [learning_rate]))
+
+        args_log_interval = 100
+        if batch_idx % args_log_interval == 0:
+            print(
+                'Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f} '
+                'lr={:.1g}'.format(
+                    epoch, batch_idx * len(data), len(train_loader.dataset),
+                    100. * batch_idx / len(train_loader), loss.item(),
+                    learning_rate))
+            items = loss.cpu().detach().numpy().item()
+            actual_losses.append(items)
+
+    return actual_losses
+
+
+def test_with_trainer(trainer, device, test_loader):
+    test_loss = 0
+    correct = 0
+    with torch.no_grad():
+        for data, target in test_loader:
             data, target = data.to(device), target.to(device)
             data = data.reshape(data.shape[0], -1)
+            output = F.log_softmax(
+                trainer.eval_step(data, fetches=['probability']), dim=1)
+            # sum up batch loss
+            test_loss += F.nll_loss(output, target, reduction='sum').item()
+            # get the index of the max log-probability
+            pred = output.argmax(dim=1, keepdim=True)
+            correct += pred.eq(target.view_as(pred)).sum().item()
 
-            loss, _ = trainer.train_step(data, target, torch.tensor([learningRate]))
+    test_loss /= len(test_loader.dataset)
 
-            args_log_interval = 100
-            if batch_idx % args_log_interval == 0:
-                print('Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}'.format(
-                    epoch, batch_idx * len(data), len(train_loader.dataset),
-                    100. * batch_idx / len(train_loader), loss.item()))
-                items = loss.cpu().numpy().item()
-                actual_losses.append(items)
+    print('\nTest set: Average loss: {:.4f}, '
+          'Accuracy: {}/{} ({:.0f}%)\n'.format(
+              test_loss, correct, len(test_loader.dataset),
+              100. * correct / len(test_loader.dataset)))
 
-        return actual_losses
+    return test_loss, correct / len(test_loader.dataset)
 
-    def test_with_trainer(self, trainer, device, test_loader):
-        test_loss = 0
-        correct = 0
-        with torch.no_grad():
-            for data, target in test_loader:
-                data, target = data.to(device), target.to(device)
-                data = data.reshape(data.shape[0], -1)
-                output = F.log_softmax(
-                    trainer.eval_step(
-                        (data),
-                        fetches=['probability']),
-                    dim=1)
-                # sum up batch loss
-                test_loss += F.nll_loss(output, target, reduction='sum').item()
-                # get the index of the max log-probability
-                pred = output.argmax(dim=1, keepdim=True)
-                correct += pred.eq(target.view_as(pred)).sum().item()
 
-        test_loss /= len(test_loader.dataset)
+class MNISTWrapper:
 
-        print('\nTest set: Average loss: {:.4f}, '
-              'Accuracy: {}/{} ({:.0f}%)\n'.format(
-            test_loss, correct, len(test_loader.dataset),
-            100. * correct / len(test_loader.dataset)))
-
-        return test_loss, correct / len(test_loader.dataset)
-
-    def mnist_model_description():
+    def model_description(self):
         input_desc = IODescription('input1', ['batch', 784], torch.float32)
         label_desc = IODescription(
             'label', ['batch', ], torch.int64, num_classes=10)
         loss_desc = IODescription('loss', [], torch.float32)
         probability_desc = IODescription(
             'probability', ['batch', 10], torch.float32)
-        return ModelDescription([input_desc, label_desc], [
-                                loss_desc, probability_desc])
+        return ModelDescription([input_desc, label_desc],
+                                [loss_desc, probability_desc])
 
     def get_loaders(self):
         args_batch_size = 64
@@ -164,89 +199,61 @@ class MNISTWrapper():
 
         # warning: changes the pytorch random generator state
         model = NeuralNet(input_size, hidden_size, num_classes)
-        model_desc = MNISTWrapper.mnist_model_description()
+        model_desc = self.model_description()
         return model, model_desc
 
 
-def testMNISTTrainingAndTesting(trainer="ORT", device="cpu"):
+def mnist_test_training_testing(trainer="ORT", device="cpu", epochs=2,
+                                learning_rate=0.001, save_model_epoch=-1):
     torch.manual_seed(1)
-    device = torch.device(device)
+    device_obj = torch.device(device)
     print('-----------------------------')
-    print("device=%r" % device)
+    print("device=%r trainer=%r" % (device_obj, trainer))
+    print('epochs=%r learning_rate=%r' % (epochs, learning_rate))
     print('-----------------------------')
+    begin = time.perf_counter()
 
     mnist = MNISTWrapper()
     train_loader, test_loader = mnist.get_loaders()
     model, model_desc = mnist.get_model()
-    
-    if trainer == "ORT":
-        trainer = get_ort_trainer(model, model_desc, device)
-    else:
-        trainer = get_torch_trainer(model, model_desc, device)
+    for inp in model_desc.inputs_:
+        print("   input: name=%r dty)e=%r shape=%r" % (
+            inp.name_, inp.dtype_, inp.shape_))
+    for inp in model_desc.outputs_:
+        print("  output: name=%r dtype=%r shape=%r" % (
+            inp.name_, inp.dtype_, inp.shape_))
 
-    learningRate = 0.01
-    args_epochs = 2
-    expected_losses = [
-        2.333008289337158,
-        1.0680292844772339,
-        0.6300537586212158,
-        0.5279903411865234,
-        0.3710068166255951,
-        0.4044453501701355,
-        0.30482712388038635,
-        0.4595026969909668,
-        0.42305776476860046,
-        0.4797358512878418,
-        0.23006735742092133,
-        0.48427966237068176,
-        0.30716797709465027,
-        0.3238796889781952,
-        0.19543828070163727,
-        0.3561663031578064,
-        0.3089643716812134,
-        0.37738722562789917,
-        0.24883587658405304,
-        0.30744990706443787]
-    expected_test_losses = [0.31038025817871095, 0.25183824462890625]
-    expected_test_accuracies = [0.9125, 0.9304]
+    if trainer == "ORT":
+        trainer_obj = get_ort_trainer(model, model_desc, device_obj)
+    else:
+        trainer_obj = get_torch_trainer(model, model_desc, device_obj)
 
     actual_losses = []
     actual_test_losses, actual_accuracies = [], []
-    for epoch in range(1, args_epochs + 1):
-        res = mnist.train_with_trainer(
-                learningRate, trainer, device,
-                train_loader, epoch)
+    for epoch in range(1, epochs + 1):
+        res = train_with_trainer(
+            learning_rate, trainer_obj, device_obj,
+            train_loader, epoch)
         actual_losses.extend(res)
+        test_loss, accuracy = test_with_trainer(
+            trainer_obj, device_obj, test_loader)
+        actual_test_losses.append(test_loss)
+        actual_accuracies.append(accuracy)
 
-        test_loss, accuracy = mnist.test_with_trainer(
-            trainer, device, test_loader)
-        actual_test_losses = [*actual_test_losses, test_loss]
-        actual_accuracies = [*actual_accuracies, accuracy]
-
-        # if you update outcomes, also do so for resume from checkpoint test
-        # args_checkpoint_epoch = 1
-        # if epoch == args_checkpoint_epoch:
-        # state = {'rng_state': torch.get_rng_state(),
-        #          'model': trainer.state_dict()}
-        # torch.save(state, get_name("ckpt_mnist.pt"))
+        if save_model_epoch > 0 and epoch % save_model_epoch == 0:
+            name = "mninst_%s_%s_i%d.pt" % (trainer, device, epoch)
+            state = {'rng_state': torch.get_rng_state(),
+                     'model': trainer_obj.state_dict()}
+            # with open(name, "wb") as f:
+            # torch.save(state, f)
+            torch.save(state, name)
+            trainer_obj.save_as_onnx(name + ".onnx")
 
     print("actual_losses=", actual_losses)
     print("actual_test_losses=", actual_test_losses)
     print("actual_accuracies=", actual_accuracies)
-
-    # to update expected outcomes, enable pdb and run the test with -s
-    # and copy paste outputs
-    # import pdb; pdb.set_trace()
-    rtol = 1e-01
-    assert_allclose(
-        expected_losses, actual_losses,
-        rtol=rtol, err_msg="loss mismatch")
-    assert_allclose(
-        expected_test_losses, actual_test_losses,
-        rtol=rtol, err_msg="test loss mismatch")
-    assert_allclose(
-        expected_test_accuracies, actual_accuracies,
-        rtol=rtol, err_msg="test accuracy mismatch")
+    print("time=%r" % (time.perf_counter() - begin))
 
 
-testMNISTTrainingAndTesting(trainer="torch")
+mnist_test_training_testing(trainer="torch", save_model_epoch=2)
+mnist_test_training_testing(trainer="ORT", save_model_epoch=2)

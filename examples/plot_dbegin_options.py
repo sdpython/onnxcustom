@@ -86,7 +86,6 @@ from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LogisticRegression
 from skl2onnx.common._registration import _converter_pool
 from skl2onnx import to_onnx
-from skl2onnx.common._registration import _converter_pool
 from mlprodict.onnxrt import OnnxInference
 
 iris = load_iris()
