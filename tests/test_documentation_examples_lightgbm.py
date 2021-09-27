@@ -42,6 +42,11 @@ class TestDocumentationExampleLightgbm(unittest.TestCase):
         for name in sorted(found):
             if 'lightgbm' not in name:
                 continue
+            if 'reg' in name:
+                from pyquickhelper.pycode.ci_helper import is_travis_or_appveyor
+                if is_travis_or_appveyor() == 'circleci':
+                    # stuck
+                    continue
 
             if '-v' in sys.argv or "--verbose" in sys.argv:
                 if name.endswith('plot_bbegin_measure_time.py'):
