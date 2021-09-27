@@ -9,6 +9,10 @@ import importlib
 import subprocess
 from datetime import datetime
 import onnxruntime
+try:
+    import onnxruntime.capi.ort_trainer as ortt
+except ImportError:
+    ortt = None
 
 
 def import_source(module_file_path, module_name):
@@ -27,6 +31,7 @@ def import_source(module_file_path, module_name):
 
 class TestDocumentationExampleTraining(unittest.TestCase):
 
+    @unittest.skipIf(ortt is None, reason="onnxruntime-training not installed.")
     def test_documentation_examples_training(self):
 
         this = os.path.abspath(os.path.dirname(__file__))
