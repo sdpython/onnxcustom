@@ -216,6 +216,7 @@ def mnist_test_training_testing(trainer="ORT", device="cpu", epochs=2,
     mnist = MNISTWrapper()
     train_loader, test_loader = mnist.get_loaders()
     model, model_desc = mnist.get_model()
+    model.to(device)
     for inp in model_desc.inputs_:
         print("   input: name=%r dty)e=%r shape=%r" % (
             inp.name_, inp.dtype_, inp.shape_))
@@ -255,5 +256,8 @@ def mnist_test_training_testing(trainer="ORT", device="cpu", epochs=2,
     print("time=%r" % (time.perf_counter() - begin))
 
 
-mnist_test_training_testing(trainer="torch", save_model_epoch=2)
-mnist_test_training_testing(trainer="ORT", save_model_epoch=2)
+device = "cuda:0" if torch.cuda.is_available() else "cpu"
+mnist_test_training_testing(
+    trainer="torch", device=device, save_model_epoch=2)
+mnist_test_training_testing(
+    trainer="ORT", device=device, save_model_epoch=2)
