@@ -27,6 +27,7 @@ sphinx
 sphinxcontrib-blockdiag
 sphinx-gallery
 torch
+torchvision
 tqdm
 xgboost
 wheel
