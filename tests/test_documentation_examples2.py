@@ -45,7 +45,7 @@ class TestDocumentationExample2(unittest.TestCase):
             if name < "plot_u":
                 continue
 
-            if '-v' in sys.argv:
+            if '-v' in sys.argv or "--verbose" in sys.argv:
                 if name.endswith('plot_bbegin_measure_time.py'):
                     if __name__ == "__main__":
                         print("%s: skip %r" % (

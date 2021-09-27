@@ -78,12 +78,13 @@ from pprint import pformat
 import numpy
 from onnxruntime import InferenceSession
 from pyquickhelper.helpgen.graphviz_helper import plot_graphviz
-from sklearn.ensemble import RandomForestClassifier
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.pipeline import Pipeline
 from sklearn.datasets import load_iris
+from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LogisticRegression
+from skl2onnx.common._registration import _converter_pool
 from skl2onnx import to_onnx
 from skl2onnx.common._registration import _converter_pool
 from mlprodict.onnxrt import OnnxInference

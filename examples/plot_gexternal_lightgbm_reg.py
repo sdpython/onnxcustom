@@ -40,7 +40,7 @@ import warnings
 import timeit
 import numpy
 from pandas import DataFrame
-import matplotlib.pyplot as plt
+# import matplotlib.pyplot as plt
 from tqdm import tqdm
 from lightgbm import LGBMRegressor
 from onnxruntime import InferenceSession
@@ -172,4 +172,4 @@ print(df)
 ax = df.plot(title="Sum of discrepancies against split\n"
                    "split = number of tree per node")
 
-plt.show()
+# plt.show()
