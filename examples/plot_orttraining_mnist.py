@@ -87,7 +87,7 @@ class TorchTrainer:
 
     def save_as_onnx(self, filename, target_opset=14, batch_size=1):
         size = (batch_size, ) + tuple(self.model_desc.inputs_[0].shape_[1:])
-        x = torch.randn(size, requires_grad=True)
+        x = torch.randn(size, requires_grad=True).to(self.device)
         torch.onnx.export(
             self.model, x, filename, export_params=True,
             do_constant_folding=True,

@@ -19,12 +19,12 @@ pyinstrument
 pyquickhelper>=1.10
 pytest
 pytest-cov
-pytorch
 scikit-learn>=1.0
 skl2onnx>=1.9.3
 sphinx
 sphinxcontrib-blockdiag
 sphinx-gallery
+torch
 tqdm
 xgboost
 wheel
