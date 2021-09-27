@@ -43,7 +43,8 @@ class TestDocumentationExampleLightgbm(unittest.TestCase):
             if 'lightgbm' not in name:
                 continue
             if 'reg' in name:
-                from pyquickhelper.pycode.ci_helper import is_travis_or_appveyor
+                from pyquickhelper.pycode.ci_helper import (
+                    is_travis_or_appveyor)
                 if is_travis_or_appveyor() == 'circleci':
                     # stuck
                     continue
