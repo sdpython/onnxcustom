@@ -52,15 +52,14 @@ onx = build_ort_op()
 sessg = InferenceSession(onx.SerializeToString(),
                          providers=["CUDAExecutionProvider"])
 
-xs = [numpy.random.rand(50, 50).astype(numpy.float32) for _ in range(10)]
-gxs = [OrtValue.ortvalue_from_numpy(x, 'cuda', 0) for x in xs]
-x = gxs[-1]
+x = numpy.random.rand(50, 50).astype(numpy.float32)
+gx = OrtValue.ortvalue_from_numpy(x, 'cuda', 0)
 
 io_binding = sessg.io_binding()
 io_binding.bind_input(
-    name='X', device_type=x.device_name(), device_id=0,
-    element_type=numpy.float32, shape=x.shape(),
-    buffer_ptr=x.data_ptr())
+    name='X', device_type=gx.device_name(), device_id=0,
+    element_type=numpy.float32, shape=gx.shape(),
+    buffer_ptr=gx.data_ptr())
 io_binding.bind_output('Y')
 print(sessg.run_with_iobinding(io_binding))
 
