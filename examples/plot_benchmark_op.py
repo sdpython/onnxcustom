@@ -183,7 +183,7 @@ def benchmark_op(repeat=10, number=10, name="Slice", shape_fct=None,
     piv = df.pivot('N', 'fct', 'average')
 
     rs = piv.copy()
-    for c in ['ort', 'org_gpu']:
+    for c in ['ort', 'ort_gpu']:
         if c in rs.columns:
             rs[c] = rs['numpy'] / rs[c]
     rs['numpy'] = 1.
