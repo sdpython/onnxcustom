@@ -88,7 +88,7 @@ def benchmark_op(repeat=2, number=5, name="Slice", shape_fct=None,
         save=save, op_version=opset)
     res = []
     for dim in tqdm([8, 16, 32, 64, 100, 128, 200,
-                     256, 400, 512, 1024]):
+                     256, 400, 512, 1024, 1500, 2048]):
         shape = shape_fct(dim)
         n_arrays = 10 if dim < 512 else 4
         xs = [numpy.random.rand(*shape).astype(numpy.float32)
@@ -140,7 +140,7 @@ def benchmark_op(repeat=2, number=5, name="Slice", shape_fct=None,
     so.enable_profiling = True
     sess = InferenceSession(onx.SerializeToString(), so,
                             providers=["CPUExecutionProvider"])
-    for i in range(0, 111):
+    for i in range(0, 1000):
         sess.run(None, {'X': xs[-1]}, )
     prof = sess.end_profiling()
     with open(prof, "r") as f:
@@ -157,7 +157,7 @@ def benchmark_op(repeat=2, number=5, name="Slice", shape_fct=None,
         so.enable_profiling = True
         sess = InferenceSession(onx.SerializeToString(), so,
                                 providers=["CUDAExecutionProvider"])
-        for i in range(0, 111):
+        for i in range(0, 1000):
             x = ctx['xs'][-1]
             io_binding = sess.io_binding()
             io_binding.bind_input(
