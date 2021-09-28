@@ -61,5 +61,7 @@ io_binding.bind_input(
     element_type=numpy.float32, shape=gx.shape(),
     buffer_ptr=gx.data_ptr())
 io_binding.bind_output('Y')
-print(sessg.run_with_iobinding(io_binding))
+sessg.run_with_iobinding(io_binding)
+Y = io_binding.copy_outputs_to_cpu()[0]
+print(Y.shape)
 
