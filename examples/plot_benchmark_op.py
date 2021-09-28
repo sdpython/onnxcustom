@@ -14,15 +14,19 @@ A simple example
 
 """
 
+import json
 import numpy
 import pandas
+from pandas import DataFrame
 import matplotlib.pyplot as plt
-from onnxruntime import InferenceSession, get_device
+from onnxruntime import InferenceSession, get_device, OrtValue, SessionOptions
 from skl2onnx.common.data_types import FloatTensorType
 from skl2onnx.algebra.onnx_ops import OnnxSlice, OnnxAdd, OnnxMul
 from mlprodict.tools import measure_time
 from tqdm import tqdm
 from mlprodict.testing.experimental_c import code_optimisation
+from mlprodict.onnxrt.ops_whole.session import OnnxWholeSession
+
 print(code_optimisation(), get_device())
 
 
@@ -47,7 +51,21 @@ def build_ort_op(op_version=14, save=None):  # opset=13, 14, ...
             f.write(onx.SerializeToString())
 
     def npy_fct(x): return (x[1:-1, 1:-1] + 1)[1:-1, 1:-1] * 2
-    return lambda x: sess.run(None, {'X': x}), npy_fct
+
+    if get_device() == 'GPU':
+
+        def run_gpu(x):
+            io_binding = sess.io_binding()
+            io_binding.bind_input(
+                name='X', device_type=x.device_name(), device_id=0,
+                element_type=numpy.float32, shape=x.shape(),
+                buffer_ptr=x.data_ptr())
+            io_binding.bind_output('Y')
+            return sess.run_with_iobinding(io_binding)
+
+        return onx, lambda x: sess.run(None, {'X': x}), npy_fct, None
+    else:
+        return onx, lambda x: sess.run(None, {'X': x}), npy_fct, None
 
 
 ###########################################
@@ -61,7 +79,8 @@ def loop_fct(fct, xs):
 
 def benchmark_op(repeat=2, number=5, name="Slice", shape_fct=None,
                  save=None, opset=14):
-    ort_fct, npy_fct = build_ort_op(save=save, op_version=opset)
+    onx, ort_fct, npy_fct, ort_fct_gpu = build_ort_op(
+        save=save, op_version=opset)
     res = []
     for dim in tqdm([8, 16, 32, 64, 100, 128, 200,
                      256, 400, 512, 1024]):
@@ -93,6 +112,54 @@ def benchmark_op(repeat=2, number=5, name="Slice", shape_fct=None,
         obs.update(info)
         res.append(obs)
 
+        if ort_fct_gpu is not None:
+
+            # onnxruntime
+            ctx['xs'] = [
+                OrtValue.ortvalue_from_numpy(
+                    x, 'cuda', 0) for x in xs]
+            ctx['fct'] = ort_fct_gpu
+            obs = measure_time(
+                "loop_fct(fct, xs)",
+                div_by_number=True, context=ctx, repeat=repeat, number=number)
+            obs['dim'] = dim
+            obs['fct'] = 'ort'
+            obs.update(info)
+            res.append(obs)
+
+    # profiling CPU
+    so = SessionOptions()
+    so.enable_profiling = True
+    sess = InferenceSession(onx.SerializeToString(), so)
+    for i in range(0, 111):
+        sess.run(None, {'X': xs[-1]}, )
+    prof = sess.end_profiling()
+    with open(prof, "r") as f:
+        js = json.load(f)
+    dfprof = DataFrame(OnnxWholeSession.process_profiling(js))
+
+    # profiling CPU
+    if ort_fct_gpu is not None:
+        so = SessionOptions()
+        so.enable_profiling = True
+        sess = InferenceSession(onx.SerializeToString(), so)
+        for i in range(0, 111):
+            x = ctx['xs'][-1]
+            io_binding = sess.io_binding()
+            io_binding.bind_input(
+                name='X', device_type=x.device_name(), device_id=0,
+                element_type=numpy.float32, shape=x.shape(),
+                buffer_ptr=x.data_ptr())
+            io_binding.bind_output('Y')
+            sess.run_with_iobinding(io_binding)
+
+        prof = sess.end_profiling()
+        with open(prof, "r") as f:
+            js = json.load(f)
+        dfprofgpu = DataFrame(OnnxWholeSession.process_profiling(js))
+    else:
+        dfprofgpu = None
+
     # Dataframes
     shape_name = str(shape).replace(str(dim), "N")
     df = pandas.DataFrame(res)
@@ -117,7 +184,7 @@ def benchmark_op(repeat=2, number=5, name="Slice", shape_fct=None,
     ax[1].plot([min(rs.index), max(rs.index)], [0.5, 0.5], 'g--')
     ax[1].plot([min(rs.index), max(rs.index)], [2., 2.], 'g--')
     ax[1].legend(prop={"size": 9})
-    return df, rs, ax
+    return dfprof, dfprofgpu, df, rs, ax
 
 
 ######################################
@@ -125,10 +192,15 @@ def benchmark_op(repeat=2, number=5, name="Slice", shape_fct=None,
 
 axes = (3, )
 dfs = []
-df, piv, ax = benchmark_op(
+dfprof, dfprofgpu, df, piv, ax = benchmark_op(
     shape_fct=lambda dim: (
         dim, dim), save="bslice.onnx")
 dfs.append(df)
 piv2 = df.pivot("fct", "N", "average")
 print(piv)
 print(piv2.T)
+print(dfprof.drop(['pid', 'tid'], axis=1).groupby(
+    ["args_op_name", 'args_provider']).sum())
+if dfprofgpu is not None:
+    print(dfprofgpu.drop(['pid', 'tid'], axis=1).groupby(
+        ["args_op_name", 'args_provider']).sum())
