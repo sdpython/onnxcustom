@@ -34,8 +34,8 @@ print([code_optimisation(), get_device()])
 # The functions to compare.
 
 def build_ort_op(op_version=14, save=None):  # opset=13, 14, ...
-    starts = numpy.array([1, -1], dtype=numpy.int64)
-    ends = starts
+    starts = numpy.array([1, 1], dtype=numpy.int64)
+    ends = numpy.array([-1, -1], dtype=numpy.int64)
     node1 = OnnxSlice('X', starts, ends, op_version=op_version)
     node2 = OnnxAdd(node1, numpy.array([1], dtype=numpy.float32),
                     op_version=op_version)
@@ -49,10 +49,21 @@ def build_ort_op(op_version=14, save=None):  # opset=13, 14, ...
     
     
 onx = build_ort_op()
+
+x = numpy.random.rand(50, 50).astype(numpy.float32)
+
+from mlprodict.onnxrt import OnnxInference
+oinf = OnnxInference(onx)
+oinf.run({'X': x}, verbose=1, fLOG=print)
+
+sess = InferenceSession(onx.SerializeToString(),
+                        providers=["CPUExecutionProvider"])
+print(sess.run(None, {'X': x})[0].shape)
+
+
 sessg = InferenceSession(onx.SerializeToString(),
                          providers=["CUDAExecutionProvider"])
 
-x = numpy.random.rand(50, 50).astype(numpy.float32)
 gx = OrtValue.ortvalue_from_numpy(x, 'cuda', 0)
 
 io_binding = sessg.io_binding()
@@ -64,4 +75,5 @@ io_binding.bind_output('Y')
 sessg.run_with_iobinding(io_binding)
 Y = io_binding.copy_outputs_to_cpu()[0]
 print(Y.shape)
+
 
