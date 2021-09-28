@@ -23,3 +23,4 @@ used in the ONNX graph.
     auto_examples/plot_fbegin_investigate
     auto_examples/plot_gbegin_dataframe
     auto_examples/plot_gbegin_transfer_learning
+    auto_examples/plot_gbegin_cst

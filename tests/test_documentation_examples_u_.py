@@ -2,13 +2,11 @@
 Tests examples from the documentation.
 """
 import unittest
-from distutils.version import StrictVersion
 import os
 import sys
 import importlib
 import subprocess
 from datetime import datetime
-import onnxruntime
 from pyquickhelper.pycode import skipif_circleci
 
 
@@ -26,10 +24,10 @@ def import_source(module_file_path, module_name):
     return module_spec.loader.exec_module(module)
 
 
-class TestDocumentationExample2(unittest.TestCase):
+class TestDocumentationExampleU_(unittest.TestCase):
 
     @skipif_circleci('too long')
-    def test_documentation_examples2(self):
+    def test_documentation_examplesU_(self):
 
         this = os.path.abspath(os.path.dirname(__file__))
         onxc = os.path.normpath(os.path.join(this, '..'))
@@ -45,20 +43,8 @@ class TestDocumentationExample2(unittest.TestCase):
             if name < "plot_u":
                 continue
 
-            if '-v' in sys.argv:
-                if name.endswith('plot_bbegin_measure_time.py'):
-                    if __name__ == "__main__":
-                        print("%s: skip %r" % (
-                            datetime.now().strftime("%d-%m-%y %H:%M:%S"),
-                            name))
-                    continue
-
             with self.subTest(name=name):
                 if name.startswith("plot_") and name.endswith(".py"):
-                    if (name == "plot_pipeline_lightgbm.py" and
-                            StrictVersion(onnxruntime.__version__) <
-                                StrictVersion('1.0.0')):
-                        continue
                     if __name__ == "__main__" or "-v" in sys.argv:
                         print("%s: run %r" % (
                             datetime.now().strftime("%d-%m-%y %H:%M:%S"),
@@ -88,11 +74,6 @@ class TestDocumentationExample2(unittest.TestCase):
                                 pass
                             elif "No module named 'xgboost'" in st:
                                 # xgboost not installed on CI
-                                pass
-                            elif ("cannot import name 'LightGbmModelContainer'"
-                                    " from 'onnxmltools.convert.common."
-                                    "_container'") in st:
-                                # onnxmltools not recent enough
                                 pass
                             elif ('Please fix either the inputs or '
                                     'the model.') in st:

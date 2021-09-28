@@ -1,8 +1,8 @@
 """
 .. _example-lightgbm:
 
-Convert a pipeline with a LightGBM model
-========================================
+Convert a pipeline with a LightGBM classifier
+=============================================
 
 .. index:: LightGBM
 
@@ -89,8 +89,8 @@ print("predict_proba", pipe.predict_proba(X[:1]))
 # Predictions with onnxruntime.
 
 sess = rt.InferenceSession("pipeline_lightgbm.onnx")
-pred_onx = sess.run(None, {"input": X[:5].astype(numpy.float32)})
 
+pred_onx = sess.run(None, {"input": X[:5].astype(numpy.float32)})
 print("predict", pred_onx[0])
 print("predict_proba", pred_onx[1][:1])
 

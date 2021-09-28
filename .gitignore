@@ -3,6 +3,7 @@ coverage.html/*
 .coverage
 dist/*
 build/*
+data/*
 *egg-info/*
 doc/auto_examples/*
 doc/_static/viz.js
@@ -15,3 +16,7 @@ temp_*
 examples/pipeline_lightgbm.onnx
 examples/model.onnx
 tests/model.onnx
+*.jpg
+*.onnx
+*.pt
+

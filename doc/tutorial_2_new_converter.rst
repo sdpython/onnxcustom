@@ -35,3 +35,5 @@ Following section shows how to create a custom converter.
     auto_examples/plot_lcustom_options
     auto_examples/plot_mcustom_parser
     auto_examples/plot_mcustom_parser_dataframe
+    auto_examples/plot_catwoe_transformer
+    auto_examples/plot_woe_transformer

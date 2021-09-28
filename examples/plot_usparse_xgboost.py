@@ -100,6 +100,7 @@ def make_pipelines(df_train, y_train, models=None,
         models = [
             RandomForestClassifier, HistGradientBoostingClassifier,
             XGBClassifier, LGBMClassifier]
+    models = [_ for _ in models if _ is not None]
 
     pipes = []
     for model in tqdm(models):

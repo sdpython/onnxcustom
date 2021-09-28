@@ -25,9 +25,9 @@ def import_source(module_file_path, module_name):
     return module_spec.loader.exec_module(module)
 
 
-class TestDocumentationExample1(unittest.TestCase):
+class TestDocumentationExampleLightgbm(unittest.TestCase):
 
-    def test_documentation_examples1(self):
+    def test_documentation_examples_lightgbm(self):
 
         this = os.path.abspath(os.path.dirname(__file__))
         onxc = os.path.normpath(os.path.join(this, '..'))
@@ -40,10 +40,16 @@ class TestDocumentationExample1(unittest.TestCase):
         found = os.listdir(fold)
         tested = 0
         for name in sorted(found):
-            if name >= "plot_u":
-                break
+            if 'lightgbm' not in name:
+                continue
+            if 'reg' in name:
+                from pyquickhelper.pycode.ci_helper import (
+                    is_travis_or_appveyor)
+                if is_travis_or_appveyor() == 'circleci':
+                    # stuck
+                    continue
 
-            if '-v' in sys.argv:
+            if '-v' in sys.argv or "--verbose" in sys.argv:
                 if name.endswith('plot_bbegin_measure_time.py'):
                     if __name__ == "__main__":
                         print("%s: skip %r" % (
@@ -83,9 +89,6 @@ class TestDocumentationExample1(unittest.TestCase):
                             elif '"dot" not found in path.' in st:
                                 # dot not installed, this part
                                 # is tested in onnx framework
-                                pass
-                            elif "No module named 'xgboost'" in st:
-                                # xgboost not installed on CI
                                 pass
                             elif ("cannot import name 'LightGbmModelContainer'"
                                     " from 'onnxmltools.convert.common."
