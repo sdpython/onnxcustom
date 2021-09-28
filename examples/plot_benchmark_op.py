@@ -140,7 +140,7 @@ def benchmark_op(repeat=10, number=10, name="Slice", shape_fct=None,
     so.enable_profiling = True
     sess = InferenceSession(onx.SerializeToString(), so,
                             providers=["CPUExecutionProvider"])
-    for i in range(0, 1000):
+    for i in range(0, 5000):
         sess.run(None, {'X': xs[-1]}, )
     prof = sess.end_profiling()
     with open(prof, "r") as f:
@@ -157,7 +157,7 @@ def benchmark_op(repeat=10, number=10, name="Slice", shape_fct=None,
         so.enable_profiling = True
         sess = InferenceSession(onx.SerializeToString(), so,
                                 providers=["CUDAExecutionProvider"])
-        for i in range(0, 1000):
+        for i in range(0, 5000):
             x = ctx['xs'][-1]
             io_binding = sess.io_binding()
             io_binding.bind_input(
