@@ -80,7 +80,7 @@ def loop_fct(fct, xs):
         fct(x)
 
 
-def benchmark_op(repeat=2, number=5, name="Slice", shape_fct=None,
+def benchmark_op(repeat=10, number=10, name="Slice", shape_fct=None,
                  save=None, opset=14, verbose=1):
     if verbose:
         print("[benchmark_op] start.")
