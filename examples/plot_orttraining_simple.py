@@ -1,8 +1,12 @@
 """
-.. _example-ort-training-mnist:
+.. _example-ort-training-simple:
 
-Onnxruntime Training and MNIST
-==============================
+Onnxruntime Training with numpy data
+====================================
+
+Example inspired from `PyTorch: Defining new autograd functions
+<https://pytorch.org/tutorials/beginner/pytorch_with_examples.html
+#pytorch-defining-new-autograd-functions>`_.
 
 
 .. contents::
@@ -14,30 +18,31 @@ A simple example
 """
 
 import time
+import math
 from onnxruntime.capi.ort_trainer import (
     ORTTrainer, IODescription, ModelDescription)
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from torchvision import datasets, transforms
+from torch import Variable
 
 
 class NeuralNet(nn.Module):
-    def __init__(self, input_size, hidden_size, num_classes):
+    def __init__(self, input_size, hidden_size, output_size):
         super(NeuralNet, self).__init__()
         self.fc1 = nn.Linear(input_size, hidden_size)
-        self.relu = nn.ReLU()
-        self.fc2 = nn.Linear(hidden_size, num_classes)
+        self.fc2 = nn.Linear(hidden_size, output_size)
 
     def forward(self, x):
         out = self.fc1(x)
-        out = self.relu(out)
         out = self.fc2(out)
         return out
 
 
-def my_loss(x, target):
-    return F.nll_loss(F.log_softmax(x, dim=1), target)
+def get_model(X, y, hidden_size=10):
+    input_size = X_train.shape[1]
+    output_size = 1 if len(y.shape) == 1 else y.shape[2]
+    return NeuralNet(input_size, hidden_size, num_classes), F.MSELoss()
 
 
 class TorchTrainer:
@@ -96,30 +101,15 @@ class TorchTrainer:
                           'output': {0: 'batch_size'}})
 
 
-def get_ort_trainer(model, model_desc, device):
-    return ORTTrainer(
-        model, my_loss, model_desc, "SGDOptimizer", None,
-        IODescription('Learning_Rate', [1, ], torch.float32),
-        device, _opset_version=12)
-
-
-def get_torch_trainer(model, model_desc, device):
-    return TorchTrainer(
-        model, my_loss, model_desc, "SGDOptimizer", None,
-        ['learning_rate'], device=device)
-
-
 def train_with_trainer(learning_rate, trainer, device,
-                       train_loader, epoch):
+                       X_train, y_train, epoch):
     actual_losses = []
     for batch_idx, (data, target) in enumerate(train_loader):
         data, target = data.to(device), target.to(device)
         data = data.reshape(data.shape[0], -1)
-
         loss, _ = trainer.train_step(
             data, target, torch.tensor(
                 [learning_rate]))
-
         args_log_interval = 100
         if batch_idx % args_log_interval == 0:
             print(
@@ -134,20 +124,19 @@ def train_with_trainer(learning_rate, trainer, device,
     return actual_losses
 
 
-def test_with_trainer(trainer, device, test_loader):
+def test_with_trainer(trainer, device, X_train, y_train):
     test_loss = 0
     correct = 0
     with torch.no_grad():
-        for data, target in test_loader:
-            data, target = data.to(device), target.to(device)
-            data = data.reshape(data.shape[0], -1)
-            output = F.log_softmax(
-                trainer.eval_step(data, fetches=['probability']), dim=1)
-            # sum up batch loss
-            test_loss += F.nll_loss(output, target, reduction='sum').item()
-            # get the index of the max log-probability
-            pred = output.argmax(dim=1, keepdim=True)
-            correct += pred.eq(target.view_as(pred)).sum().item()
+        data, target = data.to(device), target.to(device)
+        data = data.reshape(data.shape[0], -1)
+        output = F.log_softmax(
+            trainer.eval_step(data, fetches=['probability']), dim=1)
+        # sum up batch loss
+        test_loss += F.nll_loss(output, target, reduction='sum').item()
+        # get the index of the max log-probability
+        pred = output.argmax(dim=1, keepdim=True)
+        correct += pred.eq(target.view_as(pred)).sum().item()
 
     test_loss /= len(test_loader.dataset)
 
@@ -171,42 +160,18 @@ class MNISTWrapper:
         return ModelDescription([input_desc, label_desc],
                                 [loss_desc, probability_desc])
 
-    def get_loaders(self):
-        args_batch_size = 64
-        args_test_batch_size = 1000
 
-        kwargs = {'num_workers': 0, 'pin_memory': True}
-        train_loader = torch.utils.data.DataLoader(
-            datasets.MNIST(
-                '../data', train=True, download=True,
-                transform=transforms.Compose([
-                    transforms.ToTensor(),
-                    transforms.Normalize((0.1307,), (0.3081,))])),
-            batch_size=args_batch_size, shuffle=True, **kwargs)
-        test_loader = torch.utils.data.DataLoader(
-            datasets.MNIST(
-                '../data', train=False, transform=transforms.Compose([
-                    transforms.ToTensor(),
-                    transforms.Normalize((0.1307,), (0.3081,))])),
-            batch_size=args_test_batch_size, shuffle=True, **kwargs)
-
-        return train_loader, test_loader
-
-    def get_model(self):
-        input_size = 784
-        hidden_size = 500
-        num_classes = 10
-
-        # warning: changes the pytorch random generator state
-        model = NeuralNet(input_size, hidden_size, num_classes)
-        model_desc = self.model_description()
-        return model, model_desc
-
-
-def mnist_test_training_testing(trainer="ORT", device="cpu", epochs=2,
-                                learning_rate=0.001, save_model_epoch=-1):
+def test_training_testing(X_train, X_test, y_train, y_test,
+                          trainer="ORT", device="cpu", epochs=1000,
+                          learning_rate=0.001, save_model_epoch=100):
     torch.manual_seed(1)
     device_obj = torch.device(device)
+
+    X_train = Variable(torch.from_numpy(X_train)).float()
+    y_train = Variable(torch.from_numpy(y_train)).float()
+    X_test = Variable(torch.from_numpy(X_test)).float()
+    y_test = Variable(torch.from_numpy(y_test)).float()
+
     print('-----------------------------')
     print("device=%r trainer=%r" % (device_obj, trainer))
     print('epochs=%r learning_rate=%r' % (epochs, learning_rate))
@@ -257,7 +222,7 @@ def mnist_test_training_testing(trainer="ORT", device="cpu", epochs=2,
 
 
 device = "cuda:0" if torch.cuda.is_available() else "cpu"
-mnist_test_training_testing(
+test_training_testing(
     trainer="torch", device=device, save_model_epoch=2)
-mnist_test_training_testing(
+test_training_testing(
     trainer="ORT", device=device, save_model_epoch=2)
