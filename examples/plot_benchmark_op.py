@@ -27,7 +27,7 @@ from tqdm import tqdm
 from mlprodict.testing.experimental_c import code_optimisation
 from mlprodict.onnxrt.ops_whole.session import OnnxWholeSession
 
-print(code_optimisation(), get_device())
+print([code_optimisation(), get_device()])
 
 
 ###################################
@@ -63,7 +63,7 @@ def build_ort_op(op_version=14, save=None):  # opset=13, 14, ...
             io_binding.bind_output('Y')
             return sess.run_with_iobinding(io_binding)
 
-        return onx, lambda x: sess.run(None, {'X': x}), npy_fct, None
+        return onx, lambda x: sess.run(None, {'X': x}), npy_fct, run_gpu
     else:
         return onx, lambda x: sess.run(None, {'X': x}), npy_fct, None
 
@@ -78,7 +78,9 @@ def loop_fct(fct, xs):
 
 
 def benchmark_op(repeat=2, number=5, name="Slice", shape_fct=None,
-                 save=None, opset=14):
+                 save=None, opset=14, verbose=1):
+    if verbose:
+        print("[benchmark_op] start.")
     onx, ort_fct, npy_fct, ort_fct_gpu = build_ort_op(
         save=save, op_version=opset)
     res = []
@@ -128,21 +130,30 @@ def benchmark_op(repeat=2, number=5, name="Slice", shape_fct=None,
             res.append(obs)
 
     # profiling CPU
+    if verbose:
+        print("[benchmark_op] done.")
+        print("[benchmark_op] profile CPU.")
     so = SessionOptions()
     so.enable_profiling = True
-    sess = InferenceSession(onx.SerializeToString(), so)
+    sess = InferenceSession(onx.SerializeToString(), so,
+                            providers=["CPUExecutionProvider"])
     for i in range(0, 111):
         sess.run(None, {'X': xs[-1]}, )
     prof = sess.end_profiling()
     with open(prof, "r") as f:
         js = json.load(f)
     dfprof = DataFrame(OnnxWholeSession.process_profiling(js))
+    if verbose:
+        print("[benchmark_op] done.")
 
     # profiling CPU
     if ort_fct_gpu is not None:
+        if verbose:
+            print("[benchmark_op] profile GPU.")
         so = SessionOptions()
         so.enable_profiling = True
-        sess = InferenceSession(onx.SerializeToString(), so)
+        sess = InferenceSession(onx.SerializeToString(), so,
+                                providers=["CUDAExecutionProvider"])
         for i in range(0, 111):
             x = ctx['xs'][-1]
             io_binding = sess.io_binding()
@@ -157,6 +168,8 @@ def benchmark_op(repeat=2, number=5, name="Slice", shape_fct=None,
         with open(prof, "r") as f:
             js = json.load(f)
         dfprofgpu = DataFrame(OnnxWholeSession.process_profiling(js))
+        if verbose:
+            print("[benchmark_op] profile done.")
     else:
         dfprofgpu = None
 
