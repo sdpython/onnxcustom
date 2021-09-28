@@ -57,10 +57,6 @@ class TestDocumentationExample_u(unittest.TestCase):
 
             with self.subTest(name=name):
                 if name.startswith("plot_") and name.endswith(".py"):
-                    if (name == "plot_pipeline_lightgbm.py" and
-                            StrictVersion(onnxruntime.__version__) <
-                                StrictVersion('1.0.0')):
-                        continue
                     if __name__ == "__main__" or "-v" in sys.argv:
                         print("%s: run %r" % (
                             datetime.now().strftime("%d-%m-%y %H:%M:%S"),
@@ -90,11 +86,6 @@ class TestDocumentationExample_u(unittest.TestCase):
                                 pass
                             elif "No module named 'xgboost'" in st:
                                 # xgboost not installed on CI
-                                pass
-                            elif ("cannot import name 'LightGbmModelContainer'"
-                                    " from 'onnxmltools.convert.common."
-                                    "_container'") in st:
-                                # onnxmltools not recent enough
                                 pass
                             elif ('Please fix either the inputs or '
                                     'the model.') in st:
