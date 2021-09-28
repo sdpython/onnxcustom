@@ -45,7 +45,8 @@ def build_ort_op(op_version=14, save=None):  # opset=13, 14, ...
                     op_version=op_version, output_names=['Y'])
     onx = node4.to_onnx(inputs=[('X', FloatTensorType([None, None]))],
                         target_opset=op_version)
-    sess = InferenceSession(onx.SerializeToString())
+    sess = InferenceSession(onx.SerializeToString(),
+                            providers=["CPUExecutionProvider"])
     if save is not None:
         with open(save, "wb") as f:
             f.write(onx.SerializeToString())
@@ -53,15 +54,17 @@ def build_ort_op(op_version=14, save=None):  # opset=13, 14, ...
     def npy_fct(x): return (x[1:-1, 1:-1] + 1)[1:-1, 1:-1] * 2
 
     if get_device() == 'GPU':
+        sessg = InferenceSession(onx.SerializeToString(),
+                                 providers=["CUDAExecutionProvider"])
 
         def run_gpu(x):
-            io_binding = sess.io_binding()
+            io_binding = sessg.io_binding()
             io_binding.bind_input(
                 name='X', device_type=x.device_name(), device_id=0,
                 element_type=numpy.float32, shape=x.shape(),
                 buffer_ptr=x.data_ptr())
             io_binding.bind_output('Y')
-            return sess.run_with_iobinding(io_binding)
+            return sessg.run_with_iobinding(io_binding)
 
         return onx, lambda x: sess.run(None, {'X': x}), npy_fct, run_gpu
     else:
@@ -125,7 +128,7 @@ def benchmark_op(repeat=2, number=5, name="Slice", shape_fct=None,
                 "loop_fct(fct, xs)",
                 div_by_number=True, context=ctx, repeat=repeat, number=number)
             obs['dim'] = dim
-            obs['fct'] = 'ort'
+            obs['fct'] = 'ort_gpu'
             obs.update(info)
             res.append(obs)
 
