@@ -16,6 +16,7 @@ A simple example
 
 import json
 import numpy
+from numpy.testing import assert_almost_equal
 import pandas
 from pandas import DataFrame
 import matplotlib.pyplot as plt
@@ -36,8 +37,8 @@ print([code_optimisation(), get_device()])
 def build_ort_op(op_version=14, save=None, **kwargs):  # opset=13, 14, ...
     slices = kwargs['slices']
     slice1, slice2 = slices
-    slice1 = slice(0) if slice1 is None else slice(*slice1)
-    slice2 = slice(0) if slice2 is None else slice(*slice2)
+    slice1 = slice(0, None) if slice1 is None else slice(*slice1)
+    slice2 = slice(0, None) if slice2 is None else slice(*slice2)
     
     axes = []
     starts = []
@@ -69,6 +70,17 @@ def build_ort_op(op_version=14, save=None, **kwargs):  # opset=13, 14, ...
     def npy_fct(x):
         return ((x[slice1, slice2] + 1)[slice1, slice2] * 2).copy()
     
+    rnd = numpy.random.randn(10, 10).astype(numpy.float32)
+    expected = npy_fct(rnd)
+    got = sess.run(None, {'X': rnd})[0]
+    try:
+        assert_almost_equal(expected, got)
+    except AssertionError as e:
+        raise AssertionError(
+            "kwargs=%r slice1=%r slice2=%r shapes=%r ? %r "
+            "(x[slice1, slice2].shape)=%r" % (
+                kwargs, slice1, slice2, expected.shape,
+                got.shape, rnd[slice1, slice2].shape)) from e
 
     if get_device() == 'GPU':
         sessg = InferenceSession(onx.SerializeToString(),
@@ -113,8 +125,6 @@ def benchmark_op(repeat=10, number=10, name="Slice", shape_slice_fct=None,
         n_arrays = 20
         if dim >= 512:
             n_arrays = 10 
-        if dim >= 1024:
-            n_arrays = 5 
         xs = [numpy.random.rand(*shape).astype(numpy.float32)
               for _ in range(n_arrays)]
         info = dict(shape=shape)
@@ -240,6 +250,7 @@ def benchmark_op(repeat=10, number=10, name="Slice", shape_slice_fct=None,
 # The results.
 
 nth = int(code_optimisation().split('=')[1])
+cols_profile = ["shape", "slices", "args_op_name", 'args_provider']
 
 ##############################################
 # shape = (100, N) - slice = [1:-1], :
@@ -255,10 +266,10 @@ piv2 = df.pivot("fct", "shape", "average")
 print("slices = [1:-1], :")
 print(piv.to_markdown())
 print(dfprof.drop(['pid', 'tid', 'ts'], axis=1).groupby(
-    ["args_op_name", 'args_provider']).sum().to_markdown())
+    cols_profile).sum().to_markdown())
 if dfprofgpu is not None:
     print(dfprofgpu.drop(['pid', 'tid'], axis=1).groupby(
-        ["args_op_name", 'args_provider']).sum().to_markdown())
+        cols_profile).sum().to_markdown())
 
 ##############################################
 # shape = (100, N) - slice = :, [1:-1]
@@ -274,10 +285,10 @@ piv2 = df.pivot("fct", "shape", "average")
 print("slices = :, [1:-1]")
 print(piv.to_markdown())
 print(dfprof.drop(['pid', 'tid', 'ts'], axis=1).groupby(
-    ["args_op_name", 'args_provider']).sum().to_markdown())
+    cols_profile).sum().to_markdown())
 if dfprofgpu is not None:
     print(dfprofgpu.drop(['pid', 'tid'], axis=1).groupby(
-        ["args_op_name", 'args_provider']).sum().to_markdown())
+        cols_profile).sum().to_markdown())
 
 ##############################################
 # shape = (100, N) - slice = [1:-1], [1:-1]
@@ -293,8 +304,8 @@ piv2 = df.pivot("fct", "shape", "average")
 print("slices = [1:-1], [1:-1]")
 print(piv.to_markdown())
 print(dfprof.drop(['pid', 'tid', 'ts'], axis=1).groupby(
-    ["args_op_name", 'args_provider']).sum().to_markdown())
+    cols_profile).sum().to_markdown())
 if dfprofgpu is not None:
     print(dfprofgpu.drop(['pid', 'tid'], axis=1).groupby(
-        ["args_op_name", 'args_provider']).sum().to_markdown())
+        cols_profile).sum().to_markdown())
 
