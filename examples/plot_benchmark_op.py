@@ -81,16 +81,22 @@ def loop_fct(fct, xs):
 
 
 def benchmark_op(repeat=10, number=10, name="Slice", shape_fct=None,
-                 save=None, opset=14, verbose=1):
+                 save=None, opset=14, repeat_profile=1500, verbose=1):
     if verbose:
-        print("[benchmark_op] start.")
+        print("[benchmark_op] start repeat=%d number=%d repeat_profile=%d"
+              " opset=%d." % (repeat, number, repeat_profile, opset))
     onx, ort_fct, npy_fct, ort_fct_gpu = build_ort_op(
         save=save, op_version=opset)
     res = []
     for dim in tqdm([8, 16, 32, 64, 100, 128, 200,
-                     256, 400, 512, 784, 1024]):
+                     256, 400, 512, 600, 784, 800,
+                     1000, 1024, 1200]):
         shape = shape_fct(dim)
-        n_arrays = 10 if dim < 512 else 4
+        n_arrays = 20
+        if dim >= 512:
+            n_arrays = 10 
+        if dim >= 1024:
+            n_arrays = 5 
         xs = [numpy.random.rand(*shape).astype(numpy.float32)
               for _ in range(n_arrays)]
         info = dict(shape=shape)
@@ -140,7 +146,7 @@ def benchmark_op(repeat=10, number=10, name="Slice", shape_fct=None,
     so.enable_profiling = True
     sess = InferenceSession(onx.SerializeToString(), so,
                             providers=["CPUExecutionProvider"])
-    for i in range(0, 500):
+    for i in range(0, repeat_profile):
         sess.run(None, {'X': xs[-1]}, )
     prof = sess.end_profiling()
     with open(prof, "r") as f:
@@ -157,7 +163,7 @@ def benchmark_op(repeat=10, number=10, name="Slice", shape_fct=None,
         so.enable_profiling = True
         sess = InferenceSession(onx.SerializeToString(), so,
                                 providers=["CUDAExecutionProvider"])
-        for i in range(0, 500):
+        for i in range(0, repeat_profile):
             x = ctx['xs'][-1]
             io_binding = sess.io_binding()
             io_binding.bind_input(
@@ -185,7 +191,7 @@ def benchmark_op(repeat=10, number=10, name="Slice", shape_fct=None,
     rs = piv.copy()
     for c in ['ort', 'ort_gpu']:
         if c in rs.columns:
-            rs[c] = rs['numpy'] / rs[c]
+            rs["numpy/%s" % c] = rs['numpy'] / rs[c]
     rs['numpy'] = 1.
 
     # Graphs.
@@ -206,17 +212,19 @@ def benchmark_op(repeat=10, number=10, name="Slice", shape_fct=None,
 ######################################
 # The results.
 
+nth = int(code_optimisation().split('=')[1])
+
 axes = (3, )
 dfs = []
 dfprof, dfprofgpu, df, piv, ax = benchmark_op(
-    shape_fct=lambda dim: (
-        dim, dim), save="bslice.onnx")
+    shape_fct=lambda dim: (dim, dim), save="bslice.onnx",
+    number=nth*8, repeat=8, repeat_profile=100*nth)
+
 dfs.append(df)
 piv2 = df.pivot("fct", "N", "average")
-print(piv)
-print(piv2.T)
-print(dfprof.drop(['pid', 'tid'], axis=1).groupby(
-    ["args_op_name", 'args_provider']).sum())
+print(piv.to_markdown())
+print(dfprof.drop(['pid', 'tid', 'ts'], axis=1).groupby(
+    ["args_op_name", 'args_provider']).sum().to_markdown())
 if dfprofgpu is not None:
     print(dfprofgpu.drop(['pid', 'tid'], axis=1).groupby(
-        ["args_op_name", 'args_provider']).sum())
+        ["args_op_name", 'args_provider']).sum().to_markdown())
