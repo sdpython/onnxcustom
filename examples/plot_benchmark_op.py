@@ -33,13 +33,28 @@ print([code_optimisation(), get_device()])
 ###################################
 # The functions to compare.
 
-def build_ort_op(op_version=14, save=None):  # opset=13, 14, ...
-    starts = numpy.array([1, 1], dtype=numpy.int64)
-    ends = numpy.array([-1, -1], dtype=numpy.int64)
-    node1 = OnnxSlice('X', starts, ends, op_version=op_version)
+def build_ort_op(op_version=14, save=None, **kwargs):  # opset=13, 14, ...
+    slices = kwargs['slices']
+    slice1, slice2 = slices
+    slice1 = slice(0) if slice1 is None else slice(*slice1)
+    slice2 = slice(0) if slice2 is None else slice(*slice2)
+    
+    axes = []
+    starts = []
+    ends = []
+    for i in [0, 1]:
+        if slices[i] is None:
+            continue
+        axes.append(i)
+        starts.append(slices[i][0])
+        ends.append(slices[i][1])
+    starts = numpy.array(starts, dtype=numpy.int64)
+    ends = numpy.array(ends, dtype=numpy.int64)
+    axes = numpy.array(axes, dtype=numpy.int64)
+    node1 = OnnxSlice('X', starts, ends, axes, op_version=op_version)
     node2 = OnnxAdd(node1, numpy.array([1], dtype=numpy.float32),
                     op_version=op_version)
-    node3 = OnnxSlice(node2, starts, ends,
+    node3 = OnnxSlice(node2, starts, ends, axes,
                       op_version=op_version)
     node4 = OnnxMul(node3, numpy.array([2], dtype=numpy.float32),
                     op_version=op_version, output_names=['Y'])
@@ -51,7 +66,9 @@ def build_ort_op(op_version=14, save=None):  # opset=13, 14, ...
         with open(save, "wb") as f:
             f.write(onx.SerializeToString())
 
-    def npy_fct(x): return (x[1:-1, 1:-1] + 1)[1:-1, 1:-1] * 2
+    def npy_fct(x):
+        return ((x[slice1, slice2] + 1)[slice1, slice2] * 2).copy()
+    
 
     if get_device() == 'GPU':
         sessg = InferenceSession(onx.SerializeToString(),
@@ -80,18 +97,19 @@ def loop_fct(fct, xs):
         fct(x)
 
 
-def benchmark_op(repeat=10, number=10, name="Slice", shape_fct=None,
+def benchmark_op(repeat=10, number=10, name="Slice", shape_slice_fct=None,
                  save=None, opset=14, repeat_profile=1500, verbose=1):
     if verbose:
         print("[benchmark_op] start repeat=%d number=%d repeat_profile=%d"
               " opset=%d." % (repeat, number, repeat_profile, opset))
-    onx, ort_fct, npy_fct, ort_fct_gpu = build_ort_op(
-        save=save, op_version=opset)
     res = []
     for dim in tqdm([8, 16, 32, 64, 100, 128, 200,
                      256, 400, 512, 600, 784, 800,
                      1000, 1024, 1200]):
-        shape = shape_fct(dim)
+        shape, slices = shape_slice_fct(dim)
+        onx, ort_fct, npy_fct, ort_fct_gpu = build_ort_op(
+            save=save, op_version=opset, slices=slices)
+            
         n_arrays = 20
         if dim >= 512:
             n_arrays = 10 
@@ -110,6 +128,8 @@ def benchmark_op(repeat=10, number=10, name="Slice", shape_fct=None,
             div_by_number=True, context=ctx, repeat=repeat, number=number)
         obs['dim'] = dim
         obs['fct'] = 'numpy'
+        obs['shape'] = ",".join(map(str, shape))
+        obs['slices'] = str(slices)
         obs.update(info)
         res.append(obs)
 
@@ -120,6 +140,8 @@ def benchmark_op(repeat=10, number=10, name="Slice", shape_fct=None,
             div_by_number=True, context=ctx, repeat=repeat, number=number)
         obs['dim'] = dim
         obs['fct'] = 'ort'
+        obs['shape'] = ",".join(map(str, shape))
+        obs['slices'] = str(slices)
         obs.update(info)
         res.append(obs)
 
@@ -135,6 +157,8 @@ def benchmark_op(repeat=10, number=10, name="Slice", shape_fct=None,
                 div_by_number=True, context=ctx, repeat=repeat, number=number)
             obs['dim'] = dim
             obs['fct'] = 'ort_gpu'
+            obs['shape'] = ",".join(map(str, shape))
+            obs['slices'] = str(slices)
             obs.update(info)
             res.append(obs)
 
@@ -152,6 +176,8 @@ def benchmark_op(repeat=10, number=10, name="Slice", shape_fct=None,
     with open(prof, "r") as f:
         js = json.load(f)
     dfprof = DataFrame(OnnxWholeSession.process_profiling(js))
+    dfprof['shape'] = ",".join(map(str, shape))
+    dfprof['slices'] = str(slices)
     if verbose:
         print("[benchmark_op] done.")
 
@@ -177,6 +203,8 @@ def benchmark_op(repeat=10, number=10, name="Slice", shape_fct=None,
         with open(prof, "r") as f:
             js = json.load(f)
         dfprofgpu = DataFrame(OnnxWholeSession.process_profiling(js))
+        dfprofgpu['shape'] = ",".join(map(str, shape))
+        dfprofgpu['slices'] = str(slices)
         if verbose:
             print("[benchmark_op] profile done.")
     else:
@@ -185,24 +213,23 @@ def benchmark_op(repeat=10, number=10, name="Slice", shape_fct=None,
     # Dataframes
     shape_name = str(shape).replace(str(dim), "N")
     df = pandas.DataFrame(res)
-    df.columns = [_.replace('dim', 'N') for _ in df.columns]
-    piv = df.pivot('N', 'fct', 'average')
+    piv = df.pivot('shape', 'fct', 'average')
 
     rs = piv.copy()
-    for c in ['ort', 'ort_gpu']:
+    for c in ['numpy', 'ort', 'ort_gpu']:
         if c in rs.columns:
             rs["numpy/%s" % c] = rs['numpy'] / rs[c]
-    rs['numpy'] = 1.
+    rs = rs[[c for c in rs.columns if "/numpy" not in c]].copy()
 
     # Graphs.
     fig, ax = plt.subplots(1, 2, figsize=(12, 4))
     piv.plot(logx=True, logy=True, ax=ax[0],
-             title="%s benchmark\n%r - %r"
-                   " lower better" % (name, shape_name, axes))
+             title="%s benchmark\n%r"
+                   " lower better" % (name, shape_name))
     ax[0].legend(prop={"size": 9})
     rs.plot(logx=True, logy=True, ax=ax[1],
-            title="%s Speedup, baseline=numpy\n%r - %r"
-                  " higher better" % (name, shape_name, axes))
+            title="%s Speedup, baseline=numpy\n%r"
+                  " higher better" % (name, shape_name))
     ax[1].plot([min(rs.index), max(rs.index)], [0.5, 0.5], 'g--')
     ax[1].plot([min(rs.index), max(rs.index)], [2., 2.], 'g--')
     ax[1].legend(prop={"size": 9})
@@ -214,17 +241,60 @@ def benchmark_op(repeat=10, number=10, name="Slice", shape_fct=None,
 
 nth = int(code_optimisation().split('=')[1])
 
-axes = (3, )
+##############################################
+# shape = (100, N) - slice = [1:-1], :
+# ++++++++++++++++++++++++++++++++++++
+
 dfs = []
 dfprof, dfprofgpu, df, piv, ax = benchmark_op(
-    shape_fct=lambda dim: (dim, dim), save="bslice.onnx",
-    number=nth*8, repeat=8, repeat_profile=100*nth)
+    shape_slice_fct=lambda dim: ((256, dim), ((1, -1), None)),
+    save="bslice.onnx", number=nth*4, repeat=8, repeat_profile=100*nth)
 
 dfs.append(df)
-piv2 = df.pivot("fct", "N", "average")
+piv2 = df.pivot("fct", "shape", "average")
+print("slices = [1:-1], :")
 print(piv.to_markdown())
 print(dfprof.drop(['pid', 'tid', 'ts'], axis=1).groupby(
     ["args_op_name", 'args_provider']).sum().to_markdown())
 if dfprofgpu is not None:
     print(dfprofgpu.drop(['pid', 'tid'], axis=1).groupby(
         ["args_op_name", 'args_provider']).sum().to_markdown())
+
+##############################################
+# shape = (100, N) - slice = :, [1:-1]
+# ++++++++++++++++++++++++++++++++++++
+
+dfs = []
+dfprof, dfprofgpu, df, piv, ax = benchmark_op(
+    shape_slice_fct=lambda dim: ((256, dim), (None, (1, -1))),
+    save="bslice.onnx", number=nth*4, repeat=8, repeat_profile=100*nth)
+
+dfs.append(df)
+piv2 = df.pivot("fct", "shape", "average")
+print("slices = :, [1:-1]")
+print(piv.to_markdown())
+print(dfprof.drop(['pid', 'tid', 'ts'], axis=1).groupby(
+    ["args_op_name", 'args_provider']).sum().to_markdown())
+if dfprofgpu is not None:
+    print(dfprofgpu.drop(['pid', 'tid'], axis=1).groupby(
+        ["args_op_name", 'args_provider']).sum().to_markdown())
+
+##############################################
+# shape = (100, N) - slice = [1:-1], [1:-1]
+# ++++++++++++++++++++++++++++++++++++
+
+dfs = []
+dfprof, dfprofgpu, df, piv, ax = benchmark_op(
+    shape_slice_fct=lambda dim: ((256, dim), ((1, -1), (1, -1))),
+    save="bslice.onnx", number=nth*4, repeat=8, repeat_profile=100*nth)
+
+dfs.append(df)
+piv2 = df.pivot("fct", "shape", "average")
+print("slices = [1:-1], [1:-1]")
+print(piv.to_markdown())
+print(dfprof.drop(['pid', 'tid', 'ts'], axis=1).groupby(
+    ["args_op_name", 'args_provider']).sum().to_markdown())
+if dfprofgpu is not None:
+    print(dfprofgpu.drop(['pid', 'tid'], axis=1).groupby(
+        ["args_op_name", 'args_provider']).sum().to_markdown())
+
