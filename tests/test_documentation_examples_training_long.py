@@ -13,6 +13,7 @@ try:
     import onnxruntime.capi.ort_trainer as ortt
 except ImportError:
     ortt = None
+from pyquickhelper.pycode import skipif_circleci
 
 
 def import_source(module_file_path, module_name):
@@ -29,10 +30,11 @@ def import_source(module_file_path, module_name):
     return module_spec.loader.exec_module(module)
 
 
-class TestDocumentationExampleTraining(unittest.TestCase):
+class TestDocumentationExampleTrainingLong(unittest.TestCase):
 
     @unittest.skipIf(
         ortt is None, reason="onnxruntime-training not installed.")
+    @skipif_circleci("stuck")
     def test_documentation_examples_training(self):
 
         this = os.path.abspath(os.path.dirname(__file__))
@@ -48,14 +50,6 @@ class TestDocumentationExampleTraining(unittest.TestCase):
         for name in sorted(found):
             if 'training' not in name:
                 continue
-
-            if '-v' in sys.argv or "--verbose" in sys.argv:
-                if name.endswith('plot_bbegin_measure_time.py'):
-                    if __name__ == "__main__":
-                        print("%s: skip %r" % (
-                            datetime.now().strftime("%d-%m-%y %H:%M:%S"),
-                            name))
-                    continue
 
             with self.subTest(name=name):
                 if name.startswith("plot_") and name.endswith(".py"):
@@ -89,14 +83,6 @@ class TestDocumentationExampleTraining(unittest.TestCase):
                             elif '"dot" not found in path.' in st:
                                 # dot not installed, this part
                                 # is tested in onnx framework
-                                pass
-                            elif "No module named 'xgboost'" in st:
-                                # xgboost not installed on CI
-                                pass
-                            elif ("cannot import name 'LightGbmModelContainer'"
-                                    " from 'onnxmltools.convert.common."
-                                    "_container'") in st:
-                                # onnxmltools not recent enough
                                 pass
                             elif ('Please fix either the inputs or '
                                     'the model.') in st:

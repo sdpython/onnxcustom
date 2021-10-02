@@ -90,9 +90,6 @@ class TestDocumentationExampleLightgbm(unittest.TestCase):
                                 # dot not installed, this part
                                 # is tested in onnx framework
                                 pass
-                            elif "No module named 'xgboost'" in st:
-                                # xgboost not installed on CI
-                                pass
                             elif ("cannot import name 'LightGbmModelContainer'"
                                     " from 'onnxmltools.convert.common."
                                     "_container'") in st:
