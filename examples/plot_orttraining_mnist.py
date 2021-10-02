@@ -4,6 +4,7 @@
 Onnxruntime Training and MNIST
 ==============================
 
+*still in progress*
 
 .. contents::
     :local:

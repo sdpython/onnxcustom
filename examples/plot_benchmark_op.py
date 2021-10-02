@@ -39,7 +39,7 @@ def build_ort_op(op_version=14, save=None, **kwargs):  # opset=13, 14, ...
     slice1, slice2 = slices
     slice1 = slice(0, None) if slice1 is None else slice(*slice1)
     slice2 = slice(0, None) if slice2 is None else slice(*slice2)
-    
+
     axes = []
     starts = []
     ends = []
@@ -69,7 +69,7 @@ def build_ort_op(op_version=14, save=None, **kwargs):  # opset=13, 14, ...
 
     def npy_fct(x):
         return ((x[slice1, slice2] + 1)[slice1, slice2] * 2).copy()
-    
+
     rnd = numpy.random.randn(10, 10).astype(numpy.float32)
     expected = npy_fct(rnd)
     got = sess.run(None, {'X': rnd})[0]
@@ -121,10 +121,10 @@ def benchmark_op(repeat=10, number=10, name="Slice", shape_slice_fct=None,
         shape, slices = shape_slice_fct(dim)
         onx, ort_fct, npy_fct, ort_fct_gpu = build_ort_op(
             save=save, op_version=opset, slices=slices)
-            
+
         n_arrays = 20
         if dim >= 512:
-            n_arrays = 10 
+            n_arrays = 10
         xs = [numpy.random.rand(*shape).astype(numpy.float32)
               for _ in range(n_arrays)]
         info = dict(shape=shape)
@@ -259,7 +259,7 @@ cols_profile = ["shape", "slices", "args_op_name", 'args_provider']
 dfs = []
 dfprof, dfprofgpu, df, piv, ax = benchmark_op(
     shape_slice_fct=lambda dim: ((256, dim), ((1, -1), None)),
-    save="bslice.onnx", number=nth*4, repeat=8, repeat_profile=100*nth)
+    save="bslice.onnx", number=nth * 4, repeat=8, repeat_profile=100 * nth)
 
 dfs.append(df)
 piv2 = df.pivot("fct", "shape", "average")
@@ -278,7 +278,7 @@ if dfprofgpu is not None:
 dfs = []
 dfprof, dfprofgpu, df, piv, ax = benchmark_op(
     shape_slice_fct=lambda dim: ((256, dim), (None, (1, -1))),
-    save="bslice.onnx", number=nth*4, repeat=8, repeat_profile=100*nth)
+    save="bslice.onnx", number=nth * 4, repeat=8, repeat_profile=100 * nth)
 
 dfs.append(df)
 piv2 = df.pivot("fct", "shape", "average")
@@ -297,7 +297,7 @@ if dfprofgpu is not None:
 dfs = []
 dfprof, dfprofgpu, df, piv, ax = benchmark_op(
     shape_slice_fct=lambda dim: ((256, dim), ((1, -1), (1, -1))),
-    save="bslice.onnx", number=nth*4, repeat=8, repeat_profile=100*nth)
+    save="bslice.onnx", number=nth * 4, repeat=8, repeat_profile=100 * nth)
 
 dfs.append(df)
 piv2 = df.pivot("fct", "shape", "average")
@@ -308,4 +308,3 @@ print(dfprof.drop(['pid', 'tid', 'ts'], axis=1).groupby(
 if dfprofgpu is not None:
     print(dfprofgpu.drop(['pid', 'tid'], axis=1).groupby(
         cols_profile).sum().to_markdown())
-
