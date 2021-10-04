@@ -45,7 +45,6 @@ jobs:
             . venv/bin/activate
             python -m flake8 onnxcustom
             python -m flake8 _doc/examples
-            python -m flake8 _unittests
 
       - run:
           name: run tests
