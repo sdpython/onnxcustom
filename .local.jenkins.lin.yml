@@ -6,6 +6,7 @@ python:
   
 virtualenv:
   - path: {{ospathjoin(root_path, pickname("$NAME_JENKINS", project_name + "_$VERSION_$DIST_$NAME"), "_venv")}}
+  - system_site_packages: 0
   
 install:
   - $PYINT -m pip install --upgrade pip

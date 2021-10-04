@@ -1,5 +1,5 @@
 """
-Tests examples from the documentation.
+@brief      test log(time=60s)
 """
 import unittest
 import os
@@ -61,7 +61,7 @@ class TestDocumentationExampleU_(unittest.TestCase):
                             cmds, stdout=subprocess.PIPE,
                             stderr=subprocess.PIPE)
                         res = p.communicate()
-                        out, err = res
+                        _, err = res
                         st = err.decode('ascii', errors='ignore')
                         if len(st) > 0 and 'Traceback' in st:
                             if "No such file or directory: 'dot': 'dot'" in st:
@@ -85,7 +85,7 @@ class TestDocumentationExampleU_(unittest.TestCase):
                                 # graph is too big
                                 pass
                             else:
-                                raise RuntimeError(
+                                raise RuntimeError(  # pylint: disable=W0707
                                     "Example '{}' (cmd: {} - exec_prefix="
                                     "'{}') failed due to\n{}"
                                     "".format(name, cmds, sys.exec_prefix, st))
