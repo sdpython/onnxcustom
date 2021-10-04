@@ -24,7 +24,6 @@ from pprint import pprint
 import numpy as np
 from pandas import DataFrame
 from onnx import helper, numpy_helper, TensorProto
-from onnx.tools.net_drawer import GetPydotGraph, GetOpNodeProducer
 from onnxruntime import (
     __version__ as ort_version, get_device, OrtValue,
     TrainingParameters, SessionOptions, TrainingSession)
@@ -119,11 +118,8 @@ print("device=%r get_device()=%r" % (device, get_device()))
 
 
 def create_training_session(
-        training_onnx,
-        weights_to_train,
-        loss_output_name='loss',
-        training_optimizer_name='SGDOptimizer',
-        device='cpu'):
+        training_onnx, weights_to_train, loss_output_name='loss',
+        training_optimizer_name='SGDOptimizer', device='cpu'):
     """
     Creates an instance of class `TrainingSession`.
 
@@ -306,21 +302,11 @@ class CustomTraining:
     :param verbose: use :epkg:`tqdm` to display the training progress
     """
 
-    def __init__(
-            self,
-            model_onnx,
-            weights_to_train,
-            loss_output_name='loss',
-            max_iter=100,
-            training_optimizer_name='SGDOptimizer',
-            batch_size=10,
-            eta0=0.01,
-            alpha=0.0001,
-            power_t=0.25,
-            learning_rate='invscaling',
-            device='cpu',
-            device_idx=0,
-            verbose=0):
+    def __init__(self, model_onnx, weights_to_train, loss_output_name='loss',
+                 max_iter=100, training_optimizer_name='SGDOptimizer',
+                 batch_size=10, eta0=0.01, alpha=0.0001, power_t=0.25,
+                 learning_rate='invscaling', device='cpu', device_idx=0,
+                 verbose=0):
         # See https://scikit-learn.org/stable/modules/generated/
         # sklearn.linear_model.SGDRegressor.html
         self.model_onnx = model_onnx
@@ -399,16 +385,16 @@ class CustomTraining:
 
             bind.bind_input(
                 name=self.input_names_[0],
-                device_type=data.device_name(),
-                device_id=0,
+                device_type=self.device,
+                device_id=self.device_idx,
                 element_type=np.float32,
                 shape=data.shape(),
                 buffer_ptr=data.data_ptr())
 
             bind.bind_input(
                 name=self.input_names_[1],
-                device_type=target.device_name(),
-                device_id=0,
+                device_type=self.device,
+                device_id=self.device_idx,
                 element_type=np.float32,
                 shape=target.shape(),
                 buffer_ptr=target.data_ptr())

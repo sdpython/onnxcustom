@@ -234,9 +234,7 @@ for i, batch in enumerate(data_loader):
 
 
 def create_training_session(
-        training_onnx,
-        weights_to_train,
-        loss_output_name='loss',
+        training_onnx, weights_to_train, loss_output_name='loss',
         training_optimizer_name='SGDOptimizer'):
     """
     Creates an instance of class `TrainingSession`.
@@ -360,19 +358,10 @@ class CustomTraining:
     :param verbose: use :epkg:`tqdm` to display the training progress
     """
 
-    def __init__(
-            self,
-            model_onnx,
-            weights_to_train,
-            loss_output_name='loss',
-            max_iter=100,
-            training_optimizer_name='SGDOptimizer',
-            batch_size=10,
-            eta0=0.01,
-            alpha=0.0001,
-            power_t=0.25,
-            learning_rate='invscaling',
-            verbose=0):
+    def __init__(self, model_onnx, weights_to_train, loss_output_name='loss',
+                 max_iter=100, training_optimizer_name='SGDOptimizer',
+                 batch_size=10, eta0=0.01, alpha=0.0001, power_t=0.25,
+                 learning_rate='invscaling', verbose=0):
         # See https://scikit-learn.org/stable/modules/generated/
         # sklearn.linear_model.SGDRegressor.html
         self.model_onnx = model_onnx
