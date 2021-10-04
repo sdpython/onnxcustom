@@ -30,7 +30,7 @@ class TestDocumentationExampleU_(unittest.TestCase):
     def test_documentation_examplesU_(self):
 
         this = os.path.abspath(os.path.dirname(__file__))
-        onxc = os.path.normpath(os.path.join(this, '..'))
+        onxc = os.path.normpath(os.path.join(this, '..', '..'))
         pypath = os.environ.get('PYTHONPATH', None)
         sep = ";" if sys.platform == 'win32' else ':'
         pypath = "" if pypath in (None, "") else (pypath + sep)

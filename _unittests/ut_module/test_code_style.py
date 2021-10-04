@@ -12,7 +12,7 @@ class TestCodeStyle(ExtTestCase):
 
     def test_style_src(self):
         thi = os.path.abspath(os.path.dirname(__file__))
-        src_ = os.path.normpath(os.path.join(thi, "..", "..", "mlinsights"))
+        src_ = os.path.normpath(os.path.join(thi, "..", "..", "onnxcustom"))
         check_pep8(src_, fLOG=fLOG,
                    pylint_ignore=(
                         'C0103', 'C1801', 'R0201', 'R1705', 'W0108', 'W0613',
@@ -20,7 +20,6 @@ class TestCodeStyle(ExtTestCase):
                         'W0107', "R1720", 'R1732', 'C0209'),
                    skip=[])
 
-    @skipif_circleci('mysterious fail')
     def test_style_test(self):
         thi = os.path.abspath(os.path.dirname(__file__))
         test = os.path.normpath(os.path.join(thi, "..", ))
