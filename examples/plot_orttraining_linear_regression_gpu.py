@@ -27,7 +27,6 @@ from onnx import helper, numpy_helper, TensorProto
 from onnxruntime import (
     __version__ as ort_version, get_device, OrtValue,
     TrainingParameters, SessionOptions, TrainingSession)
-from pyquickhelper.helpgen.graphviz_helper import plot_graphviz
 from sklearn.datasets import make_regression
 from sklearn.model_selection import train_test_split
 from mlprodict.plotting.plotting_onnx import plot_onnx
@@ -37,13 +36,6 @@ X, y = make_regression(n_features=2, bias=2)
 X = X.astype(np.float32)
 y = y.astype(np.float32)
 X_train, X_test, y_train, y_test = train_test_split(X, y)
-
-
-def plot_dot(model):
-    pydot_graph = GetPydotGraph(
-        model.graph, name=model.graph.name, rankdir="TB",
-        node_producer=GetOpNodeProducer("docstring"))
-    return plot_graphviz(pydot_graph.to_string())
 
 
 def onnx_linear_regression_training(coefs, intercept):
