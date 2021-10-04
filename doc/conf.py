@@ -141,9 +141,11 @@ intersphinx_mapping = {
         'https://scikit-learn.org/stable/',
         None),
     'skl2onnx': (
-        'http://www.xavierdupre.fr/app/sklearn-onnx/helpsphinx/', None),
+        'http://www.xavierdupre.fr/app/sklearn-onnx/helpsphinx/',
+        None),
     'sklearn-onnx': (
-        'http://www.xavierdupre.fr/app/sklearn-onnx/helpsphinx/', None),
+        'http://www.xavierdupre.fr/app/sklearn-onnx/helpsphinx/',
+        None),
 }
 
 sphinx_gallery_conf = {

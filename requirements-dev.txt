@@ -2,6 +2,7 @@ autopep8
 category_encoders
 codecov
 coverage
+cpyquickhelper
 flake8
 joblib
 lightgbm
@@ -26,6 +27,7 @@ skl2onnx>=1.9.3
 sphinx
 sphinxcontrib-blockdiag
 sphinx-gallery
+tabulate
 torch
 torchvision
 tqdm

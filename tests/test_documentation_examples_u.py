@@ -94,6 +94,9 @@ class TestDocumentationExample_u(unittest.TestCase):
                             elif 'dot: graph is too large' in st:
                                 # graph is too big
                                 pass
+                            elif 'certificate has expired' in st:
+                                # issue when downloading a model
+                                pass
                             else:
                                 raise RuntimeError(
                                     "Example '{}' (cmd: {} - exec_prefix="
