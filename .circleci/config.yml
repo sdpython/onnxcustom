@@ -2,7 +2,7 @@ version: 2
 jobs:
   build:
     docker:
-      - image: circleci/python:3.9.5
+      - image: circleci/python:3.9.6
     
     working_directory: ~/repo
     
@@ -22,7 +22,7 @@ jobs:
       - run:
           name: install dependencies
           command: |
-            python3 -m venv venv
+            python -m venv venv
             . venv/bin/activate
             pip install -r requirements.txt
             pip install -r requirements-dev.txt
@@ -43,21 +43,14 @@ jobs:
           name: flake8
           command: |
             . venv/bin/activate
-            python -m flake8 tests
             python -m flake8 onnxcustom
-            python -m flake8 examples
+            python -m flake8 _doc/examples
 
       - run:
           name: run tests
           command: |
             . venv/bin/activate
-            coverage run  --omit=tests/test_*.py -m unittest discover tests -v
-
-      - run:
-          name: coverage
-          command: |
-            . venv/bin/activate
-            coverage html -d test-reports/coverage.html
+            python setup.py unittests
 
       - run:
           name: wheel

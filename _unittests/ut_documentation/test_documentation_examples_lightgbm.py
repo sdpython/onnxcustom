@@ -1,5 +1,5 @@
 """
-Tests examples from the documentation.
+@brief      test log(time=60s)
 """
 import unittest
 from distutils.version import StrictVersion
@@ -30,13 +30,14 @@ class TestDocumentationExampleLightgbm(unittest.TestCase):
     def test_documentation_examples_lightgbm(self):
 
         this = os.path.abspath(os.path.dirname(__file__))
-        onxc = os.path.normpath(os.path.join(this, '..'))
+        onxc = os.path.normpath(os.path.join(this, '..', '..'))
         pypath = os.environ.get('PYTHONPATH', None)
         sep = ";" if sys.platform == 'win32' else ':'
         pypath = "" if pypath in (None, "") else (pypath + sep)
         pypath += onxc
         os.environ['PYTHONPATH'] = pypath
-        fold = os.path.normpath(os.path.join(this, '..', 'examples'))
+        fold = os.path.normpath(
+            os.path.join(this, '..', '..', '_doc', 'examples'))
         found = os.listdir(fold)
         tested = 0
         for name in sorted(found):
@@ -79,7 +80,7 @@ class TestDocumentationExampleLightgbm(unittest.TestCase):
                             cmds, stdout=subprocess.PIPE,
                             stderr=subprocess.PIPE)
                         res = p.communicate()
-                        out, err = res
+                        _, err = res
                         st = err.decode('ascii', errors='ignore')
                         if len(st) > 0 and 'Traceback' in st:
                             if "No such file or directory: 'dot': 'dot'" in st:
@@ -105,7 +106,7 @@ class TestDocumentationExampleLightgbm(unittest.TestCase):
                                 # graph is too big
                                 pass
                             else:
-                                raise RuntimeError(
+                                raise RuntimeError(  # pylint: disable=W0707
                                     "Example '{}' (cmd: {} - exec_prefix="
                                     "'{}') failed due to\n{}"
                                     "".format(name, cmds, sys.exec_prefix, st))

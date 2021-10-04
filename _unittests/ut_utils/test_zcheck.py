@@ -1,5 +1,5 @@
 """
-Unit tests for the main entrypoint.
+@brief      test log(time=1s)
 """
 import unittest
 from contextlib import redirect_stdout
@@ -17,7 +17,7 @@ class TestCheck(unittest.TestCase):
         self.assertEqual(len(res), 0)
 
     def test__main__(self):
-        import onnxcustom.__main__  # noqa
+        import onnxcustom.__main__  # pylint: disable=W0611
 
 
 if __name__ == '__main__':

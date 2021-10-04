@@ -1,5 +1,5 @@
 """
-Tests examples from the documentation.
+@brief      test log(time=60s)
 """
 import unittest
 import os
@@ -7,7 +7,6 @@ import sys
 import importlib
 import subprocess
 from datetime import datetime
-from pyquickhelper.pycode import skipif_circleci
 
 
 def import_source(module_file_path, module_name):
@@ -24,24 +23,36 @@ def import_source(module_file_path, module_name):
     return module_spec.loader.exec_module(module)
 
 
-class TestDocumentationExampleU_(unittest.TestCase):
+class TestDocumentationExample_u(unittest.TestCase):
 
-    @skipif_circleci('too long')
-    def test_documentation_examplesU_(self):
+    def test_documentation_examples_u(self):
 
         this = os.path.abspath(os.path.dirname(__file__))
-        onxc = os.path.normpath(os.path.join(this, '..'))
+        onxc = os.path.normpath(os.path.join(this, '..', '..'))
         pypath = os.environ.get('PYTHONPATH', None)
         sep = ";" if sys.platform == 'win32' else ':'
         pypath = "" if pypath in (None, "") else (pypath + sep)
         pypath += onxc
         os.environ['PYTHONPATH'] = pypath
-        fold = os.path.normpath(os.path.join(this, '..', 'examples'))
+        fold = os.path.normpath(
+            os.path.join(this, '..', '..', '_doc', 'examples'))
         found = os.listdir(fold)
         tested = 0
         for name in sorted(found):
-            if name < "plot_u":
+            if name >= "plot_u":
+                break
+            if 'lightgbm' in name:
                 continue
+            if 'training' in name:
+                continue
+
+            if '-v' in sys.argv or "--verbose" in sys.argv:
+                if name.endswith('plot_bbegin_measure_time.py'):
+                    if __name__ == "__main__":
+                        print("%s: skip %r" % (
+                            datetime.now().strftime("%d-%m-%y %H:%M:%S"),
+                            name))
+                    continue
 
             with self.subTest(name=name):
                 if name.startswith("plot_") and name.endswith(".py"):
@@ -61,7 +72,7 @@ class TestDocumentationExampleU_(unittest.TestCase):
                             cmds, stdout=subprocess.PIPE,
                             stderr=subprocess.PIPE)
                         res = p.communicate()
-                        out, err = res
+                        _, err = res
                         st = err.decode('ascii', errors='ignore')
                         if len(st) > 0 and 'Traceback' in st:
                             if "No such file or directory: 'dot': 'dot'" in st:
@@ -84,8 +95,11 @@ class TestDocumentationExampleU_(unittest.TestCase):
                             elif 'dot: graph is too large' in st:
                                 # graph is too big
                                 pass
+                            elif 'certificate has expired' in st:
+                                # issue when downloading a model
+                                pass
                             else:
-                                raise RuntimeError(
+                                raise RuntimeError(  # pylint: disable=W0707
                                     "Example '{}' (cmd: {} - exec_prefix="
                                     "'{}') failed due to\n{}"
                                     "".format(name, cmds, sys.exec_prefix, st))

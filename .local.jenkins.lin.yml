@@ -1,0 +1,36 @@
+
+language: python
+
+python:
+  - { PATH: "{{Python39}}", VERSION: 3.9, DIST: std, PYINT: python3.9 }
+  
+virtualenv:
+  - path: {{ospathjoin(root_path, pickname("$NAME_JENKINS", project_name + "_$VERSION_$DIST_$NAME"), "_venv")}}
+  - system_site_packages: 0
+  
+install:
+  - $PYINT -m pip install --upgrade pip
+  - $PYINT -m pip install --upgrade --no-cache-dir --no-deps --index http://localhost:8067/simple/ jyquickhelper pyquickhelper cpyquickhelper --extra-index-url=https://pypi.python.org/simple/
+  - $PYINT -m pip install --upgrade --no-cache-dir --no-deps --index http://localhost:8067/simple/ scikit-learn>=0.22 --extra-index-url=https://pypi.python.org/simple/
+  - $PYINT -m pip install --upgrade --no-cache-dir --no-deps --index http://localhost:8067/simple/ onnx --extra-index-url=https://pypi.python.org/simple/
+  - $PYINT -m pip install --upgrade --no-cache-dir --no-deps --index http://localhost:8067/simple/ onnxruntime-training --extra-index-url=https://pypi.python.org/simple/
+  - $PYINT -m pip install --upgrade --no-cache-dir --no-deps --index http://localhost:8067/simple/ onnxconverter-common skl2onnx onnx mlprodict mlinsights --extra-index-url=https://pypi.python.org/simple/
+  - $PYINT -m pip install -r requirements.txt
+  - $PYINT -m pip install -r requirements-dev.txt
+  - $PYINT -m pip install funcparserlib==1.0.0a0
+  - $PYINT --version
+  - $PYINT -m pip freeze
+
+before_script:
+  - $PYINT -u setup.py build_ext --inplace
+
+script:
+  - { CMD: "$PYINT -u setup.py unittests", NAME: "UT" }
+
+after_script:
+  - $PYINT -u ./setup.py bdist_wheel
+  - if [ ${NAME} == "UT" ] then cp dist/*.whl {{root_path}}/../local_pypi/local_pypi_server fi
+
+documentation:
+  - if [ ${NAME} == "UT" ] then $PYINT -u setup.py build_sphinx --layout=html fi
+  - if [ ${NAME} == "UT" ] then cp -R -f _doc/sphinxdoc/build/html dist/html fi
