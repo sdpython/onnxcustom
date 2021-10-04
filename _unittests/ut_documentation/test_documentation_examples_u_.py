@@ -36,7 +36,7 @@ class TestDocumentationExampleU_(unittest.TestCase):
         pypath = "" if pypath in (None, "") else (pypath + sep)
         pypath += onxc
         os.environ['PYTHONPATH'] = pypath
-        fold = os.path.normpath(os.path.join(this, '..', 'examples'))
+        fold = os.path.normpath(os.path.join(this, '..', '..', '_doc', 'examples'))
         found = os.listdir(fold)
         tested = 0
         for name in sorted(found):
