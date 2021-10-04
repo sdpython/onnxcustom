@@ -17,7 +17,7 @@ before_test:
   - "%PYTHON%\\python -u setup.py build_ext --inplace"
 
 test_script:
-  - "%PYTHON%\\python -m unittest discover tests --verbose"
+  - "%PYTHON%\\python -m unittest discover _unittests --verbose"
   - "%PYTHON%\\python -m flake8 tests"
   - "%PYTHON%\\python -m flake8 onnxcustom"
   - "%PYTHON%\\python -m flake8 examples"

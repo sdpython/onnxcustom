@@ -16,7 +16,7 @@ before_script:
   - gcc --version
   - python setup.py build_ext --inplace
 script:
-  - python -m pytest --cov-report=xml --cov=onnxcustom tests/
+  - python -m pytest --cov-report=xml --cov=onnxcustom _unittests/
   - python -m flake8 tests
   - python -m flake8 onnxcustom
   - python -m flake8 examples

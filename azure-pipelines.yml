@@ -93,7 +93,7 @@ jobs:
           python setup.py build_ext --inplace
     displayName: 'Build package'
   - script: |
-      python -m pytest tests -v -v
+      python -m pytest _unittests -v -v
     displayName: 'Runs Unit Tests'
   - script: |
       python -u setup.py bdist_wheel
