@@ -1,6 +1,7 @@
 *.pyc
 coverage.html/*
 .coverage
+bin/*
 dist/*
 build/*
 data/*
