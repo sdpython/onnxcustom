@@ -18,9 +18,9 @@ before_test:
 
 test_script:
   - "%PYTHON%\\python -m unittest discover _unittests --verbose"
-  - "%PYTHON%\\python -m flake8 tests"
   - "%PYTHON%\\python -m flake8 onnxcustom"
-  - "%PYTHON%\\python -m flake8 examples"
+  - "%PYTHON%\\python -m flake8  _doc/examples"
+  - "%PYTHON%\\python -m flake8 _unittests"
 
 after_test:
   - "%PYTHON%\\python setup.py bdist_wheel"
