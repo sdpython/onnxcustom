@@ -16,10 +16,9 @@ before_script:
   - gcc --version
   - python setup.py build_ext --inplace
 script:
-  - python -m pytest --cov-report=xml --cov=onnxcustom _unittests/
+  - python setup.py unittests
   - python -m flake8 onnxcustom
   - python -m flake8 _doc/examples
-  - python -m flake8 _unittests
   - python setup.py bdist_wheel
   - python -m onnxcustom check
 after_script:

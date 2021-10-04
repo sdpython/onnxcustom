@@ -50,13 +50,7 @@ jobs:
           name: run tests
           command: |
             . venv/bin/activate
-            coverage run  --omit=_unittests/test_*.py -m unittest discover tests -v
-
-      - run:
-          name: coverage
-          command: |
-            . venv/bin/activate
-            coverage html -d test-reports/coverage.html
+            python setup.py unittests
 
       - run:
           name: wheel
