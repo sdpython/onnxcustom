@@ -26,6 +26,7 @@ scikit-learn>=1.0
 skl2onnx>=1.9.3
 sphinx
 sphinxcontrib-blockdiag
+sphinxcontrib.imagesvg
 sphinx-gallery
 tabulate
 torch
