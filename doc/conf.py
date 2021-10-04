@@ -126,10 +126,10 @@ intersphinx_mapping = {
     'pyquickhelper': (
         'http://www.xavierdupre.fr/app/pyquickhelper/helpsphinx/', None),
     'onnxmltools': (
-        'http://www.xavierdupre.fr/app/onnxmltools/helpsphinx/index.html',
+        'http://www.xavierdupre.fr/app/onnxmltools/helpsphinx/',
         None),
     'onnxruntime': (
-        'http://www.xavierdupre.fr/app/onnxruntime/helpsphinx/index.html',
+        'http://www.xavierdupre.fr/app/onnxruntime/helpsphinx/',
         None),
     'pandas': ('https://pandas.pydata.org/pandas-docs/stable/', None),
     'scipy': ('https://docs.scipy.org/doc/scipy/reference', None),
@@ -141,10 +141,10 @@ intersphinx_mapping = {
         'https://scikit-learn.org/stable/',
         None),
     'skl2onnx': (
-        'http://www.xavierdupre.fr/app/sklearn-onnx/helpsphinx/index.html',
+        'http://www.xavierdupre.fr/app/sklearn-onnx/helpsphinx/',
         None),
     'sklearn-onnx': (
-        'http://www.xavierdupre.fr/app/sklearn-onnx/helpsphinx/index.html',
+        'http://www.xavierdupre.fr/app/sklearn-onnx/helpsphinx/',
         None),
 }
 
