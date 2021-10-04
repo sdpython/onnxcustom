@@ -19,4 +19,4 @@ tests/model.onnx
 *.jpg
 *.onnx
 *.pt
-
+examples/onnxruntime_profile*.json

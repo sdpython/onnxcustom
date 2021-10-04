@@ -192,6 +192,8 @@ epkg_dictionary = {
         'http://www.xavierdupre.fr/app/mlprodict/helpsphinx/mlprodict/'
         'sklapi/onnx_pipeline.html?highlight=onnxpipeline',
     'onnxruntime': 'https://microsoft.github.io/onnxruntime/',
+    'onnxruntime-training':
+        'https://github.com/microsoft/onnxruntime/tree/master/orttraining',
     'openmp': 'https://en.wikipedia.org/wiki/OpenMP',
     'pyinstrument': 'https://github.com/joerick/pyinstrument',
     'python': 'https://www.python.org/',
@@ -200,6 +202,8 @@ epkg_dictionary = {
     'skorch': 'https://skorch.readthedocs.io/en/stable/',
     'sklearn-onnx': 'https://github.com/onnx/sklearn-onnx',
     'sphinx-gallery': 'https://github.com/sphinx-gallery/sphinx-gallery',
+    'Stochastic Gradient Descent':
+        'https://en.wikipedia.org/wiki/Stochastic_gradient_descent',
     'TreeEnsembleRegressor':
         'https://github.com/onnx/onnx/blob/master/docs/Operators-ml.md'
         '#ai.onnx.ml.TreeEnsembleRegressor',

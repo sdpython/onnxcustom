@@ -1,9 +1,10 @@
 """
-.. _example-ort-training:
+.. _example-ort-training-mnist:
 
 Onnxruntime Training and MNIST
 ==============================
 
+*still in progress*
 
 .. contents::
     :local:
