@@ -39,69 +39,6 @@ package_data = {
 }
 
 
-def get_extensions():
-    root = os.path.abspath(os.path.dirname(__file__))
-    if sys.platform.startswith("win"):
-        extra_compile_args = None
-    else:
-        extra_compile_args = ['-std=c++11']
-
-    ext_modules = []
-
-    # mlmodel
-
-    import sklearn
-    extensions = ["direct_blas_lapack"]
-    spl = sklearn.__version__.split('.')
-    vskl = (int(spl[0]), int(spl[1]))
-    if vskl >= (0, 24):
-        extensions.append(("_piecewise_tree_regression_common",
-                           "_piecewise_tree_regression_common024"))
-    else:
-        extensions.append(("_piecewise_tree_regression_common",
-                           "_piecewise_tree_regression_common023"))
-    extensions.extend([
-        "piecewise_tree_regression_criterion",
-        "piecewise_tree_regression_criterion_linear",
-        "piecewise_tree_regression_criterion_fast",
-        "_tree_digitize",
-    ])
-
-    pattern1 = "mlinsights.%s.%s"
-    import numpy
-    for name in extensions:
-        folder = "mltree" if name == "_tree_digitize" else "mlmodel"
-        if isinstance(name, tuple):
-            m = Extension(pattern1 % (folder, name[0]),
-                          ['mlinsights/%s/%s.pyx' % (folder, name[1])],
-                          include_dirs=[numpy.get_include()],
-                          extra_compile_args=["-O3"],
-                          language='c')
-        else:
-            m = Extension(pattern1 % (folder, name),
-                          ['mlinsights/%s/%s.pyx' % (folder, name)],
-                          include_dirs=[numpy.get_include()],
-                          extra_compile_args=["-O3"],
-                          language='c')
-        ext_modules.append(m)
-
-    # cythonize
-    from Cython.Build import cythonize
-    opts = dict(boundscheck=False, cdivision=True,
-                wraparound=False, language_level=3,
-                cdivision_warnings=False, embedsignature=True,
-                initializedcheck=False)
-    ext_modules = cythonize(ext_modules, compiler_directives=opts)
-    return ext_modules
-
-
-try:
-    ext_modules = get_extensions()
-except ImportError as e:
-    warnings.warn(
-        "Unable to build C++ extension with missing dependencies %r." % e)
-    ext_modules = None
-
 # setup
 
 setup(

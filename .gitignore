@@ -20,3 +20,4 @@ tests/model.onnx
 *.onnx
 *.pt
 examples/onnxruntime_profile*.json
+version.txt
