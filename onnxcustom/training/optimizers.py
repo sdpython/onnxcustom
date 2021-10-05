@@ -113,7 +113,7 @@ class OrtGradientOptimizer:
         for it in loop:
             bind_lr = OrtValue.ortvalue_from_numpy(
                 numpy.array([lr], dtype=numpy.float32),
-                            self.device, self.device_idx)
+                self.device, self.device_idx)
             loss = self._iteration(data_loader, bind_lr, bind)
             lr = self._update_learning_rate(it, lr)
             if self.verbose > 1:
