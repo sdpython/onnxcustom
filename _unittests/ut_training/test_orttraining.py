@@ -12,13 +12,18 @@ from sklearn.metrics import mean_squared_error
 from mlprodict.onnx_conv import to_onnx
 from mlprodict.onnxrt import OnnxInference
 from onnxcustom import __max_supported_opset__ as opset
-from onnxcustom.training.orttraining import (
-    add_loss_output, get_train_initializer)
+try:
+    from onnxruntime import TrainingSession
+except ImportError:
+    # onnxruntime not training
+    TrainingSession = None
 
 
 class TestOrtTraining(ExtTestCase):
 
+    @unittest.skipIf(TrainingSession is None, reason="not training")
     def test_add_loss_output(self):
+        from onnxcustom.training.orttraining import add_loss_output
         X, y = make_regression(  # pylint: disable=W0632
             100, n_features=10, bias=2)
         X = X.astype(numpy.float32)
@@ -35,7 +40,9 @@ class TestOrtTraining(ExtTestCase):
         skl_loss = mean_squared_error(reg.predict(X_test), y_test)
         self.assertLess(numpy.abs(skl_loss - loss[0, 0]), 1e-5)
 
+    @unittest.skipIf(TrainingSession is None, reason="not training")
     def test_get_train_initializer(self):
+        from onnxcustom.training.orttraining import get_train_initializer
         X, y = make_regression(  # pylint: disable=W0632
             100, n_features=10, bias=2)
         X = X.astype(numpy.float32)

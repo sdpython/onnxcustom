@@ -10,13 +10,19 @@ from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LinearRegression
 from mlprodict.onnx_conv import to_onnx
 from onnxcustom import __max_supported_opset__ as opset
-from onnxcustom.training.orttraining import add_loss_output
-from onnxcustom.training.optimizers import OrtGradientOptimizer
+try:
+    from onnxruntime import TrainingSession
+except ImportError:
+    # onnxruntime not training
+    TrainingSession = None
 
 
 class TestOptimizers(ExtTestCase):
 
+    @unittest.skipIf(TrainingSession is None, reason="not training")
     def test_ort_gradient_optimizers(self):
+        from onnxcustom.training.orttraining import add_loss_output
+        from onnxcustom.training.optimizers import OrtGradientOptimizer
         X, y = make_regression(  # pylint: disable=W0632
             100, n_features=10, bias=2)
         X = X.astype(numpy.float32)
