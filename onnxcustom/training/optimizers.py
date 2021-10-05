@@ -112,12 +112,14 @@ class OrtGradientOptimizer:
         train_losses = []
         for it in loop:
             bind_lr = OrtValue.ortvalue_from_numpy(
-                numpy.array([lr], dtype=numpy.float32), self.device, self.device_idx)
+                numpy.array([lr], dtype=numpy.float32),
+                            self.device, self.device_idx)
             loss = self._iteration(data_loader, bind_lr, bind)
             lr = self._update_learning_rate(it, lr)
             if self.verbose > 1:
-                loop.set_description("loss=%1.3g lr=%1.3g" % (  # pylint: disable=E1101,E1307
-                    loss, lr))  # pylint: disable=E1101,E1307
+                loop.set_description(
+                    "loss=%1.3g lr=%1.3g" % (  # pylint: disable=E1101,E1307
+                        loss, lr))  # pylint: disable=E1101,E1307
             train_losses.append(loss)
         self.train_losses_ = train_losses
         self.trained_coef_ = self.train_session_.get_state()
