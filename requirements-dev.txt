@@ -5,6 +5,7 @@ coverage
 cpyquickhelper
 flake8
 joblib
+jupyter_sphinx
 lightgbm
 loky
 matplotlib
