@@ -1,5 +1,6 @@
 """
-Implements command line ``python -m onnxcustom <command> <args>``.
+@file
+@brief Implements command line ``python -m onnxcustom <command> <args>``.
 """
 import fire
 from onnxcustom import check

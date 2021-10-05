@@ -18,7 +18,7 @@ A simple linear regression with scikit-learn
 
 """
 from pprint import pprint
-import numpy as np
+import numpy
 from pandas import DataFrame
 from onnx import helper, numpy_helper, TensorProto
 from onnxruntime import (
@@ -31,8 +31,8 @@ from mlprodict.plotting.plotting_onnx import plot_onnx
 from tqdm import tqdm
 
 X, y = make_regression(n_features=2, bias=2)
-X = X.astype(np.float32)
-y = y.astype(np.float32)
+X = X.astype(numpy.float32)
+y = y.astype(numpy.float32)
 X_train, X_test, y_train, y_test = train_test_split(X, y)
 
 lr = LinearRegression()
@@ -78,8 +78,8 @@ def onnx_linear_regression(coefs, intercept):
     return model_def
 
 
-onx = onnx_linear_regression(lr.coef_.astype(np.float32),
-                             lr.intercept_.astype(np.float32))
+onx = onnx_linear_regression(lr.coef_.astype(numpy.float32),
+                             lr.intercept_.astype(numpy.float32))
 
 ########################################
 # Let's visualize it.
@@ -157,8 +157,8 @@ def onnx_linear_regression_training(coefs, intercept):
 
 
 onx_train = onnx_linear_regression_training(
-    np.random.randn(*lr.coef_.shape).astype(np.float32),
-    np.random.randn(*lr.intercept_.reshape((-1, )).shape).astype(np.float32))
+    numpy.random.randn(*lr.coef_.shape).astype(numpy.float32),
+    numpy.random.randn(*lr.intercept_.reshape((-1, )).shape).astype(numpy.float32))
 
 plot_onnx(onx_train)
 
@@ -204,7 +204,7 @@ class DataLoader:
         N = 0
         b = len(self) - self.batch_size
         while N < len(self):
-            i = np.random.randint(0, b)
+            i = numpy.random.randint(0, b)
             N += self.batch_size
             yield (self.X[i:i + self.batch_size],
                    self.y[i:i + self.batch_size])
@@ -304,7 +304,7 @@ pprint(state_tensors)
 
 inputs = {'X': X_train[:1],
           'label': y_train[:1].reshape((-1, 1)),
-          'Learning_Rate': np.array([0.001], dtype=np.float32)}
+          'Learning_Rate': numpy.array([0.001], dtype=numpy.float32)}
 
 train_session.run(None, inputs)
 state_tensors = train_session.get_state()
@@ -315,7 +315,7 @@ pprint(state_tensors)
 
 inputs = {'X': X_train[:1],
           'label': y_train[:1].reshape((-1, 1)),
-          'Learning_Rate': np.array([0.001], dtype=np.float32)}
+          'Learning_Rate': numpy.array([0.001], dtype=numpy.float32)}
 res = train_session.run(None, inputs)
 state_tensors = train_session.get_state()
 pprint(state_tensors)
@@ -379,7 +379,7 @@ class CustomTraining:
     def _init_learning_rate(self):
         self.eta0_ = self.eta0
         if self.learning_rate == "optimal":
-            typw = np.sqrt(1.0 / np.sqrt(self.alpha))
+            typw = numpy.sqrt(1.0 / numpy.sqrt(self.alpha))
             self.eta0_ = typw / max(1.0, (1 + typw) * 2)
             self.optimal_init_ = 1.0 / (self.eta0_ * self.alpha)
         else:
@@ -390,7 +390,7 @@ class CustomTraining:
         if self.learning_rate == "optimal":
             eta = 1.0 / (self.alpha * (self.optimal_init_ + t))
         elif self.learning_rate == "invscaling":
-            eta = self.eta0_ / np.power(t + 1, self.power_t)
+            eta = self.eta0_ / numpy.power(t + 1, self.power_t)
         return eta
 
     def fit(self, X, y):
@@ -434,7 +434,7 @@ class CustomTraining:
         :return: loss
         """
         actual_losses = []
-        lr = np.array([learning_rate], dtype=np.float32)
+        lr = numpy.array([learning_rate], dtype=numpy.float32)
         for batch_idx, (data, target) in enumerate(data_loader):
             if len(target.shape) == 1:
                 target = target.reshape((-1, 1))
@@ -444,7 +444,7 @@ class CustomTraining:
                       self.input_names_[2]: lr}
             res = self.train_session_.run(None, inputs)
             actual_losses.append(res[self.loss_index_])
-        return np.array(actual_losses).mean()
+        return numpy.array(actual_losses).mean()
 
 ###########################################
 # Let's now train the model in a very similar way
@@ -456,7 +456,7 @@ trainer = CustomTraining(onx_train, ['coefs', 'intercept'], verbose=1,
 trainer.fit(X, y)
 print("training losses:", trainer.train_losses_)
 
-df = DataFrame({"iteration": np.arange(len(trainer.train_losses_)),
+df = DataFrame({"iteration": numpy.arange(len(trainer.train_losses_)),
                 "loss": trainer.train_losses_})
 df.set_index('iteration').plot(title="Training loss", logy=True)
 

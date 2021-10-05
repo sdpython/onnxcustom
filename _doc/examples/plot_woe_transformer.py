@@ -24,7 +24,7 @@ checks that every of them belongs to two intervals,
 to weight 55 and and the second one to 107.
 """
 import os
-import numpy as np
+import numpy
 import pandas as pd
 from onnx.tools.net_drawer import GetPydotGraph, GetOpNodeProducer
 from onnxruntime import InferenceSession
@@ -34,7 +34,7 @@ from skl2onnx.sklapi import WOETransformer
 # automatically registers the converter for WOETransformer
 import skl2onnx.sklapi.register  # noqa
 
-X = np.arange(10).astype(np.float32).reshape((-1, 1))
+X = numpy.arange(10).astype(numpy.float32).reshape((-1, 1))
 
 intervals = [
     [(1., 3., False, False),

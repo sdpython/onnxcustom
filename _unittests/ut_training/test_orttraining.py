@@ -1,0 +1,53 @@
+"""
+@brief      test log(time=3s)
+"""
+
+import unittest
+from pyquickhelper.pycode import ExtTestCase
+import numpy
+from sklearn.datasets import make_regression
+from sklearn.model_selection import train_test_split
+from sklearn.linear_model import LinearRegression
+from sklearn.metrics import mean_squared_error
+from mlprodict.onnx_conv import to_onnx
+from mlprodict.onnxrt import OnnxInference
+from onnxcustom import __max_supported_opset__ as opset
+from onnxcustom.training.orttraining import (
+    add_loss_output, get_train_initializer)
+
+
+class TestOrtTraining(ExtTestCase):
+
+    def test_add_loss_output(self):
+        X, y = make_regression(  # pylint: disable=W0632
+            100, n_features=10, bias=2)
+        X = X.astype(numpy.float32)
+        y = y.astype(numpy.float32)
+        X_train, X_test, y_train, y_test = train_test_split(X, y)
+        reg = LinearRegression()
+        reg.fit(X_train, y_train)
+        onx = to_onnx(reg, X_train, target_opset=opset,
+                      black_op={'LinearRegressor'})
+        onx_loss = add_loss_output(onx)
+        oinf = OnnxInference(onx_loss)
+        output = oinf.run({'X': X_test, 'label': y_test.reshape((-1, 1))})
+        loss = output['loss']
+        skl_loss = mean_squared_error(reg.predict(X_test), y_test)
+        self.assertLess(numpy.abs(skl_loss - loss[0, 0]), 1e-5)
+
+    def test_get_train_initializer(self):
+        X, y = make_regression(  # pylint: disable=W0632
+            100, n_features=10, bias=2)
+        X = X.astype(numpy.float32)
+        y = y.astype(numpy.float32)
+        X_train, _, y_train, __ = train_test_split(X, y)
+        reg = LinearRegression()
+        reg.fit(X_train, y_train)
+        onx = to_onnx(reg, X_train, target_opset=opset,
+                      black_op={'LinearRegressor'})
+        inits = get_train_initializer(onx)
+        self.assertEqual({'shape_tensor', 'intercept', 'coef'}, set(inits))
+
+
+if __name__ == "__main__":
+    unittest.main()

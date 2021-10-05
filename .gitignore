@@ -5,6 +5,7 @@ bin/*
 dist/*
 build/*
 data/*
+.eggs/*
 *.jpg
 *.onnx
 *.pt
@@ -26,3 +27,4 @@ examples/model.onnx
 tests/model.onnx
 examples/onnxruntime_profile*.json
 version.txt
+

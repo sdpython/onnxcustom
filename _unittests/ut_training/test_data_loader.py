@@ -1,0 +1,32 @@
+"""
+@brief      test log(time=3s)
+"""
+
+import unittest
+from pyquickhelper.pycode import ExtTestCase
+from sklearn.datasets import make_regression
+from onnxruntime import OrtValue
+from onnxcustom.training.data_loader import OrtDataLoader
+
+
+class TestDataLoadeer(ExtTestCase):
+
+    def test_ort_data_loader(self):
+        X, y = make_regression(  # pylint: disable=W0632
+            100, n_features=10, bias=2)
+        data = OrtDataLoader(X, y, batch_size=5)
+        n = 0
+        for it in data:
+            x, y = it
+            self.assertIsInstance(x, OrtValue)
+            self.assertIsInstance(y, OrtValue)
+            self.assertEqual(x.shape()[0], 5)
+            self.assertEqual(x.shape()[1], 10)
+            self.assertEqual(y.shape()[0], 5)
+            n += 1
+        self.assertEqual(n, 20)
+        self.assertStartsWith("OrtDataLoader(...", repr(data))
+
+
+if __name__ == "__main__":
+    unittest.main()
