@@ -2,6 +2,7 @@
 @file
 @brief Helper for :epkg:`onnxruntime-training`.
 """
+import inspect
 import numpy
 from onnxruntime import (
     OrtValue, TrainingParameters,
@@ -9,7 +10,39 @@ from onnxruntime import (
 from .data_loader import OrtDataLoader
 
 
-class OrtGradientOptimizer:
+class BaseEstimator:
+    """
+    Base class for optimizers.
+    Implements common methods such `__repr__`.
+    """
+
+    @classmethod
+    def _get_param_names(cls):
+        init = getattr(cls.__init__, "deprecated_original", cls.__init__)
+        init_signature = inspect.signature(init)
+        parameters = [
+            p for p in init_signature.parameters.values()
+            if p.name != "self" and p.kind != p.VAR_KEYWORD]
+        return [(p.name, p.default) for p in parameters]
+
+    def __repr__(self):
+        param = self._get_param_names()
+        ps = []
+        for k, v in param:
+            if k not in self.__dict__:
+                continue
+            ov = getattr(self, k)
+            if v is not inspect._empty or ov != v:
+                ro = repr(ov)
+                if len(ro) > 50 or "\n" in ro:
+                    ro = ro[:10].replace("\n", " ") + "..."
+                    ps.append("%s=%r" % (k, ro))
+                else:
+                    ps.append("%s=%r" % (k, ov))
+        return "%s(%s)" % (self.__class__.__name__, ", ".join(ps))
+
+
+class OrtGradientOptimizer(BaseEstimator):
     """
     Implements a simple :epkg:`Stochastic Gradient Descent`
     with :epkg:`onnxruntime-training`.
@@ -103,7 +136,7 @@ class OrtGradientOptimizer:
 
         bind = self.train_session_.io_binding()
 
-        if self.verbose:  # pragma: no cover
+        if self.verbose > 0:  # pragma: no cover
             from tqdm import tqdm  # pylint: disable=C0415
             loop = tqdm(range(self.max_iter))
         else:
@@ -112,11 +145,11 @@ class OrtGradientOptimizer:
         train_losses = []
         for it in loop:
             bind_lr = OrtValue.ortvalue_from_numpy(
-                numpy.array([lr], dtype=numpy.float32),
+                numpy.array([lr / self.batch_size], dtype=numpy.float32),
                 self.device, self.device_idx)
             loss = self._iteration(data_loader, bind_lr, bind)
             lr = self._update_learning_rate(it, lr)
-            if self.verbose > 1:
+            if self.verbose > 1:  # pragma: no cover
                 loop.set_description(
                     "loss=%1.3g lr=%1.3g" % (  # pylint: disable=E1101,E1307
                         loss, lr))  # pylint: disable=E1101,E1307
@@ -155,7 +188,7 @@ class OrtGradientOptimizer:
 
             self.train_session_.run_with_iobinding(bind)
             outputs = bind.copy_outputs_to_cpu()
-            actual_losses.append(outputs[self.loss_index_])
+            actual_losses.append(outputs[0] / data.shape()[0])
         return numpy.array(actual_losses).mean()
 
     def _create_training_session(

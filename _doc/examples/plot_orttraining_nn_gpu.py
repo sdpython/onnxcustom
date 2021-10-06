@@ -22,10 +22,12 @@ from pandas import DataFrame
 from onnx import helper, numpy_helper, TensorProto
 from onnxruntime import (
     __version__ as ort_version, get_device, OrtValue,
-    TrainingParameters, SessionOptions, TrainingSession)
+    TrainingParameters, SessionOptions, TrainingSession,
+    InferenceSession)
 from sklearn.datasets import make_regression
 from sklearn.model_selection import train_test_split
 from sklearn.neural_network import MLPRegressor
+from sklearn.metrics import mean_squared_error
 from mlprodict.plotting.plotting_onnx import plot_onnx
 from mlprodict.onnx_conv import to_onnx
 from onnxcustom.training import add_loss_output, get_train_initializer
@@ -38,12 +40,16 @@ X = X.astype(numpy.float32)
 y = y.astype(numpy.float32)
 X_train, X_test, y_train, y_test = train_test_split(X, y)
 
-nn = MLPRegressor(hidden_layer_sizes=(10, 10), max_iter=100)
+nn = MLPRegressor(hidden_layer_sizes=(10, 10), max_iter=1000)
 
 with warnings.catch_warnings():
     warnings.simplefilter('ignore')
-
     nn.fit(X_train, y_train)
+
+#################################
+# Score:
+
+print("mean_squared_error=%r" % mean_squared_error(y_test, nn.predict(X_test)))
 
 
 #######################################
@@ -64,6 +70,13 @@ plot_onnx(onx)
 
 onx_train = add_loss_output(onx)
 plot_onnx(onx_train)
+
+#####################################
+# Let's check inference is working.
+
+sess = InferenceSession(onx_train.SerializeToString())
+res = sess.run(None, {'X': X_test, 'label': y_test.reshape((-1, 1))})
+print("onnx loss=%r" % (res[0][0, 0] / X_test.shape[0]))
 
 #####################################
 # Let's retrieve the constant, the weight to optimize.
@@ -89,5 +102,9 @@ print("device=%r get_device()=%r" % (device, get_device()))
 # The training session.
 
 train_session = OrtGradientOptimizer(
-    onx_train, list(weights), device=device)
-print(train_session)
+    onx_train, list(weights), device=device, verbose=1, eta0=1e-4)
+
+train_session.fit(X, y)
+state_tensors = train_session.get_state()
+
+print(train_session.train_losses_)

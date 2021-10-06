@@ -81,7 +81,7 @@ def add_loss_output(onx, score_name='squared_error',
         list(onx.graph.node) + nodes,
         onx.graph.name,
         list(onx.graph.input) + inputs,
-        list(onx.graph.output) + outputs,
+        outputs + list(onx.graph.output),
         onx.graph.initializer)
     onnx_model = make_model(graph)
     onnx_model.ir_version = onx.ir_version
