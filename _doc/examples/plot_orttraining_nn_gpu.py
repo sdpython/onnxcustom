@@ -19,28 +19,26 @@ import warnings
 from pprint import pprint
 import numpy
 from pandas import DataFrame
-from onnx import helper, numpy_helper, TensorProto
-from onnxruntime import (
-    __version__ as ort_version, get_device, OrtValue,
-    TrainingParameters, SessionOptions, TrainingSession,
-    InferenceSession)
+from onnxruntime import get_device, OrtValue, InferenceSession
 from sklearn.datasets import make_regression
 from sklearn.model_selection import train_test_split
 from sklearn.neural_network import MLPRegressor
 from sklearn.metrics import mean_squared_error
 from mlprodict.plotting.plotting_onnx import plot_onnx
 from mlprodict.onnx_conv import to_onnx
+from mlprodict.tools import measure_time
 from onnxcustom.training import add_loss_output, get_train_initializer
-from onnxcustom.training.data_loader import OrtDataLoader
 from onnxcustom.training.optimizers import OrtGradientOptimizer
-from tqdm import tqdm
+
 
 X, y = make_regression(1000, n_features=10, bias=2)
 X = X.astype(numpy.float32)
 y = y.astype(numpy.float32)
 X_train, X_test, y_train, y_test = train_test_split(X, y)
 
-nn = MLPRegressor(hidden_layer_sizes=(10, 10), max_iter=1000)
+nn = MLPRegressor(hidden_layer_sizes=(10, 10), max_iter=200,
+                  solver='sgd', learning_rate_init=1e-4,
+                  n_iter_no_change=1000, batch_size=10)
 
 with warnings.catch_warnings():
     warnings.simplefilter('ignore')
@@ -102,9 +100,56 @@ print("device=%r get_device()=%r" % (device, get_device()))
 # The training session.
 
 train_session = OrtGradientOptimizer(
-    onx_train, list(weights), device=device, verbose=1, eta0=1e-4)
+    onx_train, list(weights), device=device, verbose=1, eta0=1e-4,
+    warm_start=False, max_iter=200, batch_size=10)
 
 train_session.fit(X, y)
 state_tensors = train_session.get_state()
 
 print(train_session.train_losses_)
+
+df = DataFrame({'losses': train_session.train_losses_})
+df.plot(title="Train loss against iterations", logy=True)
+
+
+################################################
+# Benchmark
+# +++++++++
+#
+# The last part compares the speed between the two training.
+
+nn = MLPRegressor(hidden_layer_sizes=(10, 10), max_iter=200,
+                  solver='sgd', learning_rate_init=1e-4,
+                  n_iter_no_change=1000, batch_size=10)
+
+
+def skl_train():
+    with warnings.catch_warnings():
+        warnings.simplefilter('ignore')
+        nn.fit(X_train, y_train)
+
+
+obs = []
+res = measure_time("skl_train()", context=dict(skl_train=skl_train),
+                   repeat=1, number=1)
+res['framework'] = ['skl']
+pprint(res)
+obs.append(res)
+
+train_session = OrtGradientOptimizer(
+    onx_train, list(weights), device=device, verbose=0, eta0=1e-4,
+    warm_start=False, max_iter=200, batch_size=10)
+
+
+def ort_train():
+    train_session.fit(X, y)
+
+
+res = measure_time("ort_train()", context=dict(ort_train=ort_train),
+                   repeat=1, number=1)
+res['framework'] = ['ort']
+pprint(res)
+obs.append(res)
+
+df = DataFrame(obs)
+print(df)

@@ -67,6 +67,8 @@ class OrtGradientOptimizer(BaseEstimator):
         * `'invscaling'`: `eta = eta0 / pow(t, power_t)`
     :param device: `'cpu'` or `'cuda'`
     :param device_idx: device index
+    :param warm_start: when set to True, reuse the solution of the previous call
+        to fit as initialization, otherwise, just erase the previous solution.
     :param verbose: use :epkg:`tqdm` to display the training progress
 
     Once initialized, the class creates the attribute
@@ -79,7 +81,7 @@ class OrtGradientOptimizer(BaseEstimator):
                  max_iter=100, training_optimizer_name='SGDOptimizer',
                  batch_size=10, eta0=0.01, alpha=0.0001, power_t=0.25,
                  learning_rate='invscaling', device='cpu', device_idx=0,
-                 verbose=0):
+                 warm_start=False, verbose=0):
         # See https://scikit-learn.org/stable/modules/generated/
         # sklearn.linear_model.SGDRegressor.html
         self.model_onnx = model_onnx
@@ -95,6 +97,7 @@ class OrtGradientOptimizer(BaseEstimator):
         self.learning_rate = learning_rate.lower()
         self.device = device
         self.device_idx = device_idx
+        self.warm_start = warm_start
 
     def _init_learning_rate(self):
         self.eta0_ = self.eta0
@@ -125,6 +128,18 @@ class OrtGradientOptimizer(BaseEstimator):
             loss_output_name=self.loss_output_name,
             training_optimizer_name=self.training_optimizer_name,
             device=self.device)
+
+        if not self.warm_start:
+            state = self.get_state()
+            new_state = {}
+            for k, v in state.items():
+                if len(v.shape) > 0:
+                    new_state[k] = numpy.random.randn(*v.shape).astype(v.dtype)
+                else:
+                    f = numpy.random.randn(1)
+                    f = f.astype(v.dtype)
+                    new_state[k] = f
+            self.set_state(new_state)
 
         data_loader = OrtDataLoader(
             X, y, batch_size=self.batch_size, device=self.device)
@@ -245,3 +260,11 @@ class OrtGradientOptimizer(BaseEstimator):
         if not hasattr(self, 'train_session_'):
             raise AttributeError("Method fit must be called before.")
         return self.train_session_.get_state()
+
+    def set_state(self, state):
+        """
+        Changes the trained weights.
+        """
+        if not hasattr(self, 'train_session_'):
+            raise AttributeError("Method fit must be called before.")
+        return self.train_session_.load_state(state)
