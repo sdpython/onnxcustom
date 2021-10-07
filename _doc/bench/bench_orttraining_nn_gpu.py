@@ -92,7 +92,7 @@ def benchmark(N=1000, n_features=20, hidden_layer_sizes="25,25", max_iter=1000,
         nn.fit(X_train, y_train)
     dur_skl = time.perf_counter() - begin
 
-    print("time_kl=%r, mean_squared_error=%r" % (
+    print("time_skl=%r, mean_squared_error=%r" % (
         dur_skl, mean_squared_error(y_train, nn.predict(X_train))))
 
     # conversion to ONNX
@@ -119,7 +119,7 @@ def benchmark(N=1000, n_features=20, hidden_layer_sizes="25,25", max_iter=1000,
     begin = time.perf_counter()
     train_session.fit(X, y)
     dur_ort = time.perf_counter() - begin
-    print("time_kl=%r, mean_squared_error=%r" % (
+    print("time_skl=%r, mean_squared_error=%r" % (
         dur_skl, mean_squared_error(y_train, nn.predict(X_train))))
     print("time_ort=%r, last_trained_error=%r" % (
         dur_ort, train_session.train_losses_[-1]))
