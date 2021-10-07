@@ -4,7 +4,7 @@
 """
 import inspect
 import numpy
-from onnxruntime import (
+from onnxruntime import (  # pylint: disable=E0611
     OrtValue, TrainingParameters,
     SessionOptions, TrainingSession)
 from .data_loader import OrtDataLoader
