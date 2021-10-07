@@ -21,7 +21,7 @@ It creates a graph to train a linear regression initialized
 with random coefficients.
 """
 from pprint import pprint
-import numpy as np
+import numpy
 from pandas import DataFrame
 from onnx import helper, numpy_helper, TensorProto
 from onnxruntime import (
@@ -33,8 +33,8 @@ from mlprodict.plotting.plotting_onnx import plot_onnx
 from tqdm import tqdm
 
 X, y = make_regression(n_features=2, bias=2)
-X = X.astype(np.float32)
-y = y.astype(np.float32)
+X = X.astype(numpy.float32)
+y = y.astype(numpy.float32)
 X_train, X_test, y_train, y_test = train_test_split(X, y)
 
 
@@ -87,8 +87,8 @@ def onnx_linear_regression_training(coefs, intercept):
 
 
 onx_train = onnx_linear_regression_training(
-    np.random.randn(2).astype(np.float32),
-    np.random.randn(1).astype(np.float32))
+    numpy.random.randn(2).astype(numpy.float32),
+    numpy.random.randn(1).astype(numpy.float32))
 
 plot_onnx(onx_train)
 
@@ -181,7 +181,7 @@ pprint(state_tensors)
 ortx = OrtValue.ortvalue_from_numpy(X_train[:1], device, 0)
 orty = OrtValue.ortvalue_from_numpy(y_train[:1].reshape((-1, 1)), device, 0)
 ortlr = OrtValue.ortvalue_from_numpy(
-    np.array([0.01], dtype=np.float32), device, 0)
+    numpy.array([0.01], dtype=numpy.float32), device, 0)
 
 inputs = {'X': ortx, 'label': orty, "Learning_Rate": ortlr}
 outputs = train_session.run(None, inputs)
@@ -221,8 +221,8 @@ class DataLoaderDevice:
         if X.shape[0] != y.shape[0]:
             raise ValueError(
                 "Shape mismatch X.shape=%r, y.shape=%r." % (X.shape, y.shape))
-        self.X = np.ascontiguousarray(X)
-        self.y = np.ascontiguousarray(y)
+        self.X = numpy.ascontiguousarray(X)
+        self.y = numpy.ascontiguousarray(y)
         self.batch_size = batch_size
         self.device = device
         self.device_idx = device_idx
@@ -239,7 +239,7 @@ class DataLoaderDevice:
         N = 0
         b = len(self) - self.batch_size
         while N < len(self):
-            i = np.random.randint(0, b)
+            i = numpy.random.randint(0, b)
             N += self.batch_size
             yield (
                 OrtValue.ortvalue_from_numpy(
@@ -318,7 +318,7 @@ class CustomTraining:
     def _init_learning_rate(self):
         self.eta0_ = self.eta0
         if self.learning_rate == "optimal":
-            typw = np.sqrt(1.0 / np.sqrt(self.alpha))
+            typw = numpy.sqrt(1.0 / numpy.sqrt(self.alpha))
             self.eta0_ = typw / max(1.0, (1 + typw) * 2)
             self.optimal_init_ = 1.0 / (self.eta0_ * self.alpha)
         else:
@@ -329,7 +329,7 @@ class CustomTraining:
         if self.learning_rate == "optimal":
             eta = 1.0 / (self.alpha * (self.optimal_init_ + t))
         elif self.learning_rate == "invscaling":
-            eta = self.eta0_ / np.power(t + 1, self.power_t)
+            eta = self.eta0_ / numpy.power(t + 1, self.power_t)
         return eta
 
     def fit(self, X, y):
@@ -361,7 +361,8 @@ class CustomTraining:
         train_losses = []
         for it in loop:
             bind_lr = OrtValue.ortvalue_from_numpy(
-                np.array([lr], dtype=np.float32), self.device, self.device_idx)
+                numpy.array([lr], dtype=numpy.float32),
+                self.device, self.device_idx)
             loss = self._iteration(data_loader, bind_lr, bind)
             lr = self._update_learning_rate(it, lr)
             if self.verbose > 1:
@@ -379,7 +380,7 @@ class CustomTraining:
                 name=self.input_names_[0],
                 device_type=self.device,
                 device_id=self.device_idx,
-                element_type=np.float32,
+                element_type=numpy.float32,
                 shape=data.shape(),
                 buffer_ptr=data.data_ptr())
 
@@ -387,14 +388,14 @@ class CustomTraining:
                 name=self.input_names_[1],
                 device_type=self.device,
                 device_id=self.device_idx,
-                element_type=np.float32,
+                element_type=numpy.float32,
                 shape=target.shape(),
                 buffer_ptr=target.data_ptr())
 
             bind.bind_input(
                 name=self.input_names_[2],
                 device_type=learning_rate.device_name(), device_id=0,
-                element_type=np.float32, shape=learning_rate.shape(),
+                element_type=numpy.float32, shape=learning_rate.shape(),
                 buffer_ptr=learning_rate.data_ptr())
 
             bind.bind_output('loss')
@@ -402,7 +403,7 @@ class CustomTraining:
             self.train_session_.run_with_iobinding(bind)
             outputs = bind.copy_outputs_to_cpu()
             actual_losses.append(outputs[self.loss_index_])
-        return np.array(actual_losses).mean()
+        return numpy.array(actual_losses).mean()
 
 ###########################################
 # Let's now train the model in a very similar way
@@ -414,7 +415,7 @@ trainer = CustomTraining(onx_train, ['coefs', 'intercept'], verbose=1,
 trainer.fit(X, y)
 print("training losses:", trainer.train_losses_)
 
-df = DataFrame({"iteration": np.arange(len(trainer.train_losses_)),
+df = DataFrame({"iteration": numpy.arange(len(trainer.train_losses_)),
                 "loss": trainer.train_losses_})
 df.set_index('iteration').plot(title="Training loss", logy=True)
 

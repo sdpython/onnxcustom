@@ -1,5 +1,6 @@
 """
-Informations related to the :epkg:`ImageNet` competition.
+@file
+@brief Informations related to the :epkg:`ImageNet` competition.
 """
 
 class_names = {

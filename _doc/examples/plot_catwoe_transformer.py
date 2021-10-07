@@ -25,7 +25,7 @@ Let's take the `Iris dataset
 <https://scikit-learn.org/stable/modules/generated/sklearn.datasets.load_iris.html>`_.
 Every feature is converter into integer.
 """
-import numpy as np
+import numpy
 from onnxruntime import InferenceSession
 from sklearn.datasets import load_iris
 from sklearn.preprocessing import OrdinalEncoder as SklOrdinalEncoder
@@ -40,8 +40,8 @@ import skl2onnx.sklapi.register  # noqa
 
 data = load_iris()
 X, y = data.data, data.target
-X = X.astype(np.int64)[:, :2]
-y = (y == 2).astype(np.int64)
+X = X.astype(numpy.int64)[:, :2]
+y = (y == 2).astype(numpy.int64)
 
 woe = WOEEncoder(cols=[0]).fit(X, y)
 print(woe.transform(X[:5]))
@@ -75,15 +75,15 @@ def ordenc_to_sklearn(op_mapping):
         mapping = column_map['mapping']
         res = []
         for i in range(mapping.shape[0]):
-            if np.isnan(mapping.index[i]):
+            if numpy.isnan(mapping.index[i]):
                 continue
             ind = mapping.iloc[i]
             while len(res) <= ind:
                 res.append(0)
             res[ind] = mapping.index[i]
-        cats[col] = np.array(res, dtype=np.int64)
+        cats[col] = numpy.array(res, dtype=numpy.int64)
 
-    skl_ord = SklOrdinalEncoder(categories=cats, dtype=np.int64)
+    skl_ord = SklOrdinalEncoder(categories=cats, dtype=numpy.int64)
     skl_ord.categories_ = cats
     return skl_ord
 
@@ -202,7 +202,7 @@ def woe_encoder_converter(scope, operator, container):
 
     sub = OnnxSubEstimator(op.ordinal_encoder, X,
                            op_version=opv)
-    cast = OnnxCast(sub, op_version=opv, to=np.float32)
+    cast = OnnxCast(sub, op_version=opv, to=numpy.float32)
     skl_ord = woeenc_to_sklearn(op.mapping)
     cat = OnnxSubEstimator(skl_ord, cast, op_version=opv,
                            output_names=operator.outputs[:1],
