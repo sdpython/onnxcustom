@@ -122,25 +122,29 @@ def benchmark(N=1000, n_features=20, hidden_layer_sizes="26,25", max_iter=1000,
 
     # training
 
+    def train_torch():
+        for epoch in range(max_iter):
+            running_loss = 0.0
+            x, y = shuffle(X_train, y_train)
+            for i in range(batch_no):
+                start = i * batch_size
+                end = start + batch_size
+                inputs = Variable(torch.FloatTensor(
+                    x[start:end], device=device))
+                labels = Variable(torch.FloatTensor(
+                    y[start:end], device=device))
+
+                optimizer.zero_grad()
+                outputs = nn(inputs)
+                loss = criterion(outputs, torch.unsqueeze(labels, dim=1))
+                loss.backward()
+                optimizer.step()
+
+                running_loss += loss.item()
+        return running_loss
+
     begin = time.perf_counter()
-    running_loss = 0.0
-    for epoch in range(max_iter):
-        X_train, y_train = shuffle(X_train, y_train)
-        for i in range(batch_no):
-            start = i * batch_size
-            end = start + batch_size
-            inputs = Variable(torch.FloatTensor(
-                X_train[start:end], device=device))
-            labels = Variable(torch.FloatTensor(
-                y_train[start:end], device=device))
-
-            optimizer.zero_grad()
-            outputs = nn(inputs)
-            loss = criterion(outputs, torch.unsqueeze(labels, dim=1))
-            loss.backward()
-            optimizer.step()
-
-            running_loss += loss.item()
+    running_loss = train_torch()
     dur_torch = time.perf_counter() - begin
 
     print("time_torch=%r, running_loss=%r" % (dur_torch, running_loss))
@@ -150,24 +154,30 @@ def benchmark(N=1000, n_features=20, hidden_layer_sizes="26,25", max_iter=1000,
     nn_ort = ORTModule(nn)
     optimizer = torch.optim.SGD(nn_ort.parameters(), lr=learning_rate_init)
     criterion = torch.nn.MSELoss(size_average=False)    
-    
+
+    def train_ort():
+        for epoch in range(max_iter):
+            running_loss = 0.0
+            x, y = shuffle(X_train, y_train)
+            for i in range(batch_no):
+                start = i * batch_size
+                end = start + batch_size
+                inputs = Variable(torch.FloatTensor(
+                    x[start:end], device=device))
+                labels = Variable(torch.FloatTensor(
+                    y[start:end], device=device))
+
+                optimizer.zero_grad()
+                outputs = nn_ort(inputs)
+                loss = criterion(outputs, torch.unsqueeze(labels, dim=1))
+                loss.backward()
+                optimizer.step()
+
+                running_loss += loss.item()
+        return running_loss
+
     begin = time.perf_counter()
-    running_loss = 0.0
-    for epoch in range(max_iter):
-        X_train, y_train = shuffle(X_train, y_train)
-        for i in range(batch_no):
-            start = i * batch_size
-            end = start + batch_size
-            inputs = Variable(torch.FloatTensor(X_train[start:end]))
-            labels = Variable(torch.FloatTensor(y_train[start:end]))
-
-            optimizer.zero_grad()
-            outputs = nn_ort(inputs)
-            loss = criterion(outputs, torch.unsqueeze(labels, dim=1))
-            loss.backward()
-            optimizer.step()
-
-            running_loss += loss.item()
+    running_loss = train_ort()
     dur_ort = time.perf_counter() - begin
 
     print("time_torch=%r, running_loss=%r" % (dur_torch, running_loss0))
