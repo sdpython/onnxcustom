@@ -158,7 +158,8 @@ def onnx_linear_regression_training(coefs, intercept):
 
 onx_train = onnx_linear_regression_training(
     numpy.random.randn(*lr.coef_.shape).astype(numpy.float32),
-    numpy.random.randn(*lr.intercept_.reshape((-1, )).shape).astype(numpy.float32))
+    numpy.random.randn(
+        *lr.intercept_.reshape((-1, )).shape).astype(numpy.float32))
 
 plot_onnx(onx_train)
 

@@ -19,7 +19,7 @@ import warnings
 from pprint import pprint
 import numpy
 from pandas import DataFrame
-from onnxruntime import get_device, OrtValue, InferenceSession
+from onnxruntime import get_device, InferenceSession
 from sklearn.datasets import make_regression
 from sklearn.model_selection import train_test_split
 from sklearn.neural_network import MLPRegressor
