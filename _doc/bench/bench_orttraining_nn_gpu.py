@@ -65,6 +65,8 @@ def benchmark(N=1000, n_features=20, hidden_layer_sizes="25,25", max_iter=1000,
     print("learning_rate_init=%f" % learning_rate_init)
     print("batch_size=%d" % batch_size)
     print("run_skl=%r" % run_skl)
+    print("opset=%r" % opset)
+    print("device=%r" % device)
     print('------------------')
 
     hidden_layer_sizes = tuple(map(int, hidden_layer_sizes.split(",")))
