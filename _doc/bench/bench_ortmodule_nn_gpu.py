@@ -46,7 +46,7 @@ import torch.nn.functional as F
 from onnxruntime.training import ORTModule
 
 
-def benchmark(N=1000, n_features=20, hidden_layer_sizes="25,25", max_iter=1000,
+def benchmark(N=1000, n_features=20, hidden_layer_sizes="26,25", max_iter=1000,
               learning_rate_init=1e-4, batch_size=100, run_skl=True,
               device='cpu', opset=14):
     """
@@ -100,7 +100,7 @@ def benchmark(N=1000, n_features=20, hidden_layer_sizes="25,25", max_iter=1000,
             for i, hid in enumerate(hidden_layer_sizes):
                 self.hidden.append(torch.nn.Linear(size, hid))
                 size = hid
-                setattr(self, "hid%i", self.hidden[-1])
+                setattr(self, "hid%d" % i, self.hidden[-1])
             self.hidden.append(torch.nn.Linear(size, n_output))
             setattr(self, "predict", self.hidden[-1])
 
@@ -111,7 +111,10 @@ def benchmark(N=1000, n_features=20, hidden_layer_sizes="25,25", max_iter=1000,
             return x
 
     nn = Net(n_features, hidden_layer_sizes, 1)
-    print("n_parameters=%d" % len(list(nn.parameters())))
+    print("n_parameters=%d, n_layers=%d" % (
+        len(list(nn.parameters())), len(nn.hidden)))
+    for i, p in enumerate(nn.parameters()):
+        print("  p[%d].shape=%r" % (i, p.shape))
     
     optimizer = torch.optim.SGD(nn.parameters(), lr=learning_rate_init)
     criterion = torch.nn.MSELoss(size_average=False)
