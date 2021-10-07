@@ -35,7 +35,7 @@ from onnxcustom.training.optimizers import OrtGradientOptimizer
 
 def benchmark(N=1000, n_features=20, hidden_layer_sizes="25,25", max_iter=1000,
               learning_rate_init=1e-4, batch_size=100, run_skl=True,
-              device='cpu'):
+              device='cpu', opset=14):
     """
     Compares :epkg:`onnxruntime-training` to :epkg:`scikit-learn` for
     training. Training algorithm is SGD.
@@ -49,6 +49,7 @@ def benchmark(N=1000, n_features=20, hidden_layer_sizes="25,25", max_iter=1000,
     :param run_skl: train scikit-learn in the same condition (True) or
         just walk through one iterator with *scikit-learn*
     :param device: `'cpu'` or `'cuda'`
+    :param opset: opset to choose for the conversion
     """
     N = int(N)
     n_features = int(n_features)
@@ -87,7 +88,7 @@ def benchmark(N=1000, n_features=20, hidden_layer_sizes="25,25", max_iter=1000,
         dur_skl, mean_squared_error(y_train, nn.predict(X_train))))
 
     # conversion to ONNX
-    onx = to_onnx(nn, X_train[:1].astype(numpy.float32), target_opset=15)
+    onx = to_onnx(nn, X_train[:1].astype(numpy.float32), target_opset=opset)
 
     # add loss
     onx_train = add_loss_output(onx)
