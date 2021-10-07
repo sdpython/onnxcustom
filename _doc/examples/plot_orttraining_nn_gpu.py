@@ -6,12 +6,7 @@ Train a scikit-learn neural network with onnxruntime-training on GPU
 ====================================================================
 
 This example leverages example :ref:`l-orttraining-linreg-gpu` to
-train a neural network from :epkg:`scikit-learn` on GPU. You may
-profile the full example with:
-
-::
-
-    py-spy record -o plot_orttraining_nn_gpu.svg -r 10 --native -- python plot_orttraining_nn_gpu.py
+train a neural network from :epkg:`scikit-learn` on GPU.
 
 .. contents::
     :local:
