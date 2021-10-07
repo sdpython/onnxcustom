@@ -80,6 +80,7 @@ def benchmark(N=1000, n_features=20, hidden_layer_sizes="26,25", max_iter=1000,
     print("run_torch=%r" % run_torch)
     print("opset=%r (unused)" % opset)
     print("device=%r" % device)
+    device0 = device
     device = torch.device(
         "cuda:0" if device in ('cuda', 'cuda:0', 'gpu') else "cpu")
     print("fixed device=%r" % device)
@@ -112,6 +113,10 @@ def benchmark(N=1000, n_features=20, hidden_layer_sizes="26,25", max_iter=1000,
             return x
 
     nn = Net(n_features, hidden_layer_sizes, 1)
+    if device0 == 'cpu':
+        nn.cpu()
+    else:
+        nn.cuda(device=device)
     print("n_parameters=%d, n_layers=%d" % (
         len(list(nn.parameters())), len(nn.hidden)))
     for i, p in enumerate(nn.parameters()):
@@ -130,8 +135,10 @@ def benchmark(N=1000, n_features=20, hidden_layer_sizes="26,25", max_iter=1000,
             for i in range(batch_no):
                 start = i * batch_size
                 end = start + batch_size
-                inputs = torch.FloatTensor(x[start:end]).to(device)
-                labels = torch.FloatTensor(y[start:end]).to(device)
+                inputs = torch.tensor(
+                    x[start:end], requires_grad=True, device=device)
+                labels = torch.tensor(
+                    y[start:end], requires_grad=True, device=device)
 
                 def step_torch():
                     optimizer.zero_grad()
@@ -154,7 +161,13 @@ def benchmark(N=1000, n_features=20, hidden_layer_sizes="26,25", max_iter=1000,
     running_loss0 = running_loss
 
     # ORTModule
-    nn_ort = ORTModule(Net(n_features, hidden_layer_sizes, 1))
+    nn = Net(n_features, hidden_layer_sizes, 1)
+    if device0 == 'cpu':
+        nn.cpu()
+    else:
+        nn.cuda(device=device)
+
+    nn_ort = ORTModule(nn)
     optimizer = torch.optim.SGD(nn_ort.parameters(), lr=learning_rate_init)
     criterion = torch.nn.MSELoss(size_average=False)    
 
@@ -165,8 +178,10 @@ def benchmark(N=1000, n_features=20, hidden_layer_sizes="26,25", max_iter=1000,
             for i in range(batch_no):
                 start = i * batch_size
                 end = start + batch_size
-                inputs = torch.FloatTensor(x[start:end]).to(device)
-                labels = torch.FloatTensor(y[start:end]).to(device)
+                inputs = torch.tensor(
+                    x[start:end], requires_grad=True, device=device)
+                labels = torch.tensor(
+                    y[start:end], requires_grad=True, device=device)
 
                 def step_ort():
                     optimizer.zero_grad()
