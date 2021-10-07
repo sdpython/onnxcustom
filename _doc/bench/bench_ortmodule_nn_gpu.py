@@ -22,7 +22,7 @@ And with `nvprof` on GPU:
 
 ::
 
-    nvprof -o bench_ortmodule_nn_gpu.nvprof python bench_ortmodule_nn_gpu.py --run_skl 0 --device cuda --opset 14
+    nvprof -o bench_ortmodule_nn_gpu.nvprof python bench_ortmodule_nn_gpu.py --run_torch 0 --device cuda --opset 14
 
 .. contents::
     :local:
@@ -47,7 +47,7 @@ from onnxruntime.training import ORTModule
 
 
 def benchmark(N=1000, n_features=20, hidden_layer_sizes="26,25", max_iter=1000,
-              learning_rate_init=1e-4, batch_size=100, run_skl=True,
+              learning_rate_init=1e-4, batch_size=100, run_torch=True,
               device='cpu', opset=14):
     """
     Compares :epkg:`onnxruntime-training` to :epkg:`scikit-learn` for
@@ -59,7 +59,7 @@ def benchmark(N=1000, n_features=20, hidden_layer_sizes="26,25", max_iter=1000,
     :param max_iter: number of iterations
     :param learning_rate_init: initial learning rate
     :param batch_size: batch size
-    :param run_skl: train scikit-learn in the same condition (True) or
+    :param run_torch: train scikit-learn in the same condition (True) or
         just walk through one iterator with *scikit-learn*
     :param device: `'cpu'` or `'cuda'`
     :param opset: opset to choose for the conversion
@@ -69,7 +69,7 @@ def benchmark(N=1000, n_features=20, hidden_layer_sizes="26,25", max_iter=1000,
     max_iter = int(max_iter)
     learning_rate_init = float(learning_rate_init)
     batch_size = int(batch_size)
-    run_skl = run_skl in (1, True, '1', 'True')
+    run_torch = run_torch in (1, True, '1', 'True')
 
     print("N=%d" % N)
     print("n_features=%d" % n_features)
@@ -77,10 +77,11 @@ def benchmark(N=1000, n_features=20, hidden_layer_sizes="26,25", max_iter=1000,
     print("max_iter=%d" % max_iter)
     print("learning_rate_init=%f" % learning_rate_init)
     print("batch_size=%d" % batch_size)
-    print("run_skl=%r" % run_skl)
-    print("opset=%r" % opset)
+    print("run_torch=%r" % run_torch)
+    print("opset=%r (unused)" % opset)
     print("device=%r" % device)
-    device = torch.device("cuda:0" if device == 'cuda' else "cpu")
+    device = torch.device(
+        "cuda:0" if device in ('cuda', 'cuda:0', 'gpu') else "cpu")
     print("fixed device=%r" % device)
     print('------------------')
 
@@ -129,10 +130,8 @@ def benchmark(N=1000, n_features=20, hidden_layer_sizes="26,25", max_iter=1000,
             for i in range(batch_no):
                 start = i * batch_size
                 end = start + batch_size
-                inputs = Variable(torch.FloatTensor(
-                    x[start:end], device=device))
-                labels = Variable(torch.FloatTensor(
-                    y[start:end], device=device))
+                inputs = torch.FloatTensor(x[start:end], device=device)
+                labels = torch.FloatTensor(y[start:end], device=device)
 
                 optimizer.zero_grad()
                 outputs = nn(inputs)
@@ -144,14 +143,15 @@ def benchmark(N=1000, n_features=20, hidden_layer_sizes="26,25", max_iter=1000,
         return running_loss
 
     begin = time.perf_counter()
-    running_loss = train_torch()
+    if run_torch:
+        running_loss = train_torch()
     dur_torch = time.perf_counter() - begin
 
     print("time_torch=%r, running_loss=%r" % (dur_torch, running_loss))
     running_loss0 = running_loss
 
     # ORTModule
-    nn_ort = ORTModule(nn)
+    nn_ort = ORTModule(Net(n_features, hidden_layer_sizes, 1))
     optimizer = torch.optim.SGD(nn_ort.parameters(), lr=learning_rate_init)
     criterion = torch.nn.MSELoss(size_average=False)    
 
@@ -162,10 +162,8 @@ def benchmark(N=1000, n_features=20, hidden_layer_sizes="26,25", max_iter=1000,
             for i in range(batch_no):
                 start = i * batch_size
                 end = start + batch_size
-                inputs = Variable(torch.FloatTensor(
-                    x[start:end], device=device))
-                labels = Variable(torch.FloatTensor(
-                    y[start:end], device=device))
+                inputs = torch.FloatTensor(x[start:end], device=device)
+                labels = torch.FloatTensor(y[start:end], device=device)
 
                 optimizer.zero_grad()
                 outputs = nn_ort(inputs)
