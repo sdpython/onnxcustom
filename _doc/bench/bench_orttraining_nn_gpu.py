@@ -5,11 +5,17 @@
 Benchmark onnxruntime-training on a neural network
 ==================================================
 
-You may profile the full example with:
+You may profile the full example with on CPU with :epkg:`py-spy`:
 
 ::
 
     py-spy record -o bench_orttraining_nn_gpu.svg -r 10 --native -- python bench_orttraining_nn_gpu.py
+
+And with `nvprof` on GPU:
+
+::
+
+    nvprof -o bench_orttraining_nn_gpu.nvprof python bench_orttraining_nn_gpu.py --run_skl 0 --device cuda --opset 14
 
 .. contents::
     :local:
