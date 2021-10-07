@@ -130,15 +130,18 @@ def benchmark(N=1000, n_features=20, hidden_layer_sizes="26,25", max_iter=1000,
             for i in range(batch_no):
                 start = i * batch_size
                 end = start + batch_size
-                inputs = torch.FloatTensor(x[start:end])  # .to(device)
-                labels = torch.FloatTensor(y[start:end])  # .to(device)
+                inputs = torch.FloatTensor(x[start:end]).to(device)
+                labels = torch.FloatTensor(y[start:end]).to(device)
 
-                optimizer.zero_grad()
-                outputs = nn(inputs)
-                loss = criterion(outputs, torch.unsqueeze(labels, dim=1))
-                loss.backward()
-                optimizer.step()
+                def step_torch():
+                    optimizer.zero_grad()
+                    outputs = nn(inputs)
+                    loss = criterion(outputs, torch.unsqueeze(labels, dim=1))
+                    loss.backward()
+                    optimizer.step()
+                    return loss
 
+                loss = step_torch()
                 running_loss += loss.item()
         return running_loss
 
@@ -162,15 +165,18 @@ def benchmark(N=1000, n_features=20, hidden_layer_sizes="26,25", max_iter=1000,
             for i in range(batch_no):
                 start = i * batch_size
                 end = start + batch_size
-                inputs = torch.FloatTensor(x[start:end])  # .to(device)
-                labels = torch.FloatTensor(y[start:end])  # .to(device)
+                inputs = torch.FloatTensor(x[start:end]).to(device)
+                labels = torch.FloatTensor(y[start:end]).to(device)
 
-                optimizer.zero_grad()
-                outputs = nn_ort(inputs)
-                loss = criterion(outputs, torch.unsqueeze(labels, dim=1))
-                loss.backward()
-                optimizer.step()
+                def step_ort():
+                    optimizer.zero_grad()
+                    outputs = nn_ort(inputs)
+                    loss = criterion(outputs, torch.unsqueeze(labels, dim=1))
+                    loss.backward()
+                    optimizer.step()
+                    return loss
 
+                loss = step_ort()
                 running_loss += loss.item()
         return running_loss
 
