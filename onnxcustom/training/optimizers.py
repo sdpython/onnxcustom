@@ -67,8 +67,9 @@ class OrtGradientOptimizer(BaseEstimator):
         * `'invscaling'`: `eta = eta0 / pow(t, power_t)`
     :param device: `'cpu'` or `'cuda'`
     :param device_idx: device index
-    :param warm_start: when set to True, reuse the solution of the previous call
-        to fit as initialization, otherwise, just erase the previous solution.
+    :param warm_start: when set to True, reuse the solution of the previous
+        call to fit as initialization, otherwise, just erase the previous
+        solution.
     :param verbose: use :epkg:`tqdm` to display the training progress
 
     Once initialized, the class creates the attribute
