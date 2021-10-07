@@ -73,7 +73,7 @@ def benchmark(N=1000, n_features=20, hidden_layer_sizes="25,25", max_iter=1000,
     X_train, X_test, y_train, y_test = train_test_split(X, y)
 
     nn = MLPRegressor(hidden_layer_sizes=hidden_layer_sizes,
-                      max_iter=max_iter if run_skl else max_iter,
+                      max_iter=max_iter if run_skl else 1,
                       solver='sgd', learning_rate_init=learning_rate_init,
                       n_iter_no_change=N, batch_size=batch_size)
 
