@@ -90,24 +90,28 @@ def benchmark(N=1000, n_features=20, hidden_layer_sizes="25,25", max_iter=1000,
     y = y.astype(numpy.float32)
     X_train, X_test, y_train, y_test = train_test_split(X, y)
 
+
     class Net(torch.nn.Module):
         def __init__(self, n_features, hidden, n_output):
             super(Net, self).__init__()
             self.hidden = []
             
             size = n_features
-            for hid in hidden_layer_sizes:
+            for i, hid in enumerate(hidden_layer_sizes):
                 self.hidden.append(torch.nn.Linear(size, hid))
                 size = hid
-            self.predict = torch.nn.Linear(size, n_output)
+                setattr(self, "hid%i", self.hidden[-1])
+            self.hidden.append(torch.nn.Linear(size, n_output))
+            setattr(self, "predict", self.hidden[-1])
 
         def forward(self, x):
             for hid in self.hidden:
                 x = hid(x)
-            x = F.relu(x)
-            return self.predict(x)
+                x = F.relu(x)
+            return x
 
     nn = Net(n_features, hidden_layer_sizes, 1)
+    print("n_parameters=%d" % len(list(nn.parameters())))
     
     optimizer = torch.optim.SGD(nn.parameters(), lr=learning_rate_init)
     criterion = torch.nn.MSELoss(size_average=False)
