@@ -16,7 +16,13 @@ You may profile the full example with on CPU with :epkg:`py-spy`:
 ::
 
     py-spy record -o bench_ortmodule_nn_gpu.svg -r 10 --native -- python bench_ortmodule_nn_gpu.py
-    py-spy record -o bench_ortmodule_nn_gpu.svg -r 10 --native -- python bench_ortmodule_nn_gpu.py
+    py-spy record -o bench_ortmodule_nn_gpu.svg -r 20 -- python bench_ortmodule_nn_gpu.py --n_features 100 --hidden_layer_sizes "30,30"
+
+The python can be profiled with :epkg:`pyinstrument`.
+
+::
+
+    python -m pyinstrument  --show-all -r html -o bench_ortmodule_nn_gpu.html bench_ortmodule_nn_gpu.py --n_features 100 --hidden_layer_sizes "30,30"
 
 And with `nvprof` on GPU:
 
@@ -48,7 +54,7 @@ from onnxruntime.training import ORTModule
 
 def benchmark(N=1000, n_features=20, hidden_layer_sizes="26,25", max_iter=1000,
               learning_rate_init=1e-4, batch_size=100, run_torch=True,
-              device='cpu', opset=14):
+              device='cpu', opset=12):
     """
     Compares :epkg:`onnxruntime-training` to :epkg:`scikit-learn` for
     training. Training algorithm is SGD.
@@ -73,7 +79,7 @@ def benchmark(N=1000, n_features=20, hidden_layer_sizes="26,25", max_iter=1000,
 
     print("N=%d" % N)
     print("n_features=%d" % n_features)
-    print("hidden_layer_sizes=%s" % hidden_layer_sizes)
+    print("hidden_layer_sizes=%r" % (hidden_layer_sizes, ))
     print("max_iter=%d" % max_iter)
     print("learning_rate_init=%f" % learning_rate_init)
     print("batch_size=%d" % batch_size)
@@ -86,7 +92,8 @@ def benchmark(N=1000, n_features=20, hidden_layer_sizes="26,25", max_iter=1000,
     print("fixed device=%r" % device)
     print('------------------')
 
-    hidden_layer_sizes = tuple(map(int, hidden_layer_sizes.split(",")))
+    if not isinstance(hidden_layer_sizes, tuple):
+        hidden_layer_sizes = tuple(map(int, hidden_layer_sizes.split(",")))
     X, y = make_regression(N, n_features=n_features, bias=2)
     X = X.astype(numpy.float32)
     y = y.astype(numpy.float32)
@@ -157,8 +164,11 @@ def benchmark(N=1000, n_features=20, hidden_layer_sizes="26,25", max_iter=1000,
         running_loss = train_torch()
     dur_torch = time.perf_counter() - begin
 
-    print("time_torch=%r, running_loss=%r" % (dur_torch, running_loss))
-    running_loss0 = running_loss
+    if run_torch:
+        print("time_torch=%r, running_loss=%r" % (dur_torch, running_loss))
+        running_loss0 = running_loss
+    else:
+        running_loss0 = -1
 
     # ORTModule
     nn = Net(n_features, hidden_layer_sizes, 1)

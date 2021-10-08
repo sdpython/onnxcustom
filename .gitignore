@@ -29,3 +29,5 @@ examples/onnxruntime_profile*.json
 version.txt
 _doc/bench/*.svg
 _doc/examples/*.svg
+_doc/bench/*.html
+_doc/examples/*.html
