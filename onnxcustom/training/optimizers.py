@@ -47,7 +47,7 @@ class OrtGradientOptimizer(BaseEstimator):
     Implements a simple :epkg:`Stochastic Gradient Descent`
     with :epkg:`onnxruntime-training`.
 
-    :param training_onnx: ONNX graph used to train
+    :param model_onnx: ONNX graph used to train
     :param weights_to_train: names of initializers to be optimized
     :param loss_output_name: name of the loss output
     :param max_iter: number of training iterations

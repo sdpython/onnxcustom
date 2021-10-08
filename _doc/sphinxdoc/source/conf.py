@@ -19,6 +19,10 @@ set_sphinx_variables(__file__, "onnxcustom", "Xavier Dupré", 2021,
                          issue=('https://github.com/sdpython/onnxcustom/issues/%s', 'issue')),
                      title="onnxcustom", book=True)
 
+extensions.append([
+    "sphinxcontrib.blockdiag"
+])
+
 blog_root = "http://www.xavierdupre.fr/app/onnxcustom/helpsphinx/"
 
 html_css_files = ['my-styles.css']
@@ -88,6 +92,7 @@ epkg_dictionary = {
     'onnxruntime-training':
         'https://github.com/microsoft/onnxruntime/tree/master/orttraining',
     'openmp': 'https://en.wikipedia.org/wiki/OpenMP',
+    'py-spy': 'https://github.com/benfred/py-spy',
     'pyinstrument': 'https://github.com/joerick/pyinstrument',
     'python': 'https://www.python.org/',
     'pytorch': 'https://pytorch.org/',
@@ -97,6 +102,7 @@ epkg_dictionary = {
     'sphinx-gallery': 'https://github.com/sphinx-gallery/sphinx-gallery',
     'Stochastic Gradient Descent':
         'https://en.wikipedia.org/wiki/Stochastic_gradient_descent',
+    'tqdm': 'https://github.com/tqdm/tqdm',
     'TreeEnsembleRegressor':
         'https://github.com/onnx/onnx/blob/master/docs/Operators-ml.md'
         '#ai.onnx.ml.TreeEnsembleRegressor',
