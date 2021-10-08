@@ -51,9 +51,9 @@ operators.
 .. toctree::
     :maxdepth: 1
 
-    tutorial
+    tutorial/index
     doc
-    api
+    api/index
     auto_examples/index
     dev
     versions

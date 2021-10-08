@@ -8,7 +8,7 @@ from onnx.helper import (
 from onnx.numpy_helper import to_array
 
 
-def unique_name(existing_names, name, add=True):
+def _unique_name(existing_names, name, add=True):
     """
     Returns a name different from any name in *existing_names*.
 
@@ -65,8 +65,8 @@ def add_loss_output(onx, score_name='squared_error',
         shape.append(d.dim_value if d.dim_value > 0 else None)
 
     if score_name == 'squared_error':
-        diff_name = unique_name(existing_names, "loss_diff")
-        diff2_name = unique_name(existing_names, "loss_diff")
+        diff_name = _unique_name(existing_names, "loss_diff")
+        diff2_name = _unique_name(existing_names, "loss_diff")
         nodes = [make_node('Sub', [output_name, label_name], [diff_name]),
                  make_node('Mul', [diff_name, diff_name], [diff2_name]),
                  make_node('ReduceSum', [diff2_name], [loss_name])]
