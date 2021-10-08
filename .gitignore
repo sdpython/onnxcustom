@@ -29,3 +29,9 @@ examples/onnxruntime_profile*.json
 version.txt
 _doc/bench/*.svg
 _doc/examples/*.svg
+_doc/bench/*.html
+_doc/examples/*.html
+_doc/examples/*.json
+_doc/sphinxdoc/source/phdoc_static/*.js
+_doc/sphinxdoc/source/phdoc_static/reveal.js/*
+_doc/sphinxdoc/source/phdoc_static/style_notebook_snippet.css

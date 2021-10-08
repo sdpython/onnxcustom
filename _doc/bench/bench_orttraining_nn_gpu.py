@@ -66,7 +66,7 @@ def benchmark(N=1000, n_features=20, hidden_layer_sizes="25,25", max_iter=1000,
 
     print("N=%d" % N)
     print("n_features=%d" % n_features)
-    print("hidden_layer_sizes=%s" % hidden_layer_sizes)
+    print("hidden_layer_sizes=%r" % (hidden_layer_sizes, ))
     print("max_iter=%d" % max_iter)
     print("learning_rate_init=%f" % learning_rate_init)
     print("batch_size=%d" % batch_size)
@@ -75,7 +75,8 @@ def benchmark(N=1000, n_features=20, hidden_layer_sizes="25,25", max_iter=1000,
     print("device=%r" % device)
     print('------------------')
 
-    hidden_layer_sizes = tuple(map(int, hidden_layer_sizes.split(",")))
+    if not isinstance(hidden_layer_sizes, tuple):
+        hidden_layer_sizes = tuple(map(int, hidden_layer_sizes.split(",")))
     X, y = make_regression(N, n_features=n_features, bias=2)
     X = X.astype(numpy.float32)
     y = y.astype(numpy.float32)
@@ -92,7 +93,7 @@ def benchmark(N=1000, n_features=20, hidden_layer_sizes="25,25", max_iter=1000,
         nn.fit(X_train, y_train)
     dur_skl = time.perf_counter() - begin
 
-    print("time_kl=%r, mean_squared_error=%r" % (
+    print("time_skl=%r, mean_squared_error=%r" % (
         dur_skl, mean_squared_error(y_train, nn.predict(X_train))))
 
     # conversion to ONNX
@@ -119,7 +120,7 @@ def benchmark(N=1000, n_features=20, hidden_layer_sizes="25,25", max_iter=1000,
     begin = time.perf_counter()
     train_session.fit(X, y)
     dur_ort = time.perf_counter() - begin
-    print("time_kl=%r, mean_squared_error=%r" % (
+    print("time_skl=%r, mean_squared_error=%r" % (
         dur_skl, mean_squared_error(y_train, nn.predict(X_train))))
     print("time_ort=%r, last_trained_error=%r" % (
         dur_ort, train_session.train_losses_[-1]))

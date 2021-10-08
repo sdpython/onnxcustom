@@ -11,6 +11,7 @@ init:
 install:
   - "%PYTHON%\\python -m pip install -r requirements.txt"
   - "%PYTHON%\\python -m pip install -r requirements-dev.txt"
+  - "%PYTHON%\\python -m pip install onnxruntime"
 build: off
 
 before_test:
