@@ -19,7 +19,7 @@ set_sphinx_variables(__file__, "onnxcustom", "Xavier Dupré", 2021,
                          issue=('https://github.com/sdpython/onnxcustom/issues/%s', 'issue')),
                      title="onnxcustom", book=True)
 
-extensions.append([
+extensions.extend([
     "sphinxcontrib.blockdiag"
 ])
 
