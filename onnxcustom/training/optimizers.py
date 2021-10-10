@@ -82,7 +82,7 @@ class OrtGradientOptimizer(BaseEstimator):
                  max_iter=100, training_optimizer_name='SGDOptimizer',
                  batch_size=10, eta0=0.01, alpha=0.0001, power_t=0.25,
                  learning_rate='invscaling', device='cpu', device_idx=0,
-                 warm_start=False, verbose=0):
+                 warm_start=False, verbose=0, validation_every=0.1):
         # See https://scikit-learn.org/stable/modules/generated/
         # sklearn.linear_model.SGDRegressor.html
         self.model_onnx = model_onnx
@@ -99,6 +99,10 @@ class OrtGradientOptimizer(BaseEstimator):
         self.device = device
         self.device_idx = device_idx
         self.warm_start = warm_start
+        if validation_every < 1:
+            self.validation_every = int(self.max_iter * validation_every)
+        else:
+            self.validation_every = validation_every
 
     def _init_learning_rate(self):
         self.eta0_ = self.eta0
@@ -117,7 +121,7 @@ class OrtGradientOptimizer(BaseEstimator):
             eta = self.eta0_ / numpy.power(t + 1, self.power_t)
         return eta
 
-    def fit(self, X, y):
+    def fit(self, X, y, X_val=None, y_val=None):
         """
         Trains the model.
         :param X: features
@@ -144,6 +148,11 @@ class OrtGradientOptimizer(BaseEstimator):
 
         data_loader = OrtDataLoader(
             X, y, batch_size=self.batch_size, device=self.device)
+        if X_val is not None:
+            data_loader_val = OrtDataLoader(
+                X_val, y_val, batch_size=X_val.shape[0], device=self.device)
+        else:
+            data_loader_val = None
         lr = self._init_learning_rate()
         self.input_names_ = [i.name for i in self.train_session_.get_inputs()]
         self.output_names_ = [
@@ -159,6 +168,7 @@ class OrtGradientOptimizer(BaseEstimator):
             loop = range(self.max_iter)
 
         train_losses = []
+        val_losses = []
         for it in loop:
             bind_lr = OrtValue.ortvalue_from_numpy(
                 numpy.array([lr / self.batch_size], dtype=numpy.float32),
@@ -170,7 +180,12 @@ class OrtGradientOptimizer(BaseEstimator):
                     "loss=%1.3g lr=%1.3g" % (  # pylint: disable=E1101,E1307
                         loss, lr))  # pylint: disable=E1101,E1307
             train_losses.append(loss)
+            if (data_loader_val is not None and
+                    (it + 1) % self.validation_every == 0):
+                val_losses.append(self._evaluation(data_loader_val, bind))
         self.train_losses_ = train_losses
+        self.validation_losses_ = (
+            None if data_loader_val is None else val_losses)
         self.trained_coef_ = self.train_session_.get_state()
         return self
 
@@ -206,6 +221,42 @@ class OrtGradientOptimizer(BaseEstimator):
             outputs = bind.copy_outputs_to_cpu()
             actual_losses.append(outputs[0] / data.shape()[0])
         return numpy.array(actual_losses).mean()
+
+    def _evaluation(self, data_loader, bind):
+        learning_rate = OrtValue.ortvalue_from_numpy(
+            numpy.array([1], dtype=numpy.float32),
+            self.device, self.device_idx)
+        actual_losses = []
+        for data, target in data_loader:
+
+            bind.bind_input(
+                name=self.input_names_[0],
+                device_type=self.device,
+                device_id=self.device_idx,
+                element_type=numpy.float32,
+                shape=data.shape(),
+                buffer_ptr=data.data_ptr())
+
+            bind.bind_input(
+                name=self.input_names_[1],
+                device_type=self.device,
+                device_id=self.device_idx,
+                element_type=numpy.float32,
+                shape=target.shape(),
+                buffer_ptr=target.data_ptr())
+
+            bind.bind_input(
+                name=self.input_names_[2],
+                device_type=learning_rate.device_name(), device_id=0,
+                element_type=numpy.float32, shape=learning_rate.shape(),
+                buffer_ptr=learning_rate.data_ptr())
+
+            bind.bind_output('loss')
+
+            self.train_session_.run_with_iobinding(bind)
+            outputs = bind.copy_outputs_to_cpu()
+            actual_losses.append(outputs[0])
+        return numpy.array(actual_losses).sum() / len(data_loader)
 
     def _create_training_session(
             self, training_onnx, weights_to_train,
