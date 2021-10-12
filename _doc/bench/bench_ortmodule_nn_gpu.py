@@ -143,6 +143,9 @@ def benchmark(N=1000, n_features=20, hidden_layer_sizes="26,25", max_iter=1000,
     batch_no = len(X_train) // batch_size
 
     # training
+    inputs = torch.tensor(
+        X_train[:1], requires_grad=True, device=device)
+    nn(inputs)
 
     def train_torch():
         for epoch in range(max_iter):
@@ -195,6 +198,11 @@ def benchmark(N=1000, n_features=20, hidden_layer_sizes="26,25", max_iter=1000,
     nn_ort = ORTModule(nn)
     optimizer = torch.optim.SGD(nn_ort.parameters(), lr=learning_rate_init)
     criterion = torch.nn.MSELoss(size_average=False)    
+
+    # exclude onnx conversion
+    inputs = torch.tensor(
+        X_train[:1], requires_grad=True, device=device)
+    nn_ort(inputs)
 
     def train_ort():
         for epoch in range(max_iter):
