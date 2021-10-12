@@ -1,0 +1,8 @@
+
+.. blogpost::
+    :title: First blog
+    :keywords: inégalités
+    :date: 2021-10-13
+    :categories: blog
+
+    :epkg:`onnxruntime-training`
