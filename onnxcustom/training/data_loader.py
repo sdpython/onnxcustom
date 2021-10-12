@@ -50,16 +50,23 @@ class OrtDataLoader:
         """
         N = 0
         b = len(self) - self.batch_size
-        while N < len(self):
-            i = numpy.random.randint(0, b)
-            N += self.batch_size
+        if b <= 0 or self.batch_size <= 0:
             yield (
                 OrtValue.ortvalue_from_numpy(
-                    self.X[i:i + self.batch_size],
-                    self.device, self.device_idx),
+                    self.X, self.device, self.device_idx),
                 OrtValue.ortvalue_from_numpy(
-                    self.y[i:i + self.batch_size],
-                    self.device, self.device_idx))
+                    self.y, self.device, self.device_idx))
+        else:
+            while N < len(self):
+                i = numpy.random.randint(0, b)
+                N += self.batch_size
+                yield (
+                    OrtValue.ortvalue_from_numpy(
+                        self.X[i:i + self.batch_size],
+                        self.device, self.device_idx),
+                    OrtValue.ortvalue_from_numpy(
+                        self.y[i:i + self.batch_size],
+                        self.device, self.device_idx))
 
     @property
     def data(self):
