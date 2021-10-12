@@ -18,6 +18,12 @@ You may profile the full example with on CPU with :epkg:`py-spy`:
     py-spy record -o bench_ortmodule_nn_gpu.svg -r 10 --native -- python bench_ortmodule_nn_gpu.py
     py-spy record -o bench_ortmodule_nn_gpu.svg -r 20 -- python bench_ortmodule_nn_gpu.py --n_features 100 --hidden_layer_sizes "30,30"
 
+Or the official profiler:
+
+::
+
+    python -m cProfile -o bench_ortmodule_nn_gpu.prof bench_ortmodule_nn_gpu.py --n_features 100 --hidden_layer_sizes "30,30"
+
 The python can be profiled with :epkg:`pyinstrument`.
 
 ::
@@ -40,6 +46,7 @@ A neural network with scikit-learn
 import warnings
 from pprint import pprint
 import time
+import os
 import numpy
 from pandas import DataFrame
 from onnxruntime import get_device
@@ -54,7 +61,7 @@ from onnxruntime.training import ORTModule
 
 def benchmark(N=1000, n_features=20, hidden_layer_sizes="26,25", max_iter=1000,
               learning_rate_init=1e-4, batch_size=100, run_torch=True,
-              device='cpu', opset=12):
+              device='cpu', opset=12, profile=True):
     """
     Compares :epkg:`onnxruntime-training` to :epkg:`scikit-learn` for
     training. Training algorithm is SGD.
@@ -69,6 +76,7 @@ def benchmark(N=1000, n_features=20, hidden_layer_sizes="26,25", max_iter=1000,
         just walk through one iterator with *scikit-learn*
     :param device: `'cpu'` or `'cuda'`
     :param opset: opset to choose for the conversion
+    :param profile: if True, run the profiler on training steps
     """
     N = int(N)
     n_features = int(n_features)
@@ -76,6 +84,7 @@ def benchmark(N=1000, n_features=20, hidden_layer_sizes="26,25", max_iter=1000,
     learning_rate_init = float(learning_rate_init)
     batch_size = int(batch_size)
     run_torch = run_torch in (1, True, '1', 'True')
+    profile = profile in (1, True, '1', 'True')
 
     print("N=%d" % N)
     print("n_features=%d" % n_features)
@@ -161,7 +170,13 @@ def benchmark(N=1000, n_features=20, hidden_layer_sizes="26,25", max_iter=1000,
 
     begin = time.perf_counter()
     if run_torch:
-        running_loss = train_torch()
+        if profile:
+            from pyquickhelper.pycode.profiling import profile
+            running_loss, prof, _ = profile(train_torch, return_results=True)
+            name = "%s.tch.prof" % os.path.split(__file__)[-1]
+            prof.dump_stats(name)
+        else:
+            running_loss = train_torch()
     dur_torch = time.perf_counter() - begin
 
     if run_torch:
@@ -206,7 +221,13 @@ def benchmark(N=1000, n_features=20, hidden_layer_sizes="26,25", max_iter=1000,
         return running_loss
 
     begin = time.perf_counter()
-    running_loss = train_ort()
+    if profile:
+        from pyquickhelper.pycode.profiling import profile
+        running_loss, prof, _ = profile(train_ort, return_results=True)
+        name = "%s.ort.prof" % os.path.split(__file__)[-1]
+        prof.dump_stats(name)
+    else:
+        running_loss = train_ort()
     dur_ort = time.perf_counter() - begin
 
     print("time_torch=%r, running_loss=%r" % (dur_torch, running_loss0))
