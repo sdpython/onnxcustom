@@ -173,7 +173,7 @@ def benchmark(N=1000, n_features=20, hidden_layer_sizes="26,25", max_iter=1000,
         if profile:
             from pyquickhelper.pycode.profiling import profile
             running_loss, prof, _ = profile(train_torch, return_results=True)
-            name = "%s.tch.prof" % os.path.split(__file__)[-1]
+            name = "%s.%s.tch.prof" % (device0, os.path.split(__file__)[-1])
             prof.dump_stats(name)
         else:
             running_loss = train_torch()
@@ -224,7 +224,7 @@ def benchmark(N=1000, n_features=20, hidden_layer_sizes="26,25", max_iter=1000,
     if profile:
         from pyquickhelper.pycode.profiling import profile
         running_loss, prof, _ = profile(train_ort, return_results=True)
-        name = "%s.ort.prof" % os.path.split(__file__)[-1]
+        name = "%s.%s.ort.prof" % (device0, os.path.split(__file__)[-1])
         prof.dump_stats(name)
     else:
         running_loss = train_ort()
