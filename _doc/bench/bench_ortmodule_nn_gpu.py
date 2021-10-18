@@ -100,6 +100,7 @@ def benchmark(N=1000, n_features=20, hidden_layer_sizes="26,25", max_iter=1000,
     print("run_torch=%r" % run_torch)
     print("opset=%r (unused)" % opset)
     print("device=%r" % device)
+    print("profile=%r" % profile)
     device0 = device
     device = torch.device(
         "cuda:0" if device in ('cuda', 'cuda:0', 'gpu') else "cpu")
@@ -177,7 +178,7 @@ def benchmark(N=1000, n_features=20, hidden_layer_sizes="26,25", max_iter=1000,
 
     begin = time.perf_counter()
     if run_torch:
-        if profile == 'cProfile':
+        if profile in ('cProfile', 'fct'):
             from pyquickhelper.pycode.profiling import profile
             running_loss, prof, _ = profile(train_torch, return_results=True)
             name = "%s.%s.tch.prof" % (device0, os.path.split(__file__)[-1])
@@ -244,7 +245,7 @@ def benchmark(N=1000, n_features=20, hidden_layer_sizes="26,25", max_iter=1000,
         return running_loss
 
     begin = time.perf_counter()
-    if profile == 'cProfile':
+    if profile in ('cProfile', 'fct'):
         from pyquickhelper.pycode.profiling import profile
         running_loss, prof, _ = profile(train_ort, return_results=True)
         name = "%s.%s.ort.prof" % (device0, os.path.split(__file__)[-1])
