@@ -180,6 +180,7 @@ def benchmark(N=1000, n_features=20, hidden_layer_sizes="26,25", max_iter=1000,
         if profile in ('cProfile', 'fct'):
             from pyquickhelper.pycode.profiling import profile
             running_loss, prof, _ = profile(train_torch, return_results=True)
+            dur_torch = time.perf_counter() - begin
             name = "%s.%s.tch.prof" % (device0, os.path.split(__file__)[-1])
             prof.dump_stats(name)
         elif profile == 'event':
@@ -190,12 +191,15 @@ def benchmark(N=1000, n_features=20, hidden_layer_sizes="26,25", max_iter=1000,
             prof = WithEventProfiler(size=10000000, clean_file_name=clean_name)
             with prof:
                 running_loss = train_torch()
-            profile = prof.report
+            dur_torch = time.perf_counter() - begin
+            df = prof.report
             name = "%s.%s.tch.csv" % (device0, os.path.split(__file__)[-1])
             df.to_csv(name, index=False)
         else:
             running_loss = train_torch()
-    dur_torch = time.perf_counter() - begin
+            dur_torch = time.perf_counter() - begin
+    else:
+        dur_torch = time.perf_counter() - begin
 
     if run_torch:
         print("time_torch=%r, running_loss=%r" % (dur_torch, running_loss))
@@ -247,6 +251,7 @@ def benchmark(N=1000, n_features=20, hidden_layer_sizes="26,25", max_iter=1000,
     if profile in ('cProfile', 'fct'):
         from pyquickhelper.pycode.profiling import profile
         running_loss, prof, _ = profile(train_ort, return_results=True)
+        dur_ort = time.perf_counter() - begin
         name = "%s.%s.ort.prof" % (device0, os.path.split(__file__)[-1])
         prof.dump_stats(name)
     elif profile == 'event':
@@ -257,12 +262,13 @@ def benchmark(N=1000, n_features=20, hidden_layer_sizes="26,25", max_iter=1000,
         prof = WithEventProfiler(size=10000000, clean_file_name=clean_name)
         with prof:
             running_loss = train_ort()
-        profile = prof.report
+        dur_ort = time.perf_counter() - begin
+        df = prof.report
         name = "%s.%s.ort.csv" % (device0, os.path.split(__file__)[-1])
         df.to_csv(name, index=False)
     else:
         running_loss = train_ort()
-    dur_ort = time.perf_counter() - begin
+        dur_ort = time.perf_counter() - begin
 
     print("time_torch=%r, running_loss=%r" % (dur_torch, running_loss0))
     print("time_ort=%r, last_trained_error=%r" % (dur_ort, running_loss))
