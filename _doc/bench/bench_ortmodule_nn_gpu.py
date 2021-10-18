@@ -36,6 +36,10 @@ And with `nvprof` on GPU:
 
     nvprof -o bench_ortmodule_nn_gpu.nvprof python bench_ortmodule_nn_gpu.py --run_torch 0 --device cuda --opset 14
 
+::
+
+    nvprof -o bench_ortmodule_nn_gpu.sql python bench_ortmodule_nn_gpu.py --profile event --device cuda --opset 14
+
 .. contents::
     :local:
 
@@ -50,6 +54,7 @@ import os
 import numpy
 from pandas import DataFrame
 from onnxruntime import get_device
+from cpyquickhelper.profiling import WithEventProfiler
 from sklearn.datasets import make_regression
 from sklearn.model_selection import train_test_split
 from sklearn.utils import shuffle
@@ -61,7 +66,7 @@ from onnxruntime.training import ORTModule
 
 def benchmark(N=1000, n_features=20, hidden_layer_sizes="26,25", max_iter=1000,
               learning_rate_init=1e-4, batch_size=100, run_torch=True,
-              device='cpu', opset=12, profile=True):
+              device='cpu', opset=12, profile='fct'):
     """
     Compares :epkg:`onnxruntime-training` to :epkg:`scikit-learn` for
     training. Training algorithm is SGD.
@@ -76,7 +81,7 @@ def benchmark(N=1000, n_features=20, hidden_layer_sizes="26,25", max_iter=1000,
         just walk through one iterator with *scikit-learn*
     :param device: `'cpu'` or `'cuda'`
     :param opset: opset to choose for the conversion
-    :param profile: if True, run the profiler on training steps
+    :param profile: 'fct' to use cProfile, 'event' to use WithEventProfiler
     """
     N = int(N)
     n_features = int(n_features)
@@ -108,12 +113,11 @@ def benchmark(N=1000, n_features=20, hidden_layer_sizes="26,25", max_iter=1000,
     y = y.astype(numpy.float32)
     X_train, X_test, y_train, y_test = train_test_split(X, y)
 
-
     class Net(torch.nn.Module):
         def __init__(self, n_features, hidden, n_output):
             super(Net, self).__init__()
             self.hidden = []
-            
+
             size = n_features
             for i, hid in enumerate(hidden_layer_sizes):
                 self.hidden.append(torch.nn.Linear(size, hid))
@@ -137,7 +141,7 @@ def benchmark(N=1000, n_features=20, hidden_layer_sizes="26,25", max_iter=1000,
         len(list(nn.parameters())), len(nn.hidden)))
     for i, p in enumerate(nn.parameters()):
         print("  p[%d].shape=%r" % (i, p.shape))
-    
+
     optimizer = torch.optim.SGD(nn.parameters(), lr=learning_rate_init)
     criterion = torch.nn.MSELoss(size_average=False)
     batch_no = len(X_train) // batch_size
@@ -173,11 +177,22 @@ def benchmark(N=1000, n_features=20, hidden_layer_sizes="26,25", max_iter=1000,
 
     begin = time.perf_counter()
     if run_torch:
-        if profile:
+        if profile == 'cProfile':
             from pyquickhelper.pycode.profiling import profile
             running_loss, prof, _ = profile(train_torch, return_results=True)
             name = "%s.%s.tch.prof" % (device0, os.path.split(__file__)[-1])
             prof.dump_stats(name)
+        elif profile == 'event':
+
+            def clean_name(x):
+                return "/".join(x.replace("\\", "/").split('/')[-3:])
+
+            prof = WithEventProfiler(size=10000000, clean_file_name=clean_name)
+            with prof:
+                running_loss = train_torch()
+            profile = prof.report
+            name = "%s.%s.tch.csv" % (device0, os.path.split(__file__)[-1])
+            df.to_csv(name, index=False)
         else:
             running_loss = train_torch()
     dur_torch = time.perf_counter() - begin
@@ -197,7 +212,7 @@ def benchmark(N=1000, n_features=20, hidden_layer_sizes="26,25", max_iter=1000,
 
     nn_ort = ORTModule(nn)
     optimizer = torch.optim.SGD(nn_ort.parameters(), lr=learning_rate_init)
-    criterion = torch.nn.MSELoss(size_average=False)    
+    criterion = torch.nn.MSELoss(size_average=False)
 
     # exclude onnx conversion
     inputs = torch.tensor(
@@ -229,11 +244,22 @@ def benchmark(N=1000, n_features=20, hidden_layer_sizes="26,25", max_iter=1000,
         return running_loss
 
     begin = time.perf_counter()
-    if profile:
+    if profile == 'cProfile':
         from pyquickhelper.pycode.profiling import profile
         running_loss, prof, _ = profile(train_ort, return_results=True)
         name = "%s.%s.ort.prof" % (device0, os.path.split(__file__)[-1])
         prof.dump_stats(name)
+    elif profile == 'event':
+
+        def clean_name(x):
+            return "/".join(x.replace("\\", "/").split('/')[-3:])
+
+        prof = WithEventProfiler(size=10000000, clean_file_name=clean_name)
+        with prof:
+            running_loss = train_ort()
+        profile = prof.report
+        name = "%s.%s.ort.csv" % (device0, os.path.split(__file__)[-1])
+        df.to_csv(name, index=False)
     else:
         running_loss = train_ort()
     dur_ort = time.perf_counter() - begin
