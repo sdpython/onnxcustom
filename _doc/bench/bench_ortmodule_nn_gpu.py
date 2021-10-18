@@ -89,7 +89,6 @@ def benchmark(N=1000, n_features=20, hidden_layer_sizes="26,25", max_iter=1000,
     learning_rate_init = float(learning_rate_init)
     batch_size = int(batch_size)
     run_torch = run_torch in (1, True, '1', 'True')
-    profile = profile in (1, True, '1', 'True')
 
     print("N=%d" % N)
     print("n_features=%d" % n_features)
