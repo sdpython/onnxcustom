@@ -3,6 +3,7 @@ category_encoders
 codecov
 coverage
 cpyquickhelper
+cxxfilt
 flake8
 joblib
 jupyter_sphinx
