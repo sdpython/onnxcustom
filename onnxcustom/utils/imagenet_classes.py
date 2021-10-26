@@ -3,6 +3,15 @@
 @brief Informations related to the :epkg:`ImageNet` competition.
 """
 
+
+def get_class_names():
+    """
+    Returns the class names for the :epkg:`ImageNet`
+    competition as a dictionary.
+    """
+    return class_names
+
+
 class_names = {
     0: 'tench, Tinca tinca',
     1: 'goldfish, Carassius auratus',

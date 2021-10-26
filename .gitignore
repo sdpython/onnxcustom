@@ -36,3 +36,4 @@ _doc/examples/*.json
 _doc/sphinxdoc/source/phdoc_static/*.js
 _doc/sphinxdoc/source/phdoc_static/reveal.js/*
 _doc/sphinxdoc/source/phdoc_static/style_notebook_snippet.css
+_unittests/ut_utils/t.*

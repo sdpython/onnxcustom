@@ -55,6 +55,7 @@ operators.
     doc
     api/index
     auto_examples/index
+    i_cmd
     dev
     versions
 

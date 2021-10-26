@@ -3,6 +3,7 @@ category_encoders
 codecov
 coverage
 cpyquickhelper
+cxxfilt
 flake8
 joblib
 jupyter_sphinx
@@ -17,6 +18,7 @@ onnxmltools
 pillow
 py-spy
 pandas
+pandas_streaming>=0.3
 pydot
 pyinstrument
 pylint

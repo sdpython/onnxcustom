@@ -63,9 +63,17 @@ custom_preamble = """\n
 imgmath_latex_preamble += custom_preamble
 latex_elements['preamble'] += custom_preamble
 
-epkg_dictionary = {
+intersphinx_mapping.update({
+    'pandas_streaming':
+        ('http://www.xavierdupre.fr/app/pyquickhelper/helpsphinx/', None),
+})
+
+
+epkg_dictionary.update({
     'C': 'https://en.wikipedia.org/wiki/C_(programming_language)',
     'C++': 'https://en.wikipedia.org/wiki/C%2B%2B',
+    'chrome-tracing':
+        'https://www.chromium.org/developers/how-tos/trace-event-profiling-tool',
     'cython': 'https://cython.org/',
     'DOT': 'https://www.graphviz.org/doc/info/lang.html',
     'ImageNet': 'http://www.image-net.org/',
@@ -77,6 +85,7 @@ epkg_dictionary = {
         'https://scikit-learn.org/stable/modules/generated/'
         'sklearn.decomposition.NMF.html',
     'numpy': 'https://numpy.org/',
+    'nvprof': 'https://docs.nvidia.com/cuda/profiler-users-guide/index.html',
     'onnx': 'https://github.com/onnx/onnx',
     'ONNX': 'https://onnx.ai/',
     'ONNX operators':
@@ -92,6 +101,8 @@ epkg_dictionary = {
     'onnxruntime-training':
         'https://github.com/microsoft/onnxruntime/tree/master/orttraining',
     'openmp': 'https://en.wikipedia.org/wiki/OpenMP',
+    'pandas_streaming':
+        'http://www.xavierdupre.fr/app/pandas_streaming/helpsphinx/index.html',
     'py-spy': 'https://github.com/benfred/py-spy',
     'pyinstrument': 'https://github.com/joerick/pyinstrument',
     'python': 'https://www.python.org/',
@@ -108,7 +119,7 @@ epkg_dictionary = {
         '#ai.onnx.ml.TreeEnsembleRegressor',
     'xgboost': 'https://xgboost.readthedocs.io/en/latest/',
     'XGBoost': 'https://xgboost.readthedocs.io/en/latest/',
-}
+})
 
 nblinks = {
     'alter_pipeline_for_debugging': 'http://www.xavierdupre.fr/app/onnxcustom/helpsphinx/onnxcustom/helpers/pipeline.html#onnxcustom.helpers.pipeline.alter_pipeline_for_debugging',
