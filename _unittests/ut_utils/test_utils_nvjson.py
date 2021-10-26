@@ -3,9 +3,6 @@
 """
 import os
 import unittest
-import datetime
-import numpy
-import pandas
 from pyquickhelper.pycode import ExtTestCase, get_temp_folder
 from onnxcustom.utils.nvprof2json import (
     convert_trace_to_json, json_to_dataframe,
@@ -49,14 +46,15 @@ class TestConvertTraceToJson(ExtTestCase):
         dfs2 = json_to_dataframe_streaming(output, chunksize=100)
         with open(output, "r", encoding="utf-8") as f:
             dfs3 = json_to_dataframe_streaming(f, chunksize=100)
-
-        print(df.columns)
-        print(df.dtypes)
-        print(df.head().T)
-        print(set(df['pid']))
-        print(set(df['cat']))
-        from pprint import pprint
-        pprint(set(df['tid']))
+            shape3 = dfs3.shape
+        shape2 = dfs2.shape
+        self.assertEqual(shape2, shape3)
+        cols = list(df.columns)
+        self.assertEqual(cols,
+                         ['name', 'ph', 'cat', 'ts',
+                          'dur', 'tid', 'pid', 'args', 'ts_sec'])
+        self.assertEqual(set(df.ph), {'X'})
+        self.assertEqual(set(df.cat), {'cuda'})
 
 
 if __name__ == "__main__":

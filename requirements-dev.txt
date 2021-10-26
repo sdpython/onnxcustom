@@ -17,6 +17,7 @@ onnxmltools
 pillow
 py-spy
 pandas
+pandas_streaming>=0.3
 pydot
 pyinstrument
 pylint

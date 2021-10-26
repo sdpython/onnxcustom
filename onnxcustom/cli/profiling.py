@@ -5,7 +5,8 @@
 from ..utils.nvprof2json import convert_trace_to_json
 
 
-def nvprof2json(filename, output="", temporary_file="", verbose=1):
+def nvprof2json(filename, output="", temporary_file="", verbose=1,
+                fLOG=print):
     """
     Converts traces produced by :epkg:`nvprof` and saved with
     format *sqlite3* (extension `.sql`).
@@ -19,9 +20,21 @@ def nvprof2json(filename, output="", temporary_file="", verbose=1):
     :param verbose: verbosity
     :param fLOG: logging function
     :return: json (if output is None, the list of events otherwise)
+
+    .. cmdref::
+        :title: Converts a profile stored by :epkg:`nvprof` into json
+        :cmd: onnxcustom.cli.profiling:nvprof2json
+
+        The sqlite dump is generated with a command line similar to:
+
+        ::
+
+            nvprof -o gpu_profile.sql python plot_gpu_training.py
+
+        The command produces a json file following the 'Trace Event Format'.
     """
     verbose = int(verbose)
     res = convert_trace_to_json(filename, output, verbose=verbose,
-                                temporary_file=temporary_file, fLOG=print)
+                                temporary_file=temporary_file, fLOG=fLOG)
     if output is None:
-        print(res)
+        fLOG(res)
