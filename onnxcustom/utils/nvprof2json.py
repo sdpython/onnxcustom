@@ -131,9 +131,11 @@ def convert_trace_to_json(filename, output=None, temporary_file=None,
                 "end.timestamp AS end_time"
             ]),
             "FROM",
-            "(SELECT * FROM CUPTI_ACTIVITY_KIND_MARKER WHERE name != 0) AS start",
+            "(SELECT * FROM CUPTI_ACTIVITY_KIND_MARKER WHERE name != 0) "
+            "AS start",
             "LEFT JOIN",
-            "(SELECT * FROM CUPTI_ACTIVITY_KIND_MARKER WHERE name = 0) AS end",
+            "(SELECT * FROM CUPTI_ACTIVITY_KIND_MARKER WHERE name = 0) "
+            "AS end",
             "ON start.id = end.id"])):
         event = {
             "name": strings[row["name"]],
@@ -260,7 +262,8 @@ def convert_trace_to_json(filename, output=None, temporary_file=None,
             "dur": _munge_time(row["end"] - row["start"]),
             "tid": "Compute",
             # lookup GPU name?
-            "pid": "[{}:{}] Overview".format(row["deviceId"], row["contextId"]),
+            "pid": "[{}:{}] Overview".format(
+                row["deviceId"], row["contextId"]),
             "args": {
                 "Grid size": "[ {}, {}, {} ]".format(
                     row["gridX"], row["gridY"], row["gridZ"]),
@@ -695,9 +698,12 @@ def json_to_dataframe_streaming(js, chunksize=100000, flatten=False, **kwargs):
     The function relies on :epkg:`pandas_streaming`.
 
     :param js: a filename, a json string, a stream containing json
-    :param chunksize: see :func:`pandas_streaming.df.StreamingDataFrame.read_json`
-    :param flatten: see :func:`pandas_streaming.df.StreamingDataFrame.read_json`
-    :param kwargs: see :func:`pandas_streaming.df.StreamingDataFrame.read_json`
+    :param chunksize:
+        see :func:`pandas_streaming.df.StreamingDataFrame.read_json`
+    :param flatten:
+        see :func:`pandas_streaming.df.StreamingDataFrame.read_json`
+    :param kwargs:
+        see :func:`pandas_streaming.df.StreamingDataFrame.read_json`
     :return: a dataframe
     """
     from pandas_streaming.df import StreamingDataFrame  # pylint: disable=C0415
