@@ -274,7 +274,8 @@ def convert_trace_to_json(filename, output=None, temporary_file=None,
             fLOG("[convert_trace_to_json] converting into json in %r"
                  "." % output)
         with open(output, "w", encoding="utf-8") as f:
-            json.dump(traceEvents, f)
+            json.dump(traceEvents, f, separators=(',\n', ':'))
+            f.write('\n')
         if verbose > 0 and fLOG is not None:
             fLOG("[convert_trace_to_json] done.")
         return traceEvents
@@ -282,7 +283,8 @@ def convert_trace_to_json(filename, output=None, temporary_file=None,
         if verbose > 0 and fLOG is not None:
             fLOG("[convert_trace_to_json] converting into json.")
         st = io.StringIO()
-        json.dump(traceEvents, st)
+        json.dump(traceEvents, st, separators=(',\n', ':'))
+        st.write('\n')
         if verbose > 0 and fLOG is not None:
             fLOG("[convert_trace_to_json] done.")
             fLOG(st.getvalue())
@@ -662,7 +664,7 @@ def json_to_dataframe(js):
     :param js: a filename, a json string, a stream containing json
     :return: a dataframe
     """
-    if isinstance(js, str):
+    if isinstance(js, str) and os.path.exists(js):
         if len(js) < 5000:
             df = pandas.read_json(js)
         else:
@@ -671,9 +673,7 @@ def json_to_dataframe(js):
     else:
         df = pandas.read_json(js)
 
-    # converts timestamp
-    df['ts2'] = df['ts'].apply(
-        lambda t: datetime.datetime.fromtimestamp(t / 1e9))
+    df['ts2'] = df['ts'].apply(lambda t: t / 1e9)
     return df
 
 
@@ -693,7 +693,7 @@ def json_to_dataframe_streaming(js, chunksize=100000, flatten=False, **kwargs):
     """
     from pandas_streaming.df import StreamingDataFrame  # pylint: disable=C0415
     if isinstance(js, str):
-        if len(js) < 5000:
+        if len(js) < 5000 and os.path.exists(js):
             sdf = StreamingDataFrame.read_json(js)
         else:
             raise RuntimeError(
@@ -702,9 +702,5 @@ def json_to_dataframe_streaming(js, chunksize=100000, flatten=False, **kwargs):
     else:
         sdf = StreamingDataFrame.read_json(js)
 
-    # converts timestamp
-    r = sdf['ts'].apply(lambda t: datetime.datetime.fromtimestamp(t / 1e9))
-    print(r.head())
-    sdf['ts2'] = sdf['ts'].apply(
-        lambda t: datetime.datetime.fromtimestamp(t / 1e9))
+    sdf['ts2'] = sdf['ts'].apply(lambda t: t / 1e9)
     return sdf
