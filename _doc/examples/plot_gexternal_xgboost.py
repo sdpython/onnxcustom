@@ -57,7 +57,7 @@ pipe.fit(X, y)
 try:
     convert_sklearn(pipe, 'pipeline_xgboost',
                     [('input', FloatTensorType([None, 2]))],
-                    target_opset=12)
+                    target_opset=14)
 except Exception as e:
     print(e)
 
@@ -94,7 +94,7 @@ update_registered_converter(
 model_onnx = convert_sklearn(
     pipe, 'pipeline_xgboost',
     [('input', FloatTensorType([None, 2]))],
-    target_opset=12)
+    target_opset=14)
 
 # And save.
 with open("pipeline_xgboost.onnx", "wb") as f:
@@ -181,7 +181,8 @@ param = {'objective': 'multi:softmax', 'num_class': 3}
 bst = train_xgb(param, dtrain, 10)
 
 initial_type = [('float_input', FloatTensorType([None, X_train.shape[1]]))]
-onx = convert_xgboost_booster(bst, "name", initial_types=initial_type)
+onx = convert_xgboost_booster(bst, "name", initial_types=initial_type,
+                              target_opset=14)
 
 sess = rt.InferenceSession(onx.SerializeToString())
 input_name = sess.get_inputs()[0].name
