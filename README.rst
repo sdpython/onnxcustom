@@ -66,19 +66,13 @@ Generate the documentation in folder ``dist/html``:
 
 ::
 
-    python -m sphinx -T -b html doc dist/html
+    python setup.py build_sphinx
 
 Run the unit tests:
 
 ::
 
-    python -m unittest discover tests
-
-Or:
-
-::
-
-    python -m pytest
+    python setup.py unittests
 
 To check style:
 
