@@ -54,7 +54,7 @@ operators.
     tutorial/index
     doc
     api/index
-    auto_examples/index
+    gyexamples/index
     i_cmd
     dev
     versions
