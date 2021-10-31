@@ -1,6 +1,6 @@
 
-Traning
-=======
+Training
+========
 
 .. contents::
     :local:

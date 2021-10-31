@@ -30,7 +30,7 @@ class BaseEstimator:
         ps = []
         for k, v in param:
             if k not in self.__dict__:
-                continue
+                continue  # pragma: no cover
             ov = getattr(self, k)
             if v is not inspect._empty or ov != v:
                 ro = repr(ov)
@@ -297,7 +297,8 @@ class OrtGradientOptimizer(BaseEstimator):
         elif device.startswith("cuda"):
             provider = ['CUDAExecutionProvider']
         else:
-            raise ValueError("Unexpected device %r." % device)
+            raise ValueError(  # pragma: no cover
+                "Unexpected device %r." % device)
 
         session = TrainingSession(
             training_onnx.SerializeToString(), ort_parameters, session_options,
@@ -318,5 +319,6 @@ class OrtGradientOptimizer(BaseEstimator):
         Changes the trained weights.
         """
         if not hasattr(self, 'train_session_'):
-            raise AttributeError("Method fit must be called before.")
+            raise AttributeError(  # pragma: no cover
+                "Method fit must be called before.")
         return self.train_session_.load_state(state)

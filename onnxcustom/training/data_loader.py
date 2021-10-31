@@ -25,7 +25,7 @@ class OrtDataLoader:
         if len(y.shape) == 1:
             y = y.reshape((-1, 1))
         if X.shape[0] != y.shape[0]:
-            raise ValueError(
+            raise ValueError(  # pragma: no cover
                 "Shape mismatch X.shape=%r, y.shape=%r." % (X.shape, y.shape))
         self.X = numpy.ascontiguousarray(X)
         self.y = numpy.ascontiguousarray(y)

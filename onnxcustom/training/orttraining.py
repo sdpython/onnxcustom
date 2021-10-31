@@ -48,7 +48,7 @@ def add_loss_output(onx, score_name='squared_error',
     """
     outputs = onx.graph.output
     if len(outputs) != 1:
-        raise ValueError(
+        raise ValueError(  # pragma: no cover
             "Unable to guess the output to compare to the "
             "expacted labels among %r." % (o.name for o in outputs))
 
@@ -74,7 +74,7 @@ def add_loss_output(onx, score_name='squared_error',
         inputs = [make_tensor_value_info('label', elem, shape)]
         outputs = [make_tensor_value_info('loss', elem, [1, 1])]
     else:
-        raise NotImplementedError(
+        raise NotImplementedError(  # pragma: no cover
             "Unexpected %r value for score_name." % score_name)
 
     graph = make_graph(
