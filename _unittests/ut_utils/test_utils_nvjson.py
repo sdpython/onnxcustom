@@ -4,6 +4,7 @@
 import os
 import unittest
 from pyquickhelper.pycode import ExtTestCase, get_temp_folder
+from pyquickhelper.loghelper.buffered_flog import BufferedPrint
 from onnxcustom.utils.nvprof2json import (
     convert_trace_to_json, json_to_dataframe,
     json_to_dataframe_streaming)
@@ -30,7 +31,10 @@ class TestConvertTraceToJson(ExtTestCase):
                             "bench_ortmodule_nn_gpu.sql.zip")
         output = os.path.join(temp, "bench_ortmodule_nn_gpu.json")
         tempf = os.path.join(temp, "bench_ortmodule_nn_gpu.sql")
-        convert_trace_to_json(data, output=output, temporary_file=tempf)
+        buf = BufferedPrint()
+        convert_trace_to_json(data, output=output, temporary_file=tempf,
+                              verbose=1, fLOG=buf.fprint)
+        self.assertIn("step 1 begin.", str(buf))
         jst = convert_trace_to_json(data, temporary_file=tempf)
         self.assertExists(output)
         self.assertExists(tempf)

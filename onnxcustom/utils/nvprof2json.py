@@ -46,12 +46,14 @@ def convert_trace_to_json(filename, output=None, temporary_file=None,
             temporary_file = filename + ".unzipped"
         if os.path.exists(temporary_file):
             if verbose > 0 and fLOG is not None:
-                fLOG("[convert_trace_to_json] %r already unzipped into %r"
-                     "." % (filename, temporary_file))
+                fLOG(  # pragma: no cover
+                    "[convert_trace_to_json] %r already unzipped into %r"
+                    "." % (filename, temporary_file))
         else:
             if verbose > 0 and fLOG is not None:
-                fLOG("[convert_trace_to_json] unzipping to file %r"
-                     "." % temporary_file)
+                fLOG(  # pragma: no cover
+                    "[convert_trace_to_json] unzipping to file %r"
+                    "." % temporary_file)
             zipf = zipfile.ZipFile(filename)
             names = zipf.namelist()
             if len(names) != 1:
@@ -91,7 +93,7 @@ def convert_trace_to_json(filename, output=None, temporary_file=None,
     for row in conn.execute("SELECT * FROM CUPTI_ACTIVITY_KIND_RUNTIME"):
         try:
             cbid = Cbids(row["cbid"]).name
-        except ValueError:
+        except ValueError:  # pragma: no cover
             cbid = str(row["cbid"])
             if verbose > 0 and fLOG is None:
                 fLOG("[convert_trace_to_json] unrecognized cbid %r." % cbid)
@@ -311,7 +313,7 @@ def _demangle(name):
     """Demangle a C++ identifier using c++filt"""
     try:
         return cxxfilt.demangle(name)
-    except cxxfilt.LibraryNotFound:
+    except cxxfilt.LibraryNotFound:  # pragma: no cover
         # One library is missing.
         return name
 
@@ -663,8 +665,8 @@ def _sizeof_fmt(num, suffix='B'):
     for unit in ['', 'K', 'M', 'G', 'T', 'P', 'E', 'Z']:
         if abs(num) < 1000.0:
             return "%3.1f%s%s" % (num, unit, suffix)
-        num /= 1000.0
-    return "%.1f%s%s" % (num, 'Y', suffix)
+        num /= 1000.0  # pragma: no cover
+    return "%.1f%s%s" % (num, 'Y', suffix)  # pragma: no cover
 
 
 def json_to_dataframe(js):
@@ -679,7 +681,7 @@ def json_to_dataframe(js):
     if isinstance(js, str) and os.path.exists(js):
         if len(js) < 5000:
             df = pandas.read_json(js)
-        else:
+        else:  # pragma: no cover
             st = io.StringIO(js)
             df = pandas.read_json(st)
     else:

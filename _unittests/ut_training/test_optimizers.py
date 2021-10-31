@@ -47,6 +47,34 @@ class TestOptimizers(ExtTestCase):
         self.assertFalse(any(map(numpy.isnan, losses)))
 
     @unittest.skipIf(TrainingSession is None, reason="not training")
+    def test_ort_gradient_optimizers_optimal(self):
+        from onnxcustom.training.orttraining import add_loss_output
+        from onnxcustom.training.optimizers import OrtGradientOptimizer
+        X, y = make_regression(  # pylint: disable=W0632
+            100, n_features=10, bias=2)
+        X = X.astype(numpy.float32)
+        y = y.astype(numpy.float32)
+        X_train, _, y_train, __ = train_test_split(X, y)
+        reg = LinearRegression()
+        reg.fit(X_train, y_train)
+        onx = to_onnx(reg, X_train, target_opset=opset,
+                      black_op={'LinearRegressor'})
+        onx_loss = add_loss_output(onx)
+        inits = ['intercept', 'coef']
+        train_session = OrtGradientOptimizer(
+            onx_loss, inits, learning_rate='optimal', max_iter=10)
+        self.assertRaise(lambda: train_session.get_state(), AttributeError)
+        train_session.fit(X, y)
+        state_tensors = train_session.get_state()
+        self.assertEqual(len(state_tensors), 2)
+        r = repr(train_session)
+        self.assertIn("OrtGradientOptimizer(model_onnx=", r)
+        self.assertIn("learning_rate='optimal'", r)
+        losses = train_session.train_losses_
+        self.assertGreater(len(losses), 1)
+        self.assertFalse(any(map(numpy.isnan, losses)))
+
+    @unittest.skipIf(TrainingSession is None, reason="not training")
     def test_ort_gradient_optimizers_evaluation(self):
         from onnxcustom.training.orttraining import add_loss_output
         from onnxcustom.training.optimizers import OrtGradientOptimizer

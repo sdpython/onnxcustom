@@ -26,6 +26,7 @@ class TestDataLoadeer(ExtTestCase):
             n += 1
         self.assertEqual(n, 20)
         self.assertStartsWith("OrtDataLoader(...", repr(data))
+        self.assertIsInstance(data.data, tuple)
 
 
 if __name__ == "__main__":
