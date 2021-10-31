@@ -57,7 +57,9 @@ operators.
     gyexamples/index
     i_cmd
     dev
-    versions
+    HISTORY
+    license
+    other_pages
 
 Sources available on
 `github/onnxcustom <https://github.com/sdpython/onnxcustom>`_.
