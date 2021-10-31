@@ -5,7 +5,10 @@
 History
 =======
 
-current - 2021-10-27 - 0.00Mb
+current - 2021-10-31 - 0.00Mb
+=============================
+
+0.2.117 - 2021-10-26 - 0.03Mb
 =============================
 
 * #11: Automates nvprof logs retrieval (2021-10-26)
@@ -17,7 +20,8 @@ current - 2021-10-27 - 0.00Mb
 * #5: Fix examples, update documentation (2021-09-28)
 * #4: Complex scenarios (2021-07-12)
 * #3: Replaces OnnxSubOperator by OnnxSubEstimator (2021-03-31)
-* #1: Add an example on black list, while list of operators. (2020-07-09)
 
 0.1.0 - 2020-07-09 - 0.04Mb
 ===========================
+
+* #1: Add an example on black list, while list of operators. (2020-07-09)
