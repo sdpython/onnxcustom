@@ -6,6 +6,7 @@ coverage
 cpyquickhelper
 cxxfilt
 flake8
+h5py
 joblib
 jupyter_sphinx
 jyquickhelper
