@@ -25,5 +25,5 @@ def main(args, fLOG=print):
 
 
 if __name__ == "__main__":
-    import sys
+    import sys  # pragma: no cover
     main(sys.argv[1:])  # pragma: no cover

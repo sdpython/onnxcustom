@@ -48,37 +48,8 @@ onnxcustom: custom ONNX
 
 `documentation <http://www.xavierdupre.fr/app/onnxcustom/helpsphinx/index.html>`_
 
-Tutorial on how to convert machine learned models into ONNX,
-implement your own converter or runtime.
-The module must be compiled to be used inplace:
-
-::
-
-    python setup.py build_ext --inplace
-
-Generate the setup in subfolder ``dist``:
-
-::
-
-    python setup.py sdist
-
-Generate the documentation in folder ``dist/html``:
-
-::
-
-    python setup.py build_sphinx
-
-Run the unit tests:
-
-::
-
-    python setup.py unittests
-
-To check style:
-
-::
-
-    python -m flake8 onnxcustom tests examples
+Examples, tutorial on how to convert machine learned models into ONNX,
+implement your own converter or runtime, or even train with ONNX / onnxruntime.
 
 The function *check* or the command line ``python -m onnxcustom check``
 checks the module is properly installed and returns processing
@@ -89,5 +60,10 @@ time for a couple of functions or simply:
     import onnxcustom
     onnxcustom.check()
 
-This tutorial has been merged into `sklearn-onnx documentation
+Most of the tutorial has been merged into `sklearn-onnx documentation
 <http://onnx.ai/sklearn-onnx/index_tutorial.html>`_.
+Among the tools this package implements, you may find:
+
+* a tool to convert NVidia Profilder logs into a dataframe
+* a SGD optimizer similar to what scikit-learn implements but
+  based on *onnxruntime-training* and able to train an CPU and GPU.

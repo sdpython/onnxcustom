@@ -17,14 +17,17 @@ def measure_time(stmt, context, repeat=10, number=50, div_by_number=False):
     :param div_by_number: divide by the number of executions
     :return: dictionary
 
-    .. runpython::
-        :showcode:
+    .. exref::
+        :title: Measure the processing time of a function
 
-        from onnxcustom.utils import measure_time
-        from math import cos
+        .. runpython::
+            :showcode:
 
-        res = measure_time("cos(x)", context=dict(cos=cos, x=5.))
-        print(res)
+            from onnxcustom.utils import measure_time
+            from math import cos
+
+            res = measure_time("cos(x)", context=dict(cos=cos, x=5.))
+            print(res)
 
     See `Timer.repeat <https://docs.python.org/3/library/
     timeit.html?timeit.Timer.repeat>`_

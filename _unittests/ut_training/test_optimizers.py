@@ -5,6 +5,7 @@
 import unittest
 from pyquickhelper.pycode import ExtTestCase
 import numpy
+from onnx.helper import set_model_props
 from sklearn.datasets import make_regression
 from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LinearRegression
@@ -32,6 +33,7 @@ class TestOptimizers(ExtTestCase):
         reg.fit(X_train, y_train)
         onx = to_onnx(reg, X_train, target_opset=opset,
                       black_op={'LinearRegressor'})
+        set_model_props(onx, {'info': 'unit test'})
         onx_loss = add_loss_output(onx)
         inits = ['intercept', 'coef']
         train_session = OrtGradientOptimizer(onx_loss, inits)

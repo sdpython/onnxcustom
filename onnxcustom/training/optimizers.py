@@ -102,7 +102,7 @@ class OrtGradientOptimizer(BaseEstimator):
         if validation_every < 1:
             self.validation_every = int(self.max_iter * validation_every)
         else:
-            self.validation_every = validation_every
+            self.validation_every = validation_every  # pragma: no cover
 
     def _init_learning_rate(self):
         self.eta0_ = self.eta0

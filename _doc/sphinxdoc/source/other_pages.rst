@@ -13,5 +13,6 @@ Other pages
     index_method
     index_module
     index_staticmethod
+    i_ex
     README
     blog/blogindex.rst

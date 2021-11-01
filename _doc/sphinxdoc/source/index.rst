@@ -43,10 +43,20 @@ onnxcustom: deploy machine learned models
     :target: https://github.com/sdpython/onnxcustom/
     :alt: size
 
-This project leverages :epkg:`ONNX` to deploy pipelines,
-standard pipeline and pipeline including custom pieces.
-It shows how to create a custom converter, needing custom
-operators.
+Examples, tutorial on how to convert machine learned models into ONNX,
+implement your own converter or runtime, or even train with :epkg:`ONNX`,
+:epkg:`onnxruntime`.
+Most of the tutorial has been merged into `sklearn-onnx documentation
+<http://onnx.ai/sklearn-onnx/index_tutorial.html>`_.
+Among the tools this package implements, you may find:
+
+* a tool to convert NVidia Profilder logs into a dataframe:
+  :func:`convert_trace_to_json <onnxcustom.utils.nvprof2json.convert_trace_to_json>`
+* a SGD optimizer similar to what scikit-learn implements
+  (see `Stochastic Gradient Descent
+  <https://scikit-learn.org/stable/modules/sgd.html>`_)
+  but based on :epkg:`onnxruntime-training` and able to train an CPU and GPU
+  (see example :ref:`l-orttraining-nn-gpu`).
 
 .. toctree::
     :maxdepth: 1

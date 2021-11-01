@@ -36,5 +36,5 @@ def nvprof2json(filename, output="", temporary_file="", verbose=1,
     verbose = int(verbose)
     res = convert_trace_to_json(filename, output, verbose=verbose,
                                 temporary_file=temporary_file, fLOG=fLOG)
-    if output is None:
+    if output is None:  # pragma: no cover
         fLOG(res)
