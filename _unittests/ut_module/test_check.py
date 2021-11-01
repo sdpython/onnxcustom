@@ -3,7 +3,7 @@
 """
 import unittest
 from pyquickhelper.pycode import ExtTestCase
-from deeponnxcustom import check
+from onnxcustom import check
 
 
 class TestCheck(ExtTestCase):
