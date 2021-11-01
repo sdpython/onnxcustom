@@ -65,6 +65,7 @@ Among the tools this package implements, you may find:
     doc
     api/index
     gyexamples/index
+    notebooks/index
     i_cmd
     dev
     HISTORY

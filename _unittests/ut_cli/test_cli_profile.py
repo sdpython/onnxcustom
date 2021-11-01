@@ -21,7 +21,7 @@ class TestCliProfile(ExtTestCase):
         self.assertRaise(
             lambda: main(args=['nvprof2json', '-f', 'something'],
                          fLOG=st.fprint),
-            sqlite3.OperationalError)           
+            sqlite3.OperationalError)
 
     def test_profile_check(self):
         st = BufferedPrint()

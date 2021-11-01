@@ -28,6 +28,7 @@ examples/model.onnx
 tests/model.onnx
 examples/onnxruntime_profile*.json
 version.txt
+_doc/notebooks/.ipynb_checkpoints/*
 _doc/bench/*.svg
 _doc/examples/*.svg
 _doc/bench/*.html

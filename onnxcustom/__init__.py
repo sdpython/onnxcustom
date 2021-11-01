@@ -18,19 +18,19 @@ def check(verbose=1):
     """
     tests = []
     try:
-        import onnx
+        import onnx  # pylint: disable=W0611,C0415
     except ImportError as e:  # pragma: no cover
         tests.append(dict(test='onnx', exc=e))
     try:
-        import skl2onnx
+        import skl2onnx  # pylint: disable=W0611,C0415
     except ImportError as e:  # pragma: no cover
         tests.append(dict(test='skl2onnx', exc=e))
     try:
-        import onnxruntime
+        import onnxruntime  # pylint: disable=W0611,C0415
     except ImportError as e:  # pragma: no cover
         tests.append(dict(test='onnxruntime', exc=e))
     try:
-        import onnxruntime.training
+        import onnxruntime.training  # pylint: disable=W0611,C0415
     except ImportError as e:  # pragma: no cover
         tests.append(dict(test='onnxruntime_training', exc=e))
-    return test
+    return tests
