@@ -1,5 +1,6 @@
 autopep8
 category_encoders
+cerberus
 codecov
 coverage
 cpyquickhelper
