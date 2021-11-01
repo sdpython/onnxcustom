@@ -1,4 +1,5 @@
 # coding: utf-8
+# flake8: noqa: F401
 """
 @file
 @brief Experimentation with ONNX, examples.
