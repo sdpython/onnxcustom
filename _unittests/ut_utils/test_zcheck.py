@@ -14,7 +14,8 @@ class TestCheck(unittest.TestCase):
         with redirect_stdout(f):
             res = check(verbose=1)
         self.assertIsInstance(res, list)
-        self.assertEqual(len(res), 0)
+        if len(res) > 0:
+            raise AssertionError(res)
 
     def test__main__(self):
         import onnxcustom.__main__  # pylint: disable=W0611
