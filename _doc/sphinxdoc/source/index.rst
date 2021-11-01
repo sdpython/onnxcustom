@@ -58,6 +58,8 @@ Among the tools this package implements, you may find:
   but based on :epkg:`onnxruntime-training` and able to train an CPU and GPU
   (see example :ref:`l-orttraining-nn-gpu`).
 
+**Contents**
+
 .. toctree::
     :maxdepth: 1
 
@@ -65,10 +67,7 @@ Among the tools this package implements, you may find:
     doc
     api/index
     gyexamples/index
-    notebooks/index
-    i_cmd
-    dev
-    HISTORY
+    all_notebooks
     license
     other_pages
 

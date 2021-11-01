@@ -76,6 +76,22 @@ class OrtGradientOptimizer(BaseEstimator):
     `session_` which holds an instance of `onnxruntime.TrainingSession`.
 
     See example :ref:`l-orttraining-nn-gpu`.
+
+    .. faqref::
+        :title: Differences between onnxruntime and onnxruntime-training
+
+        onnxruntime-training is an extension of onnxruntime
+        that supports training. Version 1.10 is obtained by compiling
+        onnxruntime from the sources with different flags.
+        One example:
+
+        ::
+
+            python ./tools/ci_build/build.py --build_dir ./build/debian \\
+                   --config Release --build_wheel --numpy_version= \\
+                   --skip_tests --build_shared_lib --enable_training \\
+                   --enable_training_ops --enable_training_torch_interop \\
+                   --parallel
     """
 
     def __init__(self, model_onnx, weights_to_train, loss_output_name='loss',
