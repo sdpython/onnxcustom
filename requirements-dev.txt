@@ -22,6 +22,7 @@ pillow
 py-spy
 pandas
 pandas_streaming>=0.3
+pydata-sphinx-theme
 pydot
 pyinstrument
 pylint
