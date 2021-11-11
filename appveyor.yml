@@ -11,8 +11,9 @@ init:
 install:
   - "%PYTHON%\\python -m pip install -r requirements.txt"
   - "%PYTHON%\\python -m pip install -r requirements-dev.txt"
-  - "%PYTHON%\\python -m pip install pymyinstall"
-  - "%PYTHON%\\Scripts\\pymy_install3 onnxruntime_training"
+  - "%PYTHON%\\python -m pip install http://www.xavierdupre.fr/enseignement/setup/onnxruntime_training-1.10.991+cpu-cp39-cp39-win_amd64.whl"
+  - "%PYTHON%\\python -m pip install http://www.xavierdupre.fr/enseignement/setup/torch_interop_utils-1.10.0+cpu-cp39-cp39-win_amd64.whl"
+  - "%PYTHON%\\python -m pip install http://www.xavierdupre.fr/enseignement/setup/aten_op_executor-1.10.0+cpu-cp39-cp39-win_amd64.whl"
 
 build: off
 
