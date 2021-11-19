@@ -19,8 +19,10 @@ used in the ONNX graph.
     ../gyexamples/plot_cbegin_opset
     ../gyexamples/plot_dbegin_options
     ../gyexamples/plot_dbegin_options_list
+    ../gyexamples/plot_dbegin_options_zipmap
     ../gyexamples/plot_ebegin_float_double
     ../gyexamples/plot_fbegin_investigate
     ../gyexamples/plot_gbegin_dataframe
     ../gyexamples/plot_gbegin_transfer_learning
     ../gyexamples/plot_gbegin_cst
+    ../gyexamples/plot_gconverting

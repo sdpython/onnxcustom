@@ -182,7 +182,7 @@ bst = train_xgb(param, dtrain, 10)
 
 initial_type = [('float_input', FloatTensorType([None, X_train.shape[1]]))]
 onx = convert_xgboost_booster(bst, "name", initial_types=initial_type,
-                              target_opset=12)
+                              target_opset=14)
 
 sess = rt.InferenceSession(onx.SerializeToString())
 input_name = sess.get_inputs()[0].name
