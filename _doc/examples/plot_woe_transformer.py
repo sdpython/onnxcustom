@@ -135,8 +135,8 @@ ax.axis('off')
 # can be infinite.
 
 intervals = [
-    [(-np.inf, 3., True, True),
-     (5., np.inf, True, True)]]
+    [(-numpy.inf, 3., True, True),
+     (5., numpy.inf, True, True)]]
 weights = [[55, 107]]
 
 woe1 = WOETransformer(intervals, onehot=False, weights=weights)
