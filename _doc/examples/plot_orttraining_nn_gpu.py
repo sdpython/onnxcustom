@@ -152,4 +152,10 @@ pprint(res)
 obs.append(res)
 
 df = DataFrame(obs)
+df = df[['average', 'framework']]
 print(df)
+
+# "
+# Graph.
+
+df.set_index('framework').plot.hist()

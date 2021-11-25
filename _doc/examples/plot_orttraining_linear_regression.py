@@ -20,14 +20,19 @@ A simple linear regression with scikit-learn
 from pprint import pprint
 import numpy
 from pandas import DataFrame
+import matplotlib.pyplot as plt
 from onnx import helper, numpy_helper, TensorProto
 from onnxruntime import (
     InferenceSession, __version__ as ort_version,
-    TrainingParameters, SessionOptions, TrainingSession)
+    TrainingParameters, SessionOptions, TrainingSession,
+    get_device)
 from sklearn.datasets import make_regression
 from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LinearRegression
+from mlprodict.onnx_conv import to_onnx
 from mlprodict.plotting.plotting_onnx import plot_onnx
+from onnxcustom.training import add_loss_output, get_train_initializer
+from onnxcustom.training.optimizers import OrtGradientOptimizer
 from tqdm import tqdm
 
 X, y = make_regression(n_features=2, bias=2)
@@ -39,7 +44,73 @@ lr = LinearRegression()
 lr.fit(X, y)
 print(lr.predict(X[:5]))
 
+##################################
+# Simplified training code
+# ++++++++++++++++++++++++
+#
+# Next lines illustrates how to train a linear regression
+# with :epkg:`onnxruntime`. It includes the conversion of
+# a linear regression into ONNX, the computation of the gradient
+# graph and the implementation of a simple stochastic gradient
+# descent. This section does not explain how it works yet but
+# shows how it could look like written with :epkg:`scikit-learn`
+# design.
 
+onx = to_onnx(lr, X_train[:1].astype(numpy.float32), target_opset=15,
+              black_op={'LinearRegressor'})
+
+###############################################
+# The loss function is the square function. We use function
+# :func:`add_loss_output <onnxcustom.training.orttraining.add_loss_output>`.
+
+onx_train = add_loss_output(onx)
+
+#####################################
+# Let's check inference is working.
+
+sess = InferenceSession(onx_train.SerializeToString())
+res = sess.run(None, {'X': X_test, 'label': y_test.reshape((-1, 1))})
+print("onnx loss=%r" % (res[0][0, 0] / X_test.shape[0]))
+
+#####################################
+# Let's retrieve the constants, the weights to optimize.
+# We remove initializer which cannot be optimized.
+
+inits = get_train_initializer(onx)
+weights = {k: v for k, v in inits.items() if k != "shape_tensor"}
+pprint(list((k, v[0].shape) for k, v in weights.items()))
+
+#####################################
+# Train on CPU or GPU if available.
+
+device = "cuda" if get_device() == 'GPU' else 'cpu'
+print("device=%r get_device()=%r" % (device, get_device()))
+
+#######################################
+# The training logic is hidden in class
+# :class:`OrtGradientOptimizer
+# <onnxcustom.training.optimizers.OrtGradientOptimizer>`.
+# It follows :epkg:`scikit-learn` API (see `SGDRegressor
+# <https://scikit-learn.org/stable/modules/
+# generated/sklearn.linear_model.SGDRegressor.html>`_.
+
+train_session = OrtGradientOptimizer(
+    onx_train, list(weights), device=device, verbose=1, eta0=1e-4,
+    warm_start=False, max_iter=200, batch_size=10)
+
+train_session.fit(X, y)
+
+# "
+# And the trained coefficient are...
+
+state_tensors = train_session.get_state()
+print("train losses:", train_session.train_losses_)
+
+df = DataFrame({'losses': train_session.train_losses_})
+df.plot(title="Train loss against iterations")
+
+# Let's see know what is behind these short lines of codes.
+#
 ###################################
 # An equivalent ONNX graph.
 # +++++++++++++++++++++++++
@@ -518,3 +589,6 @@ print(after - before)
 ################################################
 # Next example will show how to train a linear regression on GPU:
 # :ref:`l-orttraining-linreg-gpu`.
+
+
+plt.show()
