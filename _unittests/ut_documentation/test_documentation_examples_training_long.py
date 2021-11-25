@@ -14,6 +14,8 @@ try:
 except ImportError:
     ortt = None
 from pyquickhelper.pycode import skipif_circleci
+from pyquickhelper.texthelper import compare_module_version
+from mlprodict import __version__ as mlp_version
 
 
 def import_source(module_file_path, module_name):
@@ -33,7 +35,10 @@ def import_source(module_file_path, module_name):
 class TestDocumentationExampleTrainingLong(unittest.TestCase):
 
     @unittest.skipIf(
-        ortt is None, reason="onnxruntime-training not installed.")
+        compare_module_version(mlp_version, "0.8") < 0,
+        reason="onnxruntime-training not installed.")
+    @unittest.skipIf(
+        ortt is None, reason="plot_onnx was updated.")
     @skipif_circleci("stuck")
     def test_documentation_examples_training(self):
 
