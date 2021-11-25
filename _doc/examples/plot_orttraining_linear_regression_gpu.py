@@ -8,7 +8,8 @@ Train a linear regression with onnxruntime-training on GPU
 This example follows the same steps introduced in example
 :ref:`l-orttraining-linreg-cpu` but on GPU. This example works
 on CPU and GPU but automatically chooses GPU if it is
-available.
+available. The main change in this example is the parameter `device`
+which indicates where the computation takes place, on CPU or GPU.
 
 .. contents::
     :local:
@@ -16,7 +17,7 @@ available.
 A simple linear regression with scikit-learn
 ++++++++++++++++++++++++++++++++++++++++++++
 
-This code begins like example :ref:`l-orttraining-linreg-gpu`.
+This code begins like example :ref:`l-orttraining-linreg-cpu`.
 It creates a graph to train a linear regression initialized
 with random coefficients.
 """
@@ -29,7 +30,7 @@ from onnxruntime import (
     TrainingParameters, SessionOptions, TrainingSession)
 from sklearn.datasets import make_regression
 from sklearn.model_selection import train_test_split
-from mlprodict.plotting.plotting_onnx import plot_onnx
+from onnxcustom.plotting.plotting_onnx import plot_onnxs
 from tqdm import tqdm
 
 X, y = make_regression(n_features=2, bias=2)
@@ -47,7 +48,7 @@ def onnx_linear_regression_training(coefs, intercept):
     X = helper.make_tensor_value_info(
         'X', TensorProto.FLOAT, [None, coefs.shape[0]])
 
-    # expected output
+    # expected input
     label = helper.make_tensor_value_info(
         'label', TensorProto.FLOAT, [None, coefs.shape[1]])
 
@@ -55,7 +56,7 @@ def onnx_linear_regression_training(coefs, intercept):
     Y = helper.make_tensor_value_info(
         'Y', TensorProto.FLOAT, [None, coefs.shape[1]])
 
-    # loss output
+    # loss
     loss = helper.make_tensor_value_info('loss', TensorProto.FLOAT, [])
 
     # inference
@@ -76,9 +77,7 @@ def onnx_linear_regression_training(coefs, intercept):
     # graph
     graph_def = helper.make_graph(
         [node_matmul, node_add, node_diff, node_square, node_square_sum],
-        'lrt',
-        [X, label], [loss, Y],
-        [init_coefs, init_intercept])
+        'lrt', [X, label], [loss, Y], [init_coefs, init_intercept])
     model_def = helper.make_model(
         graph_def, producer_name='orttrainer', ir_version=7,
         producer_version=ort_version,
@@ -90,7 +89,7 @@ onx_train = onnx_linear_regression_training(
     numpy.random.randn(2).astype(numpy.float32),
     numpy.random.randn(1).astype(numpy.float32))
 
-plot_onnx(onx_train)
+plot_onnxs(onx_train, title="Graph with Loss")
 
 
 #########################################
@@ -124,16 +123,6 @@ def create_training_session(
     """
     ort_parameters = TrainingParameters()
     ort_parameters.loss_output_name = loss_output_name
-    ort_parameters.use_mixed_precision = False
-    # ort_parameters.world_rank = -1
-    # ort_parameters.world_size = 1
-    # ort_parameters.gradient_accumulation_steps = 1
-    # ort_parameters.allreduce_post_accumulation = False
-    # ort_parameters.deepspeed_zero_stage = 0
-    # ort_parameters.enable_grad_norm_clip = False
-    # ort_parameters.set_gradients_as_graph_outputs = False
-    # ort_parameters.use_memory_efficient_gradient = False
-    # ort_parameters.enable_adasum = False
 
     output_types = {}
     for output in training_onnx.graph.output:
@@ -141,7 +130,6 @@ def create_training_session(
 
     ort_parameters.weights_to_train = set(weights_to_train)
     ort_parameters.training_optimizer_name = training_optimizer_name
-    # ort_parameters.lr_params_feed_name = lr_params_feed_name
 
     ort_parameters.optimizer_attributes_map = {
         name: {} for name in weights_to_train}
@@ -200,6 +188,7 @@ pprint(state_tensors)
 #
 # We still need to implement a gradient descent.
 # Let's wrap this into a class similar following scikit-learn's API.
+# It needs to have an extra parameter *device*.
 
 
 class DataLoaderDevice:
