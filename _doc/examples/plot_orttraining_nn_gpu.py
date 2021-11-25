@@ -26,7 +26,7 @@ from sklearn.datasets import make_regression
 from sklearn.model_selection import train_test_split
 from sklearn.neural_network import MLPRegressor
 from sklearn.metrics import mean_squared_error
-from mlprodict.plotting.plotting_onnx import plot_onnxs
+from onnxcustom.plotting.plotting_onnx import plot_onnxs
 from mlprodict.onnx_conv import to_onnx
 from onnxcustom.training import add_loss_output, get_train_initializer
 from onnxcustom.training.optimizers import OrtGradientOptimizer

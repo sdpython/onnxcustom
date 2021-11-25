@@ -30,3 +30,4 @@ approaches.
     ../gyexamples/plot_orttraining_linear_regression_cpu
     ../gyexamples/plot_orttraining_linear_regression_gpu
     ../gyexamples/plot_orttraining_nn_gpu
+    ../gyexamples/plot_orttraining_benchmark

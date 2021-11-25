@@ -30,7 +30,7 @@ from onnxruntime import (
     TrainingParameters, SessionOptions, TrainingSession)
 from sklearn.datasets import make_regression
 from sklearn.model_selection import train_test_split
-from mlprodict.plotting.plotting_onnx import plot_onnxs
+from onnxcustom.plotting.plotting_onnx import plot_onnxs
 from tqdm import tqdm
 
 X, y = make_regression(n_features=2, bias=2)
