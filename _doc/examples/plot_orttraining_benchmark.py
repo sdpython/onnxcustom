@@ -189,5 +189,5 @@ print(df)
 ax = df[['skl', 'ort']].plot.bar(title="Processing time")
 ax.tick_params(axis='x', rotation=30)
 
-import matplotlib.pyplot as plt
-plt.show()
+# import matplotlib.pyplot as plt
+# plt.show()
