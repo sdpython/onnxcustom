@@ -169,9 +169,15 @@ df = DataFrame(benches).set_index('name')
 df
 
 #######################################
+# text output
+
+print(df)
+
+#######################################
 # Graphs.
 
-df[['skl', 'ort']].plot.bar(title="Processing time")
+ax = df[['skl', 'ort']].plot.bar(title="Processing time")
+ax.tick_params(axis='x', rotation=60)
 
-# import matplotlib.pyplot as plt
-# plt.show()
+import matplotlib.pyplot as plt
+plt.show()

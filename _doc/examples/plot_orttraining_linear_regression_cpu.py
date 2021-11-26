@@ -20,7 +20,6 @@ A simple linear regression with scikit-learn
 from pprint import pprint
 import numpy
 from pandas import DataFrame
-import matplotlib.pyplot as plt
 from onnx import helper, numpy_helper, TensorProto
 from onnxruntime import (
     InferenceSession, __version__ as ort_version,
@@ -164,7 +163,7 @@ onx_train = onnx_linear_regression_training(
     numpy.random.randn(
         *lr.intercept_.reshape((-1, )).shape).astype(numpy.float32))
 
-plot_onnxs(onx_train, "Linear Regression with a loss")
+plot_onnxs(onx_train, title="Linear Regression with a loss")
 
 ################################################
 # DataLoader
@@ -512,5 +511,5 @@ print(after - before)
 # Next example will show how to train a linear regression on GPU:
 # :ref:`l-orttraining-linreg-gpu`.
 
-
-plt.show()
+# import matplotlib.pyplot as plt
+# plt.show()
