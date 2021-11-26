@@ -27,8 +27,18 @@ class OrtDataLoader:
         if X.shape[0] != y.shape[0]:
             raise ValueError(  # pragma: no cover
                 "Shape mismatch X.shape=%r, y.shape=%r." % (X.shape, y.shape))
-        self.X = numpy.ascontiguousarray(X)
-        self.y = numpy.ascontiguousarray(y)
+
+        self.X_np = numpy.ascontiguousarray(X)
+        self.y_np = numpy.ascontiguousarray(y).reshape((-1, 1))
+
+        self.X_ort = OrtValue.ortvalue_from_numpy(
+            self.X_np, device, device_idx)
+        self.y_ort = OrtValue.ortvalue_from_numpy(
+            self.y_np, device, device_idx)
+
+        self.desc = [(self.X_np.shape, self.X_np.dtype),
+                     (self.y_np.shape, self.y_np.dtype)]
+
         self.batch_size = batch_size
         self.device = device
         self.device_idx = device_idx
@@ -41,34 +51,92 @@ class OrtDataLoader:
 
     def __len__(self):
         "Returns the number of observations."
-        return self.X.shape[0]
+        return self.desc[0][0][0]
 
     def __iter__(self):
         """
         Iterates over the datasets by drawing
         *batch_size* consecutive observations.
+        This iterator is slow as it copies the data of every
+        batch.
         """
         N = 0
         b = len(self) - self.batch_size
         if b <= 0 or self.batch_size <= 0:
             yield (
                 OrtValue.ortvalue_from_numpy(
-                    self.X, self.device, self.device_idx),
+                    self.X_np, self.device, self.device_idx),
                 OrtValue.ortvalue_from_numpy(
-                    self.y, self.device, self.device_idx))
+                    self.y_np, self.device, self.device_idx))
         else:
             while N < len(self):
                 i = numpy.random.randint(0, b)
                 N += self.batch_size
                 yield (
                     OrtValue.ortvalue_from_numpy(
-                        self.X[i:i + self.batch_size],
+                        self.X_np[i:i + self.batch_size],
                         self.device, self.device_idx),
                     OrtValue.ortvalue_from_numpy(
-                        self.y[i:i + self.batch_size],
+                        self.y_np[i:i + self.batch_size],
                         self.device, self.device_idx))
 
+    def iter_bind(self, bind, names):
+        """
+        Iterates over the datasets by drawing
+        *batch_size* consecutive observations.
+        Modifies a bind structure.
+        """
+        if len(names) != 3:
+            raise NotImplementedError(
+                "The dataloader expects three (feature name, label name, "
+                "learning rate), not %r." % names)
+
+        n_col_x = self.desc[0][0][1]
+        n_col_y = self.desc[1][0][1]
+        size_x = self.desc[0][1].itemsize
+        size_y = self.desc[1][1].itemsize
+
+        def local_bind(bind, offset, n):
+            # This function assumes the data is contiguous.
+            shape_X = (n, n_col_x)
+            shape_y = (n, n_col_y)
+
+            bind.bind_input(
+                name=names[0],
+                device_type=self.device,
+                device_id=self.device_idx,
+                element_type=self.desc[0][1],
+                shape=shape_X,
+                buffer_ptr=self.X_ort.data_ptr() + offset * n_col_x * size_x)
+
+            bind.bind_input(
+                name=names[1],
+                device_type=self.device,
+                device_id=self.device_idx,
+                element_type=self.desc[0][1],
+                shape=shape_y,
+                buffer_ptr=self.y_ort.data_ptr() + offset * n_col_y * size_y)
+
+        N = 0
+        b = len(self) - self.batch_size
+        if b <= 0 or self.batch_size <= 0:
+            shape_x = self.desc[0][0]
+            local_bind(bind, 0, shape_x[0])
+            yield shape_x[0]
+        else:
+            n = self.batch_size
+            while N < len(self):
+                i = numpy.random.randint(0, b)
+                N += self.batch_size
+                local_bind(bind, i, n)
+                yield n
+
     @property
-    def data(self):
-        "Returns a tuple of the datasets."
-        return self.X, self.y
+    def data_np(self):
+        "Returns a tuple of the datasets in numpy."
+        return self.X_np, self.y_np
+
+    @property
+    def data_ort(self):
+        "Returns a tuple of the datasets in onnxruntime OrtValue."
+        return self.X_ort, self.y_ort

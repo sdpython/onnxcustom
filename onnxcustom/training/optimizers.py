@@ -137,11 +137,15 @@ class OrtGradientOptimizer(BaseEstimator):
             eta = self.eta0_ / numpy.power(t + 1, self.power_t)
         return eta
 
-    def fit(self, X, y, X_val=None, y_val=None):
+    def fit(self, X, y, X_val=None, y_val=None, use_numpy=False):
         """
         Trains the model.
         :param X: features
         :param y: expected output
+        :param X_val: evaluation dataset
+        :param y_val: evaluation dataset
+        :param use_numpy: if True, slow iterator using numpy,
+            otherwise, minimizes copy
         :return: self
         """
         self.train_session_ = self._create_training_session(
@@ -189,7 +193,8 @@ class OrtGradientOptimizer(BaseEstimator):
             bind_lr = OrtValue.ortvalue_from_numpy(
                 numpy.array([lr / self.batch_size], dtype=numpy.float32),
                 self.device, self.device_idx)
-            loss = self._iteration(data_loader, bind_lr, bind)
+            loss = self._iteration(data_loader, bind_lr,
+                                   bind, use_numpy=use_numpy)
             lr = self._update_learning_rate(it, lr)
             if self.verbose > 1:  # pragma: no cover
                 loop.set_description(
@@ -205,37 +210,48 @@ class OrtGradientOptimizer(BaseEstimator):
         self.trained_coef_ = self.train_session_.get_state()
         return self
 
-    def _iteration(self, data_loader, learning_rate, bind):
+    def _iteration(self, data_loader, learning_rate, bind, use_numpy):
         actual_losses = []
-        for data, target in data_loader:
 
-            bind.bind_input(
-                name=self.input_names_[0],
-                device_type=self.device,
-                device_id=self.device_idx,
-                element_type=numpy.float32,
-                shape=data.shape(),
-                buffer_ptr=data.data_ptr())
+        bind.bind_input(
+            name=self.input_names_[2],
+            device_type=learning_rate.device_name(), device_id=self.device_idx,
+            element_type=numpy.float32, shape=learning_rate.shape(),
+            buffer_ptr=learning_rate.data_ptr())
+        bind.bind_output('loss')
 
-            bind.bind_input(
-                name=self.input_names_[1],
-                device_type=self.device,
-                device_id=self.device_idx,
-                element_type=numpy.float32,
-                shape=target.shape(),
-                buffer_ptr=target.data_ptr())
+        if use_numpy:
+            # Slow iterations.
+            for data, target in data_loader:
 
-            bind.bind_input(
-                name=self.input_names_[2],
-                device_type=learning_rate.device_name(), device_id=0,
-                element_type=numpy.float32, shape=learning_rate.shape(),
-                buffer_ptr=learning_rate.data_ptr())
+                bind.bind_input(
+                    name=self.input_names_[0],
+                    device_type=self.device,
+                    device_id=self.device_idx,
+                    element_type=numpy.float32,
+                    shape=data.shape(),
+                    buffer_ptr=data.data_ptr())
 
-            bind.bind_output('loss')
+                bind.bind_input(
+                    name=self.input_names_[1],
+                    device_type=self.device,
+                    device_id=self.device_idx,
+                    element_type=numpy.float32,
+                    shape=target.shape(),
+                    buffer_ptr=target.data_ptr())
 
-            self.train_session_.run_with_iobinding(bind)
-            outputs = bind.copy_outputs_to_cpu()
-            actual_losses.append(outputs[0] / data.shape()[0])
+                self.train_session_.run_with_iobinding(bind)
+                outputs = bind.copy_outputs_to_cpu()
+                actual_losses.append(outputs[0] / data.shape()[0])
+        else:
+            # Fast iterations
+            # Slow iterations.
+            for batch_size in data_loader.iter_bind(bind, self.input_names_):
+                self.train_session_.run_with_iobinding(bind)
+                # We copy the predicted output as well which is not needed.
+                outputs = bind.copy_outputs_to_cpu()
+                actual_losses.append(outputs[0] / batch_size)
+
         return numpy.array(actual_losses).mean()
 
     def _evaluation(self, data_loader, bind):

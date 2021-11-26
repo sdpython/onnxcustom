@@ -3,6 +3,7 @@
 """
 
 import unittest
+import numpy
 from pyquickhelper.pycode import ExtTestCase
 from sklearn.datasets import make_regression
 from onnxruntime import OrtValue
@@ -26,7 +27,11 @@ class TestDataLoadeer(ExtTestCase):
             n += 1
         self.assertEqual(n, 20)
         self.assertStartsWith("OrtDataLoader(...", repr(data))
-        self.assertIsInstance(data.data, tuple)
+        self.assertIsInstance(data.data_np, tuple)
+        self.assertIsInstance(data.data_ort, tuple)
+        self.assertEqual(
+            data.desc,
+            [((100, 10), numpy.float64), ((100, 1), numpy.float64)])
 
 
 if __name__ == "__main__":
