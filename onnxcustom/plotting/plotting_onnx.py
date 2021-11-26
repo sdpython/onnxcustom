@@ -55,7 +55,7 @@ def plot_onnxs(*onx, ax=None, dpi=300, temp_dot=None, temp_img=None,
             ax[i].set_title(title[i])
     if isinstance(title, str):
         if fig is None:
-            raise ValueError(
+            raise ValueError(  # pragma: no cover
                 "Main title cannot be set if ax is defined.")
         fig.suptitle(title)
     return ax

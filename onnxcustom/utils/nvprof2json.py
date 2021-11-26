@@ -57,7 +57,7 @@ def convert_trace_to_json(filename, output=None, temporary_file=None,
             zipf = zipfile.ZipFile(filename)
             names = zipf.namelist()
             if len(names) != 1:
-                raise RuntimeError(
+                raise RuntimeError(  # pragma: no cover
                     "More than one file is stored in zip file %r." % filename)
             stream = zipf.open(names[0], "r")
             with open(temporary_file, "wb") as f:
@@ -293,13 +293,14 @@ def convert_trace_to_json(filename, output=None, temporary_file=None,
         return traceEvents
     else:
         if verbose > 0 and fLOG is not None:
-            fLOG("[convert_trace_to_json] converting into json.")
+            fLOG(  # pragma: no cover
+                "[convert_trace_to_json] converting into json.")
         st = io.StringIO()
         json.dump(traceEvents, st, separators=(',\n', ':'))
         st.write('\n')
         if verbose > 0 and fLOG is not None:
-            fLOG("[convert_trace_to_json] done.")
-            fLOG(st.getvalue())
+            fLOG("[convert_trace_to_json] done.")  # pragma: no cover
+            fLOG(st.getvalue())  # pragma: no cover
         return st.getvalue()
 
 
