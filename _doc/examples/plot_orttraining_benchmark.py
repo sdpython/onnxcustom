@@ -156,8 +156,18 @@ if get_device() == 'GPU':
         onx_train, list(weights), device='cuda', eta0=5e-4,
         warm_start=False, max_iter=200, batch_size=batch_size)
 
-    benches.append(benchmark(nn, train_session, name='NN-GPU'))
+    benches.append(benchmark(nn, train_session, name='LR-GPU'))
 
+
+######################################
+# GPU profiling
+# +++++++++++++
+
+if get_device() == 'GPU':
+    ps = profile(lambda: benchmark(nn, train_session, name='LR-GPU'))[0]
+    root, nodes = profile2graph(ps, clean_text=clean_name)
+    text = root.to_text()
+    print(text)
 
 ######################################
 # Graphs
@@ -177,7 +187,7 @@ print(df)
 # Graphs.
 
 ax = df[['skl', 'ort']].plot.bar(title="Processing time")
-ax.tick_params(axis='x', rotation=60)
+ax.tick_params(axis='x', rotation=30)
 
 import matplotlib.pyplot as plt
 plt.show()
