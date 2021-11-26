@@ -43,7 +43,7 @@
 onnxcustom: custom ONNX
 =======================
 
-.. image:: https://raw.githubusercontent.com/sdpython/deeponnxcustom/master/_doc/sphinxdoc/source/phdoc_static/project_ico.png
+.. image:: https://raw.githubusercontent.com/sdpython/onnxcustom/master/_doc/sphinxdoc/source/phdoc_static/project_ico.png
     :width: 50
 
 `documentation <http://www.xavierdupre.fr/app/onnxcustom/helpsphinx/index.html>`_
