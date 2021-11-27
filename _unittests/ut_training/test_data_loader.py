@@ -7,7 +7,7 @@ import numpy
 from pyquickhelper.pycode import ExtTestCase
 from sklearn.datasets import make_regression
 from onnxruntime import OrtValue
-from onnxcustom.training.data_loader import OrtDataLoader
+from onnxcustom.training import OrtDataLoader
 
 
 class TestDataLoadeer(ExtTestCase):

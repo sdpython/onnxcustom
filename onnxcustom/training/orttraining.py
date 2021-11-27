@@ -1,6 +1,6 @@
 """
 @file
-@brief Helper for :epkg:`onnxruntime-training`.
+@brief Manipulate ONNX graph to train a model.
 """
 from onnx.helper import (
     make_node, make_graph, make_model, make_tensor_value_info,

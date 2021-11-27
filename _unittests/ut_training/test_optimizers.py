@@ -22,8 +22,8 @@ class TestOptimizers(ExtTestCase):
 
     @unittest.skipIf(TrainingSession is None, reason="not training")
     def test_ort_gradient_optimizers_use_numpy(self):
-        from onnxcustom.training.orttraining import add_loss_output
-        from onnxcustom.training.optimizers import OrtGradientOptimizer
+        from onnxcustom.training import (
+            add_loss_output, OrtGradientOptimizer)
         X, y = make_regression(  # pylint: disable=W0632
             100, n_features=10, bias=2)
         X = X.astype(numpy.float32)
@@ -78,8 +78,8 @@ class TestOptimizers(ExtTestCase):
 
     @unittest.skipIf(TrainingSession is None, reason="not training")
     def test_ort_gradient_optimizers_optimal_use_numpy(self):
-        from onnxcustom.training.orttraining import add_loss_output
-        from onnxcustom.training.optimizers import OrtGradientOptimizer
+        from onnxcustom.training import (
+            add_loss_output, OrtGradientOptimizer)
         X, y = make_regression(  # pylint: disable=W0632
             100, n_features=10, bias=2)
         X = X.astype(numpy.float32)
@@ -134,8 +134,8 @@ class TestOptimizers(ExtTestCase):
 
     @unittest.skipIf(TrainingSession is None, reason="not training")
     def test_ort_gradient_optimizers_evaluation_use_numpy(self):
-        from onnxcustom.training.orttraining import add_loss_output
-        from onnxcustom.training.optimizers import OrtGradientOptimizer
+        from onnxcustom.training import (
+            add_loss_output, OrtGradientOptimizer)
         X, y = make_regression(  # pylint: disable=W0632
             100, n_features=10, bias=2)
         X = X.astype(numpy.float32)
@@ -164,8 +164,8 @@ class TestOptimizers(ExtTestCase):
 
     @unittest.skipIf(TrainingSession is None, reason="not training")
     def test_ort_gradient_optimizers_evaluation_use_ort(self):
-        from onnxcustom.training.orttraining import add_loss_output
-        from onnxcustom.training.optimizers import OrtGradientOptimizer
+        from onnxcustom.training import (
+            add_loss_output, OrtGradientOptimizer)
         X, y = make_regression(  # pylint: disable=W0632
             100, n_features=10, bias=2)
         X = X.astype(numpy.float32)

@@ -1,6 +1,7 @@
 """
 @file
-@brief Helper for :epkg:`onnxruntime-training`.
+@brief Train a machine learned model
+with :epkg:`onnxruntime-training`.
 """
 import inspect
 import numpy

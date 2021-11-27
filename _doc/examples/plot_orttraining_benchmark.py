@@ -28,8 +28,9 @@ from sklearn.datasets import make_regression
 from sklearn.model_selection import train_test_split
 from sklearn.neural_network import MLPRegressor
 from mlprodict.onnx_conv import to_onnx
-from onnxcustom.training import add_loss_output, get_train_initializer
-from onnxcustom.training.optimizers import OrtGradientOptimizer
+from onnxcustom.training import (
+    add_loss_output, get_train_initializer,
+    OrtGradientOptimizer)
 
 
 X, y = make_regression(2000, n_features=100, bias=2)

@@ -35,8 +35,9 @@ from sklearn.model_selection import train_test_split
 from sklearn.neural_network import MLPRegressor
 from sklearn.metrics import mean_squared_error
 from mlprodict.onnx_conv import to_onnx
-from onnxcustom.training import add_loss_output, get_train_initializer
-from onnxcustom.training.optimizers import OrtGradientOptimizer
+from onnxcustom.training import (
+    add_loss_output, get_train_initializer,
+    OrtGradientOptimizer)
 
 
 def benchmark(N=1000, n_features=20, hidden_layer_sizes="25,25", max_iter=1000,
