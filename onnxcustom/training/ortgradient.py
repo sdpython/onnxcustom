@@ -115,7 +115,7 @@ class OrtGradientForwardBackward:
                 "List of weights to train must be sorted but is not in %r. "
                 "You shoud use function onnx_rename_weights to do that "
                 "before calling this class." % self.weights_to_train)
-        
+
         # complete initialisation
         self._init_next()
 
@@ -178,7 +178,7 @@ class OrtGradientForwardBackward:
             "Inherits from @see cl OrtGradientForwardBackwardFunction.")
         attributes['__module__'] = (
             OrtGradientForwardBackwardFunction.__module__)
-        self.cls_type_ =  type(
+        self.cls_type_ = type(
             self.class_name, (OrtGradientForwardBackwardFunction,),
             attributes)
 
@@ -464,8 +464,8 @@ class OrtGradientForwardBackwardFunction:
             if any(map(
                     lambda tu: (
                         tu[0].device_name() !=
-                            OrtGradientForwardBackwardFunction.device_name(
-                                tu[1])),
+                        OrtGradientForwardBackwardFunction.device_name(
+                            tu[1])),
                     zip(tensors, devices))):
                 raise RuntimeError(
                     "Not all inputs are on the same device %r != %r." % (
@@ -649,6 +649,6 @@ class OrtGradientForwardBackwardFunction:
                 _log("BCK-RET: i=%d - ptr=%r - shape=%r",
                      i, ov.shape(), ov.data_ptr())
         if logger is not None:
-            _log("got %r gradients", len(res))
+            _log("got %r gradients", len(backward_outputs))
             _log("end")
         return backward_outputs
