@@ -120,6 +120,19 @@ class OrtGradientOptimizer(BaseEstimator):
         else:
             self.validation_every = validation_every  # pragma: no cover
 
+    def __getstate__(self):
+        "Removes any non pickable attribute."
+        atts = [k for k in self.__dict__ if not k.endswith('_')]
+        if hasattr(self, 'trained_coef_'):
+            atts.append('trained_coef_')
+        return {att: getattr(self, att) for att in atts}
+
+    def __setstate__(self, state):
+        "Restores any non pickable attribute."
+        for att, v in state.items():
+            setattr(self, att, v)
+        return self
+
     def _init_learning_rate(self):
         self.eta0_ = self.eta0
         if self.learning_rate == "optimal":
@@ -343,6 +356,8 @@ class OrtGradientOptimizer(BaseEstimator):
         Returns the trained weights.
         """
         if not hasattr(self, 'train_session_'):
+            if hasattr(self, 'trained_coef_'):
+                return self.trained_coef_
             raise AttributeError("Method fit must be called before.")
         return self.train_session_.get_state()
 

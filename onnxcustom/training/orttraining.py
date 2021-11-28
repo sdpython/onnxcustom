@@ -1,6 +1,6 @@
 """
 @file
-@brief Helper for :epkg:`onnxruntime-training`.
+@brief ONNX manipulations to help build ONNX gradient graphs.
 """
 from onnx.helper import (
     make_node, make_graph, make_model, make_tensor_value_info,

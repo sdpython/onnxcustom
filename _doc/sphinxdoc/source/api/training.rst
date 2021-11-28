@@ -15,6 +15,11 @@ OrtGradientOptimizer
 
 .. autofunction:: onnxcustom.training.optimizers.OrtGradientOptimizer
 
+OrtGradientForwardBackward
+++++++++++++++++++++++++++
+
+.. autofunction:: onnxcustom.training.optimizers.OrtGradientForwardBackward
+
 Helpers
 +++++++
 
