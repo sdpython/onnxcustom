@@ -27,7 +27,7 @@ class OrtGradientForwardBackward:
         if None, all initializer of floats type are included in the list
     :param input_names: input names or None for all
     :param output_names: output names or None for all
-    :param class_name: class name
+    :param class_name: name to give the class dynamically created
     :param sess_options: see :epkg:`SessionOptions`
     :param providers: see :epkg:`InferenceSession`
     :param provider_options: see :epkg:`InferenceSession`
@@ -47,30 +47,6 @@ class OrtGradientForwardBackward:
     .. warning::
         This class does not consider subgraphs.
     """
-    class Args:
-        "Parameters for class @see cl OrtGradientForwardBackward."
-
-        def __init__(self, **kwargs):
-            for k, v in kwargs.items():
-                setattr(self, k, v)
-
-    @staticmethod
-    def _select_initializer_names(onnx_model):
-        """
-        Selects all initializers with float type.
-
-        :param onnx_model: ONNX graph
-        """
-        names = []
-        for init in onnx_model.graph.initializer:
-            name = init.name
-            dt = init.data_type
-            if dt in (TensorProto.FLOAT16,  # pylint: disable=E1101
-                      TensorProto.FLOAT,  # pylint: disable=E1101
-                      TensorProto.DOUBLE):  # pylint: disable=E1101
-                names.append(name)
-        return names
-
     def __init__(self, onnx_model, weights_to_train=None,
                  input_names=None, output_names=None, class_name=None,
                  sess_options=None, providers=None,
@@ -90,10 +66,11 @@ class OrtGradientForwardBackward:
         self.onnx_model = onnx_model
         self.input_names = input_names
         self.output_names = output_names
-        self.class_name = class_name
         self.weights_to_train = weights_to_train
         self.device_index = device_index
         self.enable_logging = enable_logging
+        self.class_name = (class_name if class_name is not None else
+                           "OrtGradientForwardBackwardFunction_%d" % id(self))
 
         self.provider_options = provider_options
         self.sess_options = sess_options
@@ -133,16 +110,31 @@ class OrtGradientForwardBackward:
         if len(self.input_names) != len(self.provider_options):
             raise ValueError(  # pragma: no cover
                 "input_names and provider_options must have the same length.")
-
         if list(sorted(self.weights_to_train)) != self.weights_to_train:
             raise ValueError(
                 "List of weights to train must be sorted but is not in %r. "
                 "You shoud use function onnx_rename_weights to do that "
                 "before calling this class." % self.weights_to_train)
-
+        
+        # complete initialisation
         self._init_next()
-        self.args_ = OrtGradientForwardBackward.Args(
-            **self._create_onnx_graphs())
+
+    @staticmethod
+    def _select_initializer_names(onnx_model):
+        """
+        Selects all initializers with float type.
+
+        :param onnx_model: ONNX graph
+        """
+        names = []
+        for init in onnx_model.graph.initializer:
+            name = init.name
+            dt = init.data_type
+            if dt in (TensorProto.FLOAT16,  # pylint: disable=E1101
+                      TensorProto.FLOAT,  # pylint: disable=E1101
+                      TensorProto.DOUBLE):  # pylint: disable=E1101
+                names.append(name)
+        return names
 
     def _init_next(self):
         if self.enable_logging:
@@ -181,6 +173,22 @@ class OrtGradientForwardBackward:
             # config.use_memory_efficient_gradient = True
             self.graph_builder_config = config
 
+        attributes = self._create_onnx_graphs()
+        attributes['__doc__'] = (
+            "Inherits from @see cl OrtGradientForwardBackwardFunction.")
+        attributes['__module__'] = (
+            OrtGradientForwardBackwardFunction.__module__)
+        self.cls_type_ =  type(
+            self.class_name, (OrtGradientForwardBackwardFunction,),
+            attributes)
+
+    def new_instance(self):
+        """
+        Creates an instance of class `self.cls_type_`.
+        It implements methods *forward* and *backward*.
+        """
+        return self.cls_type_()
+
     def __getstate__(self):
         "Removes any non pickable attribute."
         atts = [k for k in self.__dict__ if not k.endswith('_')
@@ -196,8 +204,6 @@ class OrtGradientForwardBackward:
         for att, v in state.items():
             setattr(self, att, v)
         self._init_next()
-        self.args_ = OrtGradientForwardBackward.Args(
-            **self._create_onnx_graphs())
         return self
 
     def __repr__(self):
@@ -247,7 +253,6 @@ class OrtGradientForwardBackward:
             with weights as inputs
         * `_training_agent`: :epkg:`TrainingAgent`
         * `_cache`: :epkg:`OrtValueCache`
-        * `_update_cache`: update the cache or not
         * `_states`: a list
         * `_logger`: logger
         * `_input_names`: input names
@@ -398,7 +403,6 @@ class OrtGradientForwardBackward:
             '_sess_eval': sess_eval,
             '_training_agent': training_agent,
             '_cache': OrtValueCache(),
-            '_update_cache': False,
             '_states': [],
             '_logger': logger,
             '_input_names': self.input_names,
@@ -431,6 +435,13 @@ class OrtGradientForwardBackward:
                 "%r != %r" % (kwargs['_onx_inp'], kwargs['_onx_out']))
         return kwargs
 
+
+class OrtGradientForwardBackwardFunction:
+    """
+    Ancestor for a class implementing forward and backward
+    and dynamically created by @see cl OrtGradientForwardBackward.
+    """
+
     @staticmethod
     def device_name(device):
         """
@@ -448,12 +459,13 @@ class OrtGradientForwardBackward:
 
     @staticmethod
     def input_to_ort(tensors, devices, debug):
-        "Converts a list of tensos into an OrtValueVector."
+        "Converts a list of tensos into an :epkg:`OrtValueVector`."
         def _validate_(tensors):
             if any(map(
                     lambda tu: (
                         tu[0].device_name() !=
-                        OrtGradientForwardBackward.device_name(tu[1])),
+                            OrtGradientForwardBackwardFunction.device_name(
+                                tu[1])),
                     zip(tensors, devices))):
                 raise RuntimeError(
                     "Not all inputs are on the same device %r != %r." % (
@@ -497,19 +509,35 @@ class OrtGradientForwardBackward:
             _validate_(vect)
         return vect
 
+    def save_for_backward(self, inputs):
+        """
+        Saves inputs furing forward steps. The list inputs
+        is copied (simple copy, no deep copy).
+
+        :param inputs: list of tensors to save.
+        """
+        self.saved_tensors_ = list(inputs)
+
+    @property
+    def saved_tensors(self):
+        """
+        Returns saved tensors during forward step.
+        """
+        return self.saved_tensors_
+
     def forward(self, inputs, training=False):
         """
         Implements forward function.
 
         :param inputs: inputs
         :param training: only inference or training as well
-        :return: output
+        :return: output as :epkg:`OrtValueVector`
         """
         logger = self._logger
-        cls = self.args_
+        cls = self.__class__
 
         def _log(msg, *args):
-            logger.debug("[%s.forward] (%dI) %s" + msg,
+            logger.debug("[%s.forward] (%dI) " + msg,
                          cls.__name__, len(inputs), *args)
 
         if logger is not None:
@@ -521,7 +549,7 @@ class OrtGradientForwardBackward:
             _log("ort class %r", cls)
             _log("create OrtValueVector (through dlpack)")
 
-        forward_inputs = OrtGradientForwardBackward.input_to_ort(
+        forward_inputs = cls.input_to_ort(
             inputs, cls._devices, cls._debug)
 
         if training:
@@ -533,21 +561,10 @@ class OrtGradientForwardBackward:
             cls._training_agent.run_forward(
                 forward_inputs, forward_outputs, state, cls._cache)
 
-            cls.save_for_backward(*inputs)
-
-            if cls._update_cache:
-                if logger is not None:
-                    _log("update_cache")
-                raise NotImplementedError("Cache is not implemented.")
-            else:
-                if logger is not None:
-                    _log("to torck.tensor")
-                res = cls.from_ort_to_torch(forward_outputs)
-                if len(res) == 1:
-                    res = res[0]
-                if logger is not None:
-                    _log("end")
-                return res
+            self.save_for_backward(inputs)
+            if logger is not None:
+                _log("end")
+            return forward_outputs
         else:
             # what about bind_input (+ data_ptr)
             if len(forward_inputs) != len(cls._grad_input_names):
@@ -587,18 +604,17 @@ class OrtGradientForwardBackward:
                 _log("end")
             return ortvalues
 
-    def ort_backward(self, grad_outputs):
+    def backward(self, grad_outputs):
         """
-        Implements backward function.
-        See :epkg:`autograd functions`.
+        Implements backward function. The function returns
+        an :epkg:`OrtValueVector`.
         """
-        cls = self
+        cls = self.__class__
         logger = cls._logger
 
         def _log(msg, *args):
-            logger.debug("[%s.backward] (%dI) %s" + msg,
-                         cls.__name__, len(grad_outputs),
-                         *args)
+            logger.debug("[%s.backward] (%dI) " + msg,
+                         cls.__name__, len(grad_outputs), *args)
 
         if logger is not None:
             _log("begin")
@@ -606,24 +622,27 @@ class OrtGradientForwardBackward:
             _log("ort class %r", cls)
             _log("saved_tensors")
 
-        inputs = cls.saved_tensors
+        inputs = self.saved_tensors
         if logger is not None:
             _log("DEBUG: saved_tensors %r", type(inputs))
-        if logger is not None:
             _log("cls._state.pop()")
         state = cls._states.pop()
 
         if logger is not None:
-            _log("create OrtValueVector (through dlpack)")
+            _log("create OrtValueVector")
 
-        backward_inputs = cls.from_torch_to_ort(grad_outputs)
+        backward_inputs = cls.input_to_ort(
+            grad_outputs, cls._bw_outputs_device_info, cls._debug)
 
-        backward_outputs = OrtValueVector()
         if logger is not None:
+            _log("len(grad_outputs)=%d type(grad_outputs)=%r",
+                 len(grad_outputs), type(grad_outputs))
+            _log("len(backward_inputs)=%d type(backward_inputs)=%r",
+                 len(backward_inputs), type(backward_inputs))
             _log("run_backward")
+        backward_outputs = OrtValueVector()
         cls._training_agent.run_backward(
             backward_inputs, backward_outputs, state)
-        res = cls.from_ort_to_torch(backward_outputs)
         if cls.debug:  # pragma: no cover
             _log("DEBUG")
             for i, ov in enumerate(backward_outputs):
@@ -632,4 +651,4 @@ class OrtGradientForwardBackward:
         if logger is not None:
             _log("got %r gradients", len(res))
             _log("end")
-        return res
+        return backward_outputs
