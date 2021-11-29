@@ -18,6 +18,7 @@ involving operator not actually implemented in
     tutorial_3_new_operator
     tutorial_4_complex
     tutorial_6_training
+    tutorial_6_training_partial
     tutorial_7_benchmark
 
 The tutorial was tested with following version:

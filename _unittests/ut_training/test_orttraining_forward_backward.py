@@ -44,7 +44,8 @@ class TestOrtTrainingForwardBackward(ExtTestCase):
         forback = OrtGradientForwardBackward(
             onx, debug=True, enable_logging=True)
         self.assertTrue(hasattr(forback, 'cls_type_'))
-        self.assertEqual(forback.cls_type_._onx_inp, ['X', 'coef', 'intercept'])
+        self.assertEqual(forback.cls_type_._onx_inp,
+                         ['X', 'coef', 'intercept'])
         self.assertEqual(forback.cls_type_._onx_out,
                          ['X_grad', 'coef_grad', 'intercept_grad'])
         self.assertEqual(forback.cls_type_._weights_to_train,
@@ -127,7 +128,8 @@ class TestOrtTrainingForwardBackward(ExtTestCase):
         forback = pickle.load(st2)
 
         self.assertTrue(hasattr(forback, 'cls_type_'))
-        self.assertEqual(forback.cls_type_._onx_inp, ['X', 'coef', 'intercept'])
+        self.assertEqual(forback.cls_type_._onx_inp,
+                         ['X', 'coef', 'intercept'])
         self.assertEqual(forback.cls_type_._onx_out,
                          ['X_grad', 'coef_grad', 'intercept_grad'])
         self.assertEqual(forback.cls_type_._weights_to_train,
@@ -190,15 +192,25 @@ class TestOrtTrainingForwardBackward(ExtTestCase):
         X_train, X_test, y_train, y_test = train_test_split(X, y)
         reg = LinearRegression()
         reg.fit(X_train, y_train)
+        reg.coef_ = reg.coef_.reshape((1, -1))
+        reg.intercept_ = reg.intercept_.reshape((-1, ))
         onx = to_onnx(reg, X_train, target_opset=opset,
                       black_op={'LinearRegressor'})
-        #onx.graph.input[0].type.tensor_type.shape.dim[0].dim_value = 
-        #onx.graph.output[0].type.tensor_type.shape.dim[0].dim_value = 1
+
+        # remove batch possibility
+        #onx.graph.input[0].type.tensor_type.shape.dim[0].dim_value = 0
+        #onx.graph.input[0].type.tensor_type.shape.dim[0].dim_param = "batch_size"
+        #onx.graph.output[0].type.tensor_type.shape.dim[0].dim_value = 0
+        #onx.graph.output[0].type.tensor_type.shape.dim[0].dim_param = "batch_size"
+        sess = InferenceSession(onx.SerializeToString())
+        sess.run(None, {'X': X_test[:1]})
 
         # starts testing
         forback = OrtGradientForwardBackward(
             onx, debug=True, enable_logging=True)
         temp = get_temp_folder(__file__, "temp_forward_training")
+        with open(os.path.join(temp, "model.onnx"), "wb") as f:
+            f.write(onx.SerializeToString())
         with open(os.path.join(temp, "fw_train.onnx"), "wb") as f:
             f.write(forback.cls_type_._trained_onnx.SerializeToString())
         with open(os.path.join(temp, "fw_pre.onnx"), "wb") as f:
@@ -207,16 +219,17 @@ class TestOrtTrainingForwardBackward(ExtTestCase):
 
         X_test = X_test[:1]
         expected = reg.predict(X_test)
-        coef = reg.coef_.astype(numpy.float32).reshape((-1, ))
+        coef = reg.coef_.astype(numpy.float32).reshape((-1, 1))
         intercept = numpy.array([reg.intercept_], dtype=numpy.float32)
 
         # OrtValue
         inst = forback.new_instance()
         device = OrtDevice(OrtDevice.cpu(), OrtMemType.DEFAULT, 0)
 
-        #X_test = X_test[:1]
-        #y_test = y_test[0]
-        #expected = expected[:1]
+        # only one observation
+        X_test = X_test[:1]
+        y_test = y_test[0]
+        expected = expected[:1]
 
         # OrtValueVector
         inputs = OrtValueVector()
@@ -224,7 +237,8 @@ class TestOrtTrainingForwardBackward(ExtTestCase):
             inputs.push_back(C_OrtValue.ortvalue_from_numpy(a, device))
         got = inst.forward(inputs, training=True)
         self.assertEqual(len(got), 1)
-        self.assertEqualArray(expected, got[0].numpy().ravel(), decimal=4)
+        self.assertEqualArray(
+            expected.ravel(), got[0].numpy().ravel(), decimal=4)
 
         outputs = OrtValueVector()
         outputs.push_back(C_OrtValue.ortvalue_from_numpy(
@@ -239,13 +253,14 @@ class TestOrtTrainingForwardBackward(ExtTestCase):
         got_ort = inst.forward(inputs, training=True)
         got = [v.numpy() for v in got_ort]
         self.assertEqual(len(got), 1)
-        self.assertEqualArray(expected, got[0].ravel(), decimal=4)
+        self.assertEqualArray(expected.ravel(), got[0].ravel(), decimal=4)
 
         # numpy
         inputs = [X_test, coef, intercept]
         got = inst.forward(inputs, training=True)
         self.assertEqual(len(got), 1)
-        self.assertEqualArray(expected, got[0].numpy().ravel(), decimal=4)
+        self.assertEqualArray(
+            expected.ravel(), got[0].numpy().ravel(), decimal=4)
 
     @unittest.skipIf(TrainingSession is None, reason="no training")
     def test_forward_training(self):
@@ -257,5 +272,5 @@ class TestOrtTrainingForwardBackward(ExtTestCase):
 
 
 if __name__ == "__main__":
-    TestOrtTrainingForwardBackward().test_forward_training()
+    # TestOrtTrainingForwardBackward().test_forward_training()
     unittest.main()

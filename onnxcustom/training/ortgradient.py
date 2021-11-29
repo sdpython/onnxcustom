@@ -650,17 +650,16 @@ class OrtGradientForwardBackwardFunction:
                  len(backward_inputs), type(backward_inputs))
             for i in range(len(backward_inputs)):
                 _log("backward_inputs[%d].shape=%r",
-                    i, backward_inputs[i].shape())
+                     i, backward_inputs[i].shape())
             _log("run_backward")
         backward_outputs = OrtValueVector()
         cls._training_agent.run_backward(
             backward_inputs, backward_outputs, state)
-        if cls.debug:  # pragma: no cover
+        if logger is not None:  # pragma: no cover
             _log("DEBUG")
             for i, ov in enumerate(backward_outputs):
                 _log("BCK-RET: i=%d - ptr=%r - shape=%r",
                      i, ov.shape(), ov.data_ptr())
-        if logger is not None:
             _log("got %r gradients", len(backward_outputs))
             _log("end")
         return backward_outputs
