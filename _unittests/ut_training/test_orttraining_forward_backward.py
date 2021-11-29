@@ -27,7 +27,6 @@ from onnxcustom import __max_supported_opset__ as opset
 
 class TestOrtTrainingForwardBackward(ExtTestCase):
 
-    @unittest.skipIf(TrainingSession is None, reason="no training")
     def forward_no_training(self):
         from onnxcustom.training.ortgradient import OrtGradientForwardBackward
         X, y = make_regression(  # pylint: disable=W0632
@@ -181,7 +180,6 @@ class TestOrtTrainingForwardBackward(ExtTestCase):
         self.assertEqual(len(got), 1)
         self.assertEqualArray(expected, got[0].numpy().ravel(), decimal=4)
 
-    @unittest.skipIf(TrainingSession is None, reason="no training")
     def forward_training(self):
         from onnxcustom.training.ortgradient import OrtGradientForwardBackward
         X, y = make_regression(  # pylint: disable=W0632
@@ -193,6 +191,8 @@ class TestOrtTrainingForwardBackward(ExtTestCase):
         reg.fit(X_train, y_train)
         onx = to_onnx(reg, X_train, target_opset=opset,
                       black_op={'LinearRegressor'})
+        #onx.graph.input[0].type.tensor_type.shape.dim[0].dim_value = 
+        #onx.graph.output[0].type.tensor_type.shape.dim[0].dim_value = 1
 
         # starts testing
         forback = OrtGradientForwardBackward(
@@ -206,6 +206,10 @@ class TestOrtTrainingForwardBackward(ExtTestCase):
         inst = forback.new_instance()
         device = OrtDevice(OrtDevice.cpu(), OrtMemType.DEFAULT, 0)
 
+        #X_test = X_test[:1]
+        #y_test = y_test[0]
+        #expected = expected[:1]
+
         # OrtValueVector
         inputs = OrtValueVector()
         for a in [X_test, coef, intercept]:
@@ -216,7 +220,7 @@ class TestOrtTrainingForwardBackward(ExtTestCase):
 
         outputs = OrtValueVector()
         outputs.push_back(C_OrtValue.ortvalue_from_numpy(
-            y_test.reshape((-1, 1)), device))
+            y_test.reshape((1, -1, )), device))
         got = inst.backward(outputs)
         self.assertEqual(len(got), 3)
 
@@ -245,4 +249,5 @@ class TestOrtTrainingForwardBackward(ExtTestCase):
 
 
 if __name__ == "__main__":
+    TestOrtTrainingForwardBackward().test_forward_training()
     unittest.main()

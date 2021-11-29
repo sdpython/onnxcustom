@@ -2,4 +2,5 @@
 DataLoader
 ==========
 
-.. autoclass:: onnxcustom.training.data_loader.OrtDataLoader
+.. autosignature:: onnxcustom.training.data_loader.OrtDataLoader
+    :members:

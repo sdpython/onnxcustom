@@ -253,7 +253,6 @@ class OrtGradientForwardBackward:
             with weights as inputs
         * `_training_agent`: :epkg:`TrainingAgent`
         * `_cache`: :epkg:`OrtValueCache`
-        * `_states`: a list
         * `_logger`: logger
         * `_input_names`: input names
         * `_debug`: use debug mode
@@ -403,7 +402,6 @@ class OrtGradientForwardBackward:
             '_sess_eval': sess_eval,
             '_training_agent': training_agent,
             '_cache': OrtValueCache(),
-            '_states': [],
             '_logger': logger,
             '_input_names': self.input_names,
             '_grad_input_names': grad_input_names,
@@ -440,7 +438,15 @@ class OrtGradientForwardBackwardFunction:
     """
     Ancestor for a class implementing forward and backward
     and dynamically created by @see cl OrtGradientForwardBackward.
+
+    Attributes stored in *forward* method:
+    * `saved_tensors_`: list of tensors to save during forward
+        and to retrieve during backward
+    * `state_`: current weights stored in :epkg:`PartialGraphExecutionState`
     """
+    def __init__(self):
+        self.states_ = []
+        self.saved_tensors_ = None
 
     @staticmethod
     def device_name(device):
@@ -523,6 +529,9 @@ class OrtGradientForwardBackwardFunction:
         """
         Returns saved tensors during forward step.
         """
+        if self.saved_tensors_ is None:
+            raise RuntimeError(
+                "No tensors was saved with save_for_backward.")
         return self.saved_tensors_
 
     def forward(self, inputs, training=False):
@@ -555,7 +564,7 @@ class OrtGradientForwardBackwardFunction:
         if training:
             forward_outputs = OrtValueVector()
             state = PartialGraphExecutionState()
-            cls._states.append(state)
+            self.states_.append(state)
             if logger is not None:
                 _log("run_forward")
             cls._training_agent.run_forward(
@@ -625,8 +634,8 @@ class OrtGradientForwardBackwardFunction:
         inputs = self.saved_tensors
         if logger is not None:
             _log("DEBUG: saved_tensors %r", type(inputs))
-            _log("cls._state.pop()")
-        state = cls._states.pop()
+            _log("self.state_.pop()")
+        state = self.states_.pop()
 
         if logger is not None:
             _log("create OrtValueVector")
@@ -639,6 +648,9 @@ class OrtGradientForwardBackwardFunction:
                  len(grad_outputs), type(grad_outputs))
             _log("len(backward_inputs)=%d type(backward_inputs)=%r",
                  len(backward_inputs), type(backward_inputs))
+            for i in range(len(backward_inputs)):
+                _log("backward_inputs[%d].shape=%r",
+                    i, backward_inputs[i].shape())
             _log("run_backward")
         backward_outputs = OrtValueVector()
         cls._training_agent.run_backward(
