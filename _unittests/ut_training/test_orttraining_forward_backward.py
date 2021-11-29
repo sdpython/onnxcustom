@@ -6,7 +6,8 @@ import unittest
 import io
 import pickle
 import logging
-from pyquickhelper.pycode import ExtTestCase
+import os
+from pyquickhelper.pycode import ExtTestCase, get_temp_folder
 import numpy
 from sklearn.datasets import make_regression
 from sklearn.model_selection import train_test_split
@@ -197,7 +198,14 @@ class TestOrtTrainingForwardBackward(ExtTestCase):
         # starts testing
         forback = OrtGradientForwardBackward(
             onx, debug=True, enable_logging=True)
+        temp = get_temp_folder(__file__, "temp_forward_training")
+        with open(os.path.join(temp, "fw_train.onnx"), "wb") as f:
+            f.write(forback.cls_type_._trained_onnx.SerializeToString())
+        with open(os.path.join(temp, "fw_pre.onnx"), "wb") as f:
+            gr = forback.cls_type_._optimized_pre_grad_model
+            f.write(gr.SerializeToString())
 
+        X_test = X_test[:1]
         expected = reg.predict(X_test)
         coef = reg.coef_.astype(numpy.float32).reshape((-1, ))
         intercept = numpy.array([reg.intercept_], dtype=numpy.float32)
