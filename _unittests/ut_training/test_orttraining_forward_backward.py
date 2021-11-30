@@ -11,7 +11,7 @@ from pyquickhelper.pycode import ExtTestCase, get_temp_folder
 import numpy
 from sklearn.datasets import make_regression
 from sklearn.model_selection import train_test_split
-from sklearn.linear_model import LinearRegression
+from sklearn.linear_model import LinearRegression, LogisticRegression
 from onnxruntime import InferenceSession
 from onnxruntime.capi._pybind_state import (  # pylint: disable=E0611
     OrtValue as C_OrtValue, OrtDevice, OrtMemType)
@@ -23,6 +23,7 @@ except ImportError:
     # onnxruntime not training
     TrainingSession = None
 from mlprodict.onnx_conv import to_onnx
+from mlprodict.onnx_tools.onnx_manipulations import select_model_inputs_outputs
 from onnxcustom import __max_supported_opset__ as opset
 
 
@@ -58,7 +59,7 @@ class TestOrtTrainingForwardBackward(ExtTestCase):
         self.assertEqual(forback.cls_type_._output_names, ['variable'])
 
         expected = reg.predict(X_test)
-        coef = reg.coef_.astype(numpy.float32).reshape((-1, ))
+        coef = reg.coef_.astype(numpy.float32).reshape((-1, 1))
         intercept = numpy.array([reg.intercept_], dtype=numpy.float32)
 
         sess0 = InferenceSession(onx.SerializeToString())
@@ -142,7 +143,7 @@ class TestOrtTrainingForwardBackward(ExtTestCase):
         self.assertEqual(forback.cls_type_._output_names, ['variable'])
 
         expected = reg.predict(X_test)
-        coef = reg.coef_.astype(numpy.float32).reshape((-1, ))
+        coef = reg.coef_.astype(numpy.float32).reshape((-1, 1))
         intercept = numpy.array([reg.intercept_], dtype=numpy.float32)
 
         sess0 = InferenceSession(onx.SerializeToString())
@@ -183,19 +184,30 @@ class TestOrtTrainingForwardBackward(ExtTestCase):
         self.assertEqual(len(got), 1)
         self.assertEqualArray(expected, got[0].numpy().ravel(), decimal=4)
 
-    def forward_training(self):
+    def forward_training(self, model, debug=False):
         from onnxcustom.training.ortgradient import OrtGradientForwardBackward
         X, y = make_regression(  # pylint: disable=W0632
             100, n_features=10, bias=2)
         X = X.astype(numpy.float32)
-        y = y.astype(numpy.float32)
+        if hasattr(model.__class__, 'predict_proba'):
+            y = y.astype(numpy.int64)
+        else:
+            y = y.astype(numpy.float32)
         X_train, X_test, y_train, y_test = train_test_split(X, y)
-        reg = LinearRegression()
+        reg = model
         reg.fit(X_train, y_train)
-        reg.coef_ = reg.coef_.reshape((1, -1))
-        reg.intercept_ = reg.intercept_.reshape((-1, ))
-        onx = to_onnx(reg, X_train, target_opset=opset,
-                      black_op={'LinearRegressor'})
+        # needs if skl2onnx<1.10.4
+        # reg.coef_ = reg.coef_.reshape((1, -1))
+        # reg.intercept_ = reg.intercept_.reshape((-1, ))
+        if hasattr(model.__class__, 'predict_proba'):
+            onx = to_onnx(reg, X_train, target_opset=opset,
+                          black_op={'LinearClassifier'},
+                          options={'zipmap': False})
+            onx = select_model_inputs_outputs(
+                onx, outputs=[onx.graph.output[1].name])
+        else:
+            onx = to_onnx(reg, X_train, target_opset=opset,
+                          black_op={'LinearRegressor'})
 
         # remove batch possibility
         #onx.graph.input[0].type.tensor_type.shape.dim[0].dim_value = 0
@@ -208,30 +220,51 @@ class TestOrtTrainingForwardBackward(ExtTestCase):
         # starts testing
         forback = OrtGradientForwardBackward(
             onx, debug=True, enable_logging=True)
-        temp = get_temp_folder(__file__, "temp_forward_training")
-        with open(os.path.join(temp, "model.onnx"), "wb") as f:
-            f.write(onx.SerializeToString())
-        with open(os.path.join(temp, "fw_train.onnx"), "wb") as f:
-            f.write(forback.cls_type_._trained_onnx.SerializeToString())
-        with open(os.path.join(temp, "fw_pre.onnx"), "wb") as f:
-            gr = forback.cls_type_._optimized_pre_grad_model
-            f.write(gr.SerializeToString())
+        if debug:
+            n = model.__class__.__name__
+            temp = get_temp_folder(__file__, "temp_forward_training")
+            with open(os.path.join(temp, "model_%s.onnx" % n), "wb") as f:
+                f.write(onx.SerializeToString())
+            with open(os.path.join(temp, "fw_train_%s.onnx" % n), "wb") as f:
+                f.write(forback.cls_type_._trained_onnx.SerializeToString())
+            with open(os.path.join(temp, "fw_pre_%s.onnx" % n), "wb") as f:
+                gr = forback.cls_type_._optimized_pre_grad_model
+                f.write(gr.SerializeToString())
 
-        X_test = X_test[:1]
-        expected = reg.predict(X_test)
-        coef = reg.coef_.astype(numpy.float32).reshape((-1, 1))
-        intercept = numpy.array([reg.intercept_], dtype=numpy.float32)
+        if hasattr(model.__class__, 'predict_proba'):
+            expected = reg.predict_proba(X_test)
+            coef = reg.coef_.astype(numpy.float32)
+            intercept = reg.intercept_.astype(numpy.float32)
+        else:
+            expected = reg.predict(X_test)
+            coef = reg.coef_.astype(numpy.float32).reshape((-1, 1))
+            intercept = numpy.array([reg.intercept_], dtype=numpy.float32)
 
         # OrtValue
         inst = forback.new_instance()
         device = OrtDevice(OrtDevice.cpu(), OrtMemType.DEFAULT, 0)
 
         # only one observation
-        X_test = X_test[:1]
-        y_test = y_test[0]
-        expected = expected[:1]
+        X_test1 = X_test[:1]
+        y_test1 = y_test[0]
+        expected1 = expected[:1]
 
         # OrtValueVector
+        inputs = OrtValueVector()
+        for a in [X_test1, coef, intercept]:
+            inputs.push_back(C_OrtValue.ortvalue_from_numpy(a, device))
+        got = inst.forward(inputs, training=True)
+        self.assertEqual(len(got), 1)
+        self.assertEqualArray(
+            expected1.ravel(), got[0].numpy().ravel(), decimal=4)
+
+        outputs = OrtValueVector()
+        outputs.push_back(C_OrtValue.ortvalue_from_numpy(
+            y_test1.reshape((1, -1)), device))
+        got = inst.backward(outputs)
+        self.assertEqual(len(got), 3)
+
+        # OrtValueVectorN
         inputs = OrtValueVector()
         for a in [X_test, coef, intercept]:
             inputs.push_back(C_OrtValue.ortvalue_from_numpy(a, device))
@@ -242,7 +275,7 @@ class TestOrtTrainingForwardBackward(ExtTestCase):
 
         outputs = OrtValueVector()
         outputs.push_back(C_OrtValue.ortvalue_from_numpy(
-            y_test.reshape((1, -1, )), device))
+            y_test.reshape((1, -1)), device))
         got = inst.backward(outputs)
         self.assertEqual(len(got), 3)
 
@@ -255,17 +288,38 @@ class TestOrtTrainingForwardBackward(ExtTestCase):
         self.assertEqual(len(got), 1)
         self.assertEqualArray(expected.ravel(), got[0].ravel(), decimal=4)
 
+        outputs = [C_OrtValue.ortvalue_from_numpy(
+            y_test.reshape((1, -1)), device)]
+        got = inst.backward(outputs)
+        self.assertEqual(len(got), 3)
+
         # numpy
         inputs = [X_test, coef, intercept]
-        got = inst.forward(inputs, training=True)
+        got_ort = inst.forward(inputs, training=True)
+        got = [v.numpy() for v in got_ort]
         self.assertEqual(len(got), 1)
-        self.assertEqualArray(
-            expected.ravel(), got[0].numpy().ravel(), decimal=4)
+        self.assertEqualArray(expected.ravel(), got[0].ravel(), decimal=4)
+
+        outputs = [y_test.reshape((1, -1))]
+        got = inst.backward(outputs)
+        self.assertEqual(len(got), 3)
 
     @unittest.skipIf(TrainingSession is None, reason="no training")
-    def test_forward_training(self):
+    def test_forward_training_regression(self):
         res, logs = self.assertLogging(
-            self.forward_training, 'onnxcustom', level=logging.DEBUG, console=True)
+            lambda: self.forward_training(LinearRegression()),
+            'onnxcustom', level=logging.DEBUG)
+        self.assertEmpty(res)
+        self.assertIn("[OrtGradientForwardBackward]", logs)
+        self.assertIn("weights_to_train=['coef', 'intercept']", logs)
+
+    @unittest.skipIf(TrainingSession is None, reason="no training")
+    @unittest.skipIf(True, reason="still issues")
+    def test_forward_training_logreg(self):
+        res, logs = self.assertLogging(
+            lambda: self.forward_training(
+                LogisticRegression(), debug=True),
+            'onnxcustom', level=logging.DEBUG)
         self.assertEmpty(res)
         self.assertIn("[OrtGradientForwardBackward]", logs)
         self.assertIn("weights_to_train=['coef', 'intercept']", logs)

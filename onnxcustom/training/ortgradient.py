@@ -47,6 +47,7 @@ class OrtGradientForwardBackward:
     .. warning::
         This class does not consider subgraphs.
     """
+
     def __init__(self, onnx_model, weights_to_train=None,
                  input_names=None, output_names=None, class_name=None,
                  sess_options=None, providers=None,
@@ -444,6 +445,7 @@ class OrtGradientForwardBackwardFunction:
         and to retrieve during backward
     * `state_`: current weights stored in :epkg:`PartialGraphExecutionState`
     """
+
     def __init__(self):
         self.states_ = []
         self.saved_tensors_ = None
@@ -648,7 +650,7 @@ class OrtGradientForwardBackwardFunction:
                  len(grad_outputs), type(grad_outputs))
             _log("len(backward_inputs)=%d type(backward_inputs)=%r",
                  len(backward_inputs), type(backward_inputs))
-            for i in range(len(backward_inputs)):
+            for i in range(len(backward_inputs)):  # pylint: disable=C0200
                 _log("backward_inputs[%d].shape=%r",
                      i, backward_inputs[i].shape())
             _log("run_backward")

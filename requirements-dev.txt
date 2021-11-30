@@ -30,7 +30,7 @@ pyquickhelper>=1.10
 pytest
 pytest-cov
 scikit-learn>=1.0
-skl2onnx>=1.10.2
+skl2onnx>=1.10.4
 sphinx
 sphinxcontrib-blockdiag
 sphinxcontrib.imagesvg
