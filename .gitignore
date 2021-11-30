@@ -46,3 +46,12 @@ _doc/sphinxdoc/source/index_*.rst
 _doc/sphinxdoc/source/onnxcustom/*
 _doc/sphinxdoc/source/phdoc_templates/*.html
 _doc/sphinxdoc/source/README.rst
+_doc/sphinxdoc/source/notebooks/reveal.js/*
+_doc/sphinxdoc/source/gyexamples/*
+_doc/examples/*.dot*
+_doc/sphinxdoc/build/*
+_doc/sphinxdoc/source/HISTORY.rst
+_doc/sphinxdoc/source/LICENSE.txt
+_doc/sphinxdoc/source/nbcov*.png
+_doc/sphinxdoc/source/notebooks/*
+_doc/sphinxdoc/source/gallery/*

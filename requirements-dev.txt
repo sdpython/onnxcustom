@@ -38,8 +38,6 @@ sphinxcontrib.imagesvg
 sphinx-gallery
 sympy
 tabulate
-torch
-torchvision
 tqdm
 xgboost
 wheel
