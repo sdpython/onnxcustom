@@ -9,7 +9,7 @@ import logging
 import os
 from pyquickhelper.pycode import ExtTestCase, get_temp_folder
 import numpy
-from sklearn.datasets import make_regression
+from sklearn.datasets import make_regression, make_classification
 from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LinearRegression, LogisticRegression
 from onnxruntime import InferenceSession
@@ -184,14 +184,26 @@ class TestOrtTrainingForwardBackward(ExtTestCase):
         self.assertEqual(len(got), 1)
         self.assertEqualArray(expected, got[0].numpy().ravel(), decimal=4)
 
-    def forward_training(self, model, debug=False):
+    def forward_training(self, model, debug=False, n_classes=3):
         from onnxcustom.training.ortgradient import OrtGradientForwardBackward
-        X, y = make_regression(  # pylint: disable=W0632
-            100, n_features=10, bias=2)
-        X = X.astype(numpy.float32)
+
+        def to_proba(yt):
+            mx = yt.max() + 1
+            new_yt = numpy.zeros((yt.shape[0], mx), dtype=numpy.float32)
+            for i, y in enumerate(yt):
+                new_yt[yt[i]] = 1
+            return new_yt
+
         if hasattr(model.__class__, 'predict_proba'):
+            X, y = make_classification(  # pylint: disable=W0632
+                100, n_features=10, n_classes=n_classes,
+                n_informative=7)
+            X = X.astype(numpy.float32)
             y = y.astype(numpy.int64)
         else:
+            X, y = make_regression(  # pylint: disable=W0632
+                100, n_features=10, bias=2)
+            X = X.astype(numpy.float32)
             y = y.astype(numpy.float32)
         X_train, X_test, y_train, y_test = train_test_split(X, y)
         reg = model
@@ -222,7 +234,7 @@ class TestOrtTrainingForwardBackward(ExtTestCase):
             onx, debug=True, enable_logging=True)
         if debug:
             n = model.__class__.__name__
-            temp = get_temp_folder(__file__, "temp_forward_training")
+            temp = get_temp_folder(__file__, "temp_forward_training_%s" % n)
             with open(os.path.join(temp, "model_%s.onnx" % n), "wb") as f:
                 f.write(onx.SerializeToString())
             with open(os.path.join(temp, "fw_train_%s.onnx" % n), "wb") as f:
@@ -233,23 +245,29 @@ class TestOrtTrainingForwardBackward(ExtTestCase):
 
         if hasattr(model.__class__, 'predict_proba'):
             expected = reg.predict_proba(X_test)
-            coef = reg.coef_.astype(numpy.float32)
+            coef = reg.coef_.astype(numpy.float32).T
             intercept = reg.intercept_.astype(numpy.float32)
+            # only one observation
+            X_test1 = X_test[:1]
+            y_test = to_proba(y_test).astype(numpy.float32)
+            y_test1 = y_test[:1]
+            expected1 = expected[:1]
         else:
             expected = reg.predict(X_test)
             coef = reg.coef_.astype(numpy.float32).reshape((-1, 1))
             intercept = numpy.array([reg.intercept_], dtype=numpy.float32)
+            # only one observation
+            X_test1 = X_test[:1]
+            y_test1 = y_test[0].reshape((1, -1))
+            expected1 = expected[:1]
 
         # OrtValue
         inst = forback.new_instance()
         device = OrtDevice(OrtDevice.cpu(), OrtMemType.DEFAULT, 0)
 
-        # only one observation
-        X_test1 = X_test[:1]
-        y_test1 = y_test[0]
-        expected1 = expected[:1]
-
         # OrtValueVector
+        if debug:
+            print("\n\n######################\nFORWARD")
         inputs = OrtValueVector()
         for a in [X_test1, coef, intercept]:
             inputs.push_back(C_OrtValue.ortvalue_from_numpy(a, device))
@@ -258,11 +276,15 @@ class TestOrtTrainingForwardBackward(ExtTestCase):
         self.assertEqualArray(
             expected1.ravel(), got[0].numpy().ravel(), decimal=4)
 
+        if debug:
+            print("\n\n######################\nBACKWARD")
         outputs = OrtValueVector()
         outputs.push_back(C_OrtValue.ortvalue_from_numpy(
-            y_test1.reshape((1, -1)), device))
+            y_test1, device))
         got = inst.backward(outputs)
         self.assertEqual(len(got), 3)
+        if debug:
+            print("\n######################\nEND\n")
 
         # OrtValueVectorN
         inputs = OrtValueVector()
@@ -305,16 +327,15 @@ class TestOrtTrainingForwardBackward(ExtTestCase):
         self.assertEqual(len(got), 3)
 
     @unittest.skipIf(TrainingSession is None, reason="no training")
-    def test_forward_training_regression(self):
+    def test_forward_training_linreg(self):
         res, logs = self.assertLogging(
-            lambda: self.forward_training(LinearRegression()),
+            lambda: self.forward_training(LinearRegression(), debug=True),
             'onnxcustom', level=logging.DEBUG)
         self.assertEmpty(res)
         self.assertIn("[OrtGradientForwardBackward]", logs)
         self.assertIn("weights_to_train=['coef', 'intercept']", logs)
 
     @unittest.skipIf(TrainingSession is None, reason="no training")
-    @unittest.skipIf(True, reason="still issues")
     def test_forward_training_logreg(self):
         res, logs = self.assertLogging(
             lambda: self.forward_training(
@@ -326,5 +347,4 @@ class TestOrtTrainingForwardBackward(ExtTestCase):
 
 
 if __name__ == "__main__":
-    # TestOrtTrainingForwardBackward().test_forward_training()
     unittest.main()
