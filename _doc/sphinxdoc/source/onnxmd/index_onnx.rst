@@ -13,31 +13,34 @@ Overwiew
     :maxdepth: 1
     
     onnx_docs/Overview.md
-    onnx_docs/Syntax.md
-    onnx_docs/ONNXTypes.md
-    onnx_docs/TypeAnnotations.md
-    onnx_docs/TypeDenotation.md
+    onnx_docs/IR.md
+    onnx_docs/PythonAPIOverview.md
     onnx_docs/OpConventions.md
     onnx_docs/DimensionDenotation.md
-    onnx_docs/PythonAPIOverview.md
     onnx_docs/Broadcasting.md
     onnx_docs/ExternalData.md
     onnx_docs/Hub.md
-    onnx_docs/MetadataProps.md
+    onnx_metadata
     onnx_docs/ShapeInference.md
     
+Syntax
+++++++
+
+.. toctree::
+    :maxdepth: 1
+
+    onnx_docs/Syntax.md
+
 Versions
 ++++++++
 
 .. toctree::
     :maxdepth: 1
     
-    onnx_docs/OnnxReleases.md
     onnx_docs/Versioning.md
     onnx_docs/VersionConverter.md
-    onnx_docs/Versioning.md
-    onnx_docs/IR.md
     onnx_docs/Relicensing.md
+    onnx_releases
 
 Operators
 +++++++++
@@ -45,12 +48,12 @@ Operators
 .. toctree::
     :maxdepth: 1
     
-    onnx_docs/Operators.md
-    onnx_docs/Operators-ml.md
-    onnx_docs/Changelog.md
-    onnx_docs/Changelog-ml.md
-    onnx_docs/TestCoverage.md
-    onnx_docs/TestCoverage-ml.md
+    onnx_operators
+    onnx_operators_ml
+    onnx_changelog
+    onnx_changelog_ml
+    onnx_test_coverage
+    onnx_test_coverage_ml
     
 Contribute
 ++++++++++
@@ -58,12 +61,15 @@ Contribute
 .. toctree::
     :maxdepth: 1
     
-    onnx_docs/CONTRIBUTING.md
-    onnx_docs/AddNewOp.md
+    onnx_contributing
+    onnx_add_new_op
     onnx_docs/ImplementingAnOnnxBackend.md
     onnx_docs/OnnxBackendTest.md
-    onnx_docs/ManagingExperimentalOps.md
+    onnx_managing
     onnx_docs/ONNXIFI.md
+    onnx_docs/ONNXTypes.md
+    onnx_docs/TypeAnnotations.md
+    onnx_docs/TypeDenotation.md
 
 Training
 ++++++++

@@ -19,6 +19,7 @@ def plot_onnxs(*onx, ax=None, dpi=300, temp_dot=None, temp_img=None,
     :param temp_img: temporary image,
         if None, a file is created and removed
     :param show: calls `plt.show()`
+    :param title: graph title
     :return: axes
     """
     if len(onx) == 1:

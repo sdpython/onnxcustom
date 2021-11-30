@@ -112,6 +112,7 @@ epkg_dictionary.update({
     'skorch': 'https://skorch.readthedocs.io/en/stable/',
     'sklearn-onnx': 'https://github.com/onnx/sklearn-onnx',
     'sphinx-gallery': 'https://github.com/sphinx-gallery/sphinx-gallery',
+    'sqlite3': 'https://docs.python.org/3/library/sqlite3.html',
     'Stochastic Gradient Descent':
         'https://en.wikipedia.org/wiki/Stochastic_gradient_descent',
     'tqdm': 'https://github.com/tqdm/tqdm',
