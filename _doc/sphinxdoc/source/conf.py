@@ -20,7 +20,8 @@ set_sphinx_variables(__file__, "onnxcustom", "Xavier Dupré", 2021,
                      title="onnxcustom", book=True)
 
 extensions.extend([
-    "sphinxcontrib.blockdiag"
+    "sphinxcontrib.blockdiag",
+    "myst_parser"
 ])
 
 blog_root = "http://www.xavierdupre.fr/app/onnxcustom/helpsphinx/"

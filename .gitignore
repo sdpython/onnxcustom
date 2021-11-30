@@ -38,3 +38,11 @@ _doc/sphinxdoc/source/phdoc_static/*.js
 _doc/sphinxdoc/source/phdoc_static/reveal.js/*
 _doc/sphinxdoc/source/phdoc_static/style_notebook_snippet.css
 _unittests/ut_utils/t.*
+_doc/sphinxdoc/source/_temp_*
+_doc/sphinxdoc/source/all_*.rst
+_doc/sphinxdoc/source/blog/*
+_doc/sphinxdoc/source/filechanges.rst
+_doc/sphinxdoc/source/index_*.rst
+_doc/sphinxdoc/source/onnxcustom/*
+_doc/sphinxdoc/source/phdoc_templates/*.html
+_doc/sphinxdoc/source/README.rst

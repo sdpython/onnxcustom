@@ -15,6 +15,7 @@ loky
 matplotlib
 mlinsights
 mlprodict>=0.7
+myst-parser
 nbsphinx
 onnxconverter-common
 onnxmltools
