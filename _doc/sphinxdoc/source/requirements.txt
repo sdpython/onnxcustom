@@ -6,6 +6,7 @@ loky
 matplotlib
 mlinsights
 mlprodict
+myst-parser
 nbsphinx
 onnx
 onnxruntime

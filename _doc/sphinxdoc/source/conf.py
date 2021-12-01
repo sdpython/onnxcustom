@@ -20,7 +20,8 @@ set_sphinx_variables(__file__, "onnxcustom", "Xavier Dupré", 2021,
                      title="onnxcustom", book=True)
 
 extensions.extend([
-    "sphinxcontrib.blockdiag"
+    "sphinxcontrib.blockdiag",
+    "myst_parser"
 ])
 
 blog_root = "http://www.xavierdupre.fr/app/onnxcustom/helpsphinx/"
@@ -126,6 +127,7 @@ epkg_dictionary.update({
         'http://www.xavierdupre.fr/app/onnxruntime_training/'
         'helpsphinx/api/tensors.html#sparsetensor',
     'sphinx-gallery': 'https://github.com/sphinx-gallery/sphinx-gallery',
+    'sqlite3': 'https://docs.python.org/3/library/sqlite3.html',
     'Stochastic Gradient Descent':
         'https://en.wikipedia.org/wiki/Stochastic_gradient_descent',
     'tqdm': 'https://github.com/tqdm/tqdm',

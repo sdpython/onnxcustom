@@ -15,6 +15,7 @@ loky
 matplotlib
 mlinsights
 mlprodict>=0.7
+myst-parser
 nbsphinx
 onnxconverter-common
 onnxmltools
@@ -37,8 +38,6 @@ sphinxcontrib.imagesvg
 sphinx-gallery
 sympy
 tabulate
-torch
-torchvision
 tqdm
 xgboost
 wheel

@@ -70,6 +70,7 @@ Among the tools this package implements, you may find:
     all_notebooks
     license
     other_pages
+    onnxmd/index
 
 Sources available on
 `github/onnxcustom <https://github.com/sdpython/onnxcustom>`_.
