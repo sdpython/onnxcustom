@@ -8,6 +8,6 @@ The documentation can be searched.
 
 .. toctree::
     :maxdepth: 1
-    
+
     index_onnx
     index_onnxruntime

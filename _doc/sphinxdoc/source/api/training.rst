@@ -11,6 +11,12 @@ BaseEstimator
 .. autosignature:: onnxcustom.training.optimizers.BaseEstimator
     :members:
 
+LearingRate
++++++++++++
+
+.. autosignature:: onnxcustom.training.sgd_learning_rate.LearningRateSGDRegressor
+    :members:
+
 OrtGradientOptimizer
 ++++++++++++++++++++
 
