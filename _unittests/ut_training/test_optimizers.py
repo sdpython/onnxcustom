@@ -13,6 +13,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LinearRegression
 from mlprodict.onnx_conv import to_onnx
 from onnxcustom import __max_supported_opset__ as opset
+from onnxcustom.training.sgd_learning_rate import LearningRateSGDRegressor
 try:
     from onnxruntime import TrainingSession
 except ImportError:
@@ -136,7 +137,8 @@ class TestOptimizers(ExtTestCase):
         onx_loss = add_loss_output(onx)
         inits = ['intercept', 'coef']
         train_session = OrtGradientOptimizer(
-            onx_loss, inits, learning_rate='optimal', max_iter=10)
+            onx_loss, inits, max_iter=10,
+            learning_rate=LearningRateSGDRegressor(learning_rate='optimal'))
         self.assertRaise(lambda: train_session.get_state(), AttributeError)
         train_session.fit(X, y, use_numpy=True)
         state_tensors = train_session.get_state()
@@ -164,7 +166,8 @@ class TestOptimizers(ExtTestCase):
         onx_loss = add_loss_output(onx)
         inits = ['intercept', 'coef']
         train_session = OrtGradientOptimizer(
-            onx_loss, inits, learning_rate='optimal', max_iter=10)
+            onx_loss, inits, max_iter=10,
+            learning_rate=LearningRateSGDRegressor(learning_rate='optimal'))
         self.assertRaise(lambda: train_session.get_state(), AttributeError)
         train_session.fit(X, y, use_numpy=False)
         state_tensors = train_session.get_state()

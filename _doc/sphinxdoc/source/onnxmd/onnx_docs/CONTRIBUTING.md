@@ -90,7 +90,6 @@ After having installed mypy, you can run the type checks:
 python setup.py typecheck
 ```
 
-
 # Other developer documentation
 
 * [How to implement ONNX backend (ONNX to something converter)](ImplementingAnOnnxBackend.md)

@@ -8,13 +8,20 @@ from onnxruntime import (  # pylint: disable=E0611
     OrtValue, TrainingParameters,
     SessionOptions, TrainingSession)
 from .data_loader import OrtDataLoader
+from .sgd_learning_rate import BaseLearningRate
 
 
 class BaseEstimator:
     """
     Base class for optimizers.
     Implements common methods such `__repr__`.
+
+    :param learning_rate: learning rate class,
+        see module :mod:`onnxcustom.training.sgd_learning_rate`
     """
+
+    def __init__(self, learning_rate):
+        self.learning_rate = BaseLearningRate.select(learning_rate)
 
     @classmethod
     def _get_param_names(cls):
@@ -34,7 +41,9 @@ class BaseEstimator:
             if k not in self.__dict__:
                 continue  # pragma: no cover
             ov = getattr(self, k)
-            if v is not inspect._empty or ov != v:
+            if isinstance(ov, BaseLearningRate):
+                ps.append("%s=%s" % (k, repr(ov)))
+            elif v is not inspect._empty or ov != v:
                 ro = repr(ov)
                 if len(ro) > 50 or "\n" in ro:
                     ro = ro[:10].replace("\n", " ") + "..."
@@ -55,24 +64,16 @@ class OrtGradientOptimizer(BaseEstimator):
     :param max_iter: number of training iterations
     :param training_optimizer_name: optimizing algorithm
     :param batch_size: batch size (see class *DataLoader*)
-    :param eta0: initial learning rate for the `'constant'`, `'invscaling'`
-        or `'adaptive'` schedules.
-    :param alpha: constant that multiplies the regularization term,
-        the higher the value, the stronger the regularization.
-        Also used to compute the learning rate when set to *learning_rate*
-        is set to `'optimal'`.
-    :param power_t: exponent for inverse scaling learning rate
-    :param learning_rate: learning rate schedule:
-        * `'constant'`: `eta = eta0`
-        * `'optimal'`: `eta = 1.0 / (alpha * (t + t0))` where *t0* is chosen
-            by a heuristic proposed by Leon Bottou.
-        * `'invscaling'`: `eta = eta0 / pow(t, power_t)`
+    :param learning_rate: a name or a learning rate instance,
+        see module :mod:`onnxcustom.training.sgd_learning_rate`
     :param device: `'cpu'` or `'cuda'`
     :param device_idx: device index
     :param warm_start: when set to True, reuse the solution of the previous
         call to fit as initialization, otherwise, just erase the previous
         solution.
     :param verbose: use :epkg:`tqdm` to display the training progress
+    :param validation_every: validation with a test set every
+        *validation_every* iterations
 
     Once initialized, the class creates the attribute
     `session_` which holds an instance of `onnxruntime.TrainingSession`.
@@ -98,11 +99,12 @@ class OrtGradientOptimizer(BaseEstimator):
 
     def __init__(self, model_onnx, weights_to_train, loss_output_name='loss',
                  max_iter=100, training_optimizer_name='SGDOptimizer',
-                 batch_size=10, eta0=0.01, alpha=0.0001, power_t=0.25,
-                 learning_rate='invscaling', device='cpu', device_idx=0,
+                 batch_size=10, learning_rate='SGDRegressor',
+                 device='cpu', device_idx=0,
                  warm_start=False, verbose=0, validation_every=0.1):
         # See https://scikit-learn.org/stable/modules/generated/
         # sklearn.linear_model.SGDRegressor.html
+        BaseEstimator.__init__(self, learning_rate)
         self.model_onnx = model_onnx
         self.batch_size = batch_size
         self.weights_to_train = weights_to_train
@@ -110,10 +112,6 @@ class OrtGradientOptimizer(BaseEstimator):
         self.training_optimizer_name = training_optimizer_name
         self.verbose = verbose
         self.max_iter = max_iter
-        self.eta0 = eta0
-        self.alpha = alpha
-        self.power_t = power_t
-        self.learning_rate = learning_rate.lower()
         self.device = device
         self.device_idx = device_idx
         self.warm_start = warm_start
@@ -134,23 +132,6 @@ class OrtGradientOptimizer(BaseEstimator):
         for att, v in state.items():
             setattr(self, att, v)
         return self
-
-    def _init_learning_rate(self):
-        self.eta0_ = self.eta0
-        if self.learning_rate == "optimal":
-            typw = numpy.sqrt(1.0 / numpy.sqrt(self.alpha))
-            self.eta0_ = typw / max(1.0, (1 + typw) * 2)
-            self.optimal_init_ = 1.0 / (self.eta0_ * self.alpha)
-        else:
-            self.eta0_ = self.eta0
-        return self.eta0_
-
-    def _update_learning_rate(self, t, eta):
-        if self.learning_rate == "optimal":
-            eta = 1.0 / (self.alpha * (self.optimal_init_ + t))
-        elif self.learning_rate == "invscaling":
-            eta = self.eta0_ / numpy.power(t + 1, self.power_t)
-        return eta
 
     def fit(self, X, y, X_val=None, y_val=None, use_numpy=False):
         """
@@ -188,7 +169,7 @@ class OrtGradientOptimizer(BaseEstimator):
                 X_val, y_val, batch_size=X_val.shape[0], device=self.device)
         else:
             data_loader_val = None
-        lr = self._init_learning_rate()
+        self.learning_rate.init_learning_rate()
         self.input_names_ = [i.name for i in self.train_session_.get_inputs()]
         self.output_names_ = [
             o.name for o in self.train_session_.get_outputs()]
@@ -204,13 +185,14 @@ class OrtGradientOptimizer(BaseEstimator):
 
         train_losses = []
         val_losses = []
+        lr = self.learning_rate.value
         for it in loop:
             bind_lr = OrtValue.ortvalue_from_numpy(
                 numpy.array([lr / self.batch_size], dtype=numpy.float32),
                 self.device, self.device_idx)
             loss = self._iteration(data_loader, bind_lr,
                                    bind, use_numpy=use_numpy)
-            lr = self._update_learning_rate(it, lr)
+            lr = self.learning_rate.update_learning_rate(it).value
             if self.verbose > 1:  # pragma: no cover
                 loop.set_description(
                     "loss=%1.3g lr=%1.3g" % (  # pylint: disable=E1101,E1307

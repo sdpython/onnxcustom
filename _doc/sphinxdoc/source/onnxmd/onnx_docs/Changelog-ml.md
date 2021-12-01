@@ -186,7 +186,6 @@ This version of the operator has been available since version 1 of the 'ai.onnx.
       Any keys not present in the input dictionary, will be zero in the output array.<br>
       For example: if the ``string_vocabulary`` parameter is set to ``["a", "c", "b", "z"]``,
       then an input of ``{"a": 4, "c": 8}`` will produce an output of ``[4, 8, 0, 0]``.
-      
 
 #### Version
 
@@ -968,4 +967,3 @@ This version of the operator has been available since version 2 of the 'ai.onnx.
 <dt><tt>T2</tt> : tensor(string), tensor(int64), tensor(float)</dt>
 <dd>Output type is determined by the specified 'values_*' attribute.</dd>
 </dl>
-
