@@ -10,8 +10,8 @@ or to define shape inference implementations to go along with your
 custom operators (or both!). Shape inference functions are stored as a
 member of the OpSchema objects.
 
-In ONNX 1.10 release, symbol generation and propagation along with shape 
-data propagation was added to ONNX graph level shape inference. 
+In ONNX 1.10 release, symbol generation and propagation along with shape
+data propagation was added to ONNX graph level shape inference.
 Detailed proposal is [here](proposals/SymbolicShapeInfProposal.md)
 
 ## Invoking Shape Inference

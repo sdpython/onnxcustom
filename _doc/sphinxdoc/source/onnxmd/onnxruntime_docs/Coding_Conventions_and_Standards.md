@@ -1,6 +1,5 @@
 # ONNX Runtime coding conventions and standards
 
-
 ## C++ Code Style
 
 Google style from https://google.github.io/styleguide/cppguide.html with a few minor alterations:
@@ -36,39 +35,39 @@ Other
 
 #### Clang-format
 
-Clang-format will handle automatically formatting code to these rules. There’s a Visual Studio plugin that can format on save at https://marketplace.visualstudio.com/items?itemName=LLVMExtensions.ClangFormat, or alternatively the latest versions of Visual Studio 2017 include [clang-format support](https://blogs.msdn.microsoft.com/vcblog/2018/03/13/clangformat-support-in-visual-studio-2017-15-7-preview-1/).  
+Clang-format will handle automatically formatting code to these rules. There’s a Visual Studio plugin that can format on save at https://marketplace.visualstudio.com/items?itemName=LLVMExtensions.ClangFormat, or alternatively the latest versions of Visual Studio 2017 include [clang-format support](https://blogs.msdn.microsoft.com/vcblog/2018/03/13/clangformat-support-in-visual-studio-2017-15-7-preview-1/).
 
-There is a .clang-format file in the root directory that has the max line length override and defaults to the google rules. This should be automatically discovered by the clang-format tools. 
+There is a .clang-format file in the root directory that has the max line length override and defaults to the google rules. This should be automatically discovered by the clang-format tools.
 
 ## Code analysis
 
-Visual Studio Code Analysis with [C++ Core guidelines](https://github.com/isocpp/CppCoreGuidelines/blob/master/CppCoreGuidelines.md) rules enabled is configured to run on build for the onnxruntime_common, onnxruntime_graph and onnxruntime_util libraries. Updating the onnxruntime_framework and onnxruntime_provider libraries to enable Code Analysis and build warning free is pending. 
+Visual Studio Code Analysis with [C++ Core guidelines](https://github.com/isocpp/CppCoreGuidelines/blob/master/CppCoreGuidelines.md) rules enabled is configured to run on build for the onnxruntime_common, onnxruntime_graph and onnxruntime_util libraries. Updating the onnxruntime_framework and onnxruntime_provider libraries to enable Code Analysis and build warning free is pending.
 
-Code changes should build with no Code Analysis warnings, however this is somewhat difficult to achieve consistently as the Code Analysis implementation is in fairly constant flux. Different minor releases may have less false positives (a build with the latest version may be warning free, and a build with an earlier version may not), or detect additional problems (an earlier version builds warning free and a later version doesn't). 
+Code changes should build with no Code Analysis warnings, however this is somewhat difficult to achieve consistently as the Code Analysis implementation is in fairly constant flux. Different minor releases may have less false positives (a build with the latest version may be warning free, and a build with an earlier version may not), or detect additional problems (an earlier version builds warning free and a later version doesn't).
 
 ## Unit Testing and Code Coverage
 
-There should be unit tests that cover the core functionality of the product, expected edge cases, and expected errors. 
-Code coverage from these tests should aim at maintaining over 80% coverage. 
+There should be unit tests that cover the core functionality of the product, expected edge cases, and expected errors.
+Code coverage from these tests should aim at maintaining over 80% coverage.
 
-All changes should be covered by new or existing unit tests. 
+All changes should be covered by new or existing unit tests.
 
-In order to check that all the code you expect to be covered by testing is covered, run code coverage in Visual Studio using 'Analyze Code Coverage' under the Test menu. 
+In order to check that all the code you expect to be covered by testing is covered, run code coverage in Visual Studio using 'Analyze Code Coverage' under the Test menu.
 
-There is a configuration file in onnxruntime\VSCodeCoverage.runsettings that can be used to configure code coverage so that it reports numbers for just the onnxruntime code. Select that file in Visual Studio via the Test menu: 'Test' -> 'Test Settings' -> 'Select Test Settings File'. 
+There is a configuration file in onnxruntime\VSCodeCoverage.runsettings that can be used to configure code coverage so that it reports numbers for just the onnxruntime code. Select that file in Visual Studio via the Test menu: 'Test' -> 'Test Settings' -> 'Select Test Settings File'.
 
 Using 'Show Code Coverage Coloring' will allow you to visually inspect which lines were hit by the tests. See <https://docs.microsoft.com/en-us/visualstudio/test/using-code-coverage-to-determine-how-much-code-is-being-tested?view=vs-2017>.
 
 ## Python Code Style
 
-Please adhere to the [PEP8 Style Guide](https://www.python.org/dev/peps/pep-0008/). 
+Please adhere to the [PEP8 Style Guide](https://www.python.org/dev/peps/pep-0008/).
 A maximum line length of 120 characters is allowed for consistency with the C++ code.
 
 Code can be validated with [flake8](https://pypi.org/project/flake8/) using the configuration file in the root directory called [.flake8](https://github.com/microsoft/onnxruntime/tree/master/.flake8).
 
 The [autopep8](https://pypi.org/project/autopep8/) tool can be used to automatically fix a range of PEP8 issues, as can [yapf](https://github.com/google/yapf). There's a yapf configuration file [here](https://github.com/microsoft/onnxruntime/tree/master/onnxruntime/.style.yapf).
 
-Editors such as PyCharm [(see here)](https://www.jetbrains.com/help/pycharm/code-inspection.html) and Visual Studio Code [(see here)](https://code.visualstudio.com/docs/python/linting#_flake8) can be configured to check for PEP8 issues. 
+Editors such as PyCharm [(see here)](https://www.jetbrains.com/help/pycharm/code-inspection.html) and Visual Studio Code [(see here)](https://code.visualstudio.com/docs/python/linting#_flake8) can be configured to check for PEP8 issues.
 
 ## Objective-C/C++ Code Style
 

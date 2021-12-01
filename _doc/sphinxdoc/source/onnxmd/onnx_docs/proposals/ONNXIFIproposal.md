@@ -53,7 +53,6 @@ We propose a small C-based API, which includes the following functionality:
 
     d. If predicted time to transfer inputs to the backend, do inference, and transfer outputs from the backend exceeds predicted time to do the inference on default engine (e.g. CPU), the user falls back to a different ONNX backend, or to the default engine.
 
-
 4. The user initialized the backend, and offloads the subgraph execution to the ONNX backend by calling `onnxInitGraph`, `onnxSetGraphIO` and `onnxRunGraph`
 
 ## Implementation Notes

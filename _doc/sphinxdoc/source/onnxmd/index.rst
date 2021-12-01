@@ -11,3 +11,4 @@ The documentation can be searched.
 
     index_onnx
     index_onnxruntime
+    onnxruntime_python/index
