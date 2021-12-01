@@ -108,12 +108,14 @@ class OrtGradientForwardBackward:
         if len(self.input_names) != len(self.providers):
             raise ValueError(  # pragma: no cover
                 "input_names and providers must have the same length.")
+        if self.provider_options is None:
+            self.provider_options = [{} for i in self.input_names]
         if len(self.input_names) != len(self.provider_options):
             raise ValueError(  # pragma: no cover
                 "input_names and provider_options must have the same length.")
         if list(sorted(self.weights_to_train)) != self.weights_to_train:
             raise ValueError(
-                "List of weights to train must be sorted but is not in %r. "
+                "List of weights to train must be sorted but %r is not. "
                 "You shoud use function onnx_rename_weights to do that "
                 "before calling this class." % self.weights_to_train)
 

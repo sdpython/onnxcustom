@@ -3,7 +3,7 @@ category_encoders
 cerberus
 codecov
 coverage
-cpyquickhelper
+cpyquickhelper>=0.3.370
 cxxfilt
 flake8
 h5py

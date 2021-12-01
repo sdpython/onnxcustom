@@ -76,25 +76,9 @@ class OrtGradientOptimizer(BaseEstimator):
         *validation_every* iterations
 
     Once initialized, the class creates the attribute
-    `session_` which holds an instance of `onnxruntime.TrainingSession`.
+    `train_session_` which holds an instance of :ref:`l-ort-training-session`.
 
     See example :ref:`l-orttraining-nn-gpu`.
-
-    .. faqref::
-        :title: Differences between onnxruntime and onnxruntime-training
-
-        onnxruntime-training is an extension of onnxruntime
-        that supports training. Version 1.10 is obtained by compiling
-        onnxruntime from the sources with different flags.
-        One example:
-
-        ::
-
-            python ./tools/ci_build/build.py --build_dir ./build/debian \\
-                   --config Release --build_wheel --numpy_version= \\
-                   --skip_tests --build_shared_lib --enable_training \\
-                   --enable_training_ops --enable_training_torch_interop \\
-                   --parallel
     """
 
     def __init__(self, model_onnx, weights_to_train, loss_output_name='loss',
@@ -102,8 +86,6 @@ class OrtGradientOptimizer(BaseEstimator):
                  batch_size=10, learning_rate='SGDRegressor',
                  device='cpu', device_idx=0,
                  warm_start=False, verbose=0, validation_every=0.1):
-        # See https://scikit-learn.org/stable/modules/generated/
-        # sklearn.linear_model.SGDRegressor.html
         BaseEstimator.__init__(self, learning_rate)
         self.model_onnx = model_onnx
         self.batch_size = batch_size
@@ -169,6 +151,7 @@ class OrtGradientOptimizer(BaseEstimator):
                 X_val, y_val, batch_size=X_val.shape[0], device=self.device)
         else:
             data_loader_val = None
+
         self.learning_rate.init_learning_rate()
         self.input_names_ = [i.name for i in self.train_session_.get_inputs()]
         self.output_names_ = [
@@ -292,6 +275,10 @@ class OrtGradientOptimizer(BaseEstimator):
             loss_output_name='loss',
             training_optimizer_name='SGDOptimizer',
             device='cpu'):
+        if training_optimizer_name != 'SGDOptimizer':
+            raise NotImplementedError(
+                "Only the SGDOptimizer is implemented not %r."
+                "" % training_optimizer_name)
         ort_parameters = TrainingParameters()
         ort_parameters.loss_output_name = loss_output_name
         ort_parameters.use_mixed_precision = False
