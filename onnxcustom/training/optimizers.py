@@ -18,6 +18,7 @@ class BaseEstimator:
 
     @classmethod
     def _get_param_names(cls):
+        "Extracts all parameters to serialize."
         init = getattr(cls.__init__, "deprecated_original", cls.__init__)
         init_signature = inspect.signature(init)
         parameters = [
@@ -26,6 +27,7 @@ class BaseEstimator:
         return [(p.name, p.default) for p in parameters]
 
     def __repr__(self):
+        "Usual."
         param = self._get_param_names()
         ps = []
         for k, v in param:
