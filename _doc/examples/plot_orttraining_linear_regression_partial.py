@@ -20,7 +20,6 @@ from onnxruntime import (
     InferenceSession, get_device)
 from sklearn.datasets import make_regression
 from sklearn.model_selection import train_test_split
-from sklearn.linear_model import SGDRegressor
 from sklearn.neural_network import MLPRegressor
 from mlprodict.onnx_conv import to_onnx
 from onnxcustom.plotting.plotting_onnx import plot_onnxs
@@ -29,18 +28,6 @@ X, y = make_regression(n_features=2, bias=2)
 X = X.astype(numpy.float32)
 y = y.astype(numpy.float32)
 X_train, X_test, y_train, y_test = train_test_split(X, y)
-
-lr = SGDRegressor(l1_ratio=0, max_iter=200, eta0=5e-2)
-lr.fit(X, y)
-print(lr.predict(X[:5]))
-
-##################################
-# The trained coefficients are:
-print("trained coefficients:", lr.coef_, lr.intercept_)
-
-############################################
-# However this model does not show the training curve.
-# We switch to a :class:`sklearn.neural_network.MLPRegressor`.
 
 lr = MLPRegressor(hidden_layer_sizes=tuple(),
                   activation='identity', max_iter=200,
@@ -62,5 +49,4 @@ print("trained coefficients:", lr.coefs_, lr.intercepts_)
 # graph which defines the model to learn. It is obtained by simply
 # converting the previous linear regression into ONNX.
 
-onx = to_onnx(lr, X_train[:1].astype(numpy.float32), target_opset=15,
-              black_op={'LinearRegressor'})
+onx = to_onnx(lr, X_train[:1].astype(numpy.float32), target_opset=15)

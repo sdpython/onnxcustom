@@ -185,7 +185,7 @@ class TestOrtTrainingForwardBackward(ExtTestCase):
         self.assertEqual(len(got), 1)
         self.assertEqualArray(expected, got[0].numpy().ravel(), decimal=4)
 
-    def forward_training(self, model, debug=False, n_classes=3):
+    def forward_training(self, model, debug=False, n_classes=3, add_print=False):
         from onnxcustom.training.ortgradient import OrtGradientForwardBackward
 
         def to_proba(yt):
@@ -267,7 +267,7 @@ class TestOrtTrainingForwardBackward(ExtTestCase):
         device = OrtDevice(OrtDevice.cpu(), OrtMemType.DEFAULT, 0)
 
         # OrtValueVector
-        if debug:
+        if add_print:
             print("\n\n######################\nFORWARD")
         inputs = OrtValueVector()
         for a in [X_test1, coef, intercept]:
@@ -277,14 +277,14 @@ class TestOrtTrainingForwardBackward(ExtTestCase):
         self.assertEqualArray(
             expected1.ravel(), got[0].numpy().ravel(), decimal=4)
 
-        if debug:
+        if add_print:
             print("\n\n######################\nBACKWARD")
         outputs = OrtValueVector()
         outputs.push_back(C_OrtValue.ortvalue_from_numpy(
             y_test1, device))
         got = inst.backward(outputs)
         self.assertEqual(len(got), 3)
-        if debug:
+        if add_print:
             print("\n######################\nEND\n")
 
         # OrtValueVectorN
