@@ -2,7 +2,6 @@
 @brief      test log(time=3s)
 """
 import unittest
-import os
 import numpy
 from pyquickhelper.pycode import ExtTestCase
 from skl2onnx.common.data_types import FloatTensorType

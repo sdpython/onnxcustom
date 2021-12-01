@@ -2,7 +2,6 @@
 @file
 @brief Helper for :epkg:`onnxruntime-training`.
 """
-import inspect
 import numpy
 from .ortgradient import OrtGradientForwardBackward
 from .optimizers import BaseEstimator
@@ -100,7 +99,7 @@ class OrtGradientForwardBackwardOptimizer(BaseEstimator):
             raise NotImplementedError(
                 "Only the SGDOptimizer is implemented not %r."
                 "" % self.training_optimizer_name)
-        
+
         self.train_session_ = self._create_training_session(
             self.model_onnx, self.weights_to_train,
             device=self.device)
@@ -162,23 +161,24 @@ class OrtGradientForwardBackwardOptimizer(BaseEstimator):
 
     def _iteration(self, data_loader, learning_rate, state):
         actual_losses = []
+        bs = data_loader.batch_size
 
         for ortx, orty in data_loader:
             state[0] = ortx
-            prediction = self.train_session_[1].forward(state)            
+            prediction = self.train_session_[1].forward(state)
             loss, gradient = self._gradient(prediction, orty)
             gradient = self.train_session_[1].backward([error])
-            
+
             if len(gradient) != len(state):
                 raise RuntimeError(
                     "gradient and state should have the same length but "
                     "%r != %r." % (len(gradient), len(state)))
-            
+
             n = len(state) - len(self._weights_to_train)
             for i in range(n, len(state)):
                 self._update_weights(state[i], gradient[i], learning_rate)
-            
-            actual_losses.append(loss / batch_size)
+
+            actual_losses.append(loss / bs)
 
         return numpy.array(actual_losses).mean()
 
