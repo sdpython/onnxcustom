@@ -78,6 +78,9 @@ epkg_dictionary.update({
     'cython': 'https://cython.org/',
     'DOT': 'https://www.graphviz.org/doc/info/lang.html',
     'ImageNet': 'http://www.image-net.org/',
+    'IOBinding':
+        'http://www.xavierdupre.fr/app/onnxruntime_training/'
+        'helpsphinx/api/tensors.html#iobinding',
     'LightGBM': 'https://lightgbm.readthedocs.io/en/latest/',
     'lightgbm': 'https://lightgbm.readthedocs.io/en/latest/',
     'mlprodict':
@@ -102,6 +105,15 @@ epkg_dictionary.update({
     'onnxruntime-training':
         'https://github.com/microsoft/onnxruntime/tree/master/orttraining',
     'openmp': 'https://en.wikipedia.org/wiki/OpenMP',
+    'OrtDevice':
+        'http://www.xavierdupre.fr/app/onnxruntime_training/'
+        'helpsphinx/api/tensors.html#ortdevice',
+    'OrtValue':
+        'http://www.xavierdupre.fr/app/onnxruntime_training/'
+        'helpsphinx/api/tensors.html#ortvalue',
+    'OrtValueVector':
+        'http://www.xavierdupre.fr/app/onnxruntime_training/'
+        'helpsphinx/api/training_session.html#ortvaluevector',
     'pandas_streaming':
         'http://www.xavierdupre.fr/app/pandas_streaming/helpsphinx/index.html',
     'py-spy': 'https://github.com/benfred/py-spy',
@@ -111,6 +123,9 @@ epkg_dictionary.update({
     'scikit-learn': 'https://scikit-learn.org/stable/',
     'skorch': 'https://skorch.readthedocs.io/en/stable/',
     'sklearn-onnx': 'https://github.com/onnx/sklearn-onnx',
+    'SparseTensor':
+        'http://www.xavierdupre.fr/app/onnxruntime_training/'
+        'helpsphinx/api/tensors.html#sparsetensor',
     'sphinx-gallery': 'https://github.com/sphinx-gallery/sphinx-gallery',
     'sqlite3': 'https://docs.python.org/3/library/sqlite3.html',
     'Stochastic Gradient Descent':

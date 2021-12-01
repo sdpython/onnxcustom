@@ -3,6 +3,8 @@
 """
 
 import unittest
+import io
+import pickle
 from pyquickhelper.pycode import ExtTestCase
 import numpy
 from onnx.helper import set_model_props
@@ -38,6 +40,48 @@ class TestOptimizers(ExtTestCase):
         inits = ['intercept', 'coef']
         train_session = OrtGradientOptimizer(onx_loss, inits)
         self.assertRaise(lambda: train_session.get_state(), AttributeError)
+        train_session.fit(X, y, use_numpy=True)
+        state_tensors = train_session.get_state()
+        self.assertEqual(len(state_tensors), 2)
+        r = repr(train_session)
+        self.assertIn("OrtGradientOptimizer(model_onnx=", r)
+        self.assertIn("learning_rate='invscaling'", r)
+        losses = train_session.train_losses_
+        self.assertGreater(len(losses), 1)
+        self.assertFalse(any(map(numpy.isnan, losses)))
+
+    @unittest.skipIf(TrainingSession is None, reason="not training")
+    def test_ort_gradient_optimizers_use_numpy_pickle(self):
+        from onnxcustom.training.orttraining import add_loss_output
+        from onnxcustom.training.optimizers import OrtGradientOptimizer
+        X, y = make_regression(  # pylint: disable=W0632
+            100, n_features=10, bias=2)
+        X = X.astype(numpy.float32)
+        y = y.astype(numpy.float32)
+        X_train, _, y_train, __ = train_test_split(X, y)
+        reg = LinearRegression()
+        reg.fit(X_train, y_train)
+        onx = to_onnx(reg, X_train, target_opset=opset,
+                      black_op={'LinearRegressor'})
+        set_model_props(onx, {'info': 'unit test'})
+        onx_loss = add_loss_output(onx)
+        inits = ['intercept', 'coef']
+        train_session0 = OrtGradientOptimizer(onx_loss, inits)
+
+        st = io.BytesIO()
+        pickle.dump(train_session0, st)
+        st2 = io.BytesIO(st.getvalue())
+        train_session1 = pickle.load(st2)
+
+        train_session1.fit(X, y, use_numpy=True)
+
+        st = io.BytesIO()
+        pickle.dump(train_session1, st)
+        st2 = io.BytesIO(st.getvalue())
+        train_session = pickle.load(st2)
+        state_tensors = train_session.get_state()
+        self.assertEqual(len(state_tensors), 2)
+
         train_session.fit(X, y, use_numpy=True)
         state_tensors = train_session.get_state()
         self.assertEqual(len(state_tensors), 2)

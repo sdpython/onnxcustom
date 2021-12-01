@@ -43,6 +43,24 @@ class OrtDataLoader:
         self.device = device
         self.device_idx = device_idx
 
+    def __getstate__(self):
+        "Removes any non pickable attribute."
+        state = {}
+        for att in ['X_np', 'y_np', 'desc', 'batch_size',
+                    'device', 'device_idx']:
+            state[att] = getattr(self, att)
+        return state
+
+    def __setstate__(self, state):
+        "Restores any non pickable attribute."
+        for att, v in state.items():
+            setattr(self, att, v)
+        self.X_ort = OrtValue.ortvalue_from_numpy(
+            self.X_np, self.device, self.device_idx)
+        self.y_ort = OrtValue.ortvalue_from_numpy(
+            self.y_np, self.device, self.device_idx)
+        return self
+
     def __repr__(self):
         "usual"
         return "%s(..., ..., batch_size=%r, device=%r, device_idx=%r)" % (

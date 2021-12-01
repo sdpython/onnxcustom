@@ -1,6 +1,8 @@
 
-Training
-========
+.. _l-full-training:
+
+Full Training
+=============
 
 :epkg:`onnxruntime` was initially designed to speed up inference
 and deployment but it can also be used to train a model.

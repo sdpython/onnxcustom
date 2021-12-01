@@ -8,16 +8,24 @@ Training
 BaseEstimator
 +++++++++++++
 
-.. autofunction:: onnxcustom.training.optimizers.BaseEstimator
+.. autosignature:: onnxcustom.training.optimizers.BaseEstimator
+    :members:
 
 OrtGradientOptimizer
 ++++++++++++++++++++
 
-.. autofunction:: onnxcustom.training.optimizers.OrtGradientOptimizer
+.. autosignature:: onnxcustom.training.optimizers.OrtGradientOptimizer
+    :members:
+
+OrtGradientForwardBackward
+++++++++++++++++++++++++++
+
+.. autosignature:: onnxcustom.training.optimizers.OrtGradientForwardBackward
+    :members:
 
 Helpers
 +++++++
 
-.. autofunction:: onnxcustom.training.orttraining.add_loss_output
+.. autosignature:: onnxcustom.training.orttraining.add_loss_output
 
-.. autofunction:: onnxcustom.training.orttraining.get_train_initializer
+.. autosignature:: onnxcustom.training.orttraining.get_train_initializer
