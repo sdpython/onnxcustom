@@ -114,7 +114,6 @@ Name|Type|Format|Description
 model_author|string|A comma-separated list of names.|The personal name of the author(s) of the model, and/or their organizations.
 model_license|string|Name or URL.|The well-known name or URL of the license under which the model is made available.
 
-
 ### Operator Sets
 
 Each model MUST explicitly name the operator sets that it relies on for its functionality. Operator sets define the available operators and their version. Each model defines the imported operator sets by their domains. All models implicitly import the default ONNX operator set.
@@ -214,7 +213,6 @@ Graph|The names of graphs within a domain, unique within the model domain.
 Operator|The names of operators within a domain.
 Shape|The names of tensor shape variables – scoped to the value information records of a graph, which is where shape variables occur.
 
-
 ### Nodes
 
 Computation nodes are comprised of a name, the name of an operator that it invokes, a list of named inputs, a list of named outputs, and a list of attributes.
@@ -282,7 +280,6 @@ tensors|Tensor[]|A list of tensor values.
 graphs|Graph[]|A list of graphs.
 
 The properties ‘name’ and ‘type’ are required on all attributes, and ‘doc_string’ SHOULD be used on all attributes. An attribute MUST have only one of the value-carrying properties.
-
 
 #### Variadic Inputs and Outputs
 
@@ -355,7 +352,7 @@ The following types are used to define the types of graph and node inputs and ou
 
 |Variant | Type | Description |
 |---|---|---|
-ONNX|dense tensors|Represents a Tensor. See definition above. 
+ONNX|dense tensors|Represents a Tensor. See definition above.
 ONNX|sequence|Sequences are dense, ordered, collections of elements that are of homogeneous types.
 ONNX|map|Maps are associative tables, defined by a key type and a value type.
 ONNX|optional|Optionals are wrappers that may contain an element of tensor, sequence, or map type, or may be empty (containing none). [Details](ONNXTypes.md)

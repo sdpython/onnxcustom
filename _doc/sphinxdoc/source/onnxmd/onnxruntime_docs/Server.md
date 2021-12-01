@@ -24,4 +24,3 @@ make
 ```
 
 ONNX Runtime Server supports sending logs to [rsyslog](https://www.rsyslog.com/) daemon. To enable it, please run the cmake command with an additional parameter: `-Donnxruntime_USE_SYSLOG=1`.
-
