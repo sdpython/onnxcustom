@@ -2,7 +2,6 @@
 @file
 @brief Onnxruntime helper.
 """
-import math
 from onnxruntime.capi._pybind_state import (  # pylint: disable=E0611
     OrtDevice)
 
@@ -16,7 +15,7 @@ def device_to_provider(device_name):
 
     .. runpython::
         :showcode:
-        
+
         from onnxcustom.utils.onnxruntime_helper import device_to_provider
         print(device_to_provider('cpu'))
     """
@@ -37,7 +36,7 @@ def provider_to_device(provider_name):
 
     .. runpython::
         :showcode:
-        
+
         from onnxcustom.utils.onnxruntime_helper import provider_to_device
         print(provider_to_device('CPUExecutionProvider'))
     """
@@ -56,10 +55,9 @@ def get_ort_device_type(device):
     :param device: string
     :return: :epkg:`OrtDevice`
     """
-    device_type = device if type(device) is str else device.type.lower()
+    device_type = device if isinstance(device, str) else device.type
     if device_type == 'cuda':
         return OrtDevice.cuda()
     if device_type == 'cpu':
         return OrtDevice.cpu()
     raise ValueError('Unsupported device type: %r.' % device_type)
-

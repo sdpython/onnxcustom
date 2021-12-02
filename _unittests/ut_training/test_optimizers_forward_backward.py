@@ -14,7 +14,7 @@ from sklearn.linear_model import LinearRegression
 from mlprodict.onnx_conv import to_onnx
 from onnxcustom import __max_supported_opset__ as opset
 from onnxcustom.training.sgd_learning_rate import LearningRateSGDRegressor
-from onnxcustom.utils.onnx_helper import onnx_rename_weights
+# from onnxcustom.utils.onnx_helper import onnx_rename_weights
 try:
     from onnxruntime import TrainingSession
 except ImportError:
@@ -64,7 +64,7 @@ class TestOptimizersForwardBackward(ExtTestCase):
         onx = to_onnx(reg, X_train, target_opset=opset,
                       black_op={'LinearRegressor'})
         set_model_props(onx, {'info': 'unit test'})
-        inits = ['intercept', 'coef']
+        inits = ['coef', 'intercept']
         train_session0 = OrtGradientForwardBackwardOptimizer(onx, inits)
 
         st = io.BytesIO()
@@ -104,8 +104,8 @@ class TestOptimizersForwardBackward(ExtTestCase):
         onx = to_onnx(reg, X_train, target_opset=opset,
                       black_op={'LinearRegressor'})
         set_model_props(onx, {'info': 'unit test'})
-        inits = ['intercept', 'coef']
-        train_session = OrtGradientForwardBackwardOptimizer(loss, inits)
+        inits = ['coef', 'intercept']
+        train_session = OrtGradientForwardBackwardOptimizer(onx, inits)
         self.assertRaise(lambda: train_session.get_state(), AttributeError)
         train_session.fit(X, y, use_numpy=False)
         state_tensors = train_session.get_state()
@@ -129,7 +129,7 @@ class TestOptimizersForwardBackward(ExtTestCase):
         reg.fit(X_train, y_train)
         onx = to_onnx(reg, X_train, target_opset=opset,
                       black_op={'LinearRegressor'})
-        inits = ['intercept', 'coef']
+        inits = ['coef', 'intercept']
         train_session = OrtGradientForwardBackwardOptimizer(
             onx, inits, max_iter=10,
             learning_rate=LearningRateSGDRegressor(learning_rate='optimal'))
@@ -156,7 +156,7 @@ class TestOptimizersForwardBackward(ExtTestCase):
         reg.fit(X_train, y_train)
         onx = to_onnx(reg, X_train, target_opset=opset,
                       black_op={'LinearRegressor'})
-        inits = ['intercept', 'coef']
+        inits = ['coef', 'intercept']
         train_session = OrtGradientForwardBackwardOptimizer(
             onx, inits, max_iter=10,
             learning_rate=LearningRateSGDRegressor(learning_rate='optimal'))
@@ -183,7 +183,7 @@ class TestOptimizersForwardBackward(ExtTestCase):
         reg.fit(X_train, y_train)
         onx = to_onnx(reg, X_train, target_opset=opset,
                       black_op={'LinearRegressor'})
-        inits = ['intercept', 'coef']
+        inits = ['coef', 'intercept']
         train_session = OrtGradientForwardBackwardOptimizer(onx, inits)
         self.assertRaise(lambda: train_session.get_state(), AttributeError)
         train_session.fit(X, y, X_val=X_test, y_val=y_test, use_numpy=True)
@@ -211,7 +211,7 @@ class TestOptimizersForwardBackward(ExtTestCase):
         reg.fit(X_train, y_train)
         onx = to_onnx(reg, X_train, target_opset=opset,
                       black_op={'LinearRegressor'})
-        inits = ['intercept', 'coef']
+        inits = ['coef', 'intercept']
         train_session = OrtGradientForwardBackwardOptimizer(onx, inits)
         self.assertRaise(lambda: train_session.get_state(), AttributeError)
         train_session.fit(X, y, X_val=X_test, y_val=y_test, use_numpy=False)

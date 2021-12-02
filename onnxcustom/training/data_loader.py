@@ -85,7 +85,7 @@ class OrtDataLoader:
                 OrtValue.ortvalue_from_numpy(
                     self.X_np, self.device, self.device_idx)._ortvalue,
                 OrtValue.ortvalue_from_numpy(
-                    self.y_np, self.device, self.device_idx))._ortvalue
+                    self.y_np, self.device, self.device_idx)._ortvalue)
         else:
             while N < len(self):
                 i = numpy.random.randint(0, b)

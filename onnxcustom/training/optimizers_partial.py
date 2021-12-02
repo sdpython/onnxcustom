@@ -108,10 +108,12 @@ class OrtGradientForwardBackwardOptimizer(BaseEstimator):
 
         self.input_names_ = self.train_session_[0].cls_type_._grad_input_names
         self.output_names_ = self.train_session_[0].cls_type_._bw_fetches_names
+        weights_to_train = self.train_session_[0].weights_to_train
 
         if not hasattr(self, 'state_'):
             self.set_state([
-                self.train_session_[0].get_initializer_ortvalue(name, exc=False)
+                self.train_session_[
+                    0].get_initializer_ortvalue(name, exc=False)
                 for name in self.input_names_])
         elif not self.warm_start:
             state = self.get_state()
@@ -145,7 +147,8 @@ class OrtGradientForwardBackwardOptimizer(BaseEstimator):
         val_losses = []
         lr = self.learning_rate.value
         for it in loop:
-            loss = self._iteration(data_loader, lr, self.get_state())
+            loss = self._iteration(data_loader, lr, self.get_state(),
+                                   len(weights_to_train))
             lr = self.learning_rate.update_learning_rate(it).value
             if self.verbose > 1:  # pragma: no cover
                 loop.set_description(
@@ -154,30 +157,29 @@ class OrtGradientForwardBackwardOptimizer(BaseEstimator):
             train_losses.append(loss)
             if (data_loader_val is not None and
                     (it + 1) % self.validation_every == 0):
-                val_losses.append(self._evaluation(data_loader_val, bind))
+                val_losses.append(
+                    self._evaluation(data_loader_val, self.get_state()))
         self.train_losses_ = train_losses
         self.validation_losses_ = (
             None if data_loader_val is None else val_losses)
-        self.trained_coef_ = self.train_session_.get_state()
         return self
 
-    def _iteration(self, data_loader, learning_rate, state):
+    def _iteration(self, data_loader, learning_rate, state, n_weights):
         actual_losses = []
         bs = data_loader.batch_size
 
         for ortx, orty in data_loader:
             state[0] = ortx
-            print([type(_) for _ in state])
             prediction = self.train_session_[1].forward(state)
             loss, gradient = self._gradient(prediction, orty)
-            gradient = self.train_session_[1].backward([error])
+            gradient = self.train_session_[1].backward([gradient])
 
             if len(gradient) != len(state):
                 raise RuntimeError(
                     "gradient and state should have the same length but "
                     "%r != %r." % (len(gradient), len(state)))
 
-            n = len(state) - len(self._weights_to_train)
+            n = len(state) - n_weights
             for i in range(n, len(state)):
                 self._update_weights(state[i], gradient[i], learning_rate)
 
@@ -185,7 +187,7 @@ class OrtGradientForwardBackwardOptimizer(BaseEstimator):
 
         return numpy.array(actual_losses).mean()
 
-    def _evaluation(self, data_loader, bind):
+    def _evaluation(self, data_loader, state):
         raise NotImplementedError()
 
     def _create_training_session(
