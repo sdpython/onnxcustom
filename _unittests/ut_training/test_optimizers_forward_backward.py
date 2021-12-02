@@ -25,41 +25,12 @@ except ImportError:
 class TestOptimizersForwardBackward(ExtTestCase):
 
     @unittest.skipIf(TrainingSession is None, reason="not training")
-    @unittest.skipIf(True, reason="pointer issue")
     def test_ort_gradient_optimizers_use_numpy_zero(self):
         from onnxcustom.training.optimizers_partial import OrtGradientForwardBackwardOptimizer
         X, y = make_regression(  # pylint: disable=W0632
-            100, n_features=10, bias=2)
+            100, n_features=10, bias=2, random_state=0)
         X = X.astype(numpy.float32)
         y[:] = 10
-        y = y.astype(numpy.float32)
-        X_train, _, y_train, __ = train_test_split(X, y)
-        reg = LinearRegression()
-        reg.fit(X_train, y_train)
-        onx = to_onnx(reg, X_train, target_opset=opset,
-                      black_op={'LinearRegressor'})
-        # onx = onnx_rename_weights(onx)
-        set_model_props(onx, {'info': 'unit test'})
-        inits = ['coef', 'intercept']
-        train_session = OrtGradientForwardBackwardOptimizer(onx, inits)
-        self.assertRaise(lambda: train_session.get_state(), AttributeError)
-        train_session.fit(X, y, use_numpy=True)
-        state_tensors = train_session.get_state()
-        self.assertEqual(len(state_tensors), 3)
-        r = repr(train_session)
-        self.assertIn("OrtGradientForwardBackwardOptimizer(model_onnx=", r)
-        self.assertIn("learning_rate='invscaling'", r)
-        losses = train_session.train_losses_
-        self.assertGreater(len(losses), 1)
-        self.assertFalse(any(map(numpy.isnan, losses)))
-
-    @unittest.skipIf(TrainingSession is None, reason="not training")
-    @unittest.skipIf(True, reason="pointer issue")
-    def test_ort_gradient_optimizers_use_numpy(self):
-        from onnxcustom.training.optimizers_partial import OrtGradientForwardBackwardOptimizer
-        X, y = make_regression(  # pylint: disable=W0632
-            100, n_features=10, bias=2)
-        X = X.astype(numpy.float32)
         y = y.astype(numpy.float32)
         X_train, _, y_train, __ = train_test_split(X, y)
         reg = LinearRegression()
@@ -82,11 +53,38 @@ class TestOptimizersForwardBackward(ExtTestCase):
         self.assertFalse(any(map(numpy.isnan, losses)))
 
     @unittest.skipIf(TrainingSession is None, reason="not training")
-    @unittest.skipIf(True, reason="pointer issue")
+    def test_ort_gradient_optimizers_use_numpy(self):
+        from onnxcustom.training.optimizers_partial import OrtGradientForwardBackwardOptimizer
+        X, y = make_regression(  # pylint: disable=W0632
+            100, n_features=10, bias=2, random_state=0)
+        X = X.astype(numpy.float32)
+        y = y.astype(numpy.float32)
+        X_train, _, y_train, __ = train_test_split(X, y)
+        reg = LinearRegression()
+        reg.fit(X_train, y_train)
+        onx = to_onnx(reg, X_train, target_opset=opset,
+                      black_op={'LinearRegressor'})
+        # onx = onnx_rename_weights(onx)
+        set_model_props(onx, {'info': 'unit test'})
+        inits = ['coef', 'intercept']
+        train_session = OrtGradientForwardBackwardOptimizer(
+            onx, inits, enable_logging=False)
+        self.assertRaise(lambda: train_session.get_state(), AttributeError)
+        train_session.fit(X, y, use_numpy=True)
+        state_tensors = train_session.get_state()
+        self.assertEqual(len(state_tensors), 2)
+        r = repr(train_session)
+        self.assertIn("OrtGradientForwardBackwardOptimizer(model_onnx=", r)
+        self.assertIn("learning_rate='invscaling'", r)
+        losses = train_session.train_losses_
+        self.assertGreater(len(losses), 1)
+        self.assertFalse(any(map(numpy.isnan, losses)))
+
+    @unittest.skipIf(TrainingSession is None, reason="not training")
     def test_ort_gradient_optimizers_use_numpy_pickle(self):
         from onnxcustom.training.optimizers_partial import OrtGradientForwardBackwardOptimizer
         X, y = make_regression(  # pylint: disable=W0632
-            100, n_features=10, bias=2)
+            100, n_features=10, bias=2, random_state=0)
         X = X.astype(numpy.float32)
         y = y.astype(numpy.float32)
         X_train, _, y_train, __ = train_test_split(X, y)
@@ -96,7 +94,8 @@ class TestOptimizersForwardBackward(ExtTestCase):
                       black_op={'LinearRegressor'})
         set_model_props(onx, {'info': 'unit test'})
         inits = ['coef', 'intercept']
-        train_session0 = OrtGradientForwardBackwardOptimizer(onx, inits)
+        train_session0 = OrtGradientForwardBackwardOptimizer(
+            onx, inits, learning_rate=1e-4)
 
         st = io.BytesIO()
         pickle.dump(train_session0, st)
@@ -265,5 +264,10 @@ class TestOptimizersForwardBackward(ExtTestCase):
 
 
 if __name__ == "__main__":
-    # TestOptimizersForwardBackward().test_ort_gradient_optimizers_use_numpy_zero()
+    # import logging
+    # logger = logging.getLogger('onnxcustom')
+    # logger.setLevel(logging.DEBUG)
+    # logging.basicConfig(level=logging.DEBUG)
+    # TestOptimizersForwardBackward().test_ort_gradient_optimizers_use_numpy()
+    # stop
     unittest.main()

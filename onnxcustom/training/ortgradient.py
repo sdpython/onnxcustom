@@ -8,7 +8,7 @@ from io import BytesIO
 import onnx
 from onnx.numpy_helper import to_array
 from onnx import TensorProto
-from onnxruntime import InferenceSession, RunOptions, OrtValue
+from onnxruntime import InferenceSession, RunOptions
 from onnxruntime.capi._pybind_state import (  # pylint: disable=E0611
     SessionIOBinding, OrtValue as C_OrtValue)
 from onnxruntime.capi._pybind_state import (  # pylint: disable=E0611
@@ -16,7 +16,6 @@ from onnxruntime.capi._pybind_state import (  # pylint: disable=E0611
     OrtModuleGraphBuilderConfiguration, OrtDevice,
     TrainingGraphTransformerConfiguration, OrtValueVector,
     PartialGraphExecutionState)
-from ..utils.onnxruntime_helper import provider_to_device
 
 
 class OrtGradientForwardBackward:
@@ -253,9 +252,9 @@ class OrtGradientForwardBackward:
         raise ValueError(  # pragma: no cover
             'Unexpected provider name %r.' % provider_name)
 
-    def get_initializer_ortvalue(self, name, exc=True):
+    def get_initializer(self, name, exc=True):
         """
-        Returns an initializer as an OrtValue.
+        Returns an initializer as numpy arrays.
 
         :param name: initializer name
         :param exc: raises an exception if not found or return None
@@ -263,10 +262,7 @@ class OrtGradientForwardBackward:
         """
         for init in self.onnx_model.graph.initializer:
             if name == init.name:
-                value = to_array(init)
-                return OrtValue.ortvalue_from_numpy(
-                    value, provider_to_device(self.providers[0]),
-                    self.device_index)._ortvalue
+                return to_array(init)
         if exc:
             raise RuntimeError(
                 "Unable to find name %r in %r." % (
@@ -693,7 +689,7 @@ class OrtGradientForwardBackwardFunction:
         if logger is not None:  # pragma: no cover
             _log("DEBUG")
             for i, ov in enumerate(backward_outputs):
-                _log("BCK-RET: i=%d - ptr=%r - shape=%r",
+                _log("BCK-RET: i=%d - shape=%r - ptr=%r",
                      i, ov.shape(), ov.data_ptr())
             _log("got %r gradients", len(backward_outputs))
             _log("end")

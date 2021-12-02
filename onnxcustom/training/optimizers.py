@@ -68,7 +68,7 @@ class OrtGradientOptimizer(BaseEstimator):
     :param max_iter: number of training iterations
     :param training_optimizer_name: optimizing algorithm
     :param batch_size: batch size (see class *DataLoader*)
-    :param learning_rate: a name or a learning rate instance,
+    :param learning_rate: a name or a learning rate instance or a float,
         see module :mod:`onnxcustom.training.sgd_learning_rate`
     :param device: `'cpu'` or `'cuda'`
     :param device_index: device index
@@ -208,10 +208,13 @@ class OrtGradientOptimizer(BaseEstimator):
         if isinstance(c_ortvalue, C_OrtValue):
             # does not work
             # bind._iobinding.bind_ortvalue_input(name, c_ortvalue)
+            dtype = proto_type_to_dtype(
+                c_ortvalue.proto_type() if hasattr(c_ortvalue, 'proto_type')
+                else c_ortvalue.data_type())
             bind.bind_input(
                 name=name, device_type=self.device,
                 device_id=self.device_index,
-                element_type=proto_type_to_dtype(c_ortvalue.proto_type()),
+                element_type=dtype,
                 shape=c_ortvalue.shape(),
                 buffer_ptr=c_ortvalue.data_ptr())
         elif isinstance(c_ortvalue, numpy.ndarray):

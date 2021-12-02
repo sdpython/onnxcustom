@@ -32,4 +32,4 @@ Time
 Debugging
 +++++++++
 
-.. autosignature:: onnxcustom.utils.print_helper import str_ortvalue
+.. autosignature:: onnxcustom.utils.print_helper.str_ortvalue

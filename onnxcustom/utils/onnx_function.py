@@ -80,7 +80,17 @@ def _onnx_square_error(target_opset=None, dtype=numpy.float32):
     """
     Returns the ONNX graph for function
     :math:`Y = f(X1, X2) = \\lVert X1 - X2 \\rVert ^2`.
-    :return: ONNX graph
+
+    .. gdot::
+        :script: DOT-SECTION
+
+        from mlprodict.onnxrt import OnnxInference
+        from onnxcustom.utils.onnx_function import function_onnx_graph
+
+        model_onnx = function_onnx_graph('square_error')
+        oinf = OnnxInference(model_onnx, inplace=False)
+
+        print("DOT-SECTION", oinf.to_dot())
     """
     from skl2onnx.algebra.onnx_ops import OnnxSub, OnnxReduceSumSquare
     diff = OnnxSub('X1', 'X2', op_version=target_opset)
@@ -97,7 +107,17 @@ def _onnx_grad_square_error(target_opset=None, dtype=numpy.float32):
     """
     Returns the ONNX graph for the gradient of function
     :math:`Y = f(X1, X2) = \\lVert X1 - X2 \\rVert ^2`.
-    :return: ONNX graph
+
+    .. gdot::
+        :script: DOT-SECTION
+
+        from mlprodict.onnxrt import OnnxInference
+        from onnxcustom.utils.onnx_function import function_onnx_graph
+
+        model_onnx = function_onnx_graph('grad_square_error')
+        oinf = OnnxInference(model_onnx, inplace=False)
+
+        print("DOT-SECTION", oinf.to_dot())
     """
     from skl2onnx.algebra.onnx_ops import OnnxSub, OnnxMul
     diff = OnnxSub('X1', 'X2', op_version=target_opset)
@@ -114,7 +134,17 @@ def _onnx_axpy(target_opset=None, dtype=numpy.float32):
     """
     Returns the ONNX graph for function
     :math:`Y = f(X1, X2, \\alpha) = \\alpha X1 + X2`.
-    :return: ONNX graph
+
+    .. gdot::
+        :script: DOT-SECTION
+
+        from mlprodict.onnxrt import OnnxInference
+        from onnxcustom.utils.onnx_function import function_onnx_graph
+
+        model_onnx = function_onnx_graph('avxpy')
+        oinf = OnnxInference(model_onnx, inplace=False)
+
+        print("DOT-SECTION", oinf.to_dot())
     """
     from skl2onnx.algebra.onnx_ops import OnnxAdd, OnnxMul
     res = OnnxAdd(OnnxMul('X1', 'alpha', op_version=target_opset),

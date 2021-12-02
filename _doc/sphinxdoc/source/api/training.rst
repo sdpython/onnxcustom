@@ -11,8 +11,8 @@ BaseEstimator
 .. autosignature:: onnxcustom.training.optimizers.BaseEstimator
     :members:
 
-LearingRate
-+++++++++++
+LearningRate
+++++++++++++
 
 .. autosignature:: onnxcustom.training.sgd_learning_rate.LearningRateSGDRegressor
     :members:
@@ -26,7 +26,7 @@ OrtGradientOptimizer
 OrtGradientForwardBackward
 ++++++++++++++++++++++++++
 
-.. autosignature:: onnxcustom.training.optimizers.OrtGradientForwardBackward
+.. autosignature:: onnxcustom.training.optimizers_partial.OrtGradientForwardBackward
     :members:
 
 Helpers
