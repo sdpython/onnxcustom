@@ -4,12 +4,12 @@
 """
 import inspect
 import numpy
-from onnx.mapping import TENSOR_TYPE_TO_NP_TYPE
 from onnxruntime import (  # pylint: disable=E0611
     OrtValue as PyOrtValue, TrainingParameters,
     SessionOptions, TrainingSession)
 from onnxruntime.capi._pybind_state import (  # pylint: disable=E0611
     OrtValue as C_OrtValue)
+from ..utils.onnx_helper import proto_type_to_dtype
 from .data_loader import OrtDataLoader
 from .sgd_learning_rate import BaseLearningRate
 from .excs import ConvergenceError, EvaluationError
@@ -211,16 +211,20 @@ class OrtGradientOptimizer(BaseEstimator):
             bind.bind_input(
                 name=name, device_type=self.device,
                 device_id=self.device_index,
-                element_type=TENSOR_TYPE_TO_NP_TYPE[c_ortvalue.proto_type()],
+                element_type=proto_type_to_dtype(c_ortvalue.proto_type()),
                 shape=c_ortvalue.shape(),
                 buffer_ptr=c_ortvalue.data_ptr())
-        else:
+        elif isinstance(c_ortvalue, numpy.ndarray):
             bind.bind_input(
                 name, device_type=self.device,
                 device_id=self.device_index,
                 element_type=c_ortvalue.dtype,
                 shape=c_ortvalue.shape,
                 buffer_ptr=c_ortvalue.__array_interface__['data'][0])
+        else:
+            raise TypeError(
+                "Unable to bind type %r for name %r." % (
+                    type(c_ortvalue), name))
 
     def _iteration(self, data_loader, ort_lr, bind, use_numpy):
         actual_losses = []

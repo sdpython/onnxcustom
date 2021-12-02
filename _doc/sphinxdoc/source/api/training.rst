@@ -40,3 +40,8 @@ Exceptions
 ++++++++++
 
 .. autosignature:: onnxcustom.training.excs.ConvergenceError
+
+Loss function
++++++++++++++
+
+.. autosignature:: onnxcustom.utils.onnx_function.function_onnx_graph
