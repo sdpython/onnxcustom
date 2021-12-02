@@ -23,9 +23,9 @@ class TestUtilsPrintHelper(ExtTestCase):
         self.assertEqual(expected, text)
 
         expected = (
-            "device=Cpu dtype=dtype('int32') shape=(100,) "
+            "device=Cpu dtype=dtype('int64') shape=(100,) "
             "value=[0, 1, 2, 3, 4, '...', 95, 96, 97, 98, 99]")
-        value = numpy.arange(100)
+        value = numpy.arange(100).astype(numpy.int64)
         ort = OrtValue.ortvalue_from_numpy(value, 'cpu', 0)
         text = str_ortvalue(ort._ortvalue)  # pylint: disable=W0212
         self.assertEqual(expected, text)
