@@ -61,9 +61,9 @@ def proto_type_to_dtype(proto_type):
         return numpy.float64
     # Not efficient.
     if proto_type == 'tensor(float)':
-        return TensorProto.FLOAT
+        return numpy.float32
     if proto_type == 'tensor(double)':
-        return TensorProto.FLOAT
+        return numpy.float64
     raise ValueError(
         "Unexpected value proto_type=%r (type=%r)." % (
             proto_type, type(proto_type)))
