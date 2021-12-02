@@ -4,7 +4,7 @@
 """
 import inspect
 import numpy
-from onnx.mapping import TENSOR_TYPE_TO_NP_TYPE 
+from onnx.mapping import TENSOR_TYPE_TO_NP_TYPE
 from onnxruntime import (  # pylint: disable=E0611
     OrtValue as PyOrtValue, TrainingParameters,
     SessionOptions, TrainingSession)
@@ -182,8 +182,9 @@ class OrtGradientOptimizer(BaseEstimator):
             lr = self.learning_rate.update_learning_rate(it).value
             if self.verbose > 1:  # pragma: no cover
                 loop.set_description(
-                    "loss=%1.3g lr=%1.3g lrn=%1.3g" % (  # pylint: disable=E1101,E1307
-                        loss, lr, lr_alive[0]))  # pylint: disable=E1101,E1307
+                    "loss=%1.3g lr=%1.3g "  # pylint: disable=E1307
+                    "lrn=%1.3g" % (
+                        loss, lr, lr_alive[0]))
             train_losses.append(loss)
             if (data_loader_val is not None and
                     (it + 1) % self.validation_every == 0):
@@ -232,7 +233,7 @@ class OrtGradientOptimizer(BaseEstimator):
             lr_alive = ort_lr.numpy()
             self._bind_input_ortvalue(
                 self.input_names_[2], bind, lr_alive)
-                
+
             # Slow iterations.
             for data, target in data_loader.iter_numpy():
 
@@ -288,7 +289,7 @@ class OrtGradientOptimizer(BaseEstimator):
                 raise EvaluationError(
                     "Loss is nan or infinite (%r), "
                     "evaluation has failed." % outputs[0])
-            actual_losses.append(outputs[0])
+            actual_losses.append(outputs[0] / batch_size)
         return numpy.array(actual_losses).sum() / len(data_loader)
 
     def _create_training_session(

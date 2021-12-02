@@ -100,9 +100,9 @@ class TestDataLoadeer(ExtTestCase):
             self.assertEqualArray(ov[0], n[0])
             self.assertEqualArray(ov[1], n[1])
             i = it * 5
-            self.assertEqualArray(X[i: i+5], n[0])
-            self.assertEqualArray(y[i: i+5], n[1].ravel())
-            
+            self.assertEqualArray(X[i: i + 5], n[0])
+            self.assertEqualArray(y[i: i + 5], n[1].ravel())
+
 
 if __name__ == "__main__":
     unittest.main()

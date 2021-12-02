@@ -8,7 +8,8 @@ from onnxruntime import OrtValue
 from pyquickhelper.pycode import ExtTestCase
 from onnxcustom.utils import str_ortvalue
 
-class TestUtilsPrintHelper(unittest.TestCase):
+
+class TestUtilsPrintHelper(ExtTestCase):
 
     def test_print_ortvalue(self):
         expected = (
@@ -18,7 +19,7 @@ class TestUtilsPrintHelper(unittest.TestCase):
         ort = OrtValue.ortvalue_from_numpy(value, 'cpu', 0)
         text = str_ortvalue(ort)
         self.assertEqual(expected, text)
-        text = str_ortvalue(ort._ortvalue)
+        text = str_ortvalue(ort._ortvalue)  # pylint: disable=W0212
         self.assertEqual(expected, text)
 
         expected = (
@@ -26,7 +27,7 @@ class TestUtilsPrintHelper(unittest.TestCase):
             "value=[0, 1, 2, 3, 4, '...', 95, 96, 97, 98, 99]")
         value = numpy.arange(100)
         ort = OrtValue.ortvalue_from_numpy(value, 'cpu', 0)
-        text = str_ortvalue(ort._ortvalue)
+        text = str_ortvalue(ort._ortvalue)  # pylint: disable=W0212
         self.assertEqual(expected, text)
 
 
