@@ -35,3 +35,8 @@ Helpers
 .. autosignature:: onnxcustom.training.orttraining.add_loss_output
 
 .. autosignature:: onnxcustom.training.orttraining.get_train_initializer
+
+Exceptions
+++++++++++
+
+.. autosignature:: onnxcustom.training.excs.ConvergenceError

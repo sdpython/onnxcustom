@@ -44,7 +44,9 @@ class BaseLearningRate:
         Returns an instance of a given initialized with
         *kwargs*.
         :param class_name: an instance of @see cl BaseLearningRate
-            or a string among the following class names (see below)
+            or a string among the following class names (see below),
+            it can also be a float and in that case, class
+            @see cl LearningRateSGDRegressor is used
         :return: instance of @see cl BaseLearningRate
 
         Possible values for *class_name*:
@@ -52,6 +54,8 @@ class BaseLearningRate:
         """
         if isinstance(class_name, BaseLearningRate):
             return class_name
+        if isinstance(class_name, float):
+            return LearningRateSGDRegressor(class_name)
         cls = {LearningRateSGDRegressor: ['SGDRegressor']}
         for cl, aliases in cls.items():
             if class_name == cl.__class__.__name__ or class_name in aliases:

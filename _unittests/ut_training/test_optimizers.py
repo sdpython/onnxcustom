@@ -28,7 +28,7 @@ class TestOptimizers(ExtTestCase):
         from onnxcustom.training.orttraining import add_loss_output
         from onnxcustom.training.optimizers import OrtGradientOptimizer
         X, y = make_regression(  # pylint: disable=W0632
-            100, n_features=10, bias=2)
+            100, n_features=10, bias=2, random_state=0)
         X = X.astype(numpy.float32)
         y = y.astype(numpy.float32)
         X_train, _, y_train, __ = train_test_split(X, y)
@@ -39,7 +39,8 @@ class TestOptimizers(ExtTestCase):
         set_model_props(onx, {'info': 'unit test'})
         onx_loss = add_loss_output(onx)
         inits = ['intercept', 'coef']
-        train_session = OrtGradientOptimizer(onx_loss, inits)
+        train_session = OrtGradientOptimizer(
+            onx_loss, inits, learning_rate=1e-3)
         self.assertRaise(lambda: train_session.get_state(), AttributeError)
         train_session.fit(X, y, use_numpy=True)
         state_tensors = train_session.get_state()
@@ -56,7 +57,7 @@ class TestOptimizers(ExtTestCase):
         from onnxcustom.training.orttraining import add_loss_output
         from onnxcustom.training.optimizers import OrtGradientOptimizer
         X, y = make_regression(  # pylint: disable=W0632
-            100, n_features=10, bias=2)
+            100, n_features=10, bias=2, random_state=0)
         X = X.astype(numpy.float32)
         y = y.astype(numpy.float32)
         X_train, _, y_train, __ = train_test_split(X, y)
@@ -98,7 +99,7 @@ class TestOptimizers(ExtTestCase):
         from onnxcustom.training.orttraining import add_loss_output
         from onnxcustom.training.optimizers import OrtGradientOptimizer
         X, y = make_regression(  # pylint: disable=W0632
-            100, n_features=10, bias=2)
+            100, n_features=10, bias=2, random_state=0)
         X = X.astype(numpy.float32)
         y = y.astype(numpy.float32)
         X_train, _, y_train, __ = train_test_split(X, y)
@@ -126,7 +127,7 @@ class TestOptimizers(ExtTestCase):
         from onnxcustom.training.orttraining import add_loss_output
         from onnxcustom.training.optimizers import OrtGradientOptimizer
         X, y = make_regression(  # pylint: disable=W0632
-            100, n_features=10, bias=2)
+            100, n_features=10, bias=2, random_state=0)
         X = X.astype(numpy.float32)
         y = y.astype(numpy.float32)
         X_train, _, y_train, __ = train_test_split(X, y)
@@ -155,7 +156,7 @@ class TestOptimizers(ExtTestCase):
         from onnxcustom.training.orttraining import add_loss_output
         from onnxcustom.training.optimizers import OrtGradientOptimizer
         X, y = make_regression(  # pylint: disable=W0632
-            100, n_features=10, bias=2)
+            100, n_features=10, bias=2, random_state=0)
         X = X.astype(numpy.float32)
         y = y.astype(numpy.float32)
         X_train, _, y_train, __ = train_test_split(X, y)
@@ -184,7 +185,7 @@ class TestOptimizers(ExtTestCase):
         from onnxcustom.training.orttraining import add_loss_output
         from onnxcustom.training.optimizers import OrtGradientOptimizer
         X, y = make_regression(  # pylint: disable=W0632
-            100, n_features=10, bias=2)
+            100, n_features=10, bias=2, random_state=0)
         X = X.astype(numpy.float32)
         y = y.astype(numpy.float32)
         X_train, X_test, y_train, y_test = train_test_split(X, y)
@@ -214,7 +215,7 @@ class TestOptimizers(ExtTestCase):
         from onnxcustom.training.orttraining import add_loss_output
         from onnxcustom.training.optimizers import OrtGradientOptimizer
         X, y = make_regression(  # pylint: disable=W0632
-            100, n_features=10, bias=2)
+            100, n_features=10, bias=2, random_state=0)
         X = X.astype(numpy.float32)
         y = y.astype(numpy.float32)
         X_train, X_test, y_train, y_test = train_test_split(X, y)

@@ -7,6 +7,7 @@ from ..utils.onnxruntime_helper import device_to_provider
 from .ortgradient import OrtGradientForwardBackward
 from .optimizers import BaseEstimator
 from .data_loader import OrtDataLoader
+from .excs import ConvergenceError, EvaluationError
 
 
 class OrtGradientForwardBackwardOptimizer(BaseEstimator):
@@ -168,7 +169,7 @@ class OrtGradientForwardBackwardOptimizer(BaseEstimator):
         actual_losses = []
         bs = data_loader.batch_size
 
-        for ortx, orty in data_loader:
+        for ortx, orty in data_loader.iter_ortvalue():
             state[0] = ortx
             prediction = self.train_session_[1].forward(state)
             loss, gradient = self._gradient(prediction, orty)
@@ -183,6 +184,15 @@ class OrtGradientForwardBackwardOptimizer(BaseEstimator):
             for i in range(n, len(state)):
                 self._update_weights(state[i], gradient[i], learning_rate)
 
+            if numpy.isinf(outputs[0]) or numpy.isnan(outputs[0]):
+                raise ConvergenceError(
+                    "Loss is nan, learning_rate=%r, "
+                    "the gradient descent has failed "
+                    "(past losses=%r)." % (
+                        learning_rate.value_,
+                        [float(v[0]) for v in (
+                            actual_losses if len(actual_losses) < 5
+                            else actual_losses[-5:])]))
             actual_losses.append(loss / bs)
 
         return numpy.array(actual_losses).mean()

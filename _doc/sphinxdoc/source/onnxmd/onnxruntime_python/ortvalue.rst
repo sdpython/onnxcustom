@@ -15,6 +15,11 @@ wrapped into a Python class with the same.
 Python Wrapper for OrtValue
 +++++++++++++++++++++++++++
 
+.. note::
+    Method `ortvalue_from_numpy` does not copy data, it borrows
+    the data pointer. The numpy array must remain alive while
+    the instance of OrtValue is in use.
+
 .. autoclass:: onnxruntime.OrtValue
     :members:
 
