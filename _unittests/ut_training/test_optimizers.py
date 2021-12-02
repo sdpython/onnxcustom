@@ -1,13 +1,15 @@
 """
-@brief      test log(time=3s)
+@brief      test log(time=8s)
 """
 
 import unittest
 import io
 import pickle
 from pyquickhelper.pycode import ExtTestCase
+from pyquickhelper.texthelper import compare_module_version
 import numpy
 from onnx.helper import set_model_props
+from onnxruntime import __version__ as ort_version
 from sklearn.datasets import make_regression
 from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LinearRegression
@@ -95,6 +97,8 @@ class TestOptimizers(ExtTestCase):
         self.assertFalse(any(map(numpy.isnan, losses)))
 
     @unittest.skipIf(TrainingSession is None, reason="not training")
+    @unittest.skipIf(compare_module_version(ort_version, "1.9.0") <= 0,
+                     reason="too old")
     def test_ort_gradient_optimizers_use_ort(self):
         from onnxcustom.training.orttraining import add_loss_output
         from onnxcustom.training.optimizers import OrtGradientOptimizer
