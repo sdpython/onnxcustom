@@ -13,7 +13,7 @@ from sklearn.datasets import make_regression
 from onnxcustom.training.data_loader import OrtDataLoader
 
 
-class TestDataLoadeer(ExtTestCase):
+class TestDataLoader(ExtTestCase):
 
     def test_ort_data_loader(self):
         X, y = make_regression(  # pylint: disable=W0632
