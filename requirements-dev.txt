@@ -3,7 +3,7 @@ category_encoders
 cerberus
 codecov
 coverage
-cpyquickhelper>=0.3.370
+cpyquickhelper
 cxxfilt
 flake8
 h5py
@@ -41,3 +41,6 @@ tabulate
 tqdm
 xgboost
 wheel
+
+# this dependency is needed for onnxruntime-training
+torch

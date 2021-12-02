@@ -61,7 +61,6 @@ setup(
     install_requires=["fire", "numpy", "onnx>=1.10.1", "scipy"],
     extras_require={
         'all': ["fire", "numpy", "onnx>=1.10.1",
-                "scipy", "pandas_streaming>=0.3", "cxxfilt",
-                "cpyquickhelper>=0.3.370"]
+                "scipy", "pandas_streaming>=0.3", "cxxfilt"]
     }
 )

@@ -172,7 +172,7 @@ class OrtGradientOptimizer(BaseEstimator):
         for it in loop:
             bind_lr = OrtValue.ortvalue_from_numpy(
                 numpy.array([lr / self.batch_size], dtype=numpy.float32),
-                self.device, self.device_idx)
+                self.device, self.device_idx)._ortvalue
             loss = self._iteration(data_loader, bind_lr,
                                    bind, use_numpy=use_numpy)
             lr = self.learning_rate.update_learning_rate(it).value
@@ -237,7 +237,7 @@ class OrtGradientOptimizer(BaseEstimator):
     def _evaluation(self, data_loader, bind):
         learning_rate = OrtValue.ortvalue_from_numpy(
             numpy.array([1], dtype=numpy.float32),
-            self.device, self.device_idx)
+            self.device, self.device_idx)._ortvalue
         actual_losses = []
         for data, target in data_loader:
 

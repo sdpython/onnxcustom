@@ -6,8 +6,9 @@
 import logging
 from io import BytesIO
 import onnx
+from onnx.numpy_helper import to_array
 from onnx import TensorProto
-from onnxruntime import InferenceSession, RunOptions
+from onnxruntime import InferenceSession, RunOptions, OrtValue
 from onnxruntime.capi._pybind_state import (  # pylint: disable=E0611
     SessionIOBinding, OrtValue as C_OrtValue)
 from onnxruntime.capi._pybind_state import (  # pylint: disable=E0611
@@ -15,6 +16,8 @@ from onnxruntime.capi._pybind_state import (  # pylint: disable=E0611
     OrtModuleGraphBuilderConfiguration, OrtDevice,
     TrainingGraphTransformerConfiguration, OrtValueVector,
     PartialGraphExecutionState)
+from ..utils.onnxruntime_helper import (
+    provider_to_device, get_ort_device_type)
 
 
 class OrtGradientForwardBackward:
@@ -118,6 +121,12 @@ class OrtGradientForwardBackward:
                 "List of weights to train must be sorted but %r is not. "
                 "You shoud use function onnx_rename_weights to do that "
                 "before calling this class." % self.weights_to_train)
+        if any(map(lambda v: v not in ['CPUExecutionProvider',
+                                       'CUDAExecutionProvider'],
+                   self.providers)):
+            raise ValueError(
+                "Unexpected providers %r (providers=%r)." % (
+                    self.providers, providers))
 
         # complete initialisation
         self._init_next()
@@ -165,8 +174,10 @@ class OrtGradientForwardBackward:
                 raise RuntimeError(
                     "Unable to automatically fill "
                     "OrtModuleGraphBuilderConfiguration, mismatch between "
-                    "%r and %r." % (config.initializer_names,
-                                    config.initializer_names_to_train))
+                    "%r and %r (initializer_names=%r)." % (
+                        config.initializer_names,
+                        config.initializer_names_to_train,
+                        initializer_names))
 
             p = TrainingGraphTransformerConfiguration()
             config.graph_transformer_config = p
@@ -242,6 +253,27 @@ class OrtGradientForwardBackward:
             return OrtDevice.cuda()
         raise ValueError(  # pragma: no cover
             'Unexpected provider name %r.' % provider_name)
+
+    def get_initializer_ortvalue(self, name, exc=True):
+        """
+        Returns an initializer as an OrtValue.
+
+        :param name: initializer name
+        :param exc: raises an exception if not found or return None
+        :return: the initializer as a :epkg:`OrtValue`
+        """
+        for init in self.onnx_model.graph.initializer:
+            if name == init.name:
+                value = to_array(init)
+                return OrtValue.ortvalue_from_numpy(
+                    value, provider_to_device(self.providers[0]),
+                    self.device_index)._ortvalue
+        if exc:
+            raise RuntimeError(
+                "Unable to find name %r in %r." % (
+                    name, list(
+                        i.name for i in self.onnx_model.graph.initializer)))
+        return None
 
     def _create_onnx_graphs(self):
         """

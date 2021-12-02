@@ -32,9 +32,9 @@ class OrtDataLoader:
         self.y_np = numpy.ascontiguousarray(y).reshape((-1, 1))
 
         self.X_ort = OrtValue.ortvalue_from_numpy(
-            self.X_np, device, device_idx)
+            self.X_np, device, device_idx)._ortvalue
         self.y_ort = OrtValue.ortvalue_from_numpy(
-            self.y_np, device, device_idx)
+            self.y_np, device, device_idx)._ortvalue
 
         self.desc = [(self.X_np.shape, self.X_np.dtype),
                      (self.y_np.shape, self.y_np.dtype)]
@@ -56,9 +56,9 @@ class OrtDataLoader:
         for att, v in state.items():
             setattr(self, att, v)
         self.X_ort = OrtValue.ortvalue_from_numpy(
-            self.X_np, self.device, self.device_idx)
+            self.X_np, self.device, self.device_idx)._ortvalue
         self.y_ort = OrtValue.ortvalue_from_numpy(
-            self.y_np, self.device, self.device_idx)
+            self.y_np, self.device, self.device_idx)._ortvalue
         return self
 
     def __repr__(self):
@@ -83,9 +83,9 @@ class OrtDataLoader:
         if b <= 0 or self.batch_size <= 0:
             yield (
                 OrtValue.ortvalue_from_numpy(
-                    self.X_np, self.device, self.device_idx),
+                    self.X_np, self.device, self.device_idx)._ortvalue,
                 OrtValue.ortvalue_from_numpy(
-                    self.y_np, self.device, self.device_idx))
+                    self.y_np, self.device, self.device_idx))._ortvalue
         else:
             while N < len(self):
                 i = numpy.random.randint(0, b)
@@ -93,10 +93,10 @@ class OrtDataLoader:
                 yield (
                     OrtValue.ortvalue_from_numpy(
                         self.X_np[i:i + self.batch_size],
-                        self.device, self.device_idx),
+                        self.device, self.device_idx)._ortvalue,
                     OrtValue.ortvalue_from_numpy(
                         self.y_np[i:i + self.batch_size],
-                        self.device, self.device_idx))
+                        self.device, self.device_idx)._ortvalue)
 
     def iter_bind(self, bind, names):
         """

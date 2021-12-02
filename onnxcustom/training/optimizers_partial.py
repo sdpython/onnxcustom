@@ -3,8 +3,10 @@
 @brief Helper for :epkg:`onnxruntime-training`.
 """
 import numpy
+from ..utils.onnxruntime_helper import device_to_provider
 from .ortgradient import OrtGradientForwardBackward
 from .optimizers import BaseEstimator
+from .data_loader import OrtDataLoader
 
 
 class OrtGradientForwardBackwardOptimizer(BaseEstimator):
@@ -107,7 +109,11 @@ class OrtGradientForwardBackwardOptimizer(BaseEstimator):
         self.input_names_ = self.train_session_[0].cls_type_._grad_input_names
         self.output_names_ = self.train_session_[0].cls_type_._bw_fetches_names
 
-        if not self.warm_start:
+        if not hasattr(self, 'state_'):
+            self.set_state([
+                self.train_session_[0].get_initializer_ortvalue(name, exc=False)
+                for name in self.input_names_])
+        elif not self.warm_start:
             state = self.get_state()
             new_state = {}
             for k, v in state.items():
@@ -118,9 +124,6 @@ class OrtGradientForwardBackwardOptimizer(BaseEstimator):
                     f = f.astype(v.dtype)
                     new_state[k] = f
             self.set_state(new_state)
-        elif not hasattr(self, 'state_'):
-            self.state = [self.train_session_[0].get_ortvalue(name)
-                          for name in self.input_names_]
 
         data_loader = OrtDataLoader(
             X, y, batch_size=self.batch_size, device=self.device)
@@ -131,7 +134,6 @@ class OrtGradientForwardBackwardOptimizer(BaseEstimator):
             data_loader_val = None
 
         self.learning_rate.init_learning_rate()
-        self.loss_index_ = self.output_names_.index(self.loss_output_name)
 
         if self.verbose > 0:  # pragma: no cover
             from tqdm import tqdm  # pylint: disable=C0415
@@ -143,7 +145,7 @@ class OrtGradientForwardBackwardOptimizer(BaseEstimator):
         val_losses = []
         lr = self.learning_rate.value
         for it in loop:
-            loss = self._iteration(data_loader, lr, state)
+            loss = self._iteration(data_loader, lr, self.get_state())
             lr = self.learning_rate.update_learning_rate(it).value
             if self.verbose > 1:  # pragma: no cover
                 loop.set_description(
@@ -165,6 +167,7 @@ class OrtGradientForwardBackwardOptimizer(BaseEstimator):
 
         for ortx, orty in data_loader:
             state[0] = ortx
+            print([type(_) for _ in state])
             prediction = self.train_session_[1].forward(state)
             loss, gradient = self._gradient(prediction, orty)
             gradient = self.train_session_[1].backward([error])
@@ -186,11 +189,11 @@ class OrtGradientForwardBackwardOptimizer(BaseEstimator):
         raise NotImplementedError()
 
     def _create_training_session(
-            self, model_onnx, weights_to_train, device='cpu'):
+            self, model_onnx, weights_to_train, device):
 
         forback = OrtGradientForwardBackward(
             model_onnx, weights_to_train=weights_to_train,
             debug=False, enable_logging=self.enable_logging,
-            providers=[device])
+            providers=[device_to_provider(device)])
         inst = forback.new_instance()
         return (forback, inst)

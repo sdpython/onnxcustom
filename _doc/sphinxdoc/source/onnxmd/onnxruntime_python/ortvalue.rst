@@ -21,11 +21,11 @@ Python Wrapper for OrtValue
 C Class OrtValue
 ++++++++++++++++
 
-.. autoclass:: onnxruntime.capi._pybind_state..OrtValue
+.. autoclass:: onnxruntime.capi._pybind_state.OrtValue
     :members:
 
 C Class OrtValueVector
 ++++++++++++++++++++++
 
-.. autoclass:: onnxruntime.capi._pybind_state..OrtValueVector
+.. autoclass:: onnxruntime.capi._pybind_state.OrtValueVector
     :members:

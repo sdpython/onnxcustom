@@ -36,7 +36,7 @@ class TestOptimizersForwardBackward(ExtTestCase):
         reg.fit(X_train, y_train)
         onx = to_onnx(reg, X_train, target_opset=opset,
                       black_op={'LinearRegressor'})
-        onx = onnx_rename_weights(onx)
+        # onx = onnx_rename_weights(onx)
         set_model_props(onx, {'info': 'unit test'})
         inits = ['coef', 'intercept']
         train_session = OrtGradientForwardBackwardOptimizer(onx, inits)
