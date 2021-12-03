@@ -37,6 +37,7 @@ class TestDataLoader(ExtTestCase):
             data.desc,
             [((100, 10), numpy.float64), ((100, 1), numpy.float64)])
 
+    @skipif_circleci("bizarre")
     def test_ort_data_loader_numpy(self):
         X, y = make_regression(  # pylint: disable=W0632
             100, n_features=10, bias=2)
@@ -58,6 +59,7 @@ class TestDataLoader(ExtTestCase):
             data.desc,
             [((100, 10), numpy.float64), ((100, 1), numpy.float64)])
 
+    @skipif_circleci("bizarre")
     def test_ort_data_loader_pickle(self):
         X, y = make_regression(  # pylint: disable=W0632
             100, n_features=10, bias=2)
@@ -83,6 +85,7 @@ class TestDataLoader(ExtTestCase):
             data.desc,
             [((100, 10), numpy.float64), ((100, 1), numpy.float64)])
 
+    @skipif_circleci("bizarre")
     def test_ort_data_loader_compare(self):
         X, y = make_regression(  # pylint: disable=W0632
             100, n_features=10, bias=2)
