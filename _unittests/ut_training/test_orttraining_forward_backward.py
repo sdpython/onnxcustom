@@ -1,4 +1,4 @@
-# pylint: disable=E1101,W0212
+# pylint: disable=E1101,W0212,E0611
 """
 @brief      test log(time=3s)
 """
@@ -13,10 +13,6 @@ from sklearn.datasets import make_regression, make_classification
 from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LinearRegression, LogisticRegression
 from onnxruntime import InferenceSession
-from onnxruntime.capi._pybind_state import (  # pylint: disable=E0611
-    OrtValue as C_OrtValue, OrtDevice, OrtMemType)
-from onnxruntime.capi._pybind_state import (  # pylint: disable=E0611
-    OrtValueVector)
 try:
     from onnxruntime import TrainingSession
 except ImportError:
@@ -30,6 +26,10 @@ from onnxcustom import __max_supported_opset__ as opset
 class TestOrtTrainingForwardBackward(ExtTestCase):
 
     def forward_no_training(self):
+        from onnxruntime.capi._pybind_state import (
+            OrtValue as C_OrtValue, OrtDevice, OrtMemType)
+        from onnxruntime.capi._pybind_state import (
+            OrtValueVector)
         from onnxcustom.training.ortgradient import OrtGradientForwardBackward
         X, y = make_regression(  # pylint: disable=W0632
             100, n_features=10, bias=2)
@@ -116,6 +116,10 @@ class TestOrtTrainingForwardBackward(ExtTestCase):
 
     @unittest.skipIf(TrainingSession is None, reason="no training")
     def test_forward_no_training_pickle(self):
+        from onnxruntime.capi._pybind_state import (
+            OrtValue as C_OrtValue, OrtDevice, OrtMemType)
+        from onnxruntime.capi._pybind_state import (
+            OrtValueVector)
         from onnxcustom.training.ortgradient import OrtGradientForwardBackward
         X, y = make_regression(  # pylint: disable=W0632
             100, n_features=10, bias=2)
@@ -193,6 +197,10 @@ class TestOrtTrainingForwardBackward(ExtTestCase):
             expected.ravel(), got[0].numpy().ravel(), decimal=4)
 
     def forward_training(self, model, debug=False, n_classes=3, add_print=False):
+        from onnxruntime.capi._pybind_state import (
+            OrtValue as C_OrtValue, OrtDevice, OrtMemType)
+        from onnxruntime.capi._pybind_state import (
+            OrtValueVector)
         from onnxcustom.training.ortgradient import OrtGradientForwardBackward
 
         def to_proba(yt):

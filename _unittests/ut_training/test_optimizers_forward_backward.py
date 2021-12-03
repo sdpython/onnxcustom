@@ -272,5 +272,5 @@ if __name__ == "__main__":
     # logger = logging.getLogger('onnxcustom')
     # logger.setLevel(logging.DEBUG)
     # logging.basicConfig(level=logging.DEBUG)
-    # TestOptimizersForwardBackward().test_ort_gradient_optimizers_use_numpy()
+    TestOptimizersForwardBackward().test_ort_gradient_optimizers_optimal_use_numpy()
     unittest.main()
