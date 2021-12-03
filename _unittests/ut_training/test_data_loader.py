@@ -16,6 +16,7 @@ from onnxcustom.training.data_loader import OrtDataLoader
 class TestDataLoader(ExtTestCase):
 
     def test_ort_data_loader(self):
+        print('A')
         X, y = make_regression(  # pylint: disable=W0632
             100, n_features=10, bias=2)
         data = OrtDataLoader(X, y, batch_size=5)
@@ -35,8 +36,10 @@ class TestDataLoader(ExtTestCase):
         self.assertEqual(
             data.desc,
             [((100, 10), numpy.float64), ((100, 1), numpy.float64)])
+        print('B')
 
     def test_ort_data_loader_numpy(self):
+        print('C')
         X, y = make_regression(  # pylint: disable=W0632
             100, n_features=10, bias=2)
         data = OrtDataLoader(X, y, batch_size=5)
@@ -56,8 +59,10 @@ class TestDataLoader(ExtTestCase):
         self.assertEqual(
             data.desc,
             [((100, 10), numpy.float64), ((100, 1), numpy.float64)])
+        print('D')
 
     def test_ort_data_loader_pickle(self):
+        print('E')
         X, y = make_regression(  # pylint: disable=W0632
             100, n_features=10, bias=2)
         data0 = OrtDataLoader(X, y, batch_size=5)
@@ -81,8 +86,10 @@ class TestDataLoader(ExtTestCase):
         self.assertEqual(
             data.desc,
             [((100, 10), numpy.float64), ((100, 1), numpy.float64)])
+        print('F')
 
     def test_ort_data_loader_compare(self):
+        print('G')
         X, y = make_regression(  # pylint: disable=W0632
             100, n_features=10, bias=2)
         data = OrtDataLoader(X, y, batch_size=5, random_iter=False)
@@ -102,6 +109,7 @@ class TestDataLoader(ExtTestCase):
             i = it * 5
             self.assertEqualArray(X[i: i + 5], n[0])
             self.assertEqualArray(y[i: i + 5], n[1].ravel())
+        print('H')
 
 
 if __name__ == "__main__":
