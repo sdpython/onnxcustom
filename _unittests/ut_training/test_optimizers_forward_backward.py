@@ -56,9 +56,10 @@ class TestOptimizersForwardBackward(ExtTestCase):
     def test_ort_gradient_optimizers_use_numpy(self):
         from onnxcustom.training.optimizers_partial import OrtGradientForwardBackwardOptimizer
         X, y = make_regression(  # pylint: disable=W0632
-            100, n_features=10, bias=2, random_state=0)
+            100, n_features=2, bias=2, random_state=0)
+        X[:10, :] = 0
         X = X.astype(numpy.float32)
-        y = y.astype(numpy.float32)
+        y = (X.sum(axis=1) + y / 1000).astype(numpy.float32)
         X_train, _, y_train, __ = train_test_split(X, y)
         reg = LinearRegression()
         reg.fit(X_train, y_train)
@@ -122,7 +123,6 @@ class TestOptimizersForwardBackward(ExtTestCase):
         self.assertFalse(any(map(numpy.isnan, losses)))
 
     @unittest.skipIf(TrainingSession is None, reason="not training")
-    @unittest.skipIf(True, reason="pointer issue")
     def test_ort_gradient_optimizers_use_ort(self):
         from onnxcustom.training.optimizers_partial import OrtGradientForwardBackwardOptimizer
         X, y = make_regression(  # pylint: disable=W0632
@@ -149,11 +149,10 @@ class TestOptimizersForwardBackward(ExtTestCase):
         self.assertFalse(any(map(numpy.isnan, losses)))
 
     @unittest.skipIf(TrainingSession is None, reason="not training")
-    @unittest.skipIf(True, reason="pointer issue")
     def test_ort_gradient_optimizers_optimal_use_numpy(self):
         from onnxcustom.training.optimizers_partial import OrtGradientForwardBackwardOptimizer
         X, y = make_regression(  # pylint: disable=W0632
-            100, n_features=10, bias=2)
+            100, n_features=10, bias=2, random_state=0)
         X = X.astype(numpy.float32)
         y = y.astype(numpy.float32)
         X_train, _, y_train, __ = train_test_split(X, y)
@@ -177,11 +176,10 @@ class TestOptimizersForwardBackward(ExtTestCase):
         self.assertFalse(any(map(numpy.isnan, losses)))
 
     @unittest.skipIf(TrainingSession is None, reason="not training")
-    @unittest.skipIf(True, reason="pointer issue")
     def test_ort_gradient_optimizers_optimal_use_ort(self):
         from onnxcustom.training.optimizers_partial import OrtGradientForwardBackwardOptimizer
         X, y = make_regression(  # pylint: disable=W0632
-            100, n_features=10, bias=2)
+            100, n_features=10, bias=2, random_state=0)
         X = X.astype(numpy.float32)
         y = y.astype(numpy.float32)
         X_train, _, y_train, __ = train_test_split(X, y)
@@ -205,7 +203,6 @@ class TestOptimizersForwardBackward(ExtTestCase):
         self.assertFalse(any(map(numpy.isnan, losses)))
 
     @unittest.skipIf(TrainingSession is None, reason="not training")
-    @unittest.skipIf(True, reason="pointer issue")
     def test_ort_gradient_optimizers_evaluation_use_numpy(self):
         from onnxcustom.training.optimizers_partial import OrtGradientForwardBackwardOptimizer
         X, y = make_regression(  # pylint: disable=W0632
@@ -234,7 +231,6 @@ class TestOptimizersForwardBackward(ExtTestCase):
         self.assertFalse(any(map(numpy.isnan, losses)))
 
     @unittest.skipIf(TrainingSession is None, reason="not training")
-    @unittest.skipIf(True, reason="pointer issue")
     def test_ort_gradient_optimizers_evaluation_use_ort(self):
         from onnxcustom.training.optimizers_partial import OrtGradientForwardBackwardOptimizer
         X, y = make_regression(  # pylint: disable=W0632
@@ -269,5 +265,4 @@ if __name__ == "__main__":
     # logger.setLevel(logging.DEBUG)
     # logging.basicConfig(level=logging.DEBUG)
     # TestOptimizersForwardBackward().test_ort_gradient_optimizers_use_numpy()
-    # stop
     unittest.main()

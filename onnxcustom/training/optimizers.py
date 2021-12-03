@@ -152,7 +152,8 @@ class OrtGradientOptimizer(BaseEstimator):
             X, y, batch_size=self.batch_size, device=self.device)
         if X_val is not None:
             data_loader_val = OrtDataLoader(
-                X_val, y_val, batch_size=X_val.shape[0], device=self.device)
+                X_val, y_val, batch_size=X_val.shape[0], device=self.device,
+                random_iter=False)
         else:
             data_loader_val = None
 

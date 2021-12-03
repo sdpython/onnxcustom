@@ -66,6 +66,30 @@ class TestOnnxFunction(ExtTestCase):
     def test_grad_onnx_axpy(self):
         self.common_check_alpha("axpy", lambda x1, x2, alpha: x1 * alpha + x2)
 
+    def common_check_2(self, name, fct):
+        onx = function_onnx_graph(
+            name, target_opset=__max_supported_opset__,
+            dtype=numpy.float32)
+        x1 = numpy.random.randn(10, 1).astype(numpy.float32)
+        x2 = numpy.random.randn(10, 1).astype(numpy.float32)
+        exp_loss, exp_grad = fct(x1, x2)
+
+        oinf = OnnxInference(onx)
+        got = oinf.run({'X1': x1, 'X2': x2})
+        self.assertEqualArray(exp_loss, got['Y'], decimal=5)
+        self.assertEqualArray(exp_grad, got['Z'], decimal=5)
+
+        sess = InferenceSession(onx.SerializeToString())
+        got = sess.run(None, {'X1': x1, 'X2': x2})
+        self.assertEqualArray(exp_loss, got[0], decimal=5)
+        self.assertEqualArray(exp_grad, got[1], decimal=5)
+
+    def test_loss_grad_onnx_square_error(self):
+        self.common_check_2(
+            "grad_loss_square_error",
+            lambda x1, x2: (((x1 - x2) ** 2).sum(),
+                            (x1 - x2) * (-2)))
+
 
 if __name__ == "__main__":
     unittest.main()

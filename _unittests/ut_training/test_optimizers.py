@@ -6,7 +6,6 @@ import unittest
 import io
 import pickle
 from pyquickhelper.pycode import ExtTestCase
-from pyquickhelper.texthelper import compare_module_version
 import numpy
 from onnx.helper import set_model_props
 from sklearn.datasets import make_regression
