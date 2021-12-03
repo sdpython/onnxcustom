@@ -9,7 +9,9 @@ import numpy
 class BaseLearningRate:
     """
     Class handling the learning rate update after every
-    iteration of a gradient.
+    iteration of a gradient. Two methods need to be overwritten
+    `init_learning_rate` and `update_learning_rate`. The first one
+    starts the loop, the second returns the next one.
     """
 
     def __init__(self):
@@ -37,6 +39,17 @@ class BaseLearningRate:
         "Returns the current learning rate."
         raise NotImplementedError(
             "This method must be overwritten.")
+
+    def loop(self, n=1000):
+        """
+        Loops over learning rate values, *n* to be precise.
+        :param n: number of requested iterations
+        :return: iterator
+        """
+        self.init_learning_rate()
+        for i in range(n):
+            yield self.value
+            self.update_learning_rate(i + 1)
 
     @staticmethod
     def select(class_name, **kwargs):
@@ -104,7 +117,8 @@ class LearningRateSGDRegressor(BaseLearningRate):
     :param learning_rate: learning rate schedule:
         * `'constant'`: `eta = eta0`
         * `'optimal'`: `eta = 1.0 / (alpha * (t + t0))` where *t0* is chosen
-            by a heuristic proposed by Leon Bottou.
+            by a heuristic proposed by Leon Bottou, this number is multiplied
+            by a constant C to make the first number equal to *eta0*
         * `'invscaling'`: `eta = eta0 / pow(t, power_t)`
 
     Created attributes:
@@ -116,6 +130,9 @@ class LearningRateSGDRegressor(BaseLearningRate):
     def __init__(self, eta0=0.01, alpha=0.0001, power_t=0.25,
                  learning_rate='invscaling'):
         BaseLearningRate.__init__(self)
+        if learning_rate not in ('invscaling', 'optimal', 'constant'):
+            raise ValueError(
+                "Unxepected value for learning_rate=%r." % learning_rate)
         self.eta0 = eta0
         self.alpha = alpha
         self.power_t = power_t
@@ -130,8 +147,11 @@ class LearningRateSGDRegressor(BaseLearningRate):
         self.eta0_ = self.eta0
         if self.learning_rate == "optimal":
             typw = numpy.sqrt(1.0 / numpy.sqrt(self.alpha))
-            self.eta0_ = typw / max(1.0, (1 + typw) * 2)
-            self.optimal_init_ = 1.0 / (self.eta0_ * self.alpha)
+            eta0 = typw / max(1.0, (1 + typw) * 2)
+            self.optimal_init_ = 1.0 / (eta0 * self.alpha)
+            eta = 1. / (self.alpha * self.optimal_init_)
+            self.optimal_fact_ = self.eta0 / eta
+            self.eta0_ = self.eta0
         else:
             self.eta0_ = self.eta0
         self.value_ = self.eta0_
@@ -145,7 +165,7 @@ class LearningRateSGDRegressor(BaseLearningRate):
         """
         eta = self.value_
         if self.learning_rate == "optimal":
-            eta = 1.0 / (self.alpha * (self.optimal_init_ + t))
+            eta = self.optimal_fact_ / (self.alpha * (self.optimal_init_ + t))
         elif self.learning_rate == "invscaling":
             eta = self.eta0_ / numpy.power(t + 1, self.power_t)
         self.value_ = eta

@@ -1,5 +1,5 @@
 """
-@brief      test log(time=3s)
+@brief      test log(time=13s)
 """
 
 import unittest
@@ -8,14 +8,13 @@ import pickle
 import numpy
 from onnxruntime.capi._pybind_state import (  # pylint: disable=E0611
     OrtValue as C_OrtValue)
-from pyquickhelper.pycode import ExtTestCase, skipif_circleci
+from pyquickhelper.pycode import ExtTestCase
 from sklearn.datasets import make_regression
 from onnxcustom.training.data_loader import OrtDataLoader
 
 
 class TestDataLoader(ExtTestCase):
 
-    @skipif_circleci("bizarre")
     def test_ort_data_loader(self):
         X, y = make_regression(  # pylint: disable=W0632
             100, n_features=10, bias=2)
@@ -37,7 +36,6 @@ class TestDataLoader(ExtTestCase):
             data.desc,
             [((100, 10), numpy.float64), ((100, 1), numpy.float64)])
 
-    @skipif_circleci("bizarre")
     def test_ort_data_loader_numpy(self):
         X, y = make_regression(  # pylint: disable=W0632
             100, n_features=10, bias=2)
@@ -59,7 +57,6 @@ class TestDataLoader(ExtTestCase):
             data.desc,
             [((100, 10), numpy.float64), ((100, 1), numpy.float64)])
 
-    @skipif_circleci("bizarre")
     def test_ort_data_loader_pickle(self):
         X, y = make_regression(  # pylint: disable=W0632
             100, n_features=10, bias=2)
@@ -85,7 +82,6 @@ class TestDataLoader(ExtTestCase):
             data.desc,
             [((100, 10), numpy.float64), ((100, 1), numpy.float64)])
 
-    @skipif_circleci("bizarre")
     def test_ort_data_loader_compare(self):
         X, y = make_regression(  # pylint: disable=W0632
             100, n_features=10, bias=2)

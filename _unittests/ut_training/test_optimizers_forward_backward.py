@@ -173,12 +173,12 @@ class TestOptimizersForwardBackward(ExtTestCase):
         train_session.fit(X, y, use_numpy=True)
         state_tensors = train_session.get_state()
         self.assertEqual(len(state_tensors), 2)
-        r = repr(train_session)
-        self.assertIn("OrtGradientForwardBackwardOptimizer(model_onnx=", r)
-        self.assertIn("learning_rate='optimal'", r)
         losses = train_session.train_losses_
         self.assertGreater(len(losses), 1)
         self.assertFalse(any(map(numpy.isnan, losses)))
+        r = repr(train_session)
+        self.assertIn("OrtGradientForwardBackwardOptimizer(model_onnx=", r)
+        self.assertIn("learning_rate='optimal'", r)
 
     @unittest.skipIf(TrainingSession is None, reason="not training")
     def test_ort_gradient_optimizers_optimal_use_ort(self):
@@ -272,5 +272,5 @@ if __name__ == "__main__":
     # logger = logging.getLogger('onnxcustom')
     # logger.setLevel(logging.DEBUG)
     # logging.basicConfig(level=logging.DEBUG)
-    TestOptimizersForwardBackward().test_ort_gradient_optimizers_optimal_use_numpy()
+    # TestOptimizersForwardBackward().test_ort_gradient_optimizers_optimal_use_numpy()
     unittest.main()
