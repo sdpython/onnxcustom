@@ -8,13 +8,14 @@ import pickle
 import numpy
 from onnxruntime.capi._pybind_state import (  # pylint: disable=E0611
     OrtValue as C_OrtValue)
-from pyquickhelper.pycode import ExtTestCase
+from pyquickhelper.pycode import ExtTestCase, skipif_circleci
 from sklearn.datasets import make_regression
 from onnxcustom.training.data_loader import OrtDataLoader
 
 
 class TestDataLoader(ExtTestCase):
 
+    @skipif_circleci("bizarre")
     def test_ort_data_loader(self):
         X, y = make_regression(  # pylint: disable=W0632
             100, n_features=10, bias=2)
