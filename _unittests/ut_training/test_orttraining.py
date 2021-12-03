@@ -31,6 +31,7 @@ class TestOrtTraining(ExtTestCase):
         X_train, X_test, y_train, y_test = train_test_split(X, y)
         reg = LinearRegression()
         reg.fit(X_train, y_train)
+        reg.coef_ = reg.coef_.reshape((1, -1))
         onx = to_onnx(reg, X_train, target_opset=opset,
                       black_op={'LinearRegressor'})
         onx_loss = add_loss_output(onx)
@@ -50,6 +51,7 @@ class TestOrtTraining(ExtTestCase):
         X_train, _, y_train, __ = train_test_split(X, y)
         reg = LinearRegression()
         reg.fit(X_train, y_train)
+        reg.coef_ = reg.coef_.reshape((1, -1))
         onx = to_onnx(reg, X_train, target_opset=opset,
                       black_op={'LinearRegressor'})
         inits = get_train_initializer(onx)

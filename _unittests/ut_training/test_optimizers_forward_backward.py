@@ -35,6 +35,7 @@ class TestOptimizersForwardBackward(ExtTestCase):
         X_train, _, y_train, __ = train_test_split(X, y)
         reg = LinearRegression()
         reg.fit(X_train, y_train)
+        reg.coef_ = reg.coef_.reshape((1, -1))
         onx = to_onnx(reg, X_train, target_opset=opset,
                       black_op={'LinearRegressor'})
         # onx = onnx_rename_weights(onx)
@@ -63,6 +64,7 @@ class TestOptimizersForwardBackward(ExtTestCase):
         X_train, _, y_train, __ = train_test_split(X, y)
         reg = LinearRegression()
         reg.fit(X_train, y_train)
+        reg.coef_ = reg.coef_.reshape((1, -1))
         onx = to_onnx(reg, X_train, target_opset=opset,
                       black_op={'LinearRegressor'})
         # onx = onnx_rename_weights(onx)
@@ -91,6 +93,7 @@ class TestOptimizersForwardBackward(ExtTestCase):
         X_train, _, y_train, __ = train_test_split(X, y)
         reg = LinearRegression()
         reg.fit(X_train, y_train)
+        reg.coef_ = reg.coef_.reshape((1, -1))
         onx = to_onnx(reg, X_train, target_opset=opset,
                       black_op={'LinearRegressor'})
         set_model_props(onx, {'info': 'unit test'})
@@ -132,6 +135,7 @@ class TestOptimizersForwardBackward(ExtTestCase):
         X_train, _, y_train, __ = train_test_split(X, y)
         reg = LinearRegression()
         reg.fit(X_train, y_train)
+        reg.coef_ = reg.coef_.reshape((1, -1))
         onx = to_onnx(reg, X_train, target_opset=opset,
                       black_op={'LinearRegressor'})
         set_model_props(onx, {'info': 'unit test'})
@@ -158,6 +162,7 @@ class TestOptimizersForwardBackward(ExtTestCase):
         X_train, _, y_train, __ = train_test_split(X, y)
         reg = LinearRegression()
         reg.fit(X_train, y_train)
+        reg.coef_ = reg.coef_.reshape((1, -1))
         onx = to_onnx(reg, X_train, target_opset=opset,
                       black_op={'LinearRegressor'})
         inits = ['coef', 'intercept']
@@ -185,6 +190,7 @@ class TestOptimizersForwardBackward(ExtTestCase):
         X_train, _, y_train, __ = train_test_split(X, y)
         reg = LinearRegression()
         reg.fit(X_train, y_train)
+        reg.coef_ = reg.coef_.reshape((1, -1))
         onx = to_onnx(reg, X_train, target_opset=opset,
                       black_op={'LinearRegressor'})
         inits = ['coef', 'intercept']
@@ -212,6 +218,7 @@ class TestOptimizersForwardBackward(ExtTestCase):
         X_train, X_test, y_train, y_test = train_test_split(X, y)
         reg = LinearRegression()
         reg.fit(X_train, y_train)
+        reg.coef_ = reg.coef_.reshape((1, -1))
         onx = to_onnx(reg, X_train, target_opset=opset,
                       black_op={'LinearRegressor'})
         inits = ['coef', 'intercept']
@@ -240,6 +247,7 @@ class TestOptimizersForwardBackward(ExtTestCase):
         X_train, X_test, y_train, y_test = train_test_split(X, y)
         reg = LinearRegression()
         reg.fit(X_train, y_train)
+        reg.coef_ = reg.coef_.reshape((1, -1))
         onx = to_onnx(reg, X_train, target_opset=opset,
                       black_op={'LinearRegressor'})
         inits = ['coef', 'intercept']
