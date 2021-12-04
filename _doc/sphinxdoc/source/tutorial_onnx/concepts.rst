@@ -35,8 +35,54 @@ from the learning framework used to build the model.
 .. contents::
     :local:
 
-A simple example: a linear regression
-+++++++++++++++++++++++++++++++++++++
+Input, Output, Node, Initializer
+++++++++++++++++++++++++++++++++
+
+Building an ONNX graph means implementing a function
+with the ONNX language or more precisely the :ref:`l-onnx-operators`.
+It is easier to read when there is one operator per line.
+A linear regression would be written this way.
+
+::
+
+    x = onnx.input(0)
+    a = onnx.input(1)
+    c = onnx.input(2)
+
+    ax = onnx.MatMul(a, x)
+    axc = onnx.Add(ax, c)
+
+    onnx.output(0) = axc
+
+This code implements a function with the signature `f(x, a, c) -> axc`.
+*a*, *a*, *c* are the **inputs**, *axc* is the **output**.
+*ax* is an intermediate result.
+Inputs and outputs are changing at each inference.
+*MatMul* and *Add* are the **nodes**. They also have inputs and outputs.
+A node has also a type, one of the operators in
+:ref:`l-onnx-operators`. This graph was built with the example
+in Section :ref:`l-onnx-linear-regression-onnx-api`.
+
+The graph could also have an **initializer**. When an input
+never changes such as the coefficients of the linear regression,
+it be turned into a constant and stored into the graph.
+
+::
+
+    x = onnx.input(0)
+    a = initializer
+    c = initializer
+
+    ax = onnx.MatMul(a, x)
+    axc = onnx.Add(ax, c)
+
+    onnx.output(0) = axc
+
+Visually, this graph would look like this
+(initializers are hidden). This graph was obtained with this
+code :ref:`l-onnx-linear-regression-onnx-api-init`.
+
+.. image:: images/linreg2.png
 
 Serialization
 +++++++++++++

@@ -6,6 +6,7 @@ import numpy
 from onnxruntime import InferenceSession
 from pyquickhelper.pycode import ExtTestCase
 from mlprodict.onnxrt import OnnxInference
+from mlprodict.onnx_tools.onnx_export import export2onnx
 from onnxcustom import get_max_opset
 from onnxcustom.utils.onnx_function import function_onnx_graph, get_supported_functions
 
@@ -87,6 +88,30 @@ class TestOnnxFunction(ExtTestCase):
             "grad_loss_square_error",
             lambda x1, x2: (((x1 - x2) ** 2).sum(),
                             (x1 - x2) * (-2)))
+
+    def common_check_3(self, name, fct):
+        onx = function_onnx_graph(
+            name, target_opset=get_max_opset(),
+            dtype=numpy.float32)
+        x = numpy.random.randn(10, 1).astype(numpy.float32)
+        a = numpy.random.randn(10, 1).astype(numpy.float32).T
+        b = numpy.random.randn(10, 1).astype(numpy.float32)
+        y = fct(x, a, b)
+
+        code = export2onnx(onx)
+        print(code)
+
+        oinf = OnnxInference(onx)
+        got = oinf.run({'X': x, 'A': a, 'B': b})
+        self.assertEqualArray(y, got['Y'], decimal=5)
+
+        sess = InferenceSession(onx.SerializeToString())
+        got = sess.run(None, {'X': x, 'A': a, 'B': b})
+        self.assertEqualArray(y, got[0], decimal=5)
+
+    def test_linear_regression(self):
+        self.common_check_3(
+            "linear_regression", lambda x, a, b: x @ a + b)
 
 
 if __name__ == "__main__":

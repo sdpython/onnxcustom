@@ -186,6 +186,37 @@ def _onnx_grad_loss_square_error(target_opset=None, dtype=numpy.float32):
              ('X2', var_type([None, None]))]
     onx = res.to_onnx(
         varsx, outputs=[('Y', var_type()), ('Z', var_type())],
-        target_opset=target_opset,
-        other_outputs=[res2])
+        target_opset=target_opset, other_outputs=[res2])
+    return onx
+
+
+def _onnx_linear_regression(target_opset=None, dtype=numpy.float32):
+    """
+    Returns the ONNX graph for function
+    :math:`Y = f(X, A, B) = A X + B`.
+
+    .. gdot::
+        :script: DOT-SECTION
+
+        from mlprodict.onnxrt import OnnxInference
+        from onnxcustom.utils.onnx_function import function_onnx_graph
+
+        model_onnx = function_onnx_graph('linear_regression')
+        oinf = OnnxInference(model_onnx, inplace=False)
+
+        print("DOT-SECTION", oinf.to_dot())
+    """
+    from skl2onnx.algebra.onnx_ops import (
+        OnnxMatMul, OnnxAdd)
+    res = OnnxAdd(
+        OnnxMatMul('X', 'A', op_version=target_opset),
+        'B', op_version=target_opset, output_names=['Y'])
+
+    var_type = dtype_to_var_type(dtype)
+    varsx = [('X', var_type([None, None])),
+             ('A', var_type([None, None])),
+             ('B', var_type([None, None]))]
+    onx = res.to_onnx(
+        varsx, outputs=[('Y', var_type())],
+        target_opset=target_opset, other_outputs=[res])
     return onx

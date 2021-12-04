@@ -90,6 +90,7 @@ epkg_dictionary.update({
     'lightgbm': 'https://lightgbm.readthedocs.io/en/latest/',
     'mlprodict':
         'http://www.xavierdupre.fr/app/mlprodict/helpsphinx/index.html',
+    'netron': 'https://github.com/lutzroeder/netron',
     'NMF':
         'https://scikit-learn.org/stable/modules/generated/'
         'sklearn.decomposition.NMF.html',

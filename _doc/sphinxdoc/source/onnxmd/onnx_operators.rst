@@ -1,5 +1,7 @@
 
-Onnx Operators
+.. _l-onnx-operators:
+
+ONNX Operators
 ==============
 
 .. toctree::
