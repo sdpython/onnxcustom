@@ -41,3 +41,6 @@ tabulate
 tqdm
 xgboost
 wheel
+
+# this dependency is needed for onnxruntime-training
+torch

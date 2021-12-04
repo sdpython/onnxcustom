@@ -5,14 +5,18 @@ Inference
 .. contents::
     :local:
 
-Python Wrapper
-++++++++++++++
+.. _l-ort-inference-session:
+
+Python Wrapper for InferenceSession
++++++++++++++++++++++++++++++++++++
 
 .. autoclass:: onnxruntime.InferenceSession
     :members:
 
-C Class
-+++++++
+.. _l-ort-inference-session-c:
+
+C Class InferenceSession
+++++++++++++++++++++++++
 
 .. autoclass:: onnxruntime.capi._pybind_state.InferenceSession
     :members:

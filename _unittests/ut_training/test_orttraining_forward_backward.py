@@ -1,6 +1,6 @@
-# pylint: disable=E1101,W0212
+# pylint: disable=E1101,W0212,E0611
 """
-@brief      test log(time=3s)
+@brief      test log(time=9s)
 """
 import unittest
 import io
@@ -13,10 +13,6 @@ from sklearn.datasets import make_regression, make_classification
 from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LinearRegression, LogisticRegression
 from onnxruntime import InferenceSession
-from onnxruntime.capi._pybind_state import (  # pylint: disable=E0611
-    OrtValue as C_OrtValue, OrtDevice, OrtMemType)
-from onnxruntime.capi._pybind_state import (  # pylint: disable=E0611
-    OrtValueVector)
 try:
     from onnxruntime import TrainingSession
 except ImportError:
@@ -30,6 +26,10 @@ from onnxcustom import __max_supported_opset__ as opset
 class TestOrtTrainingForwardBackward(ExtTestCase):
 
     def forward_no_training(self):
+        from onnxruntime.capi._pybind_state import (
+            OrtValue as C_OrtValue, OrtDevice, OrtMemType)
+        from onnxruntime.capi._pybind_state import (
+            OrtValueVector)
         from onnxcustom.training.ortgradient import OrtGradientForwardBackward
         X, y = make_regression(  # pylint: disable=W0632
             100, n_features=10, bias=2)
@@ -38,6 +38,7 @@ class TestOrtTrainingForwardBackward(ExtTestCase):
         X_train, X_test, y_train, _ = train_test_split(X, y)
         reg = LinearRegression()
         reg.fit(X_train, y_train)
+        reg.coef_ = reg.coef_.reshape((1, -1))
         onx = to_onnx(reg, X_train, target_opset=opset,
                       black_op={'LinearRegressor'})
 
@@ -66,14 +67,14 @@ class TestOrtTrainingForwardBackward(ExtTestCase):
         inames = [i.name for i in sess0.get_inputs()]  # pylint: disable=E1101
         self.assertEqual(inames, ['X'])
         got = sess0.run(None, {'X': X_test})
-        self.assertEqualArray(expected, got[0].ravel(), decimal=4)
+        self.assertEqualArray(expected.ravel(), got[0].ravel(), decimal=4)
 
         sess_eval = forback.cls_type_._sess_eval  # pylint: disable=E1101
         inames = [i.name for i in sess_eval.get_inputs()]
         self.assertEqual(inames, ['X', 'coef', 'intercept'])
         got = sess_eval.run(
             None, {'X': X_test, 'coef': coef, 'intercept': intercept})
-        self.assertEqualArray(expected, got[0].ravel(), decimal=4)
+        self.assertEqualArray(expected.ravel(), got[0].ravel(), decimal=4)
 
         # OrtValue
         inst = forback.new_instance()
@@ -86,7 +87,7 @@ class TestOrtTrainingForwardBackward(ExtTestCase):
         got_ort = inst.forward(inputs)
         got = [v.numpy() for v in got_ort]
         self.assertEqual(len(got), 1)
-        self.assertEqualArray(expected, got[0].ravel(), decimal=4)
+        self.assertEqualArray(expected.ravel(), got[0].ravel(), decimal=4)
 
         # OrtValueVector
         inputs = OrtValueVector()
@@ -94,13 +95,15 @@ class TestOrtTrainingForwardBackward(ExtTestCase):
             inputs.push_back(C_OrtValue.ortvalue_from_numpy(a, device))
         got = inst.forward(inputs)
         self.assertEqual(len(got), 1)
-        self.assertEqualArray(expected, got[0].numpy().ravel(), decimal=4)
+        self.assertEqualArray(
+            expected.ravel(), got[0].numpy().ravel(), decimal=4)
 
         # numpy
         inputs = [X_test, coef, intercept]
         got = inst.forward(inputs)
         self.assertEqual(len(got), 1)
-        self.assertEqualArray(expected, got[0].numpy().ravel(), decimal=4)
+        self.assertEqualArray(
+            expected.ravel(), got[0].numpy().ravel(), decimal=4)
 
     @unittest.skipIf(TrainingSession is None, reason="no training")
     def test_forward_no_training(self):
@@ -113,6 +116,10 @@ class TestOrtTrainingForwardBackward(ExtTestCase):
 
     @unittest.skipIf(TrainingSession is None, reason="no training")
     def test_forward_no_training_pickle(self):
+        from onnxruntime.capi._pybind_state import (
+            OrtValue as C_OrtValue, OrtDevice, OrtMemType)
+        from onnxruntime.capi._pybind_state import (
+            OrtValueVector)
         from onnxcustom.training.ortgradient import OrtGradientForwardBackward
         X, y = make_regression(  # pylint: disable=W0632
             100, n_features=10, bias=2)
@@ -121,6 +128,7 @@ class TestOrtTrainingForwardBackward(ExtTestCase):
         X_train, X_test, y_train, _ = train_test_split(X, y)
         reg = LinearRegression()
         reg.fit(X_train, y_train)
+        reg.coef_ = reg.coef_.reshape((1, -1))
         onx = to_onnx(reg, X_train, target_opset=opset,
                       black_op={'LinearRegressor'})
         forback0 = OrtGradientForwardBackward(onx, debug=True)
@@ -151,14 +159,14 @@ class TestOrtTrainingForwardBackward(ExtTestCase):
         inames = [i.name for i in sess0.get_inputs()]
         self.assertEqual(inames, ['X'])
         got = sess0.run(None, {'X': X_test})
-        self.assertEqualArray(expected, got[0].ravel(), decimal=4)
+        self.assertEqualArray(expected.ravel(), got[0].ravel(), decimal=4)
 
         sess_eval = forback.cls_type_._sess_eval  # pylint: disable=W0212
         inames = [i.name for i in sess_eval.get_inputs()]
         self.assertEqual(inames, ['X', 'coef', 'intercept'])
         got = sess_eval.run(
             None, {'X': X_test, 'coef': coef, 'intercept': intercept})
-        self.assertEqualArray(expected, got[0].ravel(), decimal=4)
+        self.assertEqualArray(expected.ravel(), got[0].ravel(), decimal=4)
 
         # OrtValue
         inst = forback.new_instance()
@@ -169,7 +177,8 @@ class TestOrtTrainingForwardBackward(ExtTestCase):
         got_ort = inst.forward(inputs)
         got = [v.numpy() for v in got_ort]
         self.assertEqual(len(got), 1)
-        self.assertEqualArray(expected, got[0].ravel(), decimal=4)
+        self.assertEqualArray(
+            expected.ravel(), got[0].ravel(), decimal=4)
 
         # OrtValueVector
         inputs = OrtValueVector()
@@ -177,15 +186,21 @@ class TestOrtTrainingForwardBackward(ExtTestCase):
             inputs.push_back(C_OrtValue.ortvalue_from_numpy(a, device))
         got = inst.forward(inputs)
         self.assertEqual(len(got), 1)
-        self.assertEqualArray(expected, got[0].numpy().ravel(), decimal=4)
+        self.assertEqualArray(
+            expected.ravel(), got[0].numpy().ravel(), decimal=4)
 
         # numpy
         inputs = [X_test, coef, intercept]
         got = inst.forward(inputs)
         self.assertEqual(len(got), 1)
-        self.assertEqualArray(expected, got[0].numpy().ravel(), decimal=4)
+        self.assertEqualArray(
+            expected.ravel(), got[0].numpy().ravel(), decimal=4)
 
     def forward_training(self, model, debug=False, n_classes=3, add_print=False):
+        from onnxruntime.capi._pybind_state import (
+            OrtValue as C_OrtValue, OrtDevice, OrtMemType)
+        from onnxruntime.capi._pybind_state import (
+            OrtValueVector)
         from onnxcustom.training.ortgradient import OrtGradientForwardBackward
 
         def to_proba(yt):

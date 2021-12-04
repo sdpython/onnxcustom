@@ -3,7 +3,7 @@
 @brief Manipulate data for training.
 """
 import numpy
-from onnxruntime import OrtValue
+from onnxruntime import OrtValue as PyOrtValue
 
 
 class OrtDataLoader:
@@ -16,12 +16,14 @@ class OrtDataLoader:
     :param y: labels
     :param batch_size: batch size (consecutive observations)
     :param device: `'cpu'` or `'cuda'`
-    :param device_idx: device index
+    :param device_index: device index
+    :param random_iter: random iteration
 
     See example :ref:`l-orttraining-nn-gpu`.
     """
 
-    def __init__(self, X, y, batch_size=20, device='cpu', device_idx=0):
+    def __init__(self, X, y, batch_size=20, device='cpu', device_index=0,
+                 random_iter=True):
         if len(y.shape) == 1:
             y = y.reshape((-1, 1))
         if X.shape[0] != y.shape[0]:
@@ -31,23 +33,24 @@ class OrtDataLoader:
         self.X_np = numpy.ascontiguousarray(X)
         self.y_np = numpy.ascontiguousarray(y).reshape((-1, 1))
 
-        self.X_ort = OrtValue.ortvalue_from_numpy(
-            self.X_np, device, device_idx)
-        self.y_ort = OrtValue.ortvalue_from_numpy(
-            self.y_np, device, device_idx)
+        self.X_ort = PyOrtValue.ortvalue_from_numpy(
+            self.X_np, device, device_index)._ortvalue
+        self.y_ort = PyOrtValue.ortvalue_from_numpy(
+            self.y_np, device, device_index)._ortvalue
 
         self.desc = [(self.X_np.shape, self.X_np.dtype),
                      (self.y_np.shape, self.y_np.dtype)]
 
         self.batch_size = batch_size
         self.device = device
-        self.device_idx = device_idx
+        self.device_index = device_index
+        self.random_iter = random_iter
 
     def __getstate__(self):
         "Removes any non pickable attribute."
         state = {}
         for att in ['X_np', 'y_np', 'desc', 'batch_size',
-                    'device', 'device_idx']:
+                    'device', 'device_index', 'random_iter']:
             state[att] = getattr(self, att)
         return state
 
@@ -55,48 +58,83 @@ class OrtDataLoader:
         "Restores any non pickable attribute."
         for att, v in state.items():
             setattr(self, att, v)
-        self.X_ort = OrtValue.ortvalue_from_numpy(
-            self.X_np, self.device, self.device_idx)
-        self.y_ort = OrtValue.ortvalue_from_numpy(
-            self.y_np, self.device, self.device_idx)
+        self.X_ort = PyOrtValue.ortvalue_from_numpy(
+            self.X_np, self.device, self.device_index)._ortvalue
+        self.y_ort = PyOrtValue.ortvalue_from_numpy(
+            self.y_np, self.device, self.device_index)._ortvalue
         return self
 
     def __repr__(self):
         "usual"
-        return "%s(..., ..., batch_size=%r, device=%r, device_idx=%r)" % (
+        return "%s(..., ..., batch_size=%r, device=%r, device_index=%r)" % (
             self.__class__.__name__, self.batch_size, self.device,
-            self.device_idx)
+            self.device_index)
 
     def __len__(self):
         "Returns the number of observations."
         return self.desc[0][0][0]
 
-    def __iter__(self):
+    def _next_iter(self, previous):
+        if self.random_iter:
+            b = len(self) - self.batch_size
+            return numpy.random.randint(0, b)
+        if previous == -1:
+            return 0
+        i = previous + self.batch_size
+        if i + self.batch_size > len(self):
+            i = len(self) - self.batch_size
+        return i
+
+    def iter_numpy(self):
         """
         Iterates over the datasets by drawing
         *batch_size* consecutive observations.
         This iterator is slow as it copies the data of every
-        batch.
+        batch. The function yields :eplg:`OrtValue`.
+        """
+        if self.device not in ('Cpu', 'cpu'):
+            raise RuntimeError(
+                "Only CPU device is allowed if numpy array are requested "
+                "not %r." % self.device)
+        N = 0
+        b = len(self) - self.batch_size
+        if b <= 0 or self.batch_size <= 0:
+            yield (self.X_np, self.y_np)
+        else:
+            i = -1
+            while N < len(self):
+                i = self._next_iter(i)
+                N += self.batch_size
+                yield (self.X_np[i:i + self.batch_size],
+                       self.y_np[i:i + self.batch_size])
+
+    def iter_ortvalue(self):
+        """
+        Iterates over the datasets by drawing
+        *batch_size* consecutive observations.
+        This iterator is slow as it copies the data of every
+        batch. The function yields :eplg:`OrtValue`.
         """
         N = 0
         b = len(self) - self.batch_size
         if b <= 0 or self.batch_size <= 0:
             yield (
-                OrtValue.ortvalue_from_numpy(
-                    self.X_np, self.device, self.device_idx),
-                OrtValue.ortvalue_from_numpy(
-                    self.y_np, self.device, self.device_idx))
+                PyOrtValue.ortvalue_from_numpy(
+                    self.X_np, self.device, self.device_index)._ortvalue,
+                PyOrtValue.ortvalue_from_numpy(
+                    self.y_np, self.device, self.device_index)._ortvalue)
         else:
+            i = -1
             while N < len(self):
-                i = numpy.random.randint(0, b)
+                i = self._next_iter(i)
                 N += self.batch_size
+                xp = self.X_np[i:i + self.batch_size]
+                yp = self.y_np[i:i + self.batch_size]
                 yield (
-                    OrtValue.ortvalue_from_numpy(
-                        self.X_np[i:i + self.batch_size],
-                        self.device, self.device_idx),
-                    OrtValue.ortvalue_from_numpy(
-                        self.y_np[i:i + self.batch_size],
-                        self.device, self.device_idx))
+                    PyOrtValue.ortvalue_from_numpy(
+                        xp, self.device, self.device_index)._ortvalue,
+                    PyOrtValue.ortvalue_from_numpy(
+                        yp, self.device, self.device_index)._ortvalue)
 
     def iter_bind(self, bind, names):
         """
@@ -122,7 +160,7 @@ class OrtDataLoader:
             bind.bind_input(
                 name=names[0],
                 device_type=self.device,
-                device_id=self.device_idx,
+                device_id=self.device_index,
                 element_type=self.desc[0][1],
                 shape=shape_X,
                 buffer_ptr=self.X_ort.data_ptr() + offset * n_col_x * size_x)
@@ -130,7 +168,7 @@ class OrtDataLoader:
             bind.bind_input(
                 name=names[1],
                 device_type=self.device,
-                device_id=self.device_idx,
+                device_id=self.device_index,
                 element_type=self.desc[0][1],
                 shape=shape_y,
                 buffer_ptr=self.y_ort.data_ptr() + offset * n_col_y * size_y)
@@ -143,8 +181,9 @@ class OrtDataLoader:
             yield shape_x[0]
         else:
             n = self.batch_size
+            i = -1
             while N < len(self):
-                i = numpy.random.randint(0, b)
+                i = self._next_iter(i)
                 N += self.batch_size
                 local_bind(bind, i, n)
                 yield n

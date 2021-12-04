@@ -43,8 +43,8 @@ jobs:
           name: flake8
           command: |
             . venv/bin/activate
-            python -m flake8 onnxcustom
-            python -m flake8 _doc/examples
+            python -m flake8 onnxcustom --max-line-length 90
+            python -m flake8 _doc/examples --max-line-length 90
 
       - run:
           name: run tests

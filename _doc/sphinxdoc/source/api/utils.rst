@@ -19,7 +19,17 @@ Labelling
 
 .. autosignature:: onnxcustom.utils.imagenet_classes.get_class_names
 
+ONNX
+++++
+
+.. autosignature:: onnxcustom.utils.onnx_helper.onnx_rename_weights
+
 Time
 ++++
 
 .. autosignature:: onnxcustom.utils.benchmark.measure_time
+
+Debugging
++++++++++
+
+.. autosignature:: onnxcustom.utils.print_helper.str_ortvalue

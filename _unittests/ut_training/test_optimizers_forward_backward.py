@@ -14,6 +14,7 @@ from sklearn.linear_model import LinearRegression
 from mlprodict.onnx_conv import to_onnx
 from onnxcustom import __max_supported_opset__ as opset
 from onnxcustom.training.sgd_learning_rate import LearningRateSGDRegressor
+# from onnxcustom.utils.onnx_helper import onnx_rename_weights
 try:
     from onnxruntime import TrainingSession
 except ImportError:
@@ -21,15 +22,15 @@ except ImportError:
     TrainingSession = None
 
 
-class TestOptimizers(ExtTestCase):
+class TestOptimizersForwardBackward(ExtTestCase):
 
     @unittest.skipIf(TrainingSession is None, reason="not training")
-    def test_ort_gradient_optimizers_use_numpy(self):
-        from onnxcustom.utils.onnx_orttraining import add_loss_output
-        from onnxcustom.training.optimizers import OrtGradientOptimizer
+    def test_ort_gradient_optimizers_use_numpy_zero(self):
+        from onnxcustom.training.optimizers_partial import OrtGradientForwardBackwardOptimizer
         X, y = make_regression(  # pylint: disable=W0632
             100, n_features=10, bias=2, random_state=0)
         X = X.astype(numpy.float32)
+        y[:] = 10
         y = y.astype(numpy.float32)
         X_train, _, y_train, __ = train_test_split(X, y)
         reg = LinearRegression()
@@ -37,17 +38,46 @@ class TestOptimizers(ExtTestCase):
         reg.coef_ = reg.coef_.reshape((1, -1))
         onx = to_onnx(reg, X_train, target_opset=opset,
                       black_op={'LinearRegressor'})
+        # onx = onnx_rename_weights(onx)
         set_model_props(onx, {'info': 'unit test'})
-        onx_loss = add_loss_output(onx)
-        inits = ['intercept', 'coef']
-        train_session = OrtGradientOptimizer(
-            onx_loss, inits, learning_rate=1e-3)
+        inits = ['coef', 'intercept']
+        train_session = OrtGradientForwardBackwardOptimizer(onx, inits)
         self.assertRaise(lambda: train_session.get_state(), AttributeError)
         train_session.fit(X, y, use_numpy=True)
         state_tensors = train_session.get_state()
         self.assertEqual(len(state_tensors), 2)
         r = repr(train_session)
-        self.assertIn("OrtGradientOptimizer(model_onnx=", r)
+        self.assertIn("OrtGradientForwardBackwardOptimizer(model_onnx=", r)
+        self.assertIn("learning_rate='invscaling'", r)
+        losses = train_session.train_losses_
+        self.assertGreater(len(losses), 1)
+        self.assertFalse(any(map(numpy.isnan, losses)))
+
+    @unittest.skipIf(TrainingSession is None, reason="not training")
+    def test_ort_gradient_optimizers_use_numpy(self):
+        from onnxcustom.training.optimizers_partial import OrtGradientForwardBackwardOptimizer
+        X, y = make_regression(  # pylint: disable=W0632
+            100, n_features=2, bias=2, random_state=0)
+        X[:10, :] = 0
+        X = X.astype(numpy.float32)
+        y = (X.sum(axis=1) + y / 1000).astype(numpy.float32)
+        X_train, _, y_train, __ = train_test_split(X, y)
+        reg = LinearRegression()
+        reg.fit(X_train, y_train)
+        reg.coef_ = reg.coef_.reshape((1, -1))
+        onx = to_onnx(reg, X_train, target_opset=opset,
+                      black_op={'LinearRegressor'})
+        # onx = onnx_rename_weights(onx)
+        set_model_props(onx, {'info': 'unit test'})
+        inits = ['coef', 'intercept']
+        train_session = OrtGradientForwardBackwardOptimizer(
+            onx, inits, enable_logging=False)
+        self.assertRaise(lambda: train_session.get_state(), AttributeError)
+        train_session.fit(X, y, use_numpy=True)
+        state_tensors = train_session.get_state()
+        self.assertEqual(len(state_tensors), 2)
+        r = repr(train_session)
+        self.assertIn("OrtGradientForwardBackwardOptimizer(model_onnx=", r)
         self.assertIn("learning_rate='invscaling'", r)
         losses = train_session.train_losses_
         self.assertGreater(len(losses), 1)
@@ -55,8 +85,7 @@ class TestOptimizers(ExtTestCase):
 
     @unittest.skipIf(TrainingSession is None, reason="not training")
     def test_ort_gradient_optimizers_use_numpy_pickle(self):
-        from onnxcustom.utils.onnx_orttraining import add_loss_output
-        from onnxcustom.training.optimizers import OrtGradientOptimizer
+        from onnxcustom.training.optimizers_partial import OrtGradientForwardBackwardOptimizer
         X, y = make_regression(  # pylint: disable=W0632
             100, n_features=10, bias=2, random_state=0)
         X = X.astype(numpy.float32)
@@ -68,9 +97,9 @@ class TestOptimizers(ExtTestCase):
         onx = to_onnx(reg, X_train, target_opset=opset,
                       black_op={'LinearRegressor'})
         set_model_props(onx, {'info': 'unit test'})
-        onx_loss = add_loss_output(onx)
-        inits = ['intercept', 'coef']
-        train_session0 = OrtGradientOptimizer(onx_loss, inits)
+        inits = ['coef', 'intercept']
+        train_session0 = OrtGradientForwardBackwardOptimizer(
+            onx, inits, learning_rate=1e-4)
 
         st = io.BytesIO()
         pickle.dump(train_session0, st)
@@ -90,7 +119,7 @@ class TestOptimizers(ExtTestCase):
         state_tensors = train_session.get_state()
         self.assertEqual(len(state_tensors), 2)
         r = repr(train_session)
-        self.assertIn("OrtGradientOptimizer(model_onnx=", r)
+        self.assertIn("OrtGradientForwardBackwardOptimizer(model_onnx=", r)
         self.assertIn("learning_rate='invscaling'", r)
         losses = train_session.train_losses_
         self.assertGreater(len(losses), 1)
@@ -98,10 +127,9 @@ class TestOptimizers(ExtTestCase):
 
     @unittest.skipIf(TrainingSession is None, reason="not training")
     def test_ort_gradient_optimizers_use_ort(self):
-        from onnxcustom.utils.onnx_orttraining import add_loss_output
-        from onnxcustom.training.optimizers import OrtGradientOptimizer
+        from onnxcustom.training.optimizers_partial import OrtGradientForwardBackwardOptimizer
         X, y = make_regression(  # pylint: disable=W0632
-            100, n_features=10, bias=2, random_state=0)
+            100, n_features=10, bias=2)
         X = X.astype(numpy.float32)
         y = y.astype(numpy.float32)
         X_train, _, y_train, __ = train_test_split(X, y)
@@ -111,15 +139,14 @@ class TestOptimizers(ExtTestCase):
         onx = to_onnx(reg, X_train, target_opset=opset,
                       black_op={'LinearRegressor'})
         set_model_props(onx, {'info': 'unit test'})
-        onx_loss = add_loss_output(onx)
-        inits = ['intercept', 'coef']
-        train_session = OrtGradientOptimizer(onx_loss, inits)
+        inits = ['coef', 'intercept']
+        train_session = OrtGradientForwardBackwardOptimizer(onx, inits)
         self.assertRaise(lambda: train_session.get_state(), AttributeError)
         train_session.fit(X, y, use_numpy=False)
         state_tensors = train_session.get_state()
         self.assertEqual(len(state_tensors), 2)
         r = repr(train_session)
-        self.assertIn("OrtGradientOptimizer(model_onnx=", r)
+        self.assertIn("OrtGradientForwardBackwardOptimizer(model_onnx=", r)
         self.assertIn("learning_rate='invscaling'", r)
         losses = train_session.train_losses_
         self.assertGreater(len(losses), 1)
@@ -127,8 +154,7 @@ class TestOptimizers(ExtTestCase):
 
     @unittest.skipIf(TrainingSession is None, reason="not training")
     def test_ort_gradient_optimizers_optimal_use_numpy(self):
-        from onnxcustom.utils.onnx_orttraining import add_loss_output
-        from onnxcustom.training.optimizers import OrtGradientOptimizer
+        from onnxcustom.training.optimizers_partial import OrtGradientForwardBackwardOptimizer
         X, y = make_regression(  # pylint: disable=W0632
             100, n_features=10, bias=2, random_state=0)
         X = X.astype(numpy.float32)
@@ -139,26 +165,24 @@ class TestOptimizers(ExtTestCase):
         reg.coef_ = reg.coef_.reshape((1, -1))
         onx = to_onnx(reg, X_train, target_opset=opset,
                       black_op={'LinearRegressor'})
-        onx_loss = add_loss_output(onx)
-        inits = ['intercept', 'coef']
-        train_session = OrtGradientOptimizer(
-            onx_loss, inits, max_iter=10,
+        inits = ['coef', 'intercept']
+        train_session = OrtGradientForwardBackwardOptimizer(
+            onx, inits, max_iter=10,
             learning_rate=LearningRateSGDRegressor(learning_rate='optimal'))
         self.assertRaise(lambda: train_session.get_state(), AttributeError)
         train_session.fit(X, y, use_numpy=True)
         state_tensors = train_session.get_state()
         self.assertEqual(len(state_tensors), 2)
-        r = repr(train_session)
-        self.assertIn("OrtGradientOptimizer(model_onnx=", r)
-        self.assertIn("learning_rate='optimal'", r)
         losses = train_session.train_losses_
         self.assertGreater(len(losses), 1)
         self.assertFalse(any(map(numpy.isnan, losses)))
+        r = repr(train_session)
+        self.assertIn("OrtGradientForwardBackwardOptimizer(model_onnx=", r)
+        self.assertIn("learning_rate='optimal'", r)
 
     @unittest.skipIf(TrainingSession is None, reason="not training")
     def test_ort_gradient_optimizers_optimal_use_ort(self):
-        from onnxcustom.utils.onnx_orttraining import add_loss_output
-        from onnxcustom.training.optimizers import OrtGradientOptimizer
+        from onnxcustom.training.optimizers_partial import OrtGradientForwardBackwardOptimizer
         X, y = make_regression(  # pylint: disable=W0632
             100, n_features=10, bias=2, random_state=0)
         X = X.astype(numpy.float32)
@@ -169,17 +193,16 @@ class TestOptimizers(ExtTestCase):
         reg.coef_ = reg.coef_.reshape((1, -1))
         onx = to_onnx(reg, X_train, target_opset=opset,
                       black_op={'LinearRegressor'})
-        onx_loss = add_loss_output(onx)
-        inits = ['intercept', 'coef']
-        train_session = OrtGradientOptimizer(
-            onx_loss, inits, max_iter=10,
+        inits = ['coef', 'intercept']
+        train_session = OrtGradientForwardBackwardOptimizer(
+            onx, inits, max_iter=10,
             learning_rate=LearningRateSGDRegressor(learning_rate='optimal'))
         self.assertRaise(lambda: train_session.get_state(), AttributeError)
         train_session.fit(X, y, use_numpy=False)
         state_tensors = train_session.get_state()
         self.assertEqual(len(state_tensors), 2)
         r = repr(train_session)
-        self.assertIn("OrtGradientOptimizer(model_onnx=", r)
+        self.assertIn("OrtGradientForwardBackwardOptimizer(model_onnx=", r)
         self.assertIn("learning_rate='optimal'", r)
         losses = train_session.train_losses_
         self.assertGreater(len(losses), 1)
@@ -187,10 +210,9 @@ class TestOptimizers(ExtTestCase):
 
     @unittest.skipIf(TrainingSession is None, reason="not training")
     def test_ort_gradient_optimizers_evaluation_use_numpy(self):
-        from onnxcustom.utils.onnx_orttraining import add_loss_output
-        from onnxcustom.training.optimizers import OrtGradientOptimizer
+        from onnxcustom.training.optimizers_partial import OrtGradientForwardBackwardOptimizer
         X, y = make_regression(  # pylint: disable=W0632
-            100, n_features=10, bias=2, random_state=0)
+            100, n_features=10, bias=2)
         X = X.astype(numpy.float32)
         y = y.astype(numpy.float32)
         X_train, X_test, y_train, y_test = train_test_split(X, y)
@@ -199,15 +221,14 @@ class TestOptimizers(ExtTestCase):
         reg.coef_ = reg.coef_.reshape((1, -1))
         onx = to_onnx(reg, X_train, target_opset=opset,
                       black_op={'LinearRegressor'})
-        onx_loss = add_loss_output(onx)
-        inits = ['intercept', 'coef']
-        train_session = OrtGradientOptimizer(onx_loss, inits)
+        inits = ['coef', 'intercept']
+        train_session = OrtGradientForwardBackwardOptimizer(onx, inits)
         self.assertRaise(lambda: train_session.get_state(), AttributeError)
         train_session.fit(X, y, X_val=X_test, y_val=y_test, use_numpy=True)
         state_tensors = train_session.get_state()
         self.assertEqual(len(state_tensors), 2)
         r = repr(train_session)
-        self.assertIn("OrtGradientOptimizer(model_onnx=", r)
+        self.assertIn("OrtGradientForwardBackwardOptimizer(model_onnx=", r)
         self.assertIn("learning_rate='invscaling'", r)
         losses = train_session.train_losses_
         self.assertGreater(len(losses), 1)
@@ -218,10 +239,9 @@ class TestOptimizers(ExtTestCase):
 
     @unittest.skipIf(TrainingSession is None, reason="not training")
     def test_ort_gradient_optimizers_evaluation_use_ort(self):
-        from onnxcustom.utils.onnx_orttraining import add_loss_output
-        from onnxcustom.training.optimizers import OrtGradientOptimizer
+        from onnxcustom.training.optimizers_partial import OrtGradientForwardBackwardOptimizer
         X, y = make_regression(  # pylint: disable=W0632
-            100, n_features=10, bias=2, random_state=0)
+            100, n_features=10, bias=2)
         X = X.astype(numpy.float32)
         y = y.astype(numpy.float32)
         X_train, X_test, y_train, y_test = train_test_split(X, y)
@@ -230,15 +250,14 @@ class TestOptimizers(ExtTestCase):
         reg.coef_ = reg.coef_.reshape((1, -1))
         onx = to_onnx(reg, X_train, target_opset=opset,
                       black_op={'LinearRegressor'})
-        onx_loss = add_loss_output(onx)
-        inits = ['intercept', 'coef']
-        train_session = OrtGradientOptimizer(onx_loss, inits)
+        inits = ['coef', 'intercept']
+        train_session = OrtGradientForwardBackwardOptimizer(onx, inits)
         self.assertRaise(lambda: train_session.get_state(), AttributeError)
         train_session.fit(X, y, X_val=X_test, y_val=y_test, use_numpy=False)
         state_tensors = train_session.get_state()
         self.assertEqual(len(state_tensors), 2)
         r = repr(train_session)
-        self.assertIn("OrtGradientOptimizer(model_onnx=", r)
+        self.assertIn("OrtGradientForwardBackwardOptimizer(model_onnx=", r)
         self.assertIn("learning_rate='invscaling'", r)
         losses = train_session.train_losses_
         self.assertGreater(len(losses), 1)
@@ -249,4 +268,9 @@ class TestOptimizers(ExtTestCase):
 
 
 if __name__ == "__main__":
+    # import logging
+    # logger = logging.getLogger('onnxcustom')
+    # logger.setLevel(logging.DEBUG)
+    # logging.basicConfig(level=logging.DEBUG)
+    # TestOptimizersForwardBackward().test_ort_gradient_optimizers_optimal_use_numpy()
     unittest.main()

@@ -5,10 +5,14 @@
 import inspect
 import numpy
 from onnxruntime import (  # pylint: disable=E0611
-    OrtValue, TrainingParameters,
+    OrtValue as PyOrtValue, TrainingParameters,
     SessionOptions, TrainingSession)
+from onnxruntime.capi._pybind_state import (  # pylint: disable=E0611
+    OrtValue as C_OrtValue)
+from ..utils.onnx_helper import proto_type_to_dtype
 from .data_loader import OrtDataLoader
 from .sgd_learning_rate import BaseLearningRate
+from .excs import ConvergenceError, EvaluationError
 
 
 class BaseEstimator:
@@ -25,6 +29,7 @@ class BaseEstimator:
 
     @classmethod
     def _get_param_names(cls):
+        "Extracts all parameters to serialize."
         init = getattr(cls.__init__, "deprecated_original", cls.__init__)
         init_signature = inspect.signature(init)
         parameters = [
@@ -33,6 +38,7 @@ class BaseEstimator:
         return [(p.name, p.default) for p in parameters]
 
     def __repr__(self):
+        "Usual."
         param = self._get_param_names()
         ps = []
         for k, v in param:
@@ -62,10 +68,10 @@ class OrtGradientOptimizer(BaseEstimator):
     :param max_iter: number of training iterations
     :param training_optimizer_name: optimizing algorithm
     :param batch_size: batch size (see class *DataLoader*)
-    :param learning_rate: a name or a learning rate instance,
+    :param learning_rate: a name or a learning rate instance or a float,
         see module :mod:`onnxcustom.training.sgd_learning_rate`
     :param device: `'cpu'` or `'cuda'`
-    :param device_idx: device index
+    :param device_index: device index
     :param warm_start: when set to True, reuse the solution of the previous
         call to fit as initialization, otherwise, just erase the previous
         solution.
@@ -74,34 +80,16 @@ class OrtGradientOptimizer(BaseEstimator):
         *validation_every* iterations
 
     Once initialized, the class creates the attribute
-    `session_` which holds an instance of `onnxruntime.TrainingSession`.
+    `train_session_` which holds an instance of :ref:`l-ort-training-session`.
 
     See example :ref:`l-orttraining-nn-gpu`.
-
-    .. faqref::
-        :title: Differences between onnxruntime and onnxruntime-training
-
-        onnxruntime-training is an extension of onnxruntime
-        that supports training. Version 1.10 is obtained by compiling
-        onnxruntime from the sources with different flags.
-        One example:
-
-        ::
-
-            python ./tools/ci_build/build.py --build_dir ./build/debian \\
-                   --config Release --build_wheel --numpy_version= \\
-                   --skip_tests --build_shared_lib --enable_training \\
-                   --enable_training_ops --enable_training_torch_interop \\
-                   --parallel
     """
 
     def __init__(self, model_onnx, weights_to_train, loss_output_name='loss',
                  max_iter=100, training_optimizer_name='SGDOptimizer',
                  batch_size=10, learning_rate='SGDRegressor',
-                 device='cpu', device_idx=0,
+                 device='cpu', device_index=0,
                  warm_start=False, verbose=0, validation_every=0.1):
-        # See https://scikit-learn.org/stable/modules/generated/
-        # sklearn.linear_model.SGDRegressor.html
         BaseEstimator.__init__(self, learning_rate)
         self.model_onnx = model_onnx
         self.batch_size = batch_size
@@ -111,7 +99,7 @@ class OrtGradientOptimizer(BaseEstimator):
         self.verbose = verbose
         self.max_iter = max_iter
         self.device = device
-        self.device_idx = device_idx
+        self.device_index = device_index
         self.warm_start = warm_start
         if validation_every < 1:
             self.validation_every = int(self.max_iter * validation_every)
@@ -164,9 +152,11 @@ class OrtGradientOptimizer(BaseEstimator):
             X, y, batch_size=self.batch_size, device=self.device)
         if X_val is not None:
             data_loader_val = OrtDataLoader(
-                X_val, y_val, batch_size=X_val.shape[0], device=self.device)
+                X_val, y_val, batch_size=X_val.shape[0], device=self.device,
+                random_iter=False)
         else:
             data_loader_val = None
+
         self.learning_rate.init_learning_rate()
         self.input_names_ = [i.name for i in self.train_session_.get_inputs()]
         self.output_names_ = [
@@ -185,16 +175,17 @@ class OrtGradientOptimizer(BaseEstimator):
         val_losses = []
         lr = self.learning_rate.value
         for it in loop:
-            bind_lr = OrtValue.ortvalue_from_numpy(
-                numpy.array([lr / self.batch_size], dtype=numpy.float32),
-                self.device, self.device_idx)
-            loss = self._iteration(data_loader, bind_lr,
+            lr_alive = numpy.array([lr / self.batch_size], dtype=numpy.float32)
+            ort_lr = PyOrtValue.ortvalue_from_numpy(
+                lr_alive, self.device, self.device_index)._ortvalue
+            loss = self._iteration(data_loader, ort_lr,
                                    bind, use_numpy=use_numpy)
             lr = self.learning_rate.update_learning_rate(it).value
             if self.verbose > 1:  # pragma: no cover
                 loop.set_description(
-                    "loss=%1.3g lr=%1.3g" % (  # pylint: disable=E1101,E1307
-                        loss, lr))  # pylint: disable=E1101,E1307
+                    "loss=%1.3g lr=%1.3g "  # pylint: disable=E1307
+                    "lrn=%1.3g" % (
+                        loss, lr, lr_alive[0]))
             train_losses.append(loss)
             if (data_loader_val is not None and
                     (it + 1) % self.validation_every == 0):
@@ -205,84 +196,108 @@ class OrtGradientOptimizer(BaseEstimator):
         self.trained_coef_ = self.train_session_.get_state()
         return self
 
-    def _iteration(self, data_loader, learning_rate, bind, use_numpy):
+    def _bind_input_ortvalue(self, name, bind, c_ortvalue):
+        """
+        Binds :epkg:`C_OrtValue` to the structure used by
+        :epkg:`InferenceSession` to run inference.
+
+        :param name: str
+        :param bind: python structure
+        :param c_ortvalue: C structure for OrtValue (:epkg:`C_OrtValue`),
+            it can be also a numpy array
+        """
+        if isinstance(c_ortvalue, C_OrtValue):
+            # does not work
+            # bind._iobinding.bind_ortvalue_input(name, c_ortvalue)
+            dtype = proto_type_to_dtype(
+                c_ortvalue.proto_type() if hasattr(c_ortvalue, 'proto_type')
+                else c_ortvalue.data_type())
+            bind.bind_input(
+                name=name, device_type=self.device,
+                device_id=self.device_index,
+                element_type=dtype,
+                shape=c_ortvalue.shape(),
+                buffer_ptr=c_ortvalue.data_ptr())
+        elif isinstance(c_ortvalue, numpy.ndarray):
+            bind.bind_input(
+                name, device_type=self.device,
+                device_id=self.device_index,
+                element_type=c_ortvalue.dtype,
+                shape=c_ortvalue.shape,
+                buffer_ptr=c_ortvalue.__array_interface__['data'][0])
+        else:
+            raise TypeError(
+                "Unable to bind type %r for name %r." % (
+                    type(c_ortvalue), name))
+
+    def _iteration(self, data_loader, ort_lr, bind, use_numpy):
         actual_losses = []
 
-        bind.bind_input(
-            name=self.input_names_[2],
-            device_type=learning_rate.device_name(), device_id=self.device_idx,
-            element_type=numpy.float32, shape=learning_rate.shape(),
-            buffer_ptr=learning_rate.data_ptr())
         bind.bind_output('loss')
 
         if use_numpy:
+            # onnxruntime does not copy the data, so the numpy
+            # array must remain alive all along the iteration
+            lr_alive = ort_lr.numpy()
+            self._bind_input_ortvalue(
+                self.input_names_[2], bind, lr_alive)
+
             # Slow iterations.
-            for data, target in data_loader:
+            for data, target in data_loader.iter_numpy():
 
-                bind.bind_input(
-                    name=self.input_names_[0],
-                    device_type=self.device,
-                    device_id=self.device_idx,
-                    element_type=numpy.float32,
-                    shape=data.shape(),
-                    buffer_ptr=data.data_ptr())
-
-                bind.bind_input(
-                    name=self.input_names_[1],
-                    device_type=self.device,
-                    device_id=self.device_idx,
-                    element_type=numpy.float32,
-                    shape=target.shape(),
-                    buffer_ptr=target.data_ptr())
+                self._bind_input_ortvalue(
+                    self.input_names_[0], bind, data)
+                self._bind_input_ortvalue(
+                    self.input_names_[1], bind, target)
 
                 self.train_session_.run_with_iobinding(bind)
                 outputs = bind.copy_outputs_to_cpu()
-                actual_losses.append(outputs[0] / data.shape()[0])
+                if numpy.isinf(outputs[0]) or numpy.isnan(outputs[0]):
+                    raise ConvergenceError(
+                        "Loss is nan, learning_rate=%r, "
+                        "the gradient descent has failed "
+                        "(past losses=%r)." % (
+                            ort_lr.numpy(),
+                            [float(v[0]) for v in (
+                                actual_losses if len(actual_losses) < 5
+                                else actual_losses[-5:])]))
+                actual_losses.append(outputs[0] / data.shape[0])
         else:
+            self._bind_input_ortvalue(self.input_names_[2], bind, ort_lr)
+
             # Fast iterations
             # Slow iterations.
             for batch_size in data_loader.iter_bind(bind, self.input_names_):
                 self.train_session_.run_with_iobinding(bind)
                 # We copy the predicted output as well which is not needed.
                 outputs = bind.copy_outputs_to_cpu()
+                if numpy.isinf(outputs[0]) or numpy.isnan(outputs[0]):
+                    raise ConvergenceError(
+                        "Loss is nan or infinite, learning_rate=%r, "
+                        "the gradient descent has failed "
+                        "(past losses=%r)." % (
+                            ort_lr.numpy(),
+                            [float(v[0]) for v in (
+                                actual_losses if len(actual_losses) < 5
+                                else actual_losses[-5:])]))
                 actual_losses.append(outputs[0] / batch_size)
 
         return numpy.array(actual_losses).mean()
 
     def _evaluation(self, data_loader, bind):
-        learning_rate = OrtValue.ortvalue_from_numpy(
-            numpy.array([1], dtype=numpy.float32),
-            self.device, self.device_idx)
+        lr_alive = numpy.array([0], dtype=numpy.float32)
+        self._bind_input_ortvalue(self.input_names_[2], bind, lr_alive)
+        bind.bind_output('loss')
+
         actual_losses = []
-        for data, target in data_loader:
-
-            bind.bind_input(
-                name=self.input_names_[0],
-                device_type=self.device,
-                device_id=self.device_idx,
-                element_type=numpy.float32,
-                shape=data.shape(),
-                buffer_ptr=data.data_ptr())
-
-            bind.bind_input(
-                name=self.input_names_[1],
-                device_type=self.device,
-                device_id=self.device_idx,
-                element_type=numpy.float32,
-                shape=target.shape(),
-                buffer_ptr=target.data_ptr())
-
-            bind.bind_input(
-                name=self.input_names_[2],
-                device_type=learning_rate.device_name(), device_id=0,
-                element_type=numpy.float32, shape=learning_rate.shape(),
-                buffer_ptr=learning_rate.data_ptr())
-
-            bind.bind_output('loss')
-
+        for batch_size in data_loader.iter_bind(bind, self.input_names_):
             self.train_session_.run_with_iobinding(bind)
             outputs = bind.copy_outputs_to_cpu()
-            actual_losses.append(outputs[0])
+            if numpy.isinf(outputs[0]) or numpy.isnan(outputs[0]):
+                raise EvaluationError(
+                    "Loss is nan or infinite (%r), "
+                    "evaluation has failed." % outputs[0])
+            actual_losses.append(outputs[0] / batch_size)
         return numpy.array(actual_losses).sum() / len(data_loader)
 
     def _create_training_session(
@@ -290,6 +305,10 @@ class OrtGradientOptimizer(BaseEstimator):
             loss_output_name='loss',
             training_optimizer_name='SGDOptimizer',
             device='cpu'):
+        if training_optimizer_name != 'SGDOptimizer':
+            raise NotImplementedError(
+                "Only the SGDOptimizer is implemented not %r."
+                "" % training_optimizer_name)
         ort_parameters = TrainingParameters()
         ort_parameters.loss_output_name = loss_output_name
         ort_parameters.use_mixed_precision = False

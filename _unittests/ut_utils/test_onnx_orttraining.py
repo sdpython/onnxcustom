@@ -1,5 +1,5 @@
 """
-@brief      test log(time=3s)
+@brief      test log(time=9s)
 """
 
 import unittest
@@ -23,7 +23,7 @@ class TestOrtTraining(ExtTestCase):
 
     @unittest.skipIf(TrainingSession is None, reason="not training")
     def test_add_loss_output(self):
-        from onnxcustom.training.orttraining import add_loss_output
+        from onnxcustom.utils.onnx_orttraining import add_loss_output
         X, y = make_regression(  # pylint: disable=W0632
             100, n_features=10, bias=2)
         X = X.astype(numpy.float32)
@@ -31,6 +31,7 @@ class TestOrtTraining(ExtTestCase):
         X_train, X_test, y_train, y_test = train_test_split(X, y)
         reg = LinearRegression()
         reg.fit(X_train, y_train)
+        reg.coef_ = reg.coef_.reshape((1, -1))
         onx = to_onnx(reg, X_train, target_opset=opset,
                       black_op={'LinearRegressor'})
         onx_loss = add_loss_output(onx)
@@ -42,7 +43,7 @@ class TestOrtTraining(ExtTestCase):
 
     @unittest.skipIf(TrainingSession is None, reason="not training")
     def test_get_train_initializer(self):
-        from onnxcustom.training.orttraining import get_train_initializer
+        from onnxcustom.utils.onnx_orttraining import get_train_initializer
         X, y = make_regression(  # pylint: disable=W0632
             100, n_features=10, bias=2)
         X = X.astype(numpy.float32)
@@ -50,6 +51,7 @@ class TestOrtTraining(ExtTestCase):
         X_train, _, y_train, __ = train_test_split(X, y)
         reg = LinearRegression()
         reg.fit(X_train, y_train)
+        reg.coef_ = reg.coef_.reshape((1, -1))
         onx = to_onnx(reg, X_train, target_opset=opset,
                       black_op={'LinearRegressor'})
         inits = get_train_initializer(onx)
