@@ -1,6 +1,6 @@
 
-onnxcustom: deploy machine learned models
-=========================================
+onnxcustom: deploy, train machine learned models
+================================================
 
 .. image:: https://circleci.com/gh/sdpython/onnxcustom/tree/master.svg?style=svg
     :target: https://circleci.com/gh/sdpython/onnxcustom/tree/master
@@ -46,13 +46,15 @@ onnxcustom: deploy machine learned models
 Examples, tutorial on how to convert machine learned models into ONNX,
 implement your own converter or runtime, or even train with :epkg:`ONNX`,
 :epkg:`onnxruntime`.
-Most of the tutorial has been merged into `sklearn-onnx documentation
+This package is used to write documentation in an early stage it
+is moved to over documentation website.
+Some of the tutorials has been merged into `sklearn-onnx documentation
 <http://onnx.ai/sklearn-onnx/index_tutorial.html>`_.
 Among the tools this package implements, you may find:
 
 * a tool to convert NVidia Profilder logs into a dataframe:
   :func:`convert_trace_to_json <onnxcustom.utils.nvprof2json.convert_trace_to_json>`
-* a SGD optimizer similar to what scikit-learn implements
+* A couple of SGD optimizer similar to what scikit-learn implements
   (see `Stochastic Gradient Descent
   <https://scikit-learn.org/stable/modules/sgd.html>`_)
   but based on :epkg:`onnxruntime-training` and able to train an CPU and GPU
@@ -63,6 +65,7 @@ Among the tools this package implements, you may find:
 .. toctree::
     :maxdepth: 1
 
+    tutorial_onnx/index
     tutorial/index
     doc
     api/index
@@ -72,7 +75,7 @@ Among the tools this package implements, you may find:
     other_pages
     onnxmd/index
 
-Sources available on
+Sources are available on
 `github/onnxcustom <https://github.com/sdpython/onnxcustom>`_.
 
 +----------------------+---------------------+---------------------+--------------------+------------------------+------------------------------------------------+

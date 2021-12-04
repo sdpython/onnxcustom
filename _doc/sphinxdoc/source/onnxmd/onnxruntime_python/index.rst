@@ -14,5 +14,5 @@ used functions or classes from this package.
     sparse
     inference
     training
-    partial_training
+    training_partial
     exceptions

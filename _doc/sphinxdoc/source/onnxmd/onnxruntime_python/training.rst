@@ -28,6 +28,7 @@ Python Wrapper for TrainingSession
 
 .. autoclass:: onnxruntime.TrainingSession
     :members:
+    :undoc-members:
 
 .. _l-ort-training-session-c:
 
@@ -36,9 +37,11 @@ C Class TrainingSession
 
 .. autoclass:: onnxruntime.capi._pybind_state.OrtValue
     :members:
+    :undoc-members:
 
 SessionIOBinding
 ++++++++++++++++
 
 .. autoclass:: onnxruntime.capi._pybind_state.SessionIOBinding
     :members:
+    :undoc-members:

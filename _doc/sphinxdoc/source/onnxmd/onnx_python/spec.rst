@@ -53,7 +53,7 @@ STORAGE_TENSOR_TYPE_TO_FIELD
     pprint.pprint(STORAGE_TENSOR_TYPE_TO_FIELD)
 
 STORAGE_ELEMENT_TYPE_TO_FIELD
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. runpython::
     :showcode:
@@ -64,7 +64,7 @@ STORAGE_ELEMENT_TYPE_TO_FIELD
     pprint.pprint(STORAGE_ELEMENT_TYPE_TO_FIELD)
 
 OPTIONAL_ELEMENT_TYPE_TO_FIELD
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. runpython::
     :showcode:
@@ -81,4 +81,8 @@ Opset Version
 
 .. autofunction:: onnx.defs.get_all_schemas_with_history
 
-import onnx.onnx_cpp2py_export.defs as C
+Internal module
++++++++++++++++
+
+.. automodule:: onnx.onnx_cpp2py_export.defs
+    :members:

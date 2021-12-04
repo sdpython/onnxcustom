@@ -22,15 +22,18 @@ Python Wrapper for OrtValue
 
 .. autoclass:: onnxruntime.OrtValue
     :members:
+    :undoc-members:
 
 C Class OrtValue
 ++++++++++++++++
 
 .. autoclass:: onnxruntime.capi._pybind_state.OrtValue
     :members:
+    :undoc-members:
 
 C Class OrtValueVector
 ++++++++++++++++++++++
 
 .. autoclass:: onnxruntime.capi._pybind_state.OrtValueVector
     :members:
+    :undoc-members:

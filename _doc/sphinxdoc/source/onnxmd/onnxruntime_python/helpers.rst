@@ -21,12 +21,15 @@ Frequent types
 
 .. autoclass:: onnxruntime.capi._pybind_state.ModelMetadata
     :members:
+    :undoc-members:
 
 .. autoclass:: onnxruntime.capi._pybind_state.OrtDevice
     :members:
+    :undoc-members:
 
 .. autoclass:: onnxruntime.capi._pybind_state.OrtMemType
     :members:
+    :undoc-members:
 
 Rare functions
 ++++++++++++++

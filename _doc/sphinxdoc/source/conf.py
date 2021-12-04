@@ -24,6 +24,14 @@ extensions.extend([
     "myst_parser"
 ])
 
+html_theme_options = {
+    "github_user": "sdpython",
+    "github_repo": "onnxcustom",
+    "github_version": "master",
+    "collapse_navigation": True,
+    "show_nav_level": 2,
+}
+
 blog_root = "http://www.xavierdupre.fr/app/onnxcustom/helpsphinx/"
 
 html_css_files = ['my-styles.css']
@@ -78,9 +86,6 @@ epkg_dictionary.update({
     'cython': 'https://cython.org/',
     'DOT': 'https://www.graphviz.org/doc/info/lang.html',
     'ImageNet': 'http://www.image-net.org/',
-    'IOBinding':
-        'http://www.xavierdupre.fr/app/onnxruntime_training/'
-        'helpsphinx/api/tensors.html#iobinding',
     'LightGBM': 'https://lightgbm.readthedocs.io/en/latest/',
     'lightgbm': 'https://lightgbm.readthedocs.io/en/latest/',
     'mlprodict':
@@ -98,22 +103,10 @@ epkg_dictionary.update({
         'https://github.com/onnx/onnx/blob/master/docs/Operators-ml.md',
     'ONNX Zoo': 'https://github.com/onnx/models',
     'onnxmltools': 'https://github.com/onnx/onnxmltools',
-    'OnnxPipeline':
-        'http://www.xavierdupre.fr/app/mlprodict/helpsphinx/mlprodict/'
-        'sklapi/onnx_pipeline.html?highlight=onnxpipeline',
     'onnxruntime': 'https://microsoft.github.io/onnxruntime/',
     'onnxruntime-training':
         'https://github.com/microsoft/onnxruntime/tree/master/orttraining',
     'openmp': 'https://en.wikipedia.org/wiki/OpenMP',
-    'OrtDevice':
-        'http://www.xavierdupre.fr/app/onnxruntime_training/'
-        'helpsphinx/api/tensors.html#ortdevice',
-    'OrtValue':
-        'http://www.xavierdupre.fr/app/onnxruntime_training/'
-        'helpsphinx/api/tensors.html#ortvalue',
-    'OrtValueVector':
-        'http://www.xavierdupre.fr/app/onnxruntime_training/'
-        'helpsphinx/api/training_session.html#ortvaluevector',
     'pandas_streaming':
         'http://www.xavierdupre.fr/app/pandas_streaming/helpsphinx/index.html',
     'py-spy': 'https://github.com/benfred/py-spy',
@@ -123,20 +116,74 @@ epkg_dictionary.update({
     'scikit-learn': 'https://scikit-learn.org/stable/',
     'skorch': 'https://skorch.readthedocs.io/en/stable/',
     'sklearn-onnx': 'https://github.com/onnx/sklearn-onnx',
-    'SparseTensor':
-        'http://www.xavierdupre.fr/app/onnxruntime_training/'
-        'helpsphinx/api/tensors.html#sparsetensor',
     'sphinx-gallery': 'https://github.com/sphinx-gallery/sphinx-gallery',
     'sqlite3': 'https://docs.python.org/3/library/sqlite3.html',
     'Stochastic Gradient Descent':
         'https://en.wikipedia.org/wiki/Stochastic_gradient_descent',
+    'torch': 'https://pytorch.org/',
     'tqdm': 'https://github.com/tqdm/tqdm',
-    'TreeEnsembleRegressor':
-        'https://github.com/onnx/onnx/blob/master/docs/Operators-ml.md'
-        '#ai.onnx.ml.TreeEnsembleRegressor',
     'xgboost': 'https://xgboost.readthedocs.io/en/latest/',
     'XGBoost': 'https://xgboost.readthedocs.io/en/latest/',
 })
+
+# APIs, links which should be replaced.
+
+epkg_dictionary.update({
+    'C_OrtValue':
+        'http://www.xavierdupre.fr/app/onnxcustom/helpsphinx/'
+        'onnxmd/onnxruntime_python/ortvalue.html#c-class-ortvaluevector',
+    'InferenceSession':
+        'http://www.xavierdupre.fr/app/onnxcustom/helpsphinx/onnxmd/'
+        'onnxruntime_python/inference.html'
+        '#python-wrapper-for-inferencesession',
+    'IOBinding':
+        'http://www.xavierdupre.fr/app/onnxruntime_training/'
+        'helpsphinx/api/tensors.html#iobinding',
+    'OnnxPipeline':
+        'http://www.xavierdupre.fr/app/mlprodict/helpsphinx/mlprodict/'
+        'sklapi/onnx_pipeline.html',
+    'OrtModuleGraphBuilder':
+        'http://www.xavierdupre.fr/app/onnxcustom/helpsphinx/onnxmd/'
+        'onnxruntime_python/training_partial.html'
+        "#ortmodulegraphbuilder",
+    'OrtModuleGraphBuilderConfiguration':
+        'http://www.xavierdupre.fr/app/onnxcustom/helpsphinx/onnxmd/'
+        'onnxruntime_python/training_partial.html'
+        "#ortmodulegraphbuilderconfiguration",
+    'OrtDevice':
+        'http://www.xavierdupre.fr/app/onnxruntime_training/'
+        'helpsphinx/api/tensors.html#ortdevice',
+    'OrtValue':
+        'http://www.xavierdupre.fr/app/onnxruntime_training/'
+        'helpsphinx/api/tensors.html#ortvalue',
+    'OrtValueCache':
+        'http://www.xavierdupre.fr/app/onnxcustom/helpsphinx/onnxmd/'
+        'onnxruntime_python/training_partial.html#ortvaluecache',
+    'OrtValueVector':
+        'http://www.xavierdupre.fr/app/onnxruntime_training/'
+        'helpsphinx/api/training_session.html#ortvaluevector',
+    'PartialGraphExecutionState':
+        'http://www.xavierdupre.fr/app/onnxcustom/helpsphinx/onnxmd/'
+        'onnxruntime_python/training_partial.html'
+        "#partialgraphexecutionstate",
+    'RunOptions':
+        'http://www.xavierdupre.fr/app/onnxcustom/helpsphinx/onnxmd/'
+        'onnxruntime_python/inference.html#runoptions',
+    'SessionOptions':
+        'http://www.xavierdupre.fr/app/onnxcustom/helpsphinx/onnxmd/'
+        'onnxruntime_python/inference.html#sessionoptions',
+    'SparseTensor':
+        'http://www.xavierdupre.fr/app/onnxruntime_training/'
+        'helpsphinx/api/tensors.html#sparsetensor',
+    'TrainingAgent':
+        'http://www.xavierdupre.fr/app/onnxcustom/helpsphinx/onnxmd/'
+        'onnxruntime_python/training_partial.html'
+        "#trainingagent",
+    'TreeEnsembleRegressor':
+        'https://github.com/onnx/onnx/blob/master/docs/Operators-ml.md'
+        '#ai.onnx.ml.TreeEnsembleRegressor',
+})
+
 
 nblinks = {
     'alter_pipeline_for_debugging': 'http://www.xavierdupre.fr/app/onnxcustom/helpsphinx/onnxcustom/helpers/pipeline.html#onnxcustom.helpers.pipeline.alter_pipeline_for_debugging',
