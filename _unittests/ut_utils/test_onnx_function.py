@@ -5,18 +5,16 @@ import unittest
 import numpy
 from onnxruntime import InferenceSession
 from pyquickhelper.pycode import ExtTestCase
-from skl2onnx import __max_supported_opset__
 from mlprodict.onnxrt import OnnxInference
+from onnxcustom import get_max_opset
 from onnxcustom.utils.onnx_function import function_onnx_graph, get_supported_functions
 
 
 class TestOnnxFunction(ExtTestCase):
 
-    TARGET_OPSET = 15
-
     def common_check(self, name, fct):
         onx = function_onnx_graph(
-            name, target_opset=__max_supported_opset__,
+            name, target_opset=get_max_opset(),
             dtype=numpy.float32)
         expected = numpy.random.randn(10, 1).astype(numpy.float32)
         predicted = numpy.random.randn(10, 1).astype(numpy.float32)
@@ -48,7 +46,7 @@ class TestOnnxFunction(ExtTestCase):
 
     def common_check_alpha(self, name, fct):
         onx = function_onnx_graph(
-            name, target_opset=__max_supported_opset__,
+            name, target_opset=get_max_opset(),
             dtype=numpy.float32)
         x1 = numpy.random.randn(10, 1).astype(numpy.float32)
         x2 = numpy.random.randn(10, 1).astype(numpy.float32)
@@ -68,7 +66,7 @@ class TestOnnxFunction(ExtTestCase):
 
     def common_check_2(self, name, fct):
         onx = function_onnx_graph(
-            name, target_opset=__max_supported_opset__,
+            name, target_opset=get_max_opset(),
             dtype=numpy.float32)
         x1 = numpy.random.randn(10, 1).astype(numpy.float32)
         x2 = numpy.random.randn(10, 1).astype(numpy.float32)

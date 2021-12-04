@@ -1,5 +1,6 @@
 # coding: utf-8
 # flake8: noqa: F401
+# pylint: disable=W0611,C0415
 """
 @file
 @brief Experimentation with ONNX, examples.
@@ -19,19 +20,31 @@ def check(verbose=1):
     """
     tests = []
     try:
-        import onnx  # pylint: disable=W0611,C0415
+        import onnx  
+        import onnx.helper
     except ImportError as e:  # pragma: no cover
         tests.append(dict(test='onnx', exc=e))
     try:
-        import skl2onnx  # pylint: disable=W0611,C0415
-    except ImportError as e:  # pragma: no cover
-        tests.append(dict(test='skl2onnx', exc=e))
-    try:
-        import onnxruntime  # pylint: disable=W0611,C0415
+        import onnxruntime
+        from onnxruntime import InferenceSession
     except ImportError as e:  # pragma: no cover
         tests.append(dict(test='onnxruntime', exc=e))
     try:
-        import onnxruntime.training  # pylint: disable=W0611,C0415
+        import onnxruntime.training
+        from onnxruntime.training import TrainingSession
     except ImportError as e:  # pragma: no cover
         tests.append(dict(test='onnxruntime_training', exc=e))
+    try:
+        import skl2onnx
+        from skl2onnx import to_onnx
+    except ImportError as e:  # pragma: no cover
+        tests.append(dict(test='skl2onnx', exc=e))
     return tests
+
+
+def get_max_opset():
+    """
+    Returns the highest available onnx opset version.
+    """
+    from onnx.defs import onnx_opset_version
+    return min(onnx_opset_version(), __max_supported_opset__)

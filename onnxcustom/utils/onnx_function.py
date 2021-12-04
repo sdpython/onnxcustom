@@ -141,7 +141,7 @@ def _onnx_axpy(target_opset=None, dtype=numpy.float32):
         from mlprodict.onnxrt import OnnxInference
         from onnxcustom.utils.onnx_function import function_onnx_graph
 
-        model_onnx = function_onnx_graph('avxpy')
+        model_onnx = function_onnx_graph('axpy')
         oinf = OnnxInference(model_onnx, inplace=False)
 
         print("DOT-SECTION", oinf.to_dot())

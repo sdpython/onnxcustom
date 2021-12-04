@@ -55,3 +55,4 @@ _doc/sphinxdoc/source/LICENSE.txt
 _doc/sphinxdoc/source/nbcov*.png
 _doc/sphinxdoc/source/notebooks/*
 _doc/sphinxdoc/source/gallery/*
+_unittests/ut_cli/something
