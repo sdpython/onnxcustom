@@ -23,7 +23,7 @@ before_test:
 test_script:
   - "%PYTHON%\\python setup.py unittests"
   - "%PYTHON%\\python -m flake8 onnxcustom"
-  - "%PYTHON%\\python -m flake8  _doc/examples"
+  - "%PYTHON%\\python -m flake8  _doc/examples --max-line-length 90"
 
 after_test:
   - "%PYTHON%\\python setup.py bdist_wheel"
