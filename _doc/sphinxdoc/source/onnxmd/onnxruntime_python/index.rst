@@ -1,6 +1,6 @@
 
-Useful functions and classes from onnxruntime-training
-======================================================
+Selected onnxruntime-training API
+=================================
 
 The module leverages :epkg:`onnxruntime-training` to train models.
 This section gathers documentations from the most frequent

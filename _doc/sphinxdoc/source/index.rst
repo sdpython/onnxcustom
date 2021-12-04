@@ -68,7 +68,7 @@ Among the tools this package implements, you may find:
     tutorial_onnx/index
     tutorial/index
     doc
-    api/index
+    api/apis
     gyexamples/index
     all_notebooks
     license

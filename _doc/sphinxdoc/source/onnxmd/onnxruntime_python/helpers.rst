@@ -16,14 +16,24 @@ Frequent functions
 
 .. autofunction:: onnxruntime.capi._pybind_state.get_all_providers
 
-Frequent types
-++++++++++++++
+Python Wrapper OrtDevice
+++++++++++++++++++++++++
 
-.. autoclass:: onnxruntime.capi._pybind_state.ModelMetadata
+.. autoclass:: onnxruntime.capi._pybind_state.OrtDevice
     :members:
     :undoc-members:
 
+C class, OrtDevice
+++++++++++++++++++
+
 .. autoclass:: onnxruntime.capi._pybind_state.OrtDevice
+    :members:
+    :undoc-members:
+
+C classes, frequent types
++++++++++++++++++++++++++
+
+.. autoclass:: onnxruntime.capi._pybind_state.ModelMetadata
     :members:
     :undoc-members:
 

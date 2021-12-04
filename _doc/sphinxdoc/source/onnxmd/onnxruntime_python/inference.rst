@@ -37,6 +37,20 @@ SessionOptions
     :members:
     :undoc-members:
 
+Python Wrapper for SessionIOBinding
++++++++++++++++++++++++++++++++++++
+
+.. autoclass:: onnxruntime.SessionIOBinding
+    :members:
+    :undoc-members:
+
+C Class SessionIOBinding
+++++++++++++++++++++++++
+
+.. autoclass:: onnxruntime.capi._pybind_state.SessionIOBinding
+    :members:
+    :undoc-members:
+
 Others classes
 ++++++++++++++
 

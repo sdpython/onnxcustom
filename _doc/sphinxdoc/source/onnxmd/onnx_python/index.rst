@@ -1,6 +1,6 @@
 
-Useful functions and classes from onnx
-======================================
+Selected onnx API
+=================
 
 This section gathers documentations from the most frequent
 used functions or classes from :epkg:`onnx`. Next function returns

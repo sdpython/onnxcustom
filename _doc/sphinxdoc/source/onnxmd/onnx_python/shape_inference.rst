@@ -2,5 +2,6 @@
 onnx.shape_inference
 ====================
 
-.. automodule:: onnx.shape_inference
-    :members:
+.. autofunction:: onnx.shape_inference.infer_shapes
+
+.. autofunction:: onnx.shape_inference.infer_shapes_path

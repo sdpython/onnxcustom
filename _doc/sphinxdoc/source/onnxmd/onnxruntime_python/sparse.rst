@@ -1,10 +1,20 @@
 
+============
 SparseTensor
 ============
 
 .. contents::
     :local:
+
+Python Wrapper for C Classes
+============================
+
+.. autoclass:: onnxruntime.SparseTensor
+    :members:
     :undoc-members:
+
+C classes
+=========
 
 SparseTensor
 ++++++++++++

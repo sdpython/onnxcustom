@@ -22,7 +22,7 @@ step by step how to transform the features to get a prediction.
 That's why a machine learning model implemented with ONNX is often
 referenced as an **ONNX graph**.
 
-.. image:: images/linreg.png
+.. image:: images/linreg1.png
 
 ONNX aims at providing a common language any machine learning framework
 can use to describe its models. The first scenario is to make it easier
