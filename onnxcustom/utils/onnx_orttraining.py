@@ -3,6 +3,10 @@
 @file
 @brief ONNX manipulations to help build ONNX gradient graphs.
 """
+from onnx.numpy_helper import to_array
+from onnx.helper import (
+    make_node, make_graph, make_model, make_tensor_value_info,
+    set_model_props)
 
 
 def _unique_name(existing_names, name, add=True):
@@ -43,10 +47,6 @@ def add_loss_output(onx, score_name='squared_error',
 
     See example :ref:`l-orttraining-nn-gpu`.
     """
-    from onnx.helper import (
-        make_node, make_graph, make_model, make_tensor_value_info,
-        set_model_props)
-
     outputs = onx.graph.output
     if len(outputs) != 1:
         raise ValueError(  # pragma: no cover
@@ -110,7 +110,6 @@ def get_train_initializer(onx):
 
     :return: dictionary `{name: (value, tensor)}`
     """
-    from onnx.numpy_helper import to_array
     res = {}
     for init in onx.graph.initializer:
         res[init.name] = (to_array(init), init)

@@ -23,7 +23,7 @@ class TestOrtTraining(ExtTestCase):
 
     @unittest.skipIf(TrainingSession is None, reason="not training")
     def test_add_loss_output(self):
-        from onnxcustom.training.orttraining import add_loss_output
+        from onnxcustom.utils.onnx_orttraining import add_loss_output
         X, y = make_regression(  # pylint: disable=W0632
             100, n_features=10, bias=2)
         X = X.astype(numpy.float32)
@@ -43,7 +43,7 @@ class TestOrtTraining(ExtTestCase):
 
     @unittest.skipIf(TrainingSession is None, reason="not training")
     def test_get_train_initializer(self):
-        from onnxcustom.training.orttraining import get_train_initializer
+        from onnxcustom.utils.onnx_orttraining import get_train_initializer
         X, y = make_regression(  # pylint: disable=W0632
             100, n_features=10, bias=2)
         X = X.astype(numpy.float32)

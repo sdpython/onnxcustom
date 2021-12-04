@@ -1,6 +1,6 @@
 # pylint: disable=E1101,W0212,E0611
 """
-@brief      test log(time=3s)
+@brief      test log(time=9s)
 """
 import unittest
 import io
