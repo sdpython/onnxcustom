@@ -20,7 +20,7 @@ def check(verbose=1):
     """
     tests = []
     try:
-        import onnx  
+        import onnx
         import onnx.helper
     except ImportError as e:  # pragma: no cover
         tests.append(dict(test='onnx', exc=e))

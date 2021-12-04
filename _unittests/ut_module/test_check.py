@@ -26,5 +26,6 @@ class TestCheck(ExtTestCase):
     def test__main__(self):
         import onnxcustom.__main__  # pylint: disable=W0611
 
+
 if __name__ == "__main__":
     unittest.main()

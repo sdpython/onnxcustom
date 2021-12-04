@@ -1,6 +1,6 @@
 
 onnx.helper
-=========
+===========
 
 .. contents::
     :local:
@@ -9,6 +9,8 @@ tools
 +++++
 
 .. autofunction:: onnx.helper.find_min_ir_version_for
+
+.. autofunction:: onnx.helper.split_complex_to_pairs
 
 make function
 +++++++++++++
