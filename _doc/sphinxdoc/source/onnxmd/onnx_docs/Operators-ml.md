@@ -11,24 +11,24 @@ For an operator input/output's differentiability, it can be differentiable,
 ### ai.onnx.ml
 |**Operator**|**Since version**|
 |-|-|
-|<a href="#ai.onnx.ml.ArrayFeatureExtractor">ai.onnx.ml.ArrayFeatureExtractor</a>|<a href="Changelog-ml.md#ai.onnx.ml.ArrayFeatureExtractor-1">1</a>|
-|<a href="#ai.onnx.ml.Binarizer">ai.onnx.ml.Binarizer</a>|<a href="Changelog-ml.md#ai.onnx.ml.Binarizer-1">1</a>|
-|<a href="#ai.onnx.ml.CastMap">ai.onnx.ml.CastMap</a>|<a href="Changelog-ml.md#ai.onnx.ml.CastMap-1">1</a>|
-|<a href="#ai.onnx.ml.CategoryMapper">ai.onnx.ml.CategoryMapper</a>|<a href="Changelog-ml.md#ai.onnx.ml.CategoryMapper-1">1</a>|
-|<a href="#ai.onnx.ml.DictVectorizer">ai.onnx.ml.DictVectorizer</a>|<a href="Changelog-ml.md#ai.onnx.ml.DictVectorizer-1">1</a>|
-|<a href="#ai.onnx.ml.FeatureVectorizer">ai.onnx.ml.FeatureVectorizer</a>|<a href="Changelog-ml.md#ai.onnx.ml.FeatureVectorizer-1">1</a>|
-|<a href="#ai.onnx.ml.Imputer">ai.onnx.ml.Imputer</a>|<a href="Changelog-ml.md#ai.onnx.ml.Imputer-1">1</a>|
-|<a href="#ai.onnx.ml.LabelEncoder">ai.onnx.ml.LabelEncoder</a>|<a href="Changelog-ml.md#ai.onnx.ml.LabelEncoder-2">2</a>, <a href="Changelog-ml.md#ai.onnx.ml.LabelEncoder-1">1</a>|
-|<a href="#ai.onnx.ml.LinearClassifier">ai.onnx.ml.LinearClassifier</a>|<a href="Changelog-ml.md#ai.onnx.ml.LinearClassifier-1">1</a>|
-|<a href="#ai.onnx.ml.LinearRegressor">ai.onnx.ml.LinearRegressor</a>|<a href="Changelog-ml.md#ai.onnx.ml.LinearRegressor-1">1</a>|
-|<a href="#ai.onnx.ml.Normalizer">ai.onnx.ml.Normalizer</a>|<a href="Changelog-ml.md#ai.onnx.ml.Normalizer-1">1</a>|
-|<a href="#ai.onnx.ml.OneHotEncoder">ai.onnx.ml.OneHotEncoder</a>|<a href="Changelog-ml.md#ai.onnx.ml.OneHotEncoder-1">1</a>|
-|<a href="#ai.onnx.ml.SVMClassifier">ai.onnx.ml.SVMClassifier</a>|<a href="Changelog-ml.md#ai.onnx.ml.SVMClassifier-1">1</a>|
-|<a href="#ai.onnx.ml.SVMRegressor">ai.onnx.ml.SVMRegressor</a>|<a href="Changelog-ml.md#ai.onnx.ml.SVMRegressor-1">1</a>|
-|<a href="#ai.onnx.ml.Scaler">ai.onnx.ml.Scaler</a>|<a href="Changelog-ml.md#ai.onnx.ml.Scaler-1">1</a>|
-|<a href="#ai.onnx.ml.TreeEnsembleClassifier">ai.onnx.ml.TreeEnsembleClassifier</a>|<a href="Changelog-ml.md#ai.onnx.ml.TreeEnsembleClassifier-1">1</a>|
-|<a href="#ai.onnx.ml.TreeEnsembleRegressor">ai.onnx.ml.TreeEnsembleRegressor</a>|<a href="Changelog-ml.md#ai.onnx.ml.TreeEnsembleRegressor-1">1</a>|
-|<a href="#ai.onnx.ml.ZipMap">ai.onnx.ml.ZipMap</a>|<a href="Changelog-ml.md#ai.onnx.ml.ZipMap-1">1</a>|
+|[ai-onnx-ml-ArrayFeatureExtractor](#a-name-ai-onnx-ml-arrayfeatureextractor-a-a-name-ai-onnx-ml-arrayfeatureextractor-ai-onnx-ml-arrayfeatureextractor-a)|<a href="Changelog-ml.md#ai.onnx.ml.ArrayFeatureExtractor-1">1</a>|
+|[ai-onnx-ml-Binarizer](#a-name-ai-onnx-ml-binarizer-a-a-name-ai-onnx-ml-binarizer-ai-onnx-ml-binarizer-a)|<a href="Changelog-ml.md#ai.onnx.ml.Binarizer-1">1</a>|
+|[ai-onnx-ml-CastMap](#a-name-ai-onnx-ml-castmap-a-a-name-ai-onnx-ml-castmap-ai-onnx-ml-castmap-a)|<a href="Changelog-ml.md#ai.onnx.ml.CastMap-1">1</a>|
+|[ai-onnx-ml-CategoryMapper](#a-name-ai-onnx-ml-categorymapper-a-a-name-ai-onnx-ml-categorymapper-ai-onnx-ml-categorymapper-a)|<a href="Changelog-ml.md#ai.onnx.ml.CategoryMapper-1">1</a>|
+|[ai-onnx-ml-DictVectorizer](#a-name-ai-onnx-ml-dictvectorizer-a-a-name-ai-onnx-ml-dictvectorizer-ai-onnx-ml-dictvectorizer-a)|<a href="Changelog-ml.md#ai.onnx.ml.DictVectorizer-1">1</a>|
+|[ai-onnx-ml-FeatureVectorizer](#a-name-ai-onnx-ml-featurevectorizer-a-a-name-ai-onnx-ml-featurevectorizer-ai-onnx-ml-featurevectorizer-a)|<a href="Changelog-ml.md#ai.onnx.ml.FeatureVectorizer-1">1</a>|
+|[ai-onnx-ml-Imputer](#a-name-ai-onnx-ml-imputer-a-a-name-ai-onnx-ml-imputer-ai-onnx-ml-imputer-a)|<a href="Changelog-ml.md#ai.onnx.ml.Imputer-1">1</a>|
+|[ai-onnx-ml-LabelEncoder](#a-name-ai-onnx-ml-labelencoder-a-a-name-ai-onnx-ml-labelencoder-ai-onnx-ml-labelencoder-a)|<a href="Changelog-ml.md#ai.onnx.ml.LabelEncoder-2">2</a>, <a href="Changelog-ml.md#ai.onnx.ml.LabelEncoder-1">1</a>|
+|[ai-onnx-ml-LinearClassifier](#a-name-ai-onnx-ml-linearclassifier-a-a-name-ai-onnx-ml-linearclassifier-ai-onnx-ml-linearclassifier-a)|<a href="Changelog-ml.md#ai.onnx.ml.LinearClassifier-1">1</a>|
+|[ai-onnx-ml-LinearRegressor](#a-name-ai-onnx-ml-linearregressor-a-a-name-ai-onnx-ml-linearregressor-ai-onnx-ml-linearregressor-a)|<a href="Changelog-ml.md#ai.onnx.ml.LinearRegressor-1">1</a>|
+|[ai-onnx-ml-Normalizer](#a-name-ai-onnx-ml-normalizer-a-a-name-ai-onnx-ml-normalizer-ai-onnx-ml-normalizer-a)|<a href="Changelog-ml.md#ai.onnx.ml.Normalizer-1">1</a>|
+|[ai-onnx-ml-OneHotEncoder](#a-name-ai-onnx-ml-onehotencoder-a-a-name-ai-onnx-ml-onehotencoder-ai-onnx-ml-onehotencoder-a)|<a href="Changelog-ml.md#ai.onnx.ml.OneHotEncoder-1">1</a>|
+|[ai-onnx-ml-SVMClassifier](#a-name-ai-onnx-ml-svmclassifier-a-a-name-ai-onnx-ml-svmclassifier-ai-onnx-ml-svmclassifier-a)|<a href="Changelog-ml.md#ai.onnx.ml.SVMClassifier-1">1</a>|
+|[ai-onnx-ml-SVMRegressor](#a-name-ai-onnx-ml-svmregressor-a-a-name-ai-onnx-ml-svmregressor-ai-onnx-ml-svmregressor-a)|<a href="Changelog-ml.md#ai.onnx.ml.SVMRegressor-1">1</a>|
+|[ai-onnx-ml-Scaler](#a-name-ai-onnx-ml-scaler-a-a-name-ai-onnx-ml-scaler-ai-onnx-ml-scaler-a)|<a href="Changelog-ml.md#ai.onnx.ml.Scaler-1">1</a>|
+|[ai-onnx-ml-TreeEnsembleClassifier](#a-name-ai-onnx-ml-treeensembleclassifier-a-a-name-ai-onnx-ml-treeensembleclassifier-ai-onnx-ml-treeensembleclassifier-a)|<a href="Changelog-ml.md#ai.onnx.ml.TreeEnsembleClassifier-1">1</a>|
+|[ai-onnx-ml-TreeEnsembleRegressor](#a-name-ai-onnx-ml-treeensembleregressor-a-a-name-ai-onnx-ml-treeensembleregressor-ai-onnx-ml-treeensembleregressor-a)|<a href="Changelog-ml.md#ai.onnx.ml.TreeEnsembleRegressor-1">1</a>|
+|[ai-onnx-ml-ZipMap](#a-name-ai-onnx-ml-zipmap-a-a-name-ai-onnx-ml-zipmap-ai-onnx-ml-zipmap-a)|<a href="Changelog-ml.md#ai.onnx.ml.ZipMap-1">1</a>|
 
 ## ai.onnx.ml
 ### <a name="ai.onnx.ml.ArrayFeatureExtractor"></a><a name="ai.onnx.ml.arrayfeatureextractor">**ai.onnx.ml.ArrayFeatureExtractor**</a>

@@ -97,9 +97,6 @@ make functions
 Write, Read an ONNX graph
 +++++++++++++++++++++++++
 
-
-
-
 What is a converting library?
 +++++++++++++++++++++++++++++
 

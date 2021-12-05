@@ -145,7 +145,7 @@ popular in standard machine learning.
 
 The main list is identified with a domain **ai.onnx**.
 A **domain** can be defined a set of operators.
-Additional operators such 
+Additional operators such
 are part of another domain **ai.onnx.ml** :ref:`l-onnx-operators-ml`,
 it includes tree bases models (TreeEnsmble Regressor, ...),
 preprocessing (OneHotEncoder, LabelEncoder, ...), SVM models

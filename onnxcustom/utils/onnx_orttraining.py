@@ -7,6 +7,7 @@ from onnx.numpy_helper import to_array
 from onnx.helper import (
     make_node, make_graph, make_model, make_tensor_value_info,
     set_model_props)
+from onnx import TensorProto
 
 
 def _unique_name(existing_names, name, add=True):
@@ -106,11 +107,14 @@ def add_loss_output(onx, score_name='squared_error',
 
 def get_train_initializer(onx):
     """
-    Returns the list of initializer to train.
+    Returns the list of initializers to train.
 
     :return: dictionary `{name: (value, tensor)}`
     """
     res = {}
     for init in onx.graph.initializer:
-        res[init.name] = (to_array(init), init)
+        if init.data_type in (
+                TensorProto.FLOAT,  # pylint: disable=E1101
+                TensorProto.DOUBLE):  # pylint: disable=E1101
+            res[init.name] = (to_array(init), init)
     return res

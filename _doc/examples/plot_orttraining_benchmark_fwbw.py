@@ -1,9 +1,9 @@
 """
 
-.. _l-orttraining-benchmark:
+.. _l-orttraining-benchmark-fwbw:
 
-Benchmark, comparison scikit-learn - onnxruntime-training
-=========================================================
+Benchmark, comparison scikit-learn - onnxruntime-training - forward-backward
+============================================================================
 
 The benchmark compares the processing time between :epkg:`scikit-learn`
 and :epkg:`onnxruntime-training` on a linear regression and a neural network.
@@ -28,9 +28,9 @@ from sklearn.datasets import make_regression
 from sklearn.model_selection import train_test_split
 from sklearn.neural_network import MLPRegressor
 from mlprodict.onnx_conv import to_onnx
-from onnxcustom.utils.onnx_orttraining import (
-    add_loss_output, get_train_initializer)
-from onnxcustom.training.optimizers import OrtGradientOptimizer
+from onnxcustom.utils.onnx_orttraining import get_train_initializer
+from onnxcustom.training.optimizers_partial import (
+    OrtGradientForwardBackwardOptimizer)
 
 
 X, y = make_regression(2000, n_features=100, bias=2)
@@ -56,14 +56,13 @@ with warnings.catch_warnings():
 # Conversion to ONNX and trainer initialization
 
 onx = to_onnx(nn, X_train[:1].astype(numpy.float32), target_opset=15)
-onx_train = add_loss_output(onx)
 
 inits = get_train_initializer(onx)
 weights = {k: v for k, v in inits.items() if k != "shape_tensor"}
 pprint(list((k, v[0].shape) for k, v in weights.items()))
 
-train_session = OrtGradientOptimizer(
-    onx_train, list(weights), device='cpu', learning_rate=5e-4,
+train_session = OrtGradientForwardBackwardOptimizer(
+    onx, list(sorted(weights)), device='cpu', learning_rate=5e-4,
     warm_start=False, max_iter=max_iter, batch_size=batch_size)
 
 
@@ -119,8 +118,8 @@ print(text)
 
 if get_device() == 'GPU':
 
-    train_session = OrtGradientOptimizer(
-        onx_train, list(weights), device='cuda', eta0=5e-4,
+    train_session = OrtGradientForwardBackwardOptimizer(
+        onx, list(sorted(weights)), device='cuda', eta0=5e-4,
         warm_start=False, max_iter=200, batch_size=batch_size)
 
     benches.append(benchmark(nn, train_session, name='NN-GPU'))
@@ -139,22 +138,21 @@ with warnings.catch_warnings():
 
 
 onx = to_onnx(nn, X_train[:1].astype(numpy.float32), target_opset=15)
-onx_train = add_loss_output(onx)
 
 inits = get_train_initializer(onx)
 weights = {k: v for k, v in inits.items() if k != "shape_tensor"}
 pprint(list((k, v[0].shape) for k, v in weights.items()))
 
-train_session = OrtGradientOptimizer(
-    onx_train, list(weights), device='cpu', eta0=5e-4,
+train_session = OrtGradientForwardBackwardOptimizer(
+    onx, list(sorted(weights)), device='cpu', eta0=5e-4,
     warm_start=False, max_iter=max_iter, batch_size=batch_size)
 
 benches.append(benchmark(lr, train_session, name='LR-CPU'))
 
 if get_device() == 'GPU':
 
-    train_session = OrtGradientOptimizer(
-        onx_train, list(weights), device='cuda', eta0=5e-4,
+    train_session = OrtGradientForwardBackwardOptimizer(
+        onx, list(sorted(weights)), device='cuda', eta0=5e-4,
         warm_start=False, max_iter=200, batch_size=batch_size)
 
     benches.append(benchmark(nn, train_session, name='LR-GPU'))

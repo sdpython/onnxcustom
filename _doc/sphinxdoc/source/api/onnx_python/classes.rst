@@ -50,4 +50,3 @@ TrainingInfoProto
 
 .. autoclass:: onnx.TrainingInfoProto
     :members:
-

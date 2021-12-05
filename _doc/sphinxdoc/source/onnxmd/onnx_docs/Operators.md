@@ -17,179 +17,179 @@ For an operator input/output's differentiability, it can be differentiable,
 |[Add](#a-name-add-a-a-name-add-add-a)|<a href="Changelog.md#Add-14">14</a>, <a href="Changelog.md#Add-13">13</a>, <a href="Changelog.md#Add-7">7</a>, <a href="Changelog.md#Add-6">6</a>, <a href="Changelog.md#Add-1">1</a>|
 |[And](#a-name-and-a-a-name-and-and-a)|<a href="Changelog.md#And-7">7</a>, <a href="Changelog.md#And-1">1</a>|
 |[ArgMax](#a-name-argmax-a-a-name-argmax-argmax-a)|<a href="Changelog.md#ArgMax-13">13</a>, <a href="Changelog.md#ArgMax-12">12</a>, <a href="Changelog.md#ArgMax-11">11</a>, <a href="Changelog.md#ArgMax-1">1</a>|
-|<a href="#ArgMin">ArgMin</a>|<a href="Changelog.md#ArgMin-13">13</a>, <a href="Changelog.md#ArgMin-12">12</a>, <a href="Changelog.md#ArgMin-11">11</a>, <a href="Changelog.md#ArgMin-1">1</a>|
-|<a href="#Asin">Asin</a>|<a href="Changelog.md#Asin-7">7</a>|
-|<a href="#Asinh">Asinh</a>|<a href="Changelog.md#Asinh-9">9</a>|
-|<a href="#Atan">Atan</a>|<a href="Changelog.md#Atan-7">7</a>|
-|<a href="#Atanh">Atanh</a>|<a href="Changelog.md#Atanh-9">9</a>|
-|<a href="#AveragePool">AveragePool</a>|<a href="Changelog.md#AveragePool-11">11</a>, <a href="Changelog.md#AveragePool-10">10</a>, <a href="Changelog.md#AveragePool-7">7</a>, <a href="Changelog.md#AveragePool-1">1</a>|
-|<a href="#BatchNormalization">BatchNormalization</a>|<a href="Changelog.md#BatchNormalization-15">15</a>, <a href="Changelog.md#BatchNormalization-14">14</a>, <a href="Changelog.md#BatchNormalization-9">9</a>, <a href="Changelog.md#BatchNormalization-7">7</a>, <a href="Changelog.md#BatchNormalization-6">6</a>, <a href="Changelog.md#BatchNormalization-1">1</a>|
-|<a href="#BitShift">BitShift</a>|<a href="Changelog.md#BitShift-11">11</a>|
-|<a href="#Cast">Cast</a>|<a href="Changelog.md#Cast-13">13</a>, <a href="Changelog.md#Cast-9">9</a>, <a href="Changelog.md#Cast-6">6</a>, <a href="Changelog.md#Cast-1">1</a>|
-|<a href="#Ceil">Ceil</a>|<a href="Changelog.md#Ceil-13">13</a>, <a href="Changelog.md#Ceil-6">6</a>, <a href="Changelog.md#Ceil-1">1</a>|
-|<a href="#Clip">Clip</a>|<a href="Changelog.md#Clip-13">13</a>, <a href="Changelog.md#Clip-12">12</a>, <a href="Changelog.md#Clip-11">11</a>, <a href="Changelog.md#Clip-6">6</a>, <a href="Changelog.md#Clip-1">1</a>|
-|<a href="#Compress">Compress</a>|<a href="Changelog.md#Compress-11">11</a>, <a href="Changelog.md#Compress-9">9</a>|
-|<a href="#Concat">Concat</a>|<a href="Changelog.md#Concat-13">13</a>, <a href="Changelog.md#Concat-11">11</a>, <a href="Changelog.md#Concat-4">4</a>, <a href="Changelog.md#Concat-1">1</a>|
-|<a href="#ConcatFromSequence">ConcatFromSequence</a>|<a href="Changelog.md#ConcatFromSequence-11">11</a>|
-|<a href="#Constant">Constant</a>|<a href="Changelog.md#Constant-13">13</a>, <a href="Changelog.md#Constant-12">12</a>, <a href="Changelog.md#Constant-11">11</a>, <a href="Changelog.md#Constant-9">9</a>, <a href="Changelog.md#Constant-1">1</a>|
-|<a href="#ConstantOfShape">ConstantOfShape</a>|<a href="Changelog.md#ConstantOfShape-9">9</a>|
-|<a href="#Conv">Conv</a>|<a href="Changelog.md#Conv-11">11</a>, <a href="Changelog.md#Conv-1">1</a>|
-|<a href="#ConvInteger">ConvInteger</a>|<a href="Changelog.md#ConvInteger-10">10</a>|
-|<a href="#ConvTranspose">ConvTranspose</a>|<a href="Changelog.md#ConvTranspose-11">11</a>, <a href="Changelog.md#ConvTranspose-1">1</a>|
-|<a href="#Cos">Cos</a>|<a href="Changelog.md#Cos-7">7</a>|
-|<a href="#Cosh">Cosh</a>|<a href="Changelog.md#Cosh-9">9</a>|
-|<a href="#CumSum">CumSum</a>|<a href="Changelog.md#CumSum-14">14</a>, <a href="Changelog.md#CumSum-11">11</a>|
-|<a href="#DepthToSpace">DepthToSpace</a>|<a href="Changelog.md#DepthToSpace-13">13</a>, <a href="Changelog.md#DepthToSpace-11">11</a>, <a href="Changelog.md#DepthToSpace-1">1</a>|
-|<a href="#DequantizeLinear">DequantizeLinear</a>|<a href="Changelog.md#DequantizeLinear-13">13</a>, <a href="Changelog.md#DequantizeLinear-10">10</a>|
-|<a href="#Det">Det</a>|<a href="Changelog.md#Det-11">11</a>|
-|<a href="#Div">Div</a>|<a href="Changelog.md#Div-14">14</a>, <a href="Changelog.md#Div-13">13</a>, <a href="Changelog.md#Div-7">7</a>, <a href="Changelog.md#Div-6">6</a>, <a href="Changelog.md#Div-1">1</a>|
-|<a href="#Dropout">Dropout</a>|<a href="Changelog.md#Dropout-13">13</a>, <a href="Changelog.md#Dropout-12">12</a>, <a href="Changelog.md#Dropout-10">10</a>, <a href="Changelog.md#Dropout-7">7</a>, <a href="Changelog.md#Dropout-6">6</a>, <a href="Changelog.md#Dropout-1">1</a>|
-|<a href="#Einsum">Einsum</a>|<a href="Changelog.md#Einsum-12">12</a>|
-|<a href="#Elu">Elu</a>|<a href="Changelog.md#Elu-6">6</a>, <a href="Changelog.md#Elu-1">1</a>|
-|<a href="#Equal">Equal</a>|<a href="Changelog.md#Equal-13">13</a>, <a href="Changelog.md#Equal-11">11</a>, <a href="Changelog.md#Equal-7">7</a>, <a href="Changelog.md#Equal-1">1</a>|
-|<a href="#Erf">Erf</a>|<a href="Changelog.md#Erf-13">13</a>, <a href="Changelog.md#Erf-9">9</a>|
-|<a href="#Exp">Exp</a>|<a href="Changelog.md#Exp-13">13</a>, <a href="Changelog.md#Exp-6">6</a>, <a href="Changelog.md#Exp-1">1</a>|
-|<a href="#Expand">Expand</a>|<a href="Changelog.md#Expand-13">13</a>, <a href="Changelog.md#Expand-8">8</a>|
-|<a href="#EyeLike">EyeLike</a>|<a href="Changelog.md#EyeLike-9">9</a>|
-|<a href="#Flatten">Flatten</a>|<a href="Changelog.md#Flatten-13">13</a>, <a href="Changelog.md#Flatten-11">11</a>, <a href="Changelog.md#Flatten-9">9</a>, <a href="Changelog.md#Flatten-1">1</a>|
-|<a href="#Floor">Floor</a>|<a href="Changelog.md#Floor-13">13</a>, <a href="Changelog.md#Floor-6">6</a>, <a href="Changelog.md#Floor-1">1</a>|
-|<a href="#GRU">GRU</a>|<a href="Changelog.md#GRU-14">14</a>, <a href="Changelog.md#GRU-7">7</a>, <a href="Changelog.md#GRU-3">3</a>, <a href="Changelog.md#GRU-1">1</a>|
-|<a href="#Gather">Gather</a>|<a href="Changelog.md#Gather-13">13</a>, <a href="Changelog.md#Gather-11">11</a>, <a href="Changelog.md#Gather-1">1</a>|
-|<a href="#GatherElements">GatherElements</a>|<a href="Changelog.md#GatherElements-13">13</a>, <a href="Changelog.md#GatherElements-11">11</a>|
-|<a href="#GatherND">GatherND</a>|<a href="Changelog.md#GatherND-13">13</a>, <a href="Changelog.md#GatherND-12">12</a>, <a href="Changelog.md#GatherND-11">11</a>|
-|<a href="#Gemm">Gemm</a>|<a href="Changelog.md#Gemm-13">13</a>, <a href="Changelog.md#Gemm-11">11</a>, <a href="Changelog.md#Gemm-9">9</a>, <a href="Changelog.md#Gemm-7">7</a>, <a href="Changelog.md#Gemm-6">6</a>, <a href="Changelog.md#Gemm-1">1</a>|
-|<a href="#GlobalAveragePool">GlobalAveragePool</a>|<a href="Changelog.md#GlobalAveragePool-1">1</a>|
-|<a href="#GlobalLpPool">GlobalLpPool</a>|<a href="Changelog.md#GlobalLpPool-2">2</a>, <a href="Changelog.md#GlobalLpPool-1">1</a>|
-|<a href="#GlobalMaxPool">GlobalMaxPool</a>|<a href="Changelog.md#GlobalMaxPool-1">1</a>|
-|<a href="#Greater">Greater</a>|<a href="Changelog.md#Greater-13">13</a>, <a href="Changelog.md#Greater-9">9</a>, <a href="Changelog.md#Greater-7">7</a>, <a href="Changelog.md#Greater-1">1</a>|
-|<a href="#GridSample">GridSample</a>|<a href="Changelog.md#GridSample-16">16</a>|
-|<a href="#HardSigmoid">HardSigmoid</a>|<a href="Changelog.md#HardSigmoid-6">6</a>, <a href="Changelog.md#HardSigmoid-1">1</a>|
-|<a href="#Hardmax">Hardmax</a>|<a href="Changelog.md#Hardmax-13">13</a>, <a href="Changelog.md#Hardmax-11">11</a>, <a href="Changelog.md#Hardmax-1">1</a>|
-|<a href="#Identity">Identity</a>|<a href="Changelog.md#Identity-16">16</a>, <a href="Changelog.md#Identity-14">14</a>, <a href="Changelog.md#Identity-13">13</a>, <a href="Changelog.md#Identity-1">1</a>|
-|<a href="#If">If</a>|<a href="Changelog.md#If-16">16</a>, <a href="Changelog.md#If-13">13</a>, <a href="Changelog.md#If-11">11</a>, <a href="Changelog.md#If-1">1</a>|
-|<a href="#InstanceNormalization">InstanceNormalization</a>|<a href="Changelog.md#InstanceNormalization-6">6</a>, <a href="Changelog.md#InstanceNormalization-1">1</a>|
-|<a href="#IsInf">IsInf</a>|<a href="Changelog.md#IsInf-10">10</a>|
-|<a href="#IsNaN">IsNaN</a>|<a href="Changelog.md#IsNaN-13">13</a>, <a href="Changelog.md#IsNaN-9">9</a>|
-|<a href="#LRN">LRN</a>|<a href="Changelog.md#LRN-13">13</a>, <a href="Changelog.md#LRN-1">1</a>|
-|<a href="#LSTM">LSTM</a>|<a href="Changelog.md#LSTM-14">14</a>, <a href="Changelog.md#LSTM-7">7</a>, <a href="Changelog.md#LSTM-1">1</a>|
-|<a href="#LeakyRelu">LeakyRelu</a>|<a href="Changelog.md#LeakyRelu-6">6</a>, <a href="Changelog.md#LeakyRelu-1">1</a>|
-|<a href="#Less">Less</a>|<a href="Changelog.md#Less-13">13</a>, <a href="Changelog.md#Less-9">9</a>, <a href="Changelog.md#Less-7">7</a>, <a href="Changelog.md#Less-1">1</a>|
-|<a href="#Log">Log</a>|<a href="Changelog.md#Log-13">13</a>, <a href="Changelog.md#Log-6">6</a>, <a href="Changelog.md#Log-1">1</a>|
-|<a href="#Loop">Loop</a>|<a href="Changelog.md#Loop-16">16</a>, <a href="Changelog.md#Loop-13">13</a>, <a href="Changelog.md#Loop-11">11</a>, <a href="Changelog.md#Loop-1">1</a>|
-|<a href="#LpNormalization">LpNormalization</a>|<a href="Changelog.md#LpNormalization-1">1</a>|
-|<a href="#LpPool">LpPool</a>|<a href="Changelog.md#LpPool-11">11</a>, <a href="Changelog.md#LpPool-2">2</a>, <a href="Changelog.md#LpPool-1">1</a>|
-|<a href="#MatMul">MatMul</a>|<a href="Changelog.md#MatMul-13">13</a>, <a href="Changelog.md#MatMul-9">9</a>, <a href="Changelog.md#MatMul-1">1</a>|
-|<a href="#MatMulInteger">MatMulInteger</a>|<a href="Changelog.md#MatMulInteger-10">10</a>|
-|<a href="#Max">Max</a>|<a href="Changelog.md#Max-13">13</a>, <a href="Changelog.md#Max-12">12</a>, <a href="Changelog.md#Max-8">8</a>, <a href="Changelog.md#Max-6">6</a>, <a href="Changelog.md#Max-1">1</a>|
-|<a href="#MaxPool">MaxPool</a>|<a href="Changelog.md#MaxPool-12">12</a>, <a href="Changelog.md#MaxPool-11">11</a>, <a href="Changelog.md#MaxPool-10">10</a>, <a href="Changelog.md#MaxPool-8">8</a>, <a href="Changelog.md#MaxPool-1">1</a>|
-|<a href="#MaxRoiPool">MaxRoiPool</a>|<a href="Changelog.md#MaxRoiPool-1">1</a>|
-|<a href="#MaxUnpool">MaxUnpool</a>|<a href="Changelog.md#MaxUnpool-11">11</a>, <a href="Changelog.md#MaxUnpool-9">9</a>|
-|<a href="#Mean">Mean</a>|<a href="Changelog.md#Mean-13">13</a>, <a href="Changelog.md#Mean-8">8</a>, <a href="Changelog.md#Mean-6">6</a>, <a href="Changelog.md#Mean-1">1</a>|
-|<a href="#Min">Min</a>|<a href="Changelog.md#Min-13">13</a>, <a href="Changelog.md#Min-12">12</a>, <a href="Changelog.md#Min-8">8</a>, <a href="Changelog.md#Min-6">6</a>, <a href="Changelog.md#Min-1">1</a>|
-|<a href="#Mod">Mod</a>|<a href="Changelog.md#Mod-13">13</a>, <a href="Changelog.md#Mod-10">10</a>|
-|<a href="#Mul">Mul</a>|<a href="Changelog.md#Mul-14">14</a>, <a href="Changelog.md#Mul-13">13</a>, <a href="Changelog.md#Mul-7">7</a>, <a href="Changelog.md#Mul-6">6</a>, <a href="Changelog.md#Mul-1">1</a>|
-|<a href="#Multinomial">Multinomial</a>|<a href="Changelog.md#Multinomial-7">7</a>|
-|<a href="#Neg">Neg</a>|<a href="Changelog.md#Neg-13">13</a>, <a href="Changelog.md#Neg-6">6</a>, <a href="Changelog.md#Neg-1">1</a>|
-|<a href="#NonMaxSuppression">NonMaxSuppression</a>|<a href="Changelog.md#NonMaxSuppression-11">11</a>, <a href="Changelog.md#NonMaxSuppression-10">10</a>|
-|<a href="#NonZero">NonZero</a>|<a href="Changelog.md#NonZero-13">13</a>, <a href="Changelog.md#NonZero-9">9</a>|
-|<a href="#Not">Not</a>|<a href="Changelog.md#Not-1">1</a>|
-|<a href="#OneHot">OneHot</a>|<a href="Changelog.md#OneHot-11">11</a>, <a href="Changelog.md#OneHot-9">9</a>|
-|<a href="#Optional">Optional</a>|<a href="Changelog.md#Optional-15">15</a>|
-|<a href="#OptionalGetElement">OptionalGetElement</a>|<a href="Changelog.md#OptionalGetElement-15">15</a>|
-|<a href="#OptionalHasElement">OptionalHasElement</a>|<a href="Changelog.md#OptionalHasElement-15">15</a>|
-|<a href="#Or">Or</a>|<a href="Changelog.md#Or-7">7</a>, <a href="Changelog.md#Or-1">1</a>|
-|<a href="#PRelu">PRelu</a>|<a href="Changelog.md#PRelu-9">9</a>, <a href="Changelog.md#PRelu-7">7</a>, <a href="Changelog.md#PRelu-6">6</a>, <a href="Changelog.md#PRelu-1">1</a>|
-|<a href="#Pad">Pad</a>|<a href="Changelog.md#Pad-13">13</a>, <a href="Changelog.md#Pad-11">11</a>, <a href="Changelog.md#Pad-2">2</a>, <a href="Changelog.md#Pad-1">1</a>|
-|<a href="#Pow">Pow</a>|<a href="Changelog.md#Pow-15">15</a>, <a href="Changelog.md#Pow-13">13</a>, <a href="Changelog.md#Pow-12">12</a>, <a href="Changelog.md#Pow-7">7</a>, <a href="Changelog.md#Pow-1">1</a>|
-|<a href="#QLinearConv">QLinearConv</a>|<a href="Changelog.md#QLinearConv-10">10</a>|
-|<a href="#QLinearMatMul">QLinearMatMul</a>|<a href="Changelog.md#QLinearMatMul-10">10</a>|
-|<a href="#QuantizeLinear">QuantizeLinear</a>|<a href="Changelog.md#QuantizeLinear-13">13</a>, <a href="Changelog.md#QuantizeLinear-10">10</a>|
-|<a href="#RNN">RNN</a>|<a href="Changelog.md#RNN-14">14</a>, <a href="Changelog.md#RNN-7">7</a>, <a href="Changelog.md#RNN-1">1</a>|
-|<a href="#RandomNormal">RandomNormal</a>|<a href="Changelog.md#RandomNormal-1">1</a>|
-|<a href="#RandomNormalLike">RandomNormalLike</a>|<a href="Changelog.md#RandomNormalLike-1">1</a>|
-|<a href="#RandomUniform">RandomUniform</a>|<a href="Changelog.md#RandomUniform-1">1</a>|
-|<a href="#RandomUniformLike">RandomUniformLike</a>|<a href="Changelog.md#RandomUniformLike-1">1</a>|
-|<a href="#Reciprocal">Reciprocal</a>|<a href="Changelog.md#Reciprocal-13">13</a>, <a href="Changelog.md#Reciprocal-6">6</a>, <a href="Changelog.md#Reciprocal-1">1</a>|
+|[ArgMin](#a-name-argmin-a-a-name-argmin-argmin-a)|<a href="Changelog.md#ArgMin-13">13</a>, <a href="Changelog.md#ArgMin-12">12</a>, <a href="Changelog.md#ArgMin-11">11</a>, <a href="Changelog.md#ArgMin-1">1</a>|
+|[Asin](#a-name-asin-a-a-name-asin-asin-a)|<a href="Changelog.md#Asin-7">7</a>|
+|[Asinh](#a-name-asinh-a-a-name-asinh-asinh-a)|<a href="Changelog.md#Asinh-9">9</a>|
+|[Atan](#a-name-atan-a-a-name-atan-atan-a)|<a href="Changelog.md#Atan-7">7</a>|
+|[Atanh](#a-name-atanh-a-a-name-atanh-atanh-a)|<a href="Changelog.md#Atanh-9">9</a>|
+|[AveragePool](#a-name-averagepool-a-a-name-averagepool-averagepool-a)|<a href="Changelog.md#AveragePool-11">11</a>, <a href="Changelog.md#AveragePool-10">10</a>, <a href="Changelog.md#AveragePool-7">7</a>, <a href="Changelog.md#AveragePool-1">1</a>|
+|[BatchNormalization](#a-name-batchnormalization-a-a-name-batchnormalization-batchnormalization-a)|<a href="Changelog.md#BatchNormalization-15">15</a>, <a href="Changelog.md#BatchNormalization-14">14</a>, <a href="Changelog.md#BatchNormalization-9">9</a>, <a href="Changelog.md#BatchNormalization-7">7</a>, <a href="Changelog.md#BatchNormalization-6">6</a>, <a href="Changelog.md#BatchNormalization-1">1</a>|
+|[BitShift](#a-name-bitshift-a-a-name-bitshift-bitshift-a)|<a href="Changelog.md#BitShift-11">11</a>|
+|[Cast](#a-name-cast-a-a-name-cast-cast-a)|<a href="Changelog.md#Cast-13">13</a>, <a href="Changelog.md#Cast-9">9</a>, <a href="Changelog.md#Cast-6">6</a>, <a href="Changelog.md#Cast-1">1</a>|
+|[Ceil](#a-name-ceil-a-a-name-ceil-ceil-a)|<a href="Changelog.md#Ceil-13">13</a>, <a href="Changelog.md#Ceil-6">6</a>, <a href="Changelog.md#Ceil-1">1</a>|
+|[Clip](#a-name-clip-a-a-name-clip-clip-a)|<a href="Changelog.md#Clip-13">13</a>, <a href="Changelog.md#Clip-12">12</a>, <a href="Changelog.md#Clip-11">11</a>, <a href="Changelog.md#Clip-6">6</a>, <a href="Changelog.md#Clip-1">1</a>|
+|[Compress](#a-name-compress-a-a-name-compress-compress-a)|<a href="Changelog.md#Compress-11">11</a>, <a href="Changelog.md#Compress-9">9</a>|
+|[Concat](#a-name-concat-a-a-name-concat-concat-a)|<a href="Changelog.md#Concat-13">13</a>, <a href="Changelog.md#Concat-11">11</a>, <a href="Changelog.md#Concat-4">4</a>, <a href="Changelog.md#Concat-1">1</a>|
+|[ConcatFromSequence](#a-name-concatfromsequence-a-a-name-concatfromsequence-concatfromsequence-a)|<a href="Changelog.md#ConcatFromSequence-11">11</a>|
+|[Constant](#a-name-constant-a-a-name-constant-constant-a)|<a href="Changelog.md#Constant-13">13</a>, <a href="Changelog.md#Constant-12">12</a>, <a href="Changelog.md#Constant-11">11</a>, <a href="Changelog.md#Constant-9">9</a>, <a href="Changelog.md#Constant-1">1</a>|
+|[ConstantOfShape](#a-name-constantofshape-a-a-name-constantofshape-constantofshape-a)|<a href="Changelog.md#ConstantOfShape-9">9</a>|
+|[Conv](#a-name-conv-a-a-name-conv-conv-a)|<a href="Changelog.md#Conv-11">11</a>, <a href="Changelog.md#Conv-1">1</a>|
+|[ConvInteger](#a-name-convinteger-a-a-name-convinteger-convinteger-a)|<a href="Changelog.md#ConvInteger-10">10</a>|
+|[ConvTranspose](#a-name-convtranspose-a-a-name-convtranspose-convtranspose-a)|<a href="Changelog.md#ConvTranspose-11">11</a>, <a href="Changelog.md#ConvTranspose-1">1</a>|
+|[Cos](#a-name-cos-a-a-name-cos-cos-a)|<a href="Changelog.md#Cos-7">7</a>|
+|[Cosh](#a-name-cosh-a-a-name-cosh-cosh-a)|<a href="Changelog.md#Cosh-9">9</a>|
+|[CumSum](#a-name-cumsum-a-a-name-cumsum-cumsum-a)|<a href="Changelog.md#CumSum-14">14</a>, <a href="Changelog.md#CumSum-11">11</a>|
+|[DepthToSpace](#a-name-depthtospace-a-a-name-depthtospace-depthtospace-a)|<a href="Changelog.md#DepthToSpace-13">13</a>, <a href="Changelog.md#DepthToSpace-11">11</a>, <a href="Changelog.md#DepthToSpace-1">1</a>|
+|[DequantizeLinear](#a-name-dequantizelinear-a-a-name-dequantizelinear-dequantizelinear-a)|<a href="Changelog.md#DequantizeLinear-13">13</a>, <a href="Changelog.md#DequantizeLinear-10">10</a>|
+|[Det](#a-name-det-a-a-name-det-det-a)|<a href="Changelog.md#Det-11">11</a>|
+|[Div](#a-name-div-a-a-name-div-div-a)|<a href="Changelog.md#Div-14">14</a>, <a href="Changelog.md#Div-13">13</a>, <a href="Changelog.md#Div-7">7</a>, <a href="Changelog.md#Div-6">6</a>, <a href="Changelog.md#Div-1">1</a>|
+|[Dropout](#a-name-dropout-a-a-name-dropout-dropout-a)|<a href="Changelog.md#Dropout-13">13</a>, <a href="Changelog.md#Dropout-12">12</a>, <a href="Changelog.md#Dropout-10">10</a>, <a href="Changelog.md#Dropout-7">7</a>, <a href="Changelog.md#Dropout-6">6</a>, <a href="Changelog.md#Dropout-1">1</a>|
+|[Einsum](#a-name-einsum-a-a-name-einsum-einsum-a)|<a href="Changelog.md#Einsum-12">12</a>|
+|[Elu](#a-name-elu-a-a-name-elu-elu-a)|<a href="Changelog.md#Elu-6">6</a>, <a href="Changelog.md#Elu-1">1</a>|
+|[Equal](#a-name-equal-a-a-name-equal-equal-a)|<a href="Changelog.md#Equal-13">13</a>, <a href="Changelog.md#Equal-11">11</a>, <a href="Changelog.md#Equal-7">7</a>, <a href="Changelog.md#Equal-1">1</a>|
+|[Erf](#a-name-erf-a-a-name-erf-erf-a)|<a href="Changelog.md#Erf-13">13</a>, <a href="Changelog.md#Erf-9">9</a>|
+|[Exp](#a-name-exp-a-a-name-exp-exp-a)|<a href="Changelog.md#Exp-13">13</a>, <a href="Changelog.md#Exp-6">6</a>, <a href="Changelog.md#Exp-1">1</a>|
+|[Expand](#a-name-expand-a-a-name-expand-expand-a)|<a href="Changelog.md#Expand-13">13</a>, <a href="Changelog.md#Expand-8">8</a>|
+|[EyeLike](#a-name-eyelike-a-a-name-eyelike-eyelike-a)|<a href="Changelog.md#EyeLike-9">9</a>|
+|[Flatten](#a-name-flatten-a-a-name-flatten-flatten-a)|<a href="Changelog.md#Flatten-13">13</a>, <a href="Changelog.md#Flatten-11">11</a>, <a href="Changelog.md#Flatten-9">9</a>, <a href="Changelog.md#Flatten-1">1</a>|
+|[Floor](#a-name-floor-a-a-name-floor-floor-a)|<a href="Changelog.md#Floor-13">13</a>, <a href="Changelog.md#Floor-6">6</a>, <a href="Changelog.md#Floor-1">1</a>|
+|[GRU](#a-name-gru-a-a-name-gru-gru-a)|<a href="Changelog.md#GRU-14">14</a>, <a href="Changelog.md#GRU-7">7</a>, <a href="Changelog.md#GRU-3">3</a>, <a href="Changelog.md#GRU-1">1</a>|
+|[Gather](#a-name-gather-a-a-name-gather-gather-a)|<a href="Changelog.md#Gather-13">13</a>, <a href="Changelog.md#Gather-11">11</a>, <a href="Changelog.md#Gather-1">1</a>|
+|[GatherElements](#a-name-gatherelements-a-a-name-gatherelements-gatherelements-a)|<a href="Changelog.md#GatherElements-13">13</a>, <a href="Changelog.md#GatherElements-11">11</a>|
+|[GatherND](#a-name-gathernd-a-a-name-gathernd-gathernd-a)|<a href="Changelog.md#GatherND-13">13</a>, <a href="Changelog.md#GatherND-12">12</a>, <a href="Changelog.md#GatherND-11">11</a>|
+|[Gemm](#a-name-gemm-a-a-name-gemm-gemm-a)|<a href="Changelog.md#Gemm-13">13</a>, <a href="Changelog.md#Gemm-11">11</a>, <a href="Changelog.md#Gemm-9">9</a>, <a href="Changelog.md#Gemm-7">7</a>, <a href="Changelog.md#Gemm-6">6</a>, <a href="Changelog.md#Gemm-1">1</a>|
+|[GlobalAveragePool](#a-name-globalaveragepool-a-a-name-globalaveragepool-globalaveragepool-a)|<a href="Changelog.md#GlobalAveragePool-1">1</a>|
+|[GlobalLpPool](#a-name-globallppool-a-a-name-globallppool-globallppool-a)|<a href="Changelog.md#GlobalLpPool-2">2</a>, <a href="Changelog.md#GlobalLpPool-1">1</a>|
+|[GlobalMaxPool](#a-name-globalmaxpool-a-a-name-globalmaxpool-globalmaxpool-a)|<a href="Changelog.md#GlobalMaxPool-1">1</a>|
+|[Greater](#a-name-greater-a-a-name-greater-greater-a)|<a href="Changelog.md#Greater-13">13</a>, <a href="Changelog.md#Greater-9">9</a>, <a href="Changelog.md#Greater-7">7</a>, <a href="Changelog.md#Greater-1">1</a>|
+|[GridSample](#a-name-gridsample-a-a-name-gridsample-gridsample-a)|<a href="Changelog.md#GridSample-16">16</a>|
+|[HardSigmoid](#a-name-hardsigmoid-a-a-name-hardsigmoid-hardsigmoid-a)|<a href="Changelog.md#HardSigmoid-6">6</a>, <a href="Changelog.md#HardSigmoid-1">1</a>|
+|[Hardmax](#a-name-hardmax-a-a-name-hardmax-hardmax-a)|<a href="Changelog.md#Hardmax-13">13</a>, <a href="Changelog.md#Hardmax-11">11</a>, <a href="Changelog.md#Hardmax-1">1</a>|
+|[Identity](#a-name-identity-a-a-name-identity-identity-a)|<a href="Changelog.md#Identity-16">16</a>, <a href="Changelog.md#Identity-14">14</a>, <a href="Changelog.md#Identity-13">13</a>, <a href="Changelog.md#Identity-1">1</a>|
+|[If](#a-name-if-a-a-name-if-if-a)|<a href="Changelog.md#If-16">16</a>, <a href="Changelog.md#If-13">13</a>, <a href="Changelog.md#If-11">11</a>, <a href="Changelog.md#If-1">1</a>|
+|[InstanceNormalization](#a-name-instancenormalization-a-a-name-instancenormalization-instancenormalization-a)|<a href="Changelog.md#InstanceNormalization-6">6</a>, <a href="Changelog.md#InstanceNormalization-1">1</a>|
+|[IsInf](#a-name-isinf-a-a-name-isinf-isinf-a)|<a href="Changelog.md#IsInf-10">10</a>|
+|[IsNaN](#a-name-isnan-a-a-name-isnan-isnan-a)|<a href="Changelog.md#IsNaN-13">13</a>, <a href="Changelog.md#IsNaN-9">9</a>|
+|[LRN](#a-name-lrn-a-a-name-lrn-lrn-a)|<a href="Changelog.md#LRN-13">13</a>, <a href="Changelog.md#LRN-1">1</a>|
+|[LSTM](#a-name-lstm-a-a-name-lstm-lstm-a)|<a href="Changelog.md#LSTM-14">14</a>, <a href="Changelog.md#LSTM-7">7</a>, <a href="Changelog.md#LSTM-1">1</a>|
+|[LeakyRelu](#a-name-leakyrelu-a-a-name-leakyrelu-leakyrelu-a)|<a href="Changelog.md#LeakyRelu-6">6</a>, <a href="Changelog.md#LeakyRelu-1">1</a>|
+|[Less](#a-name-less-a-a-name-less-less-a)|<a href="Changelog.md#Less-13">13</a>, <a href="Changelog.md#Less-9">9</a>, <a href="Changelog.md#Less-7">7</a>, <a href="Changelog.md#Less-1">1</a>|
+|[Log](#a-name-log-a-a-name-log-log-a)|<a href="Changelog.md#Log-13">13</a>, <a href="Changelog.md#Log-6">6</a>, <a href="Changelog.md#Log-1">1</a>|
+|[Loop](#a-name-loop-a-a-name-loop-loop-a)|<a href="Changelog.md#Loop-16">16</a>, <a href="Changelog.md#Loop-13">13</a>, <a href="Changelog.md#Loop-11">11</a>, <a href="Changelog.md#Loop-1">1</a>|
+|[LpNormalization](#a-name-lpnormalization-a-a-name-lpnormalization-lpnormalization-a)|<a href="Changelog.md#LpNormalization-1">1</a>|
+|[LpPool](#a-name-lppool-a-a-name-lppool-lppool-a)|<a href="Changelog.md#LpPool-11">11</a>, <a href="Changelog.md#LpPool-2">2</a>, <a href="Changelog.md#LpPool-1">1</a>|
+|[MatMul](#a-name-matmul-a-a-name-matmul-matmul-a)|<a href="Changelog.md#MatMul-13">13</a>, <a href="Changelog.md#MatMul-9">9</a>, <a href="Changelog.md#MatMul-1">1</a>|
+|[MatMulInteger](#a-name-matmulinteger-a-a-name-matmulinteger-matmulinteger-a)|<a href="Changelog.md#MatMulInteger-10">10</a>|
+|[Max](#a-name-max-a-a-name-max-max-a)|<a href="Changelog.md#Max-13">13</a>, <a href="Changelog.md#Max-12">12</a>, <a href="Changelog.md#Max-8">8</a>, <a href="Changelog.md#Max-6">6</a>, <a href="Changelog.md#Max-1">1</a>|
+|[MaxPool](#a-name-maxpool-a-a-name-maxpool-maxpool-a)|<a href="Changelog.md#MaxPool-12">12</a>, <a href="Changelog.md#MaxPool-11">11</a>, <a href="Changelog.md#MaxPool-10">10</a>, <a href="Changelog.md#MaxPool-8">8</a>, <a href="Changelog.md#MaxPool-1">1</a>|
+|[MaxRoiPool](#a-name-maxroipool-a-a-name-maxroipool-maxroipool-a)|<a href="Changelog.md#MaxRoiPool-1">1</a>|
+|[MaxUnpool](#a-name-maxunpool-a-a-name-maxunpool-maxunpool-a)|<a href="Changelog.md#MaxUnpool-11">11</a>, <a href="Changelog.md#MaxUnpool-9">9</a>|
+|[Mean](#a-name-mean-a-a-name-mean-mean-a)|<a href="Changelog.md#Mean-13">13</a>, <a href="Changelog.md#Mean-8">8</a>, <a href="Changelog.md#Mean-6">6</a>, <a href="Changelog.md#Mean-1">1</a>|
+|[Min](#a-name-min-a-a-name-min-min-a)|<a href="Changelog.md#Min-13">13</a>, <a href="Changelog.md#Min-12">12</a>, <a href="Changelog.md#Min-8">8</a>, <a href="Changelog.md#Min-6">6</a>, <a href="Changelog.md#Min-1">1</a>|
+|[Mod](#a-name-mod-a-a-name-mod-mod-a)|<a href="Changelog.md#Mod-13">13</a>, <a href="Changelog.md#Mod-10">10</a>|
+|[Mul](#a-name-mul-a-a-name-mul-mul-a)|<a href="Changelog.md#Mul-14">14</a>, <a href="Changelog.md#Mul-13">13</a>, <a href="Changelog.md#Mul-7">7</a>, <a href="Changelog.md#Mul-6">6</a>, <a href="Changelog.md#Mul-1">1</a>|
+|[Multinomial](#a-name-multinomial-a-a-name-multinomial-multinomial-a)|<a href="Changelog.md#Multinomial-7">7</a>|
+|[Neg](#a-name-neg-a-a-name-neg-neg-a)|<a href="Changelog.md#Neg-13">13</a>, <a href="Changelog.md#Neg-6">6</a>, <a href="Changelog.md#Neg-1">1</a>|
+|[NonMaxSuppression](#a-name-nonmaxsuppression-a-a-name-nonmaxsuppression-nonmaxsuppression-a)|<a href="Changelog.md#NonMaxSuppression-11">11</a>, <a href="Changelog.md#NonMaxSuppression-10">10</a>|
+|[NonZero](#a-name-nonzero-a-a-name-nonzero-nonzero-a)|<a href="Changelog.md#NonZero-13">13</a>, <a href="Changelog.md#NonZero-9">9</a>|
+|[Not](#a-name-not-a-a-name-not-not-a)|<a href="Changelog.md#Not-1">1</a>|
+|[OneHot](#a-name-onehot-a-a-name-onehot-onehot-a)|<a href="Changelog.md#OneHot-11">11</a>, <a href="Changelog.md#OneHot-9">9</a>|
+|[Optional](#a-name-optional-a-a-name-optional-optional-a)|<a href="Changelog.md#Optional-15">15</a>|
+|[OptionalGetElement](#a-name-optionalgetelement-a-a-name-optionalgetelement-optionalgetelement-a)|<a href="Changelog.md#OptionalGetElement-15">15</a>|
+|[OptionalHasElement](#a-name-optionalhaselement-a-a-name-optionalhaselement-optionalhaselement-a)|<a href="Changelog.md#OptionalHasElement-15">15</a>|
+|[Or](#a-name-or-a-a-name-or-or-a)|<a href="Changelog.md#Or-7">7</a>, <a href="Changelog.md#Or-1">1</a>|
+|[PRelu](#a-name-prelu-a-a-name-prelu-prelu-a)|<a href="Changelog.md#PRelu-9">9</a>, <a href="Changelog.md#PRelu-7">7</a>, <a href="Changelog.md#PRelu-6">6</a>, <a href="Changelog.md#PRelu-1">1</a>|
+|[Pad](#a-name-pad-a-a-name-pad-pad-a)|<a href="Changelog.md#Pad-13">13</a>, <a href="Changelog.md#Pad-11">11</a>, <a href="Changelog.md#Pad-2">2</a>, <a href="Changelog.md#Pad-1">1</a>|
+|[Pow](#a-name-pow-a-a-name-pow-pow-a)|<a href="Changelog.md#Pow-15">15</a>, <a href="Changelog.md#Pow-13">13</a>, <a href="Changelog.md#Pow-12">12</a>, <a href="Changelog.md#Pow-7">7</a>, <a href="Changelog.md#Pow-1">1</a>|
+|[QLinearConv](#a-name-qlinearconv-a-a-name-qlinearconv-qlinearconv-a)|<a href="Changelog.md#QLinearConv-10">10</a>|
+|[QLinearMatMul](#a-name-qlinearmatmul-a-a-name-qlinearmatmul-qlinearmatmul-a)|<a href="Changelog.md#QLinearMatMul-10">10</a>|
+|[QuantizeLinear](#a-name-quantizelinear-a-a-name-quantizelinear-quantizelinear-a)|<a href="Changelog.md#QuantizeLinear-13">13</a>, <a href="Changelog.md#QuantizeLinear-10">10</a>|
+|[RNN](#a-name-rnn-a-a-name-rnn-rnn-a)|<a href="Changelog.md#RNN-14">14</a>, <a href="Changelog.md#RNN-7">7</a>, <a href="Changelog.md#RNN-1">1</a>|
+|[RandomNormal](#a-name-randomnormal-a-a-name-randomnormal-randomnormal-a)|<a href="Changelog.md#RandomNormal-1">1</a>|
+|[RandomNormalLike](#a-name-randomnormallike-a-a-name-randomnormallike-randomnormallike-a)|<a href="Changelog.md#RandomNormalLike-1">1</a>|
+|[RandomUniform](#a-name-randomuniform-a-a-name-randomuniform-randomuniform-a)|<a href="Changelog.md#RandomUniform-1">1</a>|
+|[RandomUniformLike](#a-name-randomuniformlike-a-a-name-randomuniformlike-randomuniformlike-a)|<a href="Changelog.md#RandomUniformLike-1">1</a>|
+|[Reciprocal](#a-name-reciprocal-a-a-name-reciprocal-reciprocal-a)|<a href="Changelog.md#Reciprocal-13">13</a>, <a href="Changelog.md#Reciprocal-6">6</a>, <a href="Changelog.md#Reciprocal-1">1</a>|
 |<a href="#ReduceL1">ReduceL1</a>|<a href="Changelog.md#ReduceL1-13">13</a>, <a href="Changelog.md#ReduceL1-11">11</a>, <a href="Changelog.md#ReduceL1-1">1</a>|
 |<a href="#ReduceL2">ReduceL2</a>|<a href="Changelog.md#ReduceL2-13">13</a>, <a href="Changelog.md#ReduceL2-11">11</a>, <a href="Changelog.md#ReduceL2-1">1</a>|
-|<a href="#ReduceLogSum">ReduceLogSum</a>|<a href="Changelog.md#ReduceLogSum-13">13</a>, <a href="Changelog.md#ReduceLogSum-11">11</a>, <a href="Changelog.md#ReduceLogSum-1">1</a>|
-|<a href="#ReduceLogSumExp">ReduceLogSumExp</a>|<a href="Changelog.md#ReduceLogSumExp-13">13</a>, <a href="Changelog.md#ReduceLogSumExp-11">11</a>, <a href="Changelog.md#ReduceLogSumExp-1">1</a>|
-|<a href="#ReduceMax">ReduceMax</a>|<a href="Changelog.md#ReduceMax-13">13</a>, <a href="Changelog.md#ReduceMax-12">12</a>, <a href="Changelog.md#ReduceMax-11">11</a>, <a href="Changelog.md#ReduceMax-1">1</a>|
-|<a href="#ReduceMean">ReduceMean</a>|<a href="Changelog.md#ReduceMean-13">13</a>, <a href="Changelog.md#ReduceMean-11">11</a>, <a href="Changelog.md#ReduceMean-1">1</a>|
-|<a href="#ReduceMin">ReduceMin</a>|<a href="Changelog.md#ReduceMin-13">13</a>, <a href="Changelog.md#ReduceMin-12">12</a>, <a href="Changelog.md#ReduceMin-11">11</a>, <a href="Changelog.md#ReduceMin-1">1</a>|
-|<a href="#ReduceProd">ReduceProd</a>|<a href="Changelog.md#ReduceProd-13">13</a>, <a href="Changelog.md#ReduceProd-11">11</a>, <a href="Changelog.md#ReduceProd-1">1</a>|
-|<a href="#ReduceSum">ReduceSum</a>|<a href="Changelog.md#ReduceSum-13">13</a>, <a href="Changelog.md#ReduceSum-11">11</a>, <a href="Changelog.md#ReduceSum-1">1</a>|
-|<a href="#ReduceSumSquare">ReduceSumSquare</a>|<a href="Changelog.md#ReduceSumSquare-13">13</a>, <a href="Changelog.md#ReduceSumSquare-11">11</a>, <a href="Changelog.md#ReduceSumSquare-1">1</a>|
-|<a href="#Relu">Relu</a>|<a href="Changelog.md#Relu-14">14</a>, <a href="Changelog.md#Relu-13">13</a>, <a href="Changelog.md#Relu-6">6</a>, <a href="Changelog.md#Relu-1">1</a>|
-|<a href="#Reshape">Reshape</a>|<a href="Changelog.md#Reshape-14">14</a>, <a href="Changelog.md#Reshape-13">13</a>, <a href="Changelog.md#Reshape-5">5</a>, <a href="Changelog.md#Reshape-1">1</a>|
-|<a href="#Resize">Resize</a>|<a href="Changelog.md#Resize-13">13</a>, <a href="Changelog.md#Resize-11">11</a>, <a href="Changelog.md#Resize-10">10</a>|
-|<a href="#ReverseSequence">ReverseSequence</a>|<a href="Changelog.md#ReverseSequence-10">10</a>|
-|<a href="#RoiAlign">RoiAlign</a>|<a href="Changelog.md#RoiAlign-16">16</a>, <a href="Changelog.md#RoiAlign-10">10</a>|
-|<a href="#Round">Round</a>|<a href="Changelog.md#Round-11">11</a>|
-|<a href="#Scan">Scan</a>|<a href="Changelog.md#Scan-11">11</a>, <a href="Changelog.md#Scan-9">9</a>, <a href="Changelog.md#Scan-8">8</a>|
+|[ReduceLogSum](#a-name-reducelogsum-a-a-name-reducelogsum-reducelogsum-a)|<a href="Changelog.md#ReduceLogSum-13">13</a>, <a href="Changelog.md#ReduceLogSum-11">11</a>, <a href="Changelog.md#ReduceLogSum-1">1</a>|
+|[ReduceLogSumExp](#a-name-reducelogsumexp-a-a-name-reducelogsumexp-reducelogsumexp-a)|<a href="Changelog.md#ReduceLogSumExp-13">13</a>, <a href="Changelog.md#ReduceLogSumExp-11">11</a>, <a href="Changelog.md#ReduceLogSumExp-1">1</a>|
+|[ReduceMax](#a-name-reducemax-a-a-name-reducemax-reducemax-a)|<a href="Changelog.md#ReduceMax-13">13</a>, <a href="Changelog.md#ReduceMax-12">12</a>, <a href="Changelog.md#ReduceMax-11">11</a>, <a href="Changelog.md#ReduceMax-1">1</a>|
+|[ReduceMean](#a-name-reducemean-a-a-name-reducemean-reducemean-a)|<a href="Changelog.md#ReduceMean-13">13</a>, <a href="Changelog.md#ReduceMean-11">11</a>, <a href="Changelog.md#ReduceMean-1">1</a>|
+|[ReduceMin](#a-name-reducemin-a-a-name-reducemin-reducemin-a)|<a href="Changelog.md#ReduceMin-13">13</a>, <a href="Changelog.md#ReduceMin-12">12</a>, <a href="Changelog.md#ReduceMin-11">11</a>, <a href="Changelog.md#ReduceMin-1">1</a>|
+|[ReduceProd](#a-name-reduceprod-a-a-name-reduceprod-reduceprod-a)|<a href="Changelog.md#ReduceProd-13">13</a>, <a href="Changelog.md#ReduceProd-11">11</a>, <a href="Changelog.md#ReduceProd-1">1</a>|
+|[ReduceSum](#a-name-reducesum-a-a-name-reducesum-reducesum-a)|<a href="Changelog.md#ReduceSum-13">13</a>, <a href="Changelog.md#ReduceSum-11">11</a>, <a href="Changelog.md#ReduceSum-1">1</a>|
+|[ReduceSumSquare](#a-name-reducesumsquare-a-a-name-reducesumsquare-reducesumsquare-a)|<a href="Changelog.md#ReduceSumSquare-13">13</a>, <a href="Changelog.md#ReduceSumSquare-11">11</a>, <a href="Changelog.md#ReduceSumSquare-1">1</a>|
+|[Relu](#a-name-relu-a-a-name-relu-relu-a)|<a href="Changelog.md#Relu-14">14</a>, <a href="Changelog.md#Relu-13">13</a>, <a href="Changelog.md#Relu-6">6</a>, <a href="Changelog.md#Relu-1">1</a>|
+|[Reshape](#a-name-reshape-a-a-name-reshape-reshape-a)|<a href="Changelog.md#Reshape-14">14</a>, <a href="Changelog.md#Reshape-13">13</a>, <a href="Changelog.md#Reshape-5">5</a>, <a href="Changelog.md#Reshape-1">1</a>|
+|[Resize](#a-name-resize-a-a-name-resize-resize-a)|<a href="Changelog.md#Resize-13">13</a>, <a href="Changelog.md#Resize-11">11</a>, <a href="Changelog.md#Resize-10">10</a>|
+|[ReverseSequence](#a-name-reversesequence-a-a-name-reversesequence-reversesequence-a)|<a href="Changelog.md#ReverseSequence-10">10</a>|
+|[RoiAlign](#a-name-roialign-a-a-name-roialign-roialign-a)|<a href="Changelog.md#RoiAlign-16">16</a>, <a href="Changelog.md#RoiAlign-10">10</a>|
+|[Round](#a-name-round-a-a-name-round-round-a)|<a href="Changelog.md#Round-11">11</a>|
+|[Scan](#a-name-scan-a-a-name-scan-scan-a)|<a href="Changelog.md#Scan-11">11</a>, <a href="Changelog.md#Scan-9">9</a>, <a href="Changelog.md#Scan-8">8</a>|
 |<a href="#Scatter">Scatter</a> (deprecated)|<a href="Changelog.md#Scatter-11">11</a>, <a href="Changelog.md#Scatter-9">9</a>|
-|<a href="#ScatterElements">ScatterElements</a>|<a href="Changelog.md#ScatterElements-16">16</a>, <a href="Changelog.md#ScatterElements-13">13</a>, <a href="Changelog.md#ScatterElements-11">11</a>|
-|<a href="#ScatterND">ScatterND</a>|<a href="Changelog.md#ScatterND-16">16</a>, <a href="Changelog.md#ScatterND-13">13</a>, <a href="Changelog.md#ScatterND-11">11</a>|
-|<a href="#Selu">Selu</a>|<a href="Changelog.md#Selu-6">6</a>, <a href="Changelog.md#Selu-1">1</a>|
-|<a href="#SequenceAt">SequenceAt</a>|<a href="Changelog.md#SequenceAt-11">11</a>|
-|<a href="#SequenceConstruct">SequenceConstruct</a>|<a href="Changelog.md#SequenceConstruct-11">11</a>|
-|<a href="#SequenceEmpty">SequenceEmpty</a>|<a href="Changelog.md#SequenceEmpty-11">11</a>|
-|<a href="#SequenceErase">SequenceErase</a>|<a href="Changelog.md#SequenceErase-11">11</a>|
-|<a href="#SequenceInsert">SequenceInsert</a>|<a href="Changelog.md#SequenceInsert-11">11</a>|
-|<a href="#SequenceLength">SequenceLength</a>|<a href="Changelog.md#SequenceLength-11">11</a>|
-|<a href="#Shape">Shape</a>|<a href="Changelog.md#Shape-15">15</a>, <a href="Changelog.md#Shape-13">13</a>, <a href="Changelog.md#Shape-1">1</a>|
-|<a href="#Shrink">Shrink</a>|<a href="Changelog.md#Shrink-9">9</a>|
-|<a href="#Sigmoid">Sigmoid</a>|<a href="Changelog.md#Sigmoid-13">13</a>, <a href="Changelog.md#Sigmoid-6">6</a>, <a href="Changelog.md#Sigmoid-1">1</a>|
-|<a href="#Sign">Sign</a>|<a href="Changelog.md#Sign-13">13</a>, <a href="Changelog.md#Sign-9">9</a>|
-|<a href="#Sin">Sin</a>|<a href="Changelog.md#Sin-7">7</a>|
-|<a href="#Sinh">Sinh</a>|<a href="Changelog.md#Sinh-9">9</a>|
-|<a href="#Size">Size</a>|<a href="Changelog.md#Size-13">13</a>, <a href="Changelog.md#Size-1">1</a>|
-|<a href="#Slice">Slice</a>|<a href="Changelog.md#Slice-13">13</a>, <a href="Changelog.md#Slice-11">11</a>, <a href="Changelog.md#Slice-10">10</a>, <a href="Changelog.md#Slice-1">1</a>|
-|<a href="#Softplus">Softplus</a>|<a href="Changelog.md#Softplus-1">1</a>|
-|<a href="#Softsign">Softsign</a>|<a href="Changelog.md#Softsign-1">1</a>|
-|<a href="#SpaceToDepth">SpaceToDepth</a>|<a href="Changelog.md#SpaceToDepth-13">13</a>, <a href="Changelog.md#SpaceToDepth-1">1</a>|
-|<a href="#Split">Split</a>|<a href="Changelog.md#Split-13">13</a>, <a href="Changelog.md#Split-11">11</a>, <a href="Changelog.md#Split-2">2</a>, <a href="Changelog.md#Split-1">1</a>|
-|<a href="#SplitToSequence">SplitToSequence</a>|<a href="Changelog.md#SplitToSequence-11">11</a>|
-|<a href="#Sqrt">Sqrt</a>|<a href="Changelog.md#Sqrt-13">13</a>, <a href="Changelog.md#Sqrt-6">6</a>, <a href="Changelog.md#Sqrt-1">1</a>|
-|<a href="#Squeeze">Squeeze</a>|<a href="Changelog.md#Squeeze-13">13</a>, <a href="Changelog.md#Squeeze-11">11</a>, <a href="Changelog.md#Squeeze-1">1</a>|
-|<a href="#StringNormalizer">StringNormalizer</a>|<a href="Changelog.md#StringNormalizer-10">10</a>|
-|<a href="#Sub">Sub</a>|<a href="Changelog.md#Sub-14">14</a>, <a href="Changelog.md#Sub-13">13</a>, <a href="Changelog.md#Sub-7">7</a>, <a href="Changelog.md#Sub-6">6</a>, <a href="Changelog.md#Sub-1">1</a>|
-|<a href="#Sum">Sum</a>|<a href="Changelog.md#Sum-13">13</a>, <a href="Changelog.md#Sum-8">8</a>, <a href="Changelog.md#Sum-6">6</a>, <a href="Changelog.md#Sum-1">1</a>|
-|<a href="#Tan">Tan</a>|<a href="Changelog.md#Tan-7">7</a>|
-|<a href="#Tanh">Tanh</a>|<a href="Changelog.md#Tanh-13">13</a>, <a href="Changelog.md#Tanh-6">6</a>, <a href="Changelog.md#Tanh-1">1</a>|
-|<a href="#TfIdfVectorizer">TfIdfVectorizer</a>|<a href="Changelog.md#TfIdfVectorizer-9">9</a>|
-|<a href="#ThresholdedRelu">ThresholdedRelu</a>|<a href="Changelog.md#ThresholdedRelu-10">10</a>|
-|<a href="#Tile">Tile</a>|<a href="Changelog.md#Tile-13">13</a>, <a href="Changelog.md#Tile-6">6</a>, <a href="Changelog.md#Tile-1">1</a>|
-|<a href="#TopK">TopK</a>|<a href="Changelog.md#TopK-11">11</a>, <a href="Changelog.md#TopK-10">10</a>, <a href="Changelog.md#TopK-1">1</a>|
-|<a href="#Transpose">Transpose</a>|<a href="Changelog.md#Transpose-13">13</a>, <a href="Changelog.md#Transpose-1">1</a>|
-|<a href="#Trilu">Trilu</a>|<a href="Changelog.md#Trilu-14">14</a>|
-|<a href="#Unique">Unique</a>|<a href="Changelog.md#Unique-11">11</a>|
-|<a href="#Unsqueeze">Unsqueeze</a>|<a href="Changelog.md#Unsqueeze-13">13</a>, <a href="Changelog.md#Unsqueeze-11">11</a>, <a href="Changelog.md#Unsqueeze-1">1</a>|
+|[ScatterElements](#a-name-scatterelements-a-a-name-scatterelements-scatterelements-a)|<a href="Changelog.md#ScatterElements-16">16</a>, <a href="Changelog.md#ScatterElements-13">13</a>, <a href="Changelog.md#ScatterElements-11">11</a>|
+|[ScatterND](#a-name-scatternd-a-a-name-scatternd-scatternd-a)|<a href="Changelog.md#ScatterND-16">16</a>, <a href="Changelog.md#ScatterND-13">13</a>, <a href="Changelog.md#ScatterND-11">11</a>|
+|[Selu](#a-name-selu-a-a-name-selu-selu-a)|<a href="Changelog.md#Selu-6">6</a>, <a href="Changelog.md#Selu-1">1</a>|
+|[SequenceAt](#a-name-sequenceat-a-a-name-sequenceat-sequenceat-a)|<a href="Changelog.md#SequenceAt-11">11</a>|
+|[SequenceConstruct](#a-name-sequenceconstruct-a-a-name-sequenceconstruct-sequenceconstruct-a)|<a href="Changelog.md#SequenceConstruct-11">11</a>|
+|[SequenceEmpty](#a-name-sequenceempty-a-a-name-sequenceempty-sequenceempty-a)|<a href="Changelog.md#SequenceEmpty-11">11</a>|
+|[SequenceErase](#a-name-sequenceerase-a-a-name-sequenceerase-sequenceerase-a)|<a href="Changelog.md#SequenceErase-11">11</a>|
+|[SequenceInsert](#a-name-sequenceinsert-a-a-name-sequenceinsert-sequenceinsert-a)|<a href="Changelog.md#SequenceInsert-11">11</a>|
+|[SequenceLength](#a-name-sequencelength-a-a-name-sequencelength-sequencelength-a)|<a href="Changelog.md#SequenceLength-11">11</a>|
+|[Shape](#a-name-shape-a-a-name-shape-shape-a)|<a href="Changelog.md#Shape-15">15</a>, <a href="Changelog.md#Shape-13">13</a>, <a href="Changelog.md#Shape-1">1</a>|
+|[Shrink](#a-name-shrink-a-a-name-shrink-shrink-a)|<a href="Changelog.md#Shrink-9">9</a>|
+|[Sigmoid](#a-name-sigmoid-a-a-name-sigmoid-sigmoid-a)|<a href="Changelog.md#Sigmoid-13">13</a>, <a href="Changelog.md#Sigmoid-6">6</a>, <a href="Changelog.md#Sigmoid-1">1</a>|
+|[Sign](#a-name-sign-a-a-name-sign-sign-a)|<a href="Changelog.md#Sign-13">13</a>, <a href="Changelog.md#Sign-9">9</a>|
+|[Sin](#a-name-sin-a-a-name-sin-sin-a)|<a href="Changelog.md#Sin-7">7</a>|
+|[Sinh](#a-name-sinh-a-a-name-sinh-sinh-a)|<a href="Changelog.md#Sinh-9">9</a>|
+|[Size](#a-name-size-a-a-name-size-size-a)|<a href="Changelog.md#Size-13">13</a>, <a href="Changelog.md#Size-1">1</a>|
+|[Slice](#a-name-slice-a-a-name-slice-slice-a)|<a href="Changelog.md#Slice-13">13</a>, <a href="Changelog.md#Slice-11">11</a>, <a href="Changelog.md#Slice-10">10</a>, <a href="Changelog.md#Slice-1">1</a>|
+|[Softplus](#a-name-softplus-a-a-name-softplus-softplus-a)|<a href="Changelog.md#Softplus-1">1</a>|
+|[Softsign](#a-name-softsign-a-a-name-softsign-softsign-a)|<a href="Changelog.md#Softsign-1">1</a>|
+|[SpaceToDepth](#a-name-spacetodepth-a-a-name-spacetodepth-spacetodepth-a)|<a href="Changelog.md#SpaceToDepth-13">13</a>, <a href="Changelog.md#SpaceToDepth-1">1</a>|
+|[Split](#a-name-split-a-a-name-split-split-a)|<a href="Changelog.md#Split-13">13</a>, <a href="Changelog.md#Split-11">11</a>, <a href="Changelog.md#Split-2">2</a>, <a href="Changelog.md#Split-1">1</a>|
+|[SplitToSequence](#a-name-splittosequence-a-a-name-splittosequence-splittosequence-a)|<a href="Changelog.md#SplitToSequence-11">11</a>|
+|[Sqrt](#a-name-sqrt-a-a-name-sqrt-sqrt-a)|<a href="Changelog.md#Sqrt-13">13</a>, <a href="Changelog.md#Sqrt-6">6</a>, <a href="Changelog.md#Sqrt-1">1</a>|
+|[Squeeze](#a-name-squeeze-a-a-name-squeeze-squeeze-a)|<a href="Changelog.md#Squeeze-13">13</a>, <a href="Changelog.md#Squeeze-11">11</a>, <a href="Changelog.md#Squeeze-1">1</a>|
+|[StringNormalizer](#a-name-stringnormalizer-a-a-name-stringnormalizer-stringnormalizer-a)|<a href="Changelog.md#StringNormalizer-10">10</a>|
+|[Sub](#a-name-sub-a-a-name-sub-sub-a)|<a href="Changelog.md#Sub-14">14</a>, <a href="Changelog.md#Sub-13">13</a>, <a href="Changelog.md#Sub-7">7</a>, <a href="Changelog.md#Sub-6">6</a>, <a href="Changelog.md#Sub-1">1</a>|
+|[Sum](#a-name-sum-a-a-name-sum-sum-a)|<a href="Changelog.md#Sum-13">13</a>, <a href="Changelog.md#Sum-8">8</a>, <a href="Changelog.md#Sum-6">6</a>, <a href="Changelog.md#Sum-1">1</a>|
+|[Tan](#a-name-tan-a-a-name-tan-tan-a)|<a href="Changelog.md#Tan-7">7</a>|
+|[Tanh](#a-name-tanh-a-a-name-tanh-tanh-a)|<a href="Changelog.md#Tanh-13">13</a>, <a href="Changelog.md#Tanh-6">6</a>, <a href="Changelog.md#Tanh-1">1</a>|
+|[TfIdfVectorizer](#a-name-tfidfvectorizer-a-a-name-tfidfvectorizer-tfidfvectorizer-a)|<a href="Changelog.md#TfIdfVectorizer-9">9</a>|
+|[ThresholdedRelu](#a-name-thresholdedrelu-a-a-name-thresholdedrelu-thresholdedrelu-a)|<a href="Changelog.md#ThresholdedRelu-10">10</a>|
+|[Tile](#a-name-tile-a-a-name-tile-tile-a)|<a href="Changelog.md#Tile-13">13</a>, <a href="Changelog.md#Tile-6">6</a>, <a href="Changelog.md#Tile-1">1</a>|
+|[TopK](#a-name-topk-a-a-name-topk-topk-a)|<a href="Changelog.md#TopK-11">11</a>, <a href="Changelog.md#TopK-10">10</a>, <a href="Changelog.md#TopK-1">1</a>|
+|[Transpose](#a-name-transpose-a-a-name-transpose-transpose-a)|<a href="Changelog.md#Transpose-13">13</a>, <a href="Changelog.md#Transpose-1">1</a>|
+|[Trilu](#a-name-trilu-a-a-name-trilu-trilu-a)|<a href="Changelog.md#Trilu-14">14</a>|
+|[Unique](#a-name-unique-a-a-name-unique-unique-a)|<a href="Changelog.md#Unique-11">11</a>|
+|[Unsqueeze](#a-name-unsqueeze-a-a-name-unsqueeze-unsqueeze-a)|<a href="Changelog.md#Unsqueeze-13">13</a>, <a href="Changelog.md#Unsqueeze-11">11</a>, <a href="Changelog.md#Unsqueeze-1">1</a>|
 |<a href="#Upsample">Upsample</a> (deprecated)|<a href="Changelog.md#Upsample-10">10</a>, <a href="Changelog.md#Upsample-9">9</a>, <a href="Changelog.md#Upsample-7">7</a>|
-|<a href="#Where">Where</a>|<a href="Changelog.md#Where-16">16</a>, <a href="Changelog.md#Where-9">9</a>|
-|<a href="#Xor">Xor</a>|<a href="Changelog.md#Xor-7">7</a>, <a href="Changelog.md#Xor-1">1</a>|
+|[Where](#a-name-where-a-a-name-where-where-a)|<a href="Changelog.md#Where-16">16</a>, <a href="Changelog.md#Where-9">9</a>|
+|[Xor](#a-name-xor-a-a-name-xor-xor-a)|<a href="Changelog.md#Xor-7">7</a>, <a href="Changelog.md#Xor-1">1</a>|
 |**Function**|**Since version**|
-|<a href="#Bernoulli">Bernoulli</a>|<a href="Changelog.md#Bernoulli-15">15</a>|
-|<a href="#CastLike">CastLike</a>|<a href="Changelog.md#CastLike-15">15</a>|
-|<a href="#Celu">Celu</a>|<a href="Changelog.md#Celu-12">12</a>|
-|<a href="#DynamicQuantizeLinear">DynamicQuantizeLinear</a>|<a href="Changelog.md#DynamicQuantizeLinear-11">11</a>|
-|<a href="#GreaterOrEqual">GreaterOrEqual</a>|<a href="Changelog.md#GreaterOrEqual-12">12</a>|
-|<a href="#HardSwish">HardSwish</a>|<a href="Changelog.md#HardSwish-14">14</a>|
-|<a href="#LessOrEqual">LessOrEqual</a>|<a href="Changelog.md#LessOrEqual-12">12</a>|
-|<a href="#LogSoftmax">LogSoftmax</a>|<a href="Changelog.md#LogSoftmax-13">13</a>, <a href="Changelog.md#LogSoftmax-11">11</a>, <a href="Changelog.md#LogSoftmax-1">1</a>|
-|<a href="#MeanVarianceNormalization">MeanVarianceNormalization</a>|<a href="Changelog.md#MeanVarianceNormalization-13">13</a>, <a href="Changelog.md#MeanVarianceNormalization-9">9</a>|
-|<a href="#NegativeLogLikelihoodLoss">NegativeLogLikelihoodLoss</a>|<a href="Changelog.md#NegativeLogLikelihoodLoss-13">13</a>, <a href="Changelog.md#NegativeLogLikelihoodLoss-12">12</a>|
-|<a href="#Range">Range</a>|<a href="Changelog.md#Range-11">11</a>|
-|<a href="#Softmax">Softmax</a>|<a href="Changelog.md#Softmax-13">13</a>, <a href="Changelog.md#Softmax-11">11</a>, <a href="Changelog.md#Softmax-1">1</a>|
-|<a href="#SoftmaxCrossEntropyLoss">SoftmaxCrossEntropyLoss</a>|<a href="Changelog.md#SoftmaxCrossEntropyLoss-13">13</a>, <a href="Changelog.md#SoftmaxCrossEntropyLoss-12">12</a>|
+|[Bernoulli](#a-name-bernoulli-a-a-name-bernoulli-bernoulli-a)|<a href="Changelog.md#Bernoulli-15">15</a>|
+|[CastLike](#a-name-castlike-a-a-name-castlike-castlike-a)|<a href="Changelog.md#CastLike-15">15</a>|
+|[Celu](#a-name-celu-a-a-name-celu-celu-a)|<a href="Changelog.md#Celu-12">12</a>|
+|[DynamicQuantizeLinear](#a-name-dynamicquantizelinear-a-a-name-dynamicquantizelinear-dynamicquantizelinear-a)|<a href="Changelog.md#DynamicQuantizeLinear-11">11</a>|
+|[GreaterOrEqual](#a-name-greaterorequal-a-a-name-greaterorequal-greaterorequal-a)|<a href="Changelog.md#GreaterOrEqual-12">12</a>|
+|[HardSwish](#a-name-hardswish-a-a-name-hardswish-hardswish-a)|<a href="Changelog.md#HardSwish-14">14</a>|
+|[LessOrEqual](#a-name-lessorequal-a-a-name-lessorequal-lessorequal-a)|<a href="Changelog.md#LessOrEqual-12">12</a>|
+|[LogSoftmax](#a-name-logsoftmax-a-a-name-logsoftmax-logsoftmax-a)|<a href="Changelog.md#LogSoftmax-13">13</a>, <a href="Changelog.md#LogSoftmax-11">11</a>, <a href="Changelog.md#LogSoftmax-1">1</a>|
+|[MeanVarianceNormalization](#a-name-meanvariancenormalization-a-a-name-meanvariancenormalization-meanvariancenormalization-a)|<a href="Changelog.md#MeanVarianceNormalization-13">13</a>, <a href="Changelog.md#MeanVarianceNormalization-9">9</a>|
+|[NegativeLogLikelihoodLoss](#a-name-negativeloglikelihoodloss-a-a-name-negativeloglikelihoodloss-negativeloglikelihoodloss-a)|<a href="Changelog.md#NegativeLogLikelihoodLoss-13">13</a>, <a href="Changelog.md#NegativeLogLikelihoodLoss-12">12</a>|
+|[Range](#a-name-range-a-a-name-range-range-a)|<a href="Changelog.md#Range-11">11</a>|
+|[Softmax](#a-name-softmax-a-a-name-softmax-softmax-a)|<a href="Changelog.md#Softmax-13">13</a>, <a href="Changelog.md#Softmax-11">11</a>, <a href="Changelog.md#Softmax-1">1</a>|
+|[SoftmaxCrossEntropyLoss](#a-name-softmaxcrossentropyloss-a-a-name-softmaxcrossentropyloss-softmaxcrossentropyloss-a)|<a href="Changelog.md#SoftmaxCrossEntropyLoss-13">13</a>, <a href="Changelog.md#SoftmaxCrossEntropyLoss-12">12</a>|
 
 ### ai.onnx.preview.training
 |**Operator**|**Since version**|
 |-|-|
-|<a href="#ai.onnx.preview.training.Adagrad">ai.onnx.preview.training.Adagrad</a>|<a href="Changelog.md#ai.onnx.preview.training.Adagrad-1">1</a>|
-|<a href="#ai.onnx.preview.training.Adam">ai.onnx.preview.training.Adam</a>|<a href="Changelog.md#ai.onnx.preview.training.Adam-1">1</a>|
-|<a href="#ai.onnx.preview.training.Gradient">ai.onnx.preview.training.Gradient</a>|<a href="Changelog.md#ai.onnx.preview.training.Gradient-1">1</a>|
-|<a href="#ai.onnx.preview.training.Momentum">ai.onnx.preview.training.Momentum</a>|<a href="Changelog.md#ai.onnx.preview.training.Momentum-1">1</a>|
+|[ai-onnx-preview-training-Adagrad](#a-name-ai-onnx-preview-training-adagrad-a-a-name-ai-onnx-preview-training-adagrad-ai-onnx-preview-training-adagrad-a)|<a href="Changelog.md#ai.onnx.preview.training.Adagrad-1">1</a>|
+|[ai-onnx-preview-training-Adam](#a-name-ai-onnx-preview-training-adam-a-a-name-ai-onnx-preview-training-adam-ai-onnx-preview-training-adam-a)|<a href="Changelog.md#ai.onnx.preview.training.Adam-1">1</a>|
+|[ai-onnx-preview-training-Gradient](#a-name-ai-onnx-preview-training-gradient-a-a-name-ai-onnx-preview-training-gradient-ai-onnx-preview-training-gradient-a)|<a href="Changelog.md#ai.onnx.preview.training.Gradient-1">1</a>|
+|[ai-onnx-preview-training-Momentum](#a-name-ai-onnx-preview-training-momentum-a-a-name-ai-onnx-preview-training-momentum-ai-onnx-preview-training-momentum-a)|<a href="Changelog.md#ai.onnx.preview.training.Momentum-1">1</a>|
 
 
 ## ai.onnx (default)

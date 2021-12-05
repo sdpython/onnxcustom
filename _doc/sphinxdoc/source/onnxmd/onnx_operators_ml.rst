@@ -1,5 +1,7 @@
 
-Onnx ML Operators
+.. _l-onnx-operators-ml:
+
+ONNX ML Operators
 =================
 
 .. toctree::

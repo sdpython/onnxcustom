@@ -18,4 +18,5 @@ Next example introduced how this is done with ONNX.
 .. toctree::
     :maxdepth: 1
 
-    ../gyexamples/plot_orttraining_linear_regression_partial
+    ../gyexamples/plot_orttraining_nn_gpu_fwbw
+    ../gyexamples/plot_orttraining_benchmark_fwbw
