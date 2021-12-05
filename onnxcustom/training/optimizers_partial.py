@@ -1,6 +1,6 @@
 """
 @file
-@brief Helper for :epkg:`onnxruntime-training` forward backward training.
+@brief Optimizer with :epkg:`onnxruntime-training` forward backward training.
 """
 import logging
 import numpy
@@ -165,6 +165,7 @@ class OrtGradientForwardBackwardOptimizer(BaseEstimator):
     def fit(self, X, y, X_val=None, y_val=None, use_numpy=False):
         """
         Trains the model.
+
         :param X: features
         :param y: expected output
         :param X_val: evaluation dataset

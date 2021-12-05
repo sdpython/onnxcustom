@@ -28,6 +28,7 @@ Python Wrapper for TrainingSession
 
 .. autoclass:: onnxruntime.TrainingSession
     :members:
+    :inherited-members:
     :undoc-members:
 
 .. _l-ort-training-session-c:

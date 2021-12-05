@@ -1,6 +1,6 @@
 """
 @file
-@brief Helper for :epkg:`onnxruntime-training`.
+@brief Optimizer with :epkg:`onnxruntime-training`.
 """
 import inspect
 import numpy
@@ -122,6 +122,7 @@ class OrtGradientOptimizer(BaseEstimator):
     def fit(self, X, y, X_val=None, y_val=None, use_numpy=False):
         """
         Trains the model.
+
         :param X: features
         :param y: expected output
         :param X_val: evaluation dataset

@@ -12,7 +12,7 @@ Python Wrapper for InferenceSession
 
 .. autoclass:: onnxruntime.InferenceSession
     :members:
-    :undoc-members:
+    :inherited-members:
 
 .. _l-ort-inference-session-c:
 

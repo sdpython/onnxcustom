@@ -1,7 +1,7 @@
 # pylint: disable=E1101
 """
 @file
-@brief Helpers for :epkg:`onnxruntime-training`.
+@brief Gradient with :epkg:`onnxruntime-training` forward backward.
 """
 import logging
 from io import BytesIO

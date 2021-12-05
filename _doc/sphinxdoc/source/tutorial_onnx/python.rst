@@ -19,6 +19,7 @@ Linear Regression, no initializer
 .. runpython::
     :showcode:
     :toggle: out
+    :warningout: DeprecationWarning
 
     # imports
     import numpy
@@ -56,6 +57,7 @@ Linear Regression, initializer
 .. runpython::
     :showcode:
     :toggle: out
+    :warningout: DeprecationWarning
 
     import numpy
     from onnx import numpy_helper, TensorProto
@@ -83,6 +85,7 @@ Linear Regression, initializer
     # graph
     graph = make_graph([node1, node2], 'lr', [X], [Y], [A, C])
     onnx_model = make_model(graph)
+    print(onnx_model)
 
 ONNX Python API
 +++++++++++++++

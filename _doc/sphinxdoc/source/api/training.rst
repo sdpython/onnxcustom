@@ -26,15 +26,15 @@ OrtGradientOptimizer
 OrtGradientForwardBackward
 ++++++++++++++++++++++++++
 
-.. autosignature:: onnxcustom.training.optimizers_partial.OrtGradientForwardBackward
+.. autosignature:: onnxcustom.training.optimizers_partial.OrtGradientForwardBackwardOptimizer
     :members:
 
 Helpers
 +++++++
 
-.. autosignature:: onnxcustom.training.orttraining.add_loss_output
+.. autosignature:: onnxcustom.utils.onnx_orttraining.add_loss_output
 
-.. autosignature:: onnxcustom.training.orttraining.get_train_initializer
+.. autosignature:: onnxcustom.utils.onnx_orttraining.get_train_initializer
 
 Exceptions
 ++++++++++
