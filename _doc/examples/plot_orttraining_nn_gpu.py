@@ -101,8 +101,8 @@ print("device=%r get_device()=%r" % (device, get_device()))
 # The training session.
 
 train_session = OrtGradientOptimizer(
-    onx_train, list(weights), device=device, verbose=1, eta0=5e-4,
-    warm_start=False, max_iter=200, batch_size=10)
+    onx_train, list(weights), device=device, verbose=1,
+    learning_rate=5e-4, warm_start=False, max_iter=200, batch_size=10)
 
 train_session.fit(X, y)
 state_tensors = train_session.get_state()

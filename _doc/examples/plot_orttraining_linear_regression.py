@@ -128,7 +128,7 @@ print("device=%r get_device()=%r" % (device, get_device()))
 # The gradient graph is not available at this stage.
 
 train_session = OrtGradientOptimizer(
-    onx_train, list(weights), device=device, verbose=1, eta0=1e-2,
+    onx_train, list(weights), device=device, verbose=1, learning_rate=1e-2,
     warm_start=False, max_iter=200, batch_size=10)
 
 train_session.fit(X, y)

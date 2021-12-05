@@ -42,3 +42,12 @@ SparseTensorProto
 
 .. autoclass:: onnx.SparseTensorProto
     :members:
+
+.. _l-traininginfoproto:
+
+TrainingInfoProto
++++++++++++++++++
+
+.. autoclass:: onnx.TrainingInfoProto
+    :members:
+

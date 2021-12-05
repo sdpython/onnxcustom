@@ -7,5 +7,5 @@ API
     :maxdepth: 1
 
     index
-    ../onnxmd/onnx_python/index
-    ../onnxmd/onnxruntime_python/index
+    onnx_python/index
+    onnxruntime_python/index

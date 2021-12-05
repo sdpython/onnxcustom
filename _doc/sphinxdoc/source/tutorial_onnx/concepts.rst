@@ -84,14 +84,76 @@ code :ref:`l-onnx-linear-regression-onnx-api-init`.
 
 .. image:: images/linreg2.png
 
-Serialization
-+++++++++++++
+Serialization with protobuf
++++++++++++++++++++++++++++
+
+The deployment of a machine learned model into production
+usually requires to replicate the entire ecosystem used to
+train the model, most of the time with a :epkg:`docker`.
+Once a model is converted into ONNX, the production environment
+only needs a runtime to execute the graph defined with ONNX
+operators. This runtime can be developped in any language
+suitable for the production application, C, java, python, javascript,
+C#, Webassembly, arm...
+
+But to make that happen, the ONNX graph needs to be saved and it should
+take as less space as possible. That's why ONNX uses :epkg:`protobuf` to
+serizalize the graph into one single block
+(see `Parsing and Serialization
+<https://developers.google.com/protocol-buffers/docs/pythontutorial#
+parsing-and-serialization>`_).
 
 Metadata
 ++++++++
 
-List of available operators
-+++++++++++++++++++++++++++
+Machine learned models are continuously refreshed. It is important
+to keep track of the model version, the author of the model,
+how it was train. ONNX offers the possibility to store additional data
+into the model itself.
+
+* **doc_string**: Human-readable documentation for this model.
+    Markdown is allowed.
+* **domain**: A reverse-DNS name to indicate the model namespace or domain,
+    for example, 'org.onnx'
+* **metadata_props**: Named metadata as dictionary `map<string,string>`,
+    `(values, keys)` should be distinct.
+* **model_author**: A comma-separated list of names,
+    The personal name of the author(s) of the model, and/or their organizations.
+* **model_license**: The well-known name or URL of the license
+    under which the model is made available.
+* **model_version**: The version of the model itself, encoded in an integer.
+* **producer_name**: The name of the tool used to generate the model.
+* **producer_version**: The version of the generating tool.
+* **training_info**: An optional extension that contains
+    information for training (see :ref:`l-traininginfoproto`)
+
+List of available operators and domains
++++++++++++++++++++++++++++++++++++++++
+
+The main list is described here: :ref:`l-onnx-operators`.
+It merges standard matrix operators (Add, Sub, MatMul, Transpose,
+Greater, IsNaN, Shape, Reshape...),
+reductions (ReduceSum, ReduceMin, ...)
+image transformations (Conv, MaxPool, ...),
+deep neural networks layer (RNN, DropOut, ...),
+activations functions (Relu, Softmax, ...).
+It covers most of the operations needed to implement
+inference functions from standard and deep machine learning.
+A few operators are dedicated to text but they hardly cover
+the needs. The main list also missing tree based models very
+popular in standard machine learning.
+
+The main list is identified with a domain **ai.onnx**.
+A **domain** can be defined a set of operators.
+Additional operators such 
+are part of another domain **ai.onnx.ml** :ref:`l-onnx-operators-ml`,
+it includes tree bases models (TreeEnsmble Regressor, ...),
+preprocessing (OneHotEncoder, LabelEncoder, ...), SVM models
+(SVMRegressor, ...), imputer (Imputer).
+
+ONNX only defines these two domains. But the library :epkg:`onnx`
+supports any custom domains and operators
+(see :ref:`l-onnx-extensibility`).
 
 Supported Types
 +++++++++++++++
@@ -102,11 +164,10 @@ implicit cast.
 What is an opset version?
 +++++++++++++++++++++++++
 
-What is a domain?
-+++++++++++++++++
-
 Subgraphs
 +++++++++
+
+.. _l-onnx-extensibility:
 
 Extensibility
 +++++++++++++

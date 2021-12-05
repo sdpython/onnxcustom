@@ -62,7 +62,7 @@ weights = {k: v for k, v in inits.items() if k != "shape_tensor"}
 pprint(list((k, v[0].shape) for k, v in weights.items()))
 
 train_session = OrtGradientOptimizer(
-    onx_train, list(weights), device='cpu', eta0=5e-4,
+    onx_train, list(weights), device='cpu', learning_rate=5e-4,
     warm_start=False, max_iter=max_iter, batch_size=batch_size)
 
 

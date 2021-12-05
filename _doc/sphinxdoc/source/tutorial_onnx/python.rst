@@ -1,4 +1,5 @@
 
+============================
 Build ONNX Graph with Python
 ============================
 
@@ -9,12 +10,12 @@ an ONNX graph.
     :local:
 
 A simple example: a linear regression
-+++++++++++++++++++++++++++++++++++++
+=====================================
 
 .. _l-onnx-linear-regression-onnx-api:
 
 Linear Regression, no initializer
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
++++++++++++++++++++++++++++++++++
 
 .. runpython::
     :showcode:
@@ -52,7 +53,7 @@ Linear Regression, no initializer
 .. _l-onnx-linear-regression-onnx-api-init:
 
 Linear Regression, initializer
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+++++++++++++++++++++++++++++++
 
 .. runpython::
     :showcode:
@@ -88,7 +89,16 @@ Linear Regression, initializer
     print(onnx_model)
 
 ONNX Python API
-+++++++++++++++
+===============
+
+make functions
+++++++++++++++
+
+Write, Read an ONNX graph
++++++++++++++++++++++++++
+
+
+
 
 What is a converting library?
 +++++++++++++++++++++++++++++

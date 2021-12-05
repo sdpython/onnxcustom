@@ -99,7 +99,7 @@ class TestOnnxFunction(ExtTestCase):
         y = fct(x, a, b)
 
         code = export2onnx(onx)
-        print(code)
+        self.assertIn("'OnnxAdd'", code)
 
         oinf = OnnxInference(onx)
         got = oinf.run({'X': x, 'A': a, 'B': b})

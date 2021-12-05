@@ -84,6 +84,7 @@ epkg_dictionary.update({
     'chrome-tracing':
         'https://www.chromium.org/developers/how-tos/trace-event-profiling-tool',
     'cython': 'https://cython.org/',
+    'docker': 'https://en.wikipedia.org/wiki/Docker_(software)',
     'DOT': 'https://www.graphviz.org/doc/info/lang.html',
     'ImageNet': 'http://www.image-net.org/',
     'LightGBM': 'https://lightgbm.readthedocs.io/en/latest/',
