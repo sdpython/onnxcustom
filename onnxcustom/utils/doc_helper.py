@@ -18,3 +18,4 @@ def fix_link_operator_md(markdown):
             content = f.read()
     else:
         content = markdown
+    return content
