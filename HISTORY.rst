@@ -5,9 +5,18 @@
 History
 =======
 
-current - 2021-11-26 - 0.00Mb
+current - 2021-12-06 - 0.00Mb
 =============================
 
+* #21: Implements a mechanism that update training weights with SGDRegressor or MLPRegressor (2021-12-04)
+* #25: Implements optimizers with forward, backward functionalities (2021-12-04)
+* #23: Extend documentation (2021-12-01)
+* #22: Move learning_rate logic in a separate class (2021-12-01)
+* #19: Implements training with forward, backward (2021-12-01)
+* #20: Experiment markdown rendering (2021-12-01)
+* #18: Adds classes to train an ONNX gradient with TrainingAgent (2021-11-27)
+* #14: Optimize DataLoader to use iobinding (avoir copy) (2021-11-26)
+* #17: Minimize the number of data copy while training a model (2021-11-26)
 * #13: Adds function plot_onnxs (2021-11-25)
 * #12: Add more examples (2021-11-19)
 

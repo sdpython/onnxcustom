@@ -1,6 +1,6 @@
 
-Tutorial
-========
+Tutorial ONNX and standard machine learning
+===========================================
 
 .. index:: tutorial
 

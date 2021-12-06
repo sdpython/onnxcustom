@@ -1,8 +1,8 @@
 
 .. _onnx-tutorial:
 
-Onnx Tutorial
-=============
+Introduction to ONNX
+====================
 
 This documentation describes the :epkg:`ONNX` concepts
 (**Open Neural Network Exchange**).

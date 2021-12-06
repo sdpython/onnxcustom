@@ -120,7 +120,7 @@ print(text)
 if get_device() == 'GPU':
 
     train_session = OrtGradientOptimizer(
-        onx_train, list(weights), device='cuda', eta0=5e-4,
+        onx_train, list(weights), device='cuda', learning_rate=5e-4,
         warm_start=False, max_iter=200, batch_size=batch_size)
 
     benches.append(benchmark(nn, train_session, name='NN-GPU'))
@@ -146,7 +146,7 @@ weights = {k: v for k, v in inits.items() if k != "shape_tensor"}
 pprint(list((k, v[0].shape) for k, v in weights.items()))
 
 train_session = OrtGradientOptimizer(
-    onx_train, list(weights), device='cpu', eta0=5e-4,
+    onx_train, list(weights), device='cpu', learning_rate=5e-4,
     warm_start=False, max_iter=max_iter, batch_size=batch_size)
 
 benches.append(benchmark(lr, train_session, name='LR-CPU'))
@@ -154,7 +154,7 @@ benches.append(benchmark(lr, train_session, name='LR-CPU'))
 if get_device() == 'GPU':
 
     train_session = OrtGradientOptimizer(
-        onx_train, list(weights), device='cuda', eta0=5e-4,
+        onx_train, list(weights), device='cuda', learning_rate=5e-4,
         warm_start=False, max_iter=200, batch_size=batch_size)
 
     benches.append(benchmark(nn, train_session, name='LR-GPU'))

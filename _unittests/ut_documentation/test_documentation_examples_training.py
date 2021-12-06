@@ -7,7 +7,13 @@ import sys
 import importlib
 import subprocess
 from datetime import datetime
-from pyquickhelper.pycode import ExtTestCase
+try:
+    import onnxruntime.capi.ort_trainer as ortt
+except ImportError:
+    ortt = None
+from pyquickhelper.pycode import skipif_circleci, ExtTestCase
+from pyquickhelper.texthelper import compare_module_version
+from mlprodict import __version__ as mlp_version
 
 
 def import_source(module_file_path, module_name):
@@ -24,9 +30,15 @@ def import_source(module_file_path, module_name):
     return module_spec.loader.exec_module(module)
 
 
-class TestDocumentationExample_u(ExtTestCase):
+class TestDocumentationExampleTraining(ExtTestCase):
 
-    def test_documentation_examples_u(self):
+    @unittest.skipIf(
+        compare_module_version(mlp_version, "0.7.1642") < 0,
+        reason="onnxruntime-training not installed.")
+    @unittest.skipIf(
+        ortt is None, reason="plot_onnx was updated.")
+    @skipif_circleci("stuck")
+    def test_documentation_examples_training(self):
 
         this = os.path.abspath(os.path.dirname(__file__))
         onxc = os.path.normpath(os.path.join(this, '..', '..'))
@@ -40,22 +52,12 @@ class TestDocumentationExample_u(ExtTestCase):
         found = os.listdir(fold)
         tested = 0
         for name in sorted(found):
-            if name >= "plot_u":
-                break
-            if 'lightgbm' in name:
+            if 'training' not in name:
                 continue
-            if 'training' in name:
+            if "fwbw" in name:
                 continue
             if not name.startswith("plot_") or not name.endswith(".py"):
                 continue
-
-            if '-v' in sys.argv or "--verbose" in sys.argv:
-                if name.endswith('plot_bbegin_measure_time.py'):
-                    if __name__ == "__main__":
-                        print("%s: skip %r" % (
-                            datetime.now().strftime("%d-%m-%y %H:%M:%S"),
-                            name))
-                    continue
 
             with self.subTest(name=name):
                 if __name__ == "__main__" or "-v" in sys.argv:
@@ -85,9 +87,6 @@ class TestDocumentationExample_u(ExtTestCase):
                             # dot not installed, this part
                             # is tested in onnx framework
                             pass
-                        elif "No module named 'xgboost'" in st:
-                            # xgboost not installed on CI
-                            pass
                         elif ('Please fix either the inputs or '
                                 'the model.') in st:
                             # onnxruntime datasets changed in master
@@ -96,9 +95,6 @@ class TestDocumentationExample_u(ExtTestCase):
                             pass
                         elif 'dot: graph is too large' in st:
                             # graph is too big
-                            pass
-                        elif 'certificate has expired' in st:
-                            # issue when downloading a model
                             pass
                         else:
                             raise RuntimeError(  # pylint: disable=W0707
