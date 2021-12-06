@@ -110,6 +110,9 @@ def get_train_initializer(onx):
     Returns the list of initializers to train.
 
     :return: dictionary `{name: (value, tensor)}`
+
+    The function walk through the list of initializers and
+    returns all tensors with elements from types float or double.
     """
     res = {}
     for init in onx.graph.initializer:

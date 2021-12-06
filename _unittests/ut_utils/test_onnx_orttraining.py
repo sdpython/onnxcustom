@@ -55,7 +55,7 @@ class TestOrtTraining(ExtTestCase):
         onx = to_onnx(reg, X_train, target_opset=opset,
                       black_op={'LinearRegressor'})
         inits = get_train_initializer(onx)
-        self.assertEqual({'shape_tensor', 'intercept', 'coef'}, set(inits))
+        self.assertEqual({'intercept', 'coef'}, set(inits))
 
 
 if __name__ == "__main__":
