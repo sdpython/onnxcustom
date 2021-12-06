@@ -111,6 +111,7 @@ epkg_dictionary.update({
     'openmp': 'https://en.wikipedia.org/wiki/OpenMP',
     'pandas_streaming':
         'http://www.xavierdupre.fr/app/pandas_streaming/helpsphinx/index.html',
+    'protobuf': 'https://developers.google.com/protocol-buffers',
     'py-spy': 'https://github.com/benfred/py-spy',
     'pyinstrument': 'https://github.com/joerick/pyinstrument',
     'python': 'https://www.python.org/',

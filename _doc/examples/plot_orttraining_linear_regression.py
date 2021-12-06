@@ -28,7 +28,8 @@ from sklearn.linear_model import SGDRegressor
 from sklearn.neural_network import MLPRegressor
 from mlprodict.onnx_conv import to_onnx
 from onnxcustom.plotting.plotting_onnx import plot_onnxs
-from onnxcustom.utils.onnx_orttraining import add_loss_output, get_train_initializer
+from onnxcustom.utils.onnx_orttraining import (
+    add_loss_output, get_train_initializer)
 from onnxcustom.training.optimizers import OrtGradientOptimizer
 
 X, y = make_regression(n_features=2, bias=2)

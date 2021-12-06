@@ -426,6 +426,16 @@ class OrtGradientForwardBackward:
         devices = list(fw_outputs_device_info)
         while len(devices) < len(grad_input_names):
             devices.append(devices[-1])
+
+        trained_onnx = onnx.load(BytesIO(train_onnx_model_serialized))
+        onnx_loss = onnx.load(BytesIO(optimized_pre_grad_model))
+        for i, node in enumerate(trained_onnx.graph.node):
+            if node.name == '':
+                node.name = "N%d" % i
+        for i, node in enumerate(onnx_loss.graph.node):
+            if node.name == '':
+                node.name = "N%d" % i
+
         kwargs = {
             '_run_options': self.run_options,
             '_sess': sess,
@@ -444,9 +454,8 @@ class OrtGradientForwardBackward:
                 self.weights_to_train)),
             '_graph_info': graph_info,
             #
-            '_trained_onnx': onnx.load(BytesIO(train_onnx_model_serialized)),
-            '_optimized_pre_grad_model':
-                onnx.load(BytesIO(optimized_pre_grad_model)),
+            '_trained_onnx': trained_onnx,
+            '_optimized_pre_grad_model': onnx_loss,
             '_graph_builder': builder,
             '_devices': devices,
             '_debug': self.debug
