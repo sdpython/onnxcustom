@@ -11,6 +11,7 @@ from ..utils.onnx_helper import get_onnx_opset, proto_type_to_dtype
 from ..utils.onnxruntime_helper import device_to_provider
 from ..utils.onnx_function import function_onnx_graph
 from ..utils.print_helper import str_ortvalue
+from ..utils.onnx_orttraining import get_train_initializer
 from .ortgradient import OrtGradientForwardBackward
 from .optimizers import BaseEstimator
 from .data_loader import OrtDataLoader
@@ -24,7 +25,9 @@ class OrtGradientForwardBackwardOptimizer(BaseEstimator):
     @see class OrtGradientForwardBackward.
 
     :param model_onnx: ONNX graph used to train
-    :param weights_to_train: names of initializers to be optimized
+    :param weights_to_train: names of initializers to be optimized,
+        if None, function @see fn get_train_initialize returns
+        the list of float iniitializer
     :param loss_output_name: name of the loss output
     :param max_iter: number of training iterations
     :param training_optimizer_name: optimizing algorithm
@@ -47,13 +50,16 @@ class OrtGradientForwardBackwardOptimizer(BaseEstimator):
     * `square_error`: mean square error, used for regression
     """
 
-    def __init__(self, model_onnx, weights_to_train, loss_output_name='loss',
-                 max_iter=100, training_optimizer_name='SGDOptimizer',
+    def __init__(self, model_onnx, weights_to_train=None,
+                 loss_output_name='loss', max_iter=100,
+                 training_optimizer_name='SGDOptimizer',
                  batch_size=10, learning_rate='SGDRegressor',
                  device='cpu', device_index=0,
                  warm_start=False, verbose=0, validation_every=0.1,
                  loss_function="square_error",
                  enable_logging=False):
+        if weights_to_train is None:
+            weights_to_train = list(get_train_initializer(model_onnx))
         BaseEstimator.__init__(self, learning_rate)
         self.model_onnx = model_onnx
         self.batch_size = batch_size
@@ -114,6 +120,10 @@ class OrtGradientForwardBackwardOptimizer(BaseEstimator):
         """
         if not hasattr(self, 'train_state_'):
             raise AttributeError("Method fit must be called before.")
+        if self.train_state_ is None:
+            raise RuntimeError("No train_state_ available (None).")
+        if self.weights_to_train is None:
+            raise RuntimeError("Unexpected self.weights_to_train (None).")
         n = len(self.train_state_) - len(self.weights_to_train)
         return self.train_state_[n:]
 

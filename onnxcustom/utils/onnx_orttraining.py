@@ -3,6 +3,7 @@
 @file
 @brief ONNX manipulations to help build ONNX gradient graphs.
 """
+from collections import OrderedDict
 from onnx.numpy_helper import to_array
 from onnx.helper import (
     make_node, make_graph, make_model, make_tensor_value_info,
@@ -114,9 +115,10 @@ def get_train_initializer(onx):
     The function walk through the list of initializers and
     returns all tensors with elements from types float or double.
     """
-    res = {}
+    res = OrderedDict()
     for init in onx.graph.initializer:
         if init.data_type in (
+                TensorProto.FLOAT16,  # pylint: disable=E1101
                 TensorProto.FLOAT,  # pylint: disable=E1101
                 TensorProto.DOUBLE):  # pylint: disable=E1101
             res[init.name] = (to_array(init), init)

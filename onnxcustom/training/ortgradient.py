@@ -7,7 +7,6 @@ import logging
 from io import BytesIO
 import onnx
 from onnx.numpy_helper import to_array
-from onnx import TensorProto
 from onnxruntime import InferenceSession, RunOptions
 from onnxruntime.capi._pybind_state import (  # pylint: disable=E0611
     SessionIOBinding, OrtValue as C_OrtValue)
@@ -16,6 +15,7 @@ from onnxruntime.capi._pybind_state import (  # pylint: disable=E0611
     OrtModuleGraphBuilderConfiguration, OrtDevice,
     TrainingGraphTransformerConfiguration, OrtValueVector,
     PartialGraphExecutionState)
+from ..utils.onnx_orttraining import get_train_initializer
 
 
 class OrtGradientForwardBackward:
@@ -114,11 +114,30 @@ class OrtGradientForwardBackward:
         if len(self.input_names) != len(self.provider_options):
             raise ValueError(  # pragma: no cover
                 "input_names and provider_options must have the same length.")
+
         if list(sorted(self.weights_to_train)) != self.weights_to_train:
             raise ValueError(
                 "List of weights to train must be sorted but %r is not. "
                 "You shoud use function onnx_rename_weights to do that "
                 "before calling this class." % self.weights_to_train)
+        set_weights = set(self.weights_to_train)
+        found = []
+        for i in self.onnx_model.graph.initializer:
+            if i.name not in set_weights:
+                continue
+            found.append(i.name)
+        if len(found) != len(self.weights_to_train):
+            raise ValueError(
+                "One weight name in self.weights_to_train was not found in "
+                "the initializers %r." % (self.weights_to_train, ))
+        if found != self.weights_to_train:
+            raise ValueError(
+                "List of weights to train must be sorted and follow the "
+                "as the initializers in the graph. %r != %r."
+                "You shoud use function onnx_rename_weights to do that "
+                "before calling this class." % (
+                    self.weights_to_train, found))
+
         if any(map(lambda v: v not in ['CPUExecutionProvider',
                                        'CUDAExecutionProvider'],
                    self.providers)):
@@ -136,15 +155,8 @@ class OrtGradientForwardBackward:
 
         :param onnx_model: ONNX graph
         """
-        names = []
-        for init in onnx_model.graph.initializer:
-            name = init.name
-            dt = init.data_type
-            if dt in (TensorProto.FLOAT16,  # pylint: disable=E1101
-                      TensorProto.FLOAT,  # pylint: disable=E1101
-                      TensorProto.DOUBLE):  # pylint: disable=E1101
-                names.append(name)
-        return names
+        inits = get_train_initializer(onnx_model)
+        return list(inits)
 
     def _init_next(self):
         if self.enable_logging:

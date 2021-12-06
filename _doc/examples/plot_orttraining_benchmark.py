@@ -42,7 +42,7 @@ X_train, X_test, y_train, y_test = train_test_split(X, y)
 # Common parameters and model
 
 batch_size = 15
-max_iter = 200
+max_iter = 100
 
 nn = MLPRegressor(hidden_layer_sizes=(50, 10), max_iter=batch_size,
                   solver='sgd', learning_rate_init=1e-4,

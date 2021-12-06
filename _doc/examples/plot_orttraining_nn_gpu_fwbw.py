@@ -28,6 +28,7 @@ from sklearn.metrics import mean_squared_error
 from onnxcustom.plotting.plotting_onnx import plot_onnxs
 from mlprodict.onnx_conv import to_onnx
 from onnxcustom.utils.onnx_orttraining import get_train_initializer
+from onnxcustom.utils.onnx_helper import onnx_rename_weights
 from onnxcustom.training.optimizers_partial import (
     OrtGradientForwardBackwardOptimizer)
 
@@ -37,7 +38,7 @@ X = X.astype(numpy.float32)
 y = y.astype(numpy.float32)
 X_train, X_test, y_train, y_test = train_test_split(X, y)
 
-nn = MLPRegressor(hidden_layer_sizes=(10, 10), max_iter=200,
+nn = MLPRegressor(hidden_layer_sizes=(10, 10), max_iter=100,
                   solver='sgd', learning_rate_init=1e-4,
                   n_iter_no_change=1000, batch_size=10)
 
@@ -75,11 +76,24 @@ print("device=%r get_device()=%r" % (device, get_device()))
 #######################################
 # The training session.
 
-train_session = OrtGradientForwardBackwardOptimizer(
-    onx, list(weights), device=device, verbose=1,
-    learning_rate=5e-4, warm_start=False, max_iter=200, batch_size=10)
+try:
+    train_session = OrtGradientForwardBackwardOptimizer(
+        onx, device=device, verbose=1,
+        warm_start=False, max_iter=200, batch_size=10)
+    train_session.fit(X, y)
+except ValueError as e:
+    print(e)
 
+#########################################
+# Fix...
+
+onx = onnx_rename_weights(onx)
+train_session = OrtGradientForwardBackwardOptimizer(
+    onx, device=device, verbose=1,
+    learning_rate=1e-4, warm_start=False, max_iter=100, batch_size=10)
 train_session.fit(X, y)
+
+
 state_tensors = train_session.get_state()
 
 print(train_session.train_losses_)
