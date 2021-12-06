@@ -8,13 +8,13 @@ import importlib
 import subprocess
 from datetime import datetime
 try:
-    import onnxruntime.capi.ort_trainer as ortt
-except ImportError:
-    ortt = None
-try:
     import torch
 except ImportError:
     torch = None
+try:
+    import onnxruntime.capi.ort_trainer as ortt
+except ImportError:
+    ortt = None
 from pyquickhelper.pycode import skipif_circleci, ExtTestCase
 from pyquickhelper.texthelper import compare_module_version
 from mlprodict import __version__ as mlp_version
@@ -34,7 +34,7 @@ def import_source(module_file_path, module_name):
     return module_spec.loader.exec_module(module)
 
 
-class TestDocumentationExampleTrainingFwBw(ExtTestCase):
+class TestDocumentationExampleTrainingTorch(ExtTestCase):
 
     @unittest.skipIf(
         compare_module_version(mlp_version, "0.7.1642") <= 0,
@@ -44,7 +44,7 @@ class TestDocumentationExampleTrainingFwBw(ExtTestCase):
     @unittest.skipIf(
         ortt is None, reason="onnxruntime-training not installed.")
     @skipif_circleci("stuck")
-    def test_documentation_examples_training_fwbw(self):
+    def test_documentation_examples_training_torch(self):
 
         this = os.path.abspath(os.path.dirname(__file__))
         onxc = os.path.normpath(os.path.join(this, '..', '..'))
@@ -60,7 +60,7 @@ class TestDocumentationExampleTrainingFwBw(ExtTestCase):
         for name in sorted(found):
             if 'training' not in name:
                 continue
-            if "fwbw" not in name:
+            if "torch" not in name:
                 continue
             if not name.startswith("plot_") or not name.endswith(".py"):
                 continue

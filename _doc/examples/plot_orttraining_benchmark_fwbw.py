@@ -7,7 +7,7 @@ Benchmark, comparison scikit-learn - forward-backward
 
 The benchmark compares the processing time between :epkg:`scikit-learn`
 and :epkg:`onnxruntime-training` on a linear regression and a neural network.
-It replicates the benchmark implemented in :ref:`l-orttraining-nn-gpu`
+It replicates the benchmark implemented in :ref:`l-orttraining-benchmark`
 but uses the forward backward approach developped in
 :ref:`l-orttraining-linreg-fwbw`.
 
@@ -59,7 +59,7 @@ onx = to_onnx(nn, X_train[:1].astype(numpy.float32), target_opset=15)
 onx = onnx_rename_weights(onx)
 
 train_session = OrtGradientForwardBackwardOptimizer(
-    onx, device='cpu', learning_rate=5e-5,
+    onx, device='cpu', learning_rate=1e-5,
     warm_start=False, max_iter=max_iter, batch_size=batch_size)
 
 
@@ -93,6 +93,9 @@ benches = [benchmark(nn, train_session, name='NN-CPU')]
 
 def clean_name(text):
     pos = text.find('onnxruntime')
+    if pos >= 0:
+        return text[pos:]
+    pos = text.find('sklearn')
     if pos >= 0:
         return text[pos:]
     pos = text.find('onnxcustom')
@@ -134,7 +137,7 @@ with warnings.catch_warnings():
     lr.fit(X, y)
 
 
-onx = to_onnx(nn, X_train[:1].astype(numpy.float32), target_opset=15)
+onx = to_onnx(lr, X_train[:1].astype(numpy.float32), target_opset=15)
 
 train_session = OrtGradientForwardBackwardOptimizer(
     onx, device='cpu', learning_rate=1e-4,
@@ -156,7 +159,7 @@ if get_device() == 'GPU':
 # +++++++++++++
 
 if get_device() == 'GPU':
-    ps = profile(lambda: benchmark(nn, train_session, name='LR-GPU'))[0]
+    ps = profile(lambda: benchmark(lr, train_session, name='LR-GPU'))[0]
     root, nodes = profile2graph(ps, clean_text=clean_name)
     text = root.to_text()
     print(text)

@@ -2,13 +2,12 @@
 
 .. _l-orttraining-nn-gpu-fwbw:
 
-Forward backward on a neural network with onnxruntime-training on GPU
-=====================================================================
+Forward backward on a neural network on GPU
+===========================================
 
 This example leverages example :ref:`l-orttraining-linreg-gpu` to
-train a neural network from :epkg:`scikit-learn` on GPU. However, the code
-is using classes implemented in this module, following the pattern
-introduced in exemple :ref:`l-orttraining-linreg`.
+train a neural network from :epkg:`scikit-learn` on GPU. The code
+uses the same code introduced in :ref:`l-orttraining-linreg-fwbw`.
 
 .. contents::
     :local:
@@ -39,12 +38,14 @@ y = y.astype(numpy.float32)
 X_train, X_test, y_train, y_test = train_test_split(X, y)
 
 nn = MLPRegressor(hidden_layer_sizes=(10, 10), max_iter=100,
-                  solver='sgd', learning_rate_init=1e-4,
+                  solver='sgd', learning_rate_init=1e-5,
                   n_iter_no_change=1000, batch_size=10)
 
 with warnings.catch_warnings():
     warnings.simplefilter('ignore')
     nn.fit(X_train, y_train)
+
+print(nn.loss_curve_)
 
 #################################
 # Score:
@@ -74,27 +75,41 @@ device = "cuda" if get_device() == 'GPU' else 'cpu'
 print("device=%r get_device()=%r" % (device, get_device()))
 
 #######################################
-# The training session.
+# The training session. The first instructions fails
+# for an odd reason as the class :epkg:`TrainingAgent` expects
+# to find the list of weights to train in alphabetical order.
+# That means the list `onx.graph.initializer` must be sorted
+# by alphabetical order of their names otherwise the process
+# could crash unless it is caught earlier with the following
+# exception.
 
 try:
     train_session = OrtGradientForwardBackwardOptimizer(
         onx, device=device, verbose=1,
-        warm_start=False, max_iter=200, batch_size=10)
+        warm_start=False, max_iter=100, batch_size=10)
     train_session.fit(X, y)
 except ValueError as e:
     print(e)
 
 #########################################
-# Fix...
+# Function :func:`onnx_rename_weights
+# <onnxcustom.utils.onnx_helper.onnx_rename_weights>`
+# does not change the order of the initializer but renames
+# them. Then class :epkg:`TrainingAgent` may work.
 
 onx = onnx_rename_weights(onx)
 train_session = OrtGradientForwardBackwardOptimizer(
     onx, device=device, verbose=1,
-    learning_rate=1e-4, warm_start=False, max_iter=100, batch_size=10)
+    learning_rate=1e-5, warm_start=False, max_iter=100, batch_size=10)
 train_session.fit(X, y)
 
+#########################################
+# Let's the weights.
 
 state_tensors = train_session.get_state()
+
+##########################################
+# And the loss.
 
 print(train_session.train_losses_)
 

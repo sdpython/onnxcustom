@@ -33,10 +33,10 @@ def import_source(module_file_path, module_name):
 class TestDocumentationExampleTraining(ExtTestCase):
 
     @unittest.skipIf(
-        compare_module_version(mlp_version, "0.7.1642") < 0,
-        reason="onnxruntime-training not installed.")
+        compare_module_version(mlp_version, "0.7.1642") <= 0,
+        reason="plot_onnx was updated.")
     @unittest.skipIf(
-        ortt is None, reason="plot_onnx was updated.")
+        ortt is None, reason="onnxruntime-training not installed.")
     @skipif_circleci("stuck")
     def test_documentation_examples_training(self):
 
@@ -55,6 +55,8 @@ class TestDocumentationExampleTraining(ExtTestCase):
             if 'training' not in name:
                 continue
             if "fwbw" in name:
+                continue
+            if "torch" in name:
                 continue
             if not name.startswith("plot_") or not name.endswith(".py"):
                 continue

@@ -94,7 +94,9 @@ plot_onnxs(onx, title="Linear Regression in ONNX")
 # and a gradient will be computed for it.
 # However an initializer used to modify a shape or to
 # extract a subpart of a tensor does not need training.
-# Let's remove them from the list of initializer to train.
+# :func:`get_train_initializer
+# <onnxcustom.tools.onnx_orttraining.get_train_initializer>`
+# removes them.
 
 inits = get_train_initializer(onx)
 weights = {k: v for k, v in inits.items() if k != "shape_tensor"}
@@ -125,7 +127,7 @@ train_session = OrtGradientForwardBackwardOptimizer(
 train_session.fit(X, y)
 
 ######################################
-# And the trained coefficient are...
+# And the trained coefficients are...
 
 state_tensors = train_session.get_state()
 pprint(["trained coefficients:", state_tensors])
@@ -146,8 +148,7 @@ df.plot(title="Train loss against iterations")
 # on a few more graphs than the initial graph.
 # When the loss is needed but not the gradient, class
 # :epkg:`TrainingAgent` creates another graph, faster,
-# withe the initializers as inputs.
-
+# with the trained initializers as additional inputs.
 
 onx_loss = train_session.train_session_.cls_type_._optimized_pre_grad_model
 
@@ -161,7 +162,7 @@ onx_gradient = train_session.train_session_.cls_type_._trained_onnx
 plot_onnxs(onx_loss, onx_gradient, title=['loss', 'gradient + loss'])
 
 #################################
-# The last ONNX graph are used to compute the gradient *dE/dY*
+# The last ONNX graphs are used to compute the gradient *dE/dY*
 # and to update the weights. The first graph takes the labels and the
 # expected labels and returns the square loss and its gradient.
 # The second graph takes the weights and the learning rate as inputs
