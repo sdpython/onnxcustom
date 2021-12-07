@@ -15,11 +15,11 @@ local_template = os.path.join(os.path.abspath(
 
 
 def callback_begin():
-    source = os.path.absapth(os.path.join(
+    source = os.path.abspath(os.path.join(
         os.path.dirname(__file__), "..", "..", "examples", "images"))
     if not os.path.exists(source_dir):
         raise FileNotFoundError("Folder %r not found." % source)
-    dest = os.path.absapth(os.path.join(
+    dest = os.path.abspath(os.path.join(
         os.path.dirname(__file__), "gyexamples", "images"))
     if not os.path.exists(dest):
         os.makedirs(dest)
