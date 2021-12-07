@@ -5,6 +5,7 @@ Configuration for the documntation.
 import sys
 import os
 import warnings
+import shutil
 import pydata_sphinx_theme
 from pyquickhelper.helpgen.default_conf import set_sphinx_variables
 
