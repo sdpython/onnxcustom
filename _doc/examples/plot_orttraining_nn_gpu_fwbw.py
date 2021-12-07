@@ -117,5 +117,9 @@ df = DataFrame({'ort losses': train_session.train_losses_,
                 'skl losses:': nn.loss_curve_})
 df.plot(title="Train loss against iterations", logy=True)
 
+##############################################
+# The convergence rate is different but both classes
+# do not update the learning the same way.
+
 # import matplotlib.pyplot as plt
 # plt.show()

@@ -13,11 +13,29 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.split(__file__)[0])))
 local_template = os.path.join(os.path.abspath(
     os.path.dirname(__file__)), "phdoc_templates")
 
+
+def callback_begin():
+    source = os.path.absapth(os.path.join(
+        os.path.dirname(__file__), "..", "..", "examples", "images"))
+    if not os.path.exists(source_dir):
+        raise FileNotFoundError("Folder %r not found." % source)
+    dest = os.path.absapth(os.path.join(
+        os.path.dirname(__file__), "gyexamples", "images"))
+    if not os.path.exists(dest):
+        os.makedirs(dest)
+    for img in os.listdir(source):
+        ext = os.path.splitext(img)[-1]
+        if ext not in {'.png', '.jpg'}:
+            continue
+        shutil.copy(os.path.join(source, img), dest)
+
+
 set_sphinx_variables(__file__, "onnxcustom", "Xavier Dupré", 2021,
                      "pydata_sphinx_theme", pydata_sphinx_theme.get_html_theme_path(),
                      locals(), extlinks=dict(
                          issue=('https://github.com/sdpython/onnxcustom/issues/%s', 'issue')),
-                     title="onnxcustom", book=True)
+                     title="onnxcustom", book=True,
+                     callback_begin=callback_begin)
 
 extensions.extend([
     "sphinxcontrib.blockdiag",
@@ -189,7 +207,10 @@ epkg_dictionary.update({
 
 
 nblinks = {
-    'alter_pipeline_for_debugging': 'http://www.xavierdupre.fr/app/onnxcustom/helpsphinx/onnxcustom/helpers/pipeline.html#onnxcustom.helpers.pipeline.alter_pipeline_for_debugging',
+    'alter_pipeline_for_debugging':
+        'http://www.xavierdupre.fr/app/onnxcustom/helpsphinx/'
+        'onnxcustom/helpers/pipeline.html'
+        '#onnxcustom.helpers.pipeline.alter_pipeline_for_debugging',
 }
 
 warnings.filterwarnings("ignore", category=FutureWarning)

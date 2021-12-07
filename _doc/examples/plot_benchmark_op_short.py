@@ -1,11 +1,11 @@
 """
 .. _example-ort-training-benchmark:
 
-Benchmark an operator
-=====================
+Benchmark operator Slice
+========================
 
-This short code compares the execution on CPU and GPU
-for the same ONNX graph.
+This short code compares the execution of the operator *Slice*
+on CPU and GPU in three configurations.
 
 .. contents::
     :local:

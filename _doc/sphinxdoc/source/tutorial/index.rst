@@ -1,5 +1,5 @@
 
-Tutorial ONNX and standard machine learning
+ONNX and Standard Machine Learning Tutorial
 ===========================================
 
 .. index:: tutorial
@@ -29,20 +29,22 @@ The tutorial was tested with following version:
     import sys
     import numpy
     import scipy
-    import sklearn
-    import lightgbm
     import onnx
-    import onnxmltools
     import onnxruntime
+    import lightgbm
     import xgboost
+    import sklearn
+    import onnxconverter_common
+    import onnxmltools
     import skl2onnx
+    import pyquickhelper
     import mlprodict
     import onnxcustom
-    import pyquickhelper
 
     print("python {}".format(sys.version_info))
     mods = [numpy, scipy, sklearn, lightgbm, xgboost,
             onnx, onnxmltools, onnxruntime, onnxcustom,
+            onnxconverter_common,
             skl2onnx, mlprodict, pyquickhelper]
     mods = [(m.__name__, m.__version__) for m in mods]
     mx = max(len(_[0]) for _ in mods) + 1
