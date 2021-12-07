@@ -14,6 +14,7 @@ install:
   - $PYINT -m pip install --upgrade --no-cache-dir --no-deps --index http://localhost:8067/simple/ onnx --extra-index-url=https://pypi.python.org/simple/
   - $PYINT -m pip install --upgrade --no-cache-dir --no-deps --index http://localhost:8067/simple/ onnxruntime-training --extra-index-url=https://pypi.python.org/simple/
   - $PYINT -m pip install --upgrade --no-cache-dir --no-deps --index http://localhost:8067/simple/ onnxconverter-common skl2onnx onnx mlprodict mlinsights --extra-index-url=https://pypi.python.org/simple/
+  - $PYINT -m pip install --upgrade --no-cache-dir --no-deps --index http://localhost:8067/simple/ torch_interop_utils aten_op_executor --extra-index-url=https://pypi.python.org/simple/
   - $PYINT -m pip install -r requirements.txt
   - $PYINT -m pip install -r requirements-dev.txt
   - $PYINT -m pip install funcparserlib==1.0.0a0
