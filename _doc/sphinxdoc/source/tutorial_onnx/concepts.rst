@@ -158,11 +158,73 @@ supports any custom domains and operators
 Supported Types
 +++++++++++++++
 
+ONNX specifications is optimized for numerical competition with
+tensors. A :epkg:`tensor` is a multidimensional array. It is defined
+by:
+
+* a type: the element type, the same for all elements in the tensor
+* a shape: an array with all dimensions, this array can be empty,
+  a dimension can be null
+* a contiguous array: it represents all the values
+
+This definition do not includes *strides* or the possibility to define
+a part of a tensor based on an existing tensor. An ONNX tensor is a dense
+full array.
+
+Element Type
+~~~~~~~~~~~~
+
+ONNX was initially developped to help deploying deep learning model.
+That's why the specifications was initially designed for floats (32 bits).
+The current version supports all common types. Dictionary
+:ref:`l-onnx-types-mapping` gives the correspondance between :epkg:`ONNX`
+and :epkg:`numpy`.
+
+.. runpython::
+    :showcode:
+
+    import re
+    from onnx import TensorProto
+
+    reg = re.compile('^[0-9A-Z_]+$')
+
+    values = {}
+    for att in sorted(dir(TensorProto)):
+        if att in {'DESCRIPTOR'}:
+            continue
+        if reg.match(att):
+            values[getattr(TensorProto, att)] = att
+    for i, att in sorted(values.items()):
+        si = str(i)
+        if len(si) == 1:
+            si = " " + si
+        print("%s: onnx.TensorProto.%s" % (si, att))
+
 ONNX is strongly typed and its definition does not support
-implicit cast.
+implicit cast. It is impossible to add two tensors or matrices
+with different types even if other languages do. That's why explicit
+cast must be inserted in a graph.
+
+Sparse Tensor
+~~~~~~~~~~~~~
+
+Sparse tensors are useful to represent arrays having many null coefficients.
+ONNX supports 2D sparse tensor.
+
+Other types
+~~~~~~~~~~~
+
+In addition to tensors and sparse tensors, ONNX supports sequences of tensors,
+map of tensors, sequences of map of tensors.
 
 What is an opset version?
 +++++++++++++++++++++++++
+
+.. runpython::
+    :showcode:
+
+    import onnx
+    print(onnx.__version__, onnx.defs.onnx_opset_version())
 
 Subgraphs
 +++++++++

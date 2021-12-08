@@ -39,7 +39,7 @@ from onnxcustom.utils.onnx_orttraining import add_loss_output, get_train_initial
 from onnxcustom.training.optimizers import OrtGradientOptimizer
 
 
-def benchmark(N=1000, n_features=20, hidden_layer_sizes="25,25", max_iter=1000,
+def benchmark(N=1000, n_features=100, hidden_layer_sizes="50,10", max_iter=1000,
               learning_rate_init=1e-4, batch_size=100, run_skl=True,
               device='cpu', opset=14):
     """
@@ -85,7 +85,7 @@ def benchmark(N=1000, n_features=20, hidden_layer_sizes="25,25", max_iter=1000,
     nn = MLPRegressor(hidden_layer_sizes=hidden_layer_sizes,
                       max_iter=max_iter if run_skl else 1,
                       solver='sgd', learning_rate_init=learning_rate_init,
-                      n_iter_no_change=N, batch_size=batch_size)
+                      n_iter_no_change=max_iter, batch_size=batch_size)
 
     begin = time.perf_counter()
     with warnings.catch_warnings():
@@ -103,8 +103,8 @@ def benchmark(N=1000, n_features=20, hidden_layer_sizes="25,25", max_iter=1000,
     onx_train = add_loss_output(onx)
 
     # list of weights
-    inits = get_train_initializer(onx)
-    weights = {k: v for k, v in inits.items() if k != "shape_tensor"}
+    weights = get_train_initializer(onx)
+    print('weights:', list(sorted(weights)))
 
     # training
     print("device=%r get_device()=%r" % (device, get_device()))
@@ -114,7 +114,7 @@ def benchmark(N=1000, n_features=20, hidden_layer_sizes="25,25", max_iter=1000,
 
     train_session = OrtGradientOptimizer(
         onx_train, list(weights), device=device, verbose=0,
-        eta0=learning_rate_init,
+        learning_rate=learning_rate_init,
         warm_start=False, max_iter=max_iter, batch_size=batch_size)
 
     begin = time.perf_counter()

@@ -5,20 +5,10 @@ onnx classes
 .. contents::
     :local:
 
-.. _l-tensorproto:
+AttributeProto
+++++++++++++++
 
-TensorProto
-+++++++++++
-
-.. autoclass:: onnx.TensorProto
-    :members:
-
-.. _l-nodeproto:
-
-NodeProto
-+++++++++
-
-.. autoclass:: onnx.NodeProto
+.. autoclass:: onnx.AttributeProto
     :members:
 
 .. _l-modelproto:
@@ -29,12 +19,12 @@ ModelProto
 .. autoclass:: onnx.ModelProto
     :members:
 
-.. _l-valueinfoproto:
+.. _l-nodeproto:
 
-ValueInfoProto
-++++++++++++++
+NodeProto
++++++++++
 
-.. autoclass:: onnx.ValueInfoProto
+.. autoclass:: onnx.NodeProto
     :members:
 
 SparseTensorProto
@@ -43,10 +33,26 @@ SparseTensorProto
 .. autoclass:: onnx.SparseTensorProto
     :members:
 
+.. _l-tensorproto:
+
+TensorProto
++++++++++++
+
+.. autoclass:: onnx.TensorProto
+    :members:
+
 .. _l-traininginfoproto:
 
 TrainingInfoProto
 +++++++++++++++++
 
 .. autoclass:: onnx.TrainingInfoProto
+    :members:
+
+.. _l-valueinfoproto:
+
+ValueInfoProto
+++++++++++++++
+
+.. autoclass:: onnx.ValueInfoProto
     :members:

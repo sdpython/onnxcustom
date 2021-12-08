@@ -8,6 +8,8 @@ mappings
 Type Mappings
 +++++++++++++
 
+.. _l-onnx-types-mapping:
+
 TENSOR_TYPE_TO_NP_TYPE
 ~~~~~~~~~~~~~~~~~~~~~~
 

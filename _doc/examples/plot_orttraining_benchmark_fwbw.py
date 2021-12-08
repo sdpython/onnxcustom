@@ -33,7 +33,7 @@ from onnxcustom.training.optimizers_partial import (
     OrtGradientForwardBackwardOptimizer)
 
 
-X, y = make_regression(2000, n_features=100, bias=2)
+X, y = make_regression(1000, n_features=100, bias=2)
 X = X.astype(numpy.float32)
 y = y.astype(numpy.float32)
 X_train, X_test, y_train, y_test = train_test_split(X, y)
@@ -44,7 +44,7 @@ X_train, X_test, y_train, y_test = train_test_split(X, y)
 batch_size = 15
 max_iter = 100
 
-nn = MLPRegressor(hidden_layer_sizes=(50, 10), max_iter=batch_size,
+nn = MLPRegressor(hidden_layer_sizes=(50, 10), max_iter=max_iter,
                   solver='sgd', learning_rate_init=1e-4,
                   n_iter_no_change=max_iter * 3, batch_size=batch_size)
 
@@ -76,7 +76,7 @@ def benchmark(skl_model, train_session, name, verbose=True):
     begin = time.perf_counter()
     train_session.fit(X, y)
     duration_ort = time.perf_counter() - begin
-    length_ort = len(skl_model.loss_curve_)
+    length_ort = len(train_session.train_losses_)
     print("[benchmark] ort=%r iteration - %r seconds" % (
         length_ort, duration_ort))
 
@@ -128,7 +128,7 @@ if get_device() == 'GPU':
 # Linear Regression
 # +++++++++++++++++
 
-lr = MLPRegressor(hidden_layer_sizes=tuple(), max_iter=batch_size,
+lr = MLPRegressor(hidden_layer_sizes=tuple(), max_iter=max_iter,
                   solver='sgd', learning_rate_init=1e-4,
                   n_iter_no_change=max_iter * 3, batch_size=batch_size)
 

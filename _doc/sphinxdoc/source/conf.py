@@ -142,6 +142,8 @@ epkg_dictionary.update({
     'sqlite3': 'https://docs.python.org/3/library/sqlite3.html',
     'Stochastic Gradient Descent':
         'https://en.wikipedia.org/wiki/Stochastic_gradient_descent',
+    'Tensor': 'https://en.wikipedia.org/wiki/Tensor',
+    'tensor': 'https://en.wikipedia.org/wiki/Tensor',
     'torch': 'https://pytorch.org/',
     'tqdm': 'https://github.com/tqdm/tqdm',
     'xgboost': 'https://xgboost.readthedocs.io/en/latest/',
