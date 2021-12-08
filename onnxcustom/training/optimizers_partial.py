@@ -305,9 +305,10 @@ class OrtGradientForwardBackwardOptimizer(BaseEstimator):
         if isinstance(c_ortvalue, C_OrtValue):
             # does not work
             # bind._iobinding.bind_ortvalue_input(name, c_ortvalue)
-            dtype = proto_type_to_dtype(
-                c_ortvalue.proto_type() if hasattr(c_ortvalue, 'proto_type')
-                else c_ortvalue.data_type())
+            if hasattr(c_ortvalue, 'proto_type'):
+                dtype = proto_type_to_dtype(c_ortvalue.proto_type())
+            else:
+                dtype = proto_type_to_dtype(c_ortvalue.data_type())
             bind.bind_input(
                 name=name, device_type=self.device,
                 device_id=self.device_index,
@@ -340,9 +341,10 @@ class OrtGradientForwardBackwardOptimizer(BaseEstimator):
         if isinstance(c_ortvalue, C_OrtValue):
             # does not work
             # bind._iobinding.bind_ortvalue_input(name, c_ortvalue)
-            dtype = proto_type_to_dtype(
-                c_ortvalue.proto_type() if hasattr(c_ortvalue, 'proto_type')
-                else c_ortvalue.data_type())
+            if hasattr(c_ortvalue, 'proto_type'):
+                dtype = proto_type_to_dtype(c_ortvalue.proto_type())
+            else:
+                dtype = proto_type_to_dtype(c_ortvalue.data_type())
             bind.bind_output(
                 name=name, device_type=self.device,
                 device_id=self.device_index,
