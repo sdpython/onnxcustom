@@ -398,6 +398,17 @@ class OrtGradientForwardBackwardOptimizer(BaseEstimator):
 
             prediction = self.train_function_.forward(state, training=True)
             loss, loss_gradient = self._loss_gradient(orty, prediction[0])
+            cpu_loss = loss.numpy()
+            if numpy.isinf(cpu_loss) or numpy.isnan(cpu_loss):
+                raise ConvergenceError(
+                    "Loss is nan, learning_rate=%r, "
+                    "the gradient descent has failed "
+                    "(past losses=%r)." % (
+                        learning_rate,
+                        [float(v) for v in (
+                            actual_losses if len(actual_losses) < 5
+                            else actual_losses[-5:])]))
+
             gradient = self.train_function_.backward([loss_gradient])
 
             if len(gradient) != len(state):
@@ -407,9 +418,7 @@ class OrtGradientForwardBackwardOptimizer(BaseEstimator):
 
             n = len(state) - n_weights
             for i in range(n, len(state)):
-                self._update_weights(state[i], gradient[i], -learning_rate)
-
-            cpu_loss = loss.numpy()
+                self._update_weights(state[i], gradient[i], -learning_rate / bs)
 
             if logger is not None:
                 logger.debug(
@@ -420,15 +429,6 @@ class OrtGradientForwardBackwardOptimizer(BaseEstimator):
                         "[OrtGradientForwardBackwardOptimizer._iteration] "
                         "state[%i]=%s", i, str_ortvalue(state[i]))
 
-            if numpy.isinf(cpu_loss) or numpy.isnan(cpu_loss):
-                raise ConvergenceError(
-                    "Loss is nan, learning_rate=%r, "
-                    "the gradient descent has failed "
-                    "(past losses=%r)." % (
-                        learning_rate,
-                        [float(v) for v in (
-                            actual_losses if len(actual_losses) < 5
-                            else actual_losses[-5:])]))
             actual_losses.append(cpu_loss / bs)
 
         if logger is not None:
