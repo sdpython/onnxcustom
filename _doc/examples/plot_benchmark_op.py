@@ -1,8 +1,8 @@
 """
 .. _example-ort-training:
 
-Benchmark operator Slice
-========================
+Benchmark and profile of operator Slice
+=======================================
 
 This short code compares the execution of the operator *Slice*
 between :epkg:`numpy` and :epkg:`onnxruntime` for three

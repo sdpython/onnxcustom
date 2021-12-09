@@ -13,6 +13,7 @@ data/*
 *.out
 *.prof
 *.pyproj
+*.bat
 *egg-info/*
 temp_*
 version.txt
@@ -46,3 +47,9 @@ _doc/sphinxdoc/source/gallery/*
 _unittests/ut_cli/something
 _unittests/ut_documentation/onnxruntime_profile*.json
 _unittests/ut_utils/t.*
+_doc/examples/bench.png
+_doc/examples/data.csv
+_doc/examples/plot_*.png
+_doc/examples/plot_l*.xlsx
+_doc/examples/plot_*.csv
+_doc/examples/summary.csv

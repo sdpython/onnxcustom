@@ -194,12 +194,7 @@ print(df)
 # ++++++++++++++
 
 piv = pivot_table(
-    df,
-    index=[
-        "shape",
-        "slice"],
-    columns="provider",
-    values="average")
+    df, index=["shape", "slice"], columns="provider", values="average")
 if 'GPU' in piv.columns:
     piv['ratio'] = piv['GPU'] / piv['CPU']
 print(piv)
