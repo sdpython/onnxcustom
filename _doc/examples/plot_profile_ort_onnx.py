@@ -47,7 +47,9 @@ print(code_optimisation())
 # ++++++++++++++++++
 
 filename = "onnx_to_profile.onnx"
+
 if not os.path.exists(filename):
+    print("Generate a graph for %r." % filename)
     X = numpy.random.randn(1000, 10).astype(numpy.float64)
     y = X.sum(axis=1).reshape((-1, 1))
 
@@ -118,6 +120,8 @@ else:
         C_OrtDevice.cpu(), C_OrtDevice.default_memory(), 0)
     provider = 'CPUExecutionProvider'
 
+print("provider = %r" % provider)
+
 ####################################
 # We load the graph.
 
@@ -129,9 +133,12 @@ with open(filename, 'rb') as f:
 
 so = SessionOptions()
 so.enable_profiling = True
+so.optimized_model_filepath = os.path.split(filename)[-1] + ".optimized.onnx"
 sess = InferenceSession(onx.SerializeToString(), so,
                         providers=[provider])
 bind = SessionIOBinding(sess._sess)
+
+print("graph_optimization_level:", so.graph_optimization_level)
 
 #####################################
 # Creates random data
@@ -152,10 +159,11 @@ def run_with_iobinding(sess, bind, ort_device, feed_ort_value, outputs):
     for name, (value, dtype) in feed_ort_value.items():
         bind.bind_input(name, ort_device, dtype, value.shape(),
                         value.data_ptr())
-    bind.bind_output('variable', ort_device)
+    for out in outputs:
+        bind.bind_output(out, ort_device)
     sess._sess.run_with_iobinding(bind, None)
     ortvalues = bind.get_outputs()
-    return ortvalues[0].numpy()
+    return [o.numpy() for o in ortvalues]
 
 #######################################
 # The profiling.
@@ -184,13 +192,16 @@ gr_dur.plot.barh(ax=ax[0])
 gr_n.plot.barh(ax=ax[1])
 ax[0].set_title("duration")
 ax[1].set_title("n occurences")
-fig.suptitle(filename)
+fig.suptitle(os.path.split(filename)[-1])
 
 ######################################
 # Second graph is by operator name.
 
 gr_dur = df[['dur', "args_op_name", "name"]].groupby(
     ["args_op_name", "name"]).sum().sort_values('dur')
+if gr_dur.shape[0] > 30:
+    gr_dur = gr_dur.tail(n=30)
+
 gr_dur.head(n=5)
 
 #######################################

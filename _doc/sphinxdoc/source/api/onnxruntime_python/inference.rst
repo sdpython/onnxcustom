@@ -54,18 +54,30 @@ C Class SessionIOBinding
 Others classes
 ++++++++++++++
 
-.. autoclass:: onnxruntime.capi._pybind_OrtAllocatorType
+OrtAllocatorType
+~~~~~~~~~~~~~~~~
+
+.. autoclass:: onnxruntime.capi._pybind_state.OrtAllocatorType
     :members:
     :undoc-members:
 
-.. autoclass:: onnxruntime.capi._pybind_ExecutionOrder
+ExecutionOrder
+~~~~~~~~~~~~~~
+
+.. autoclass:: onnxruntime.capi._pybind_state.ExecutionOrder
     :members:
     :undoc-members:
 
-.. autoclass:: onnxruntime.capi._pybind_ExecutionMode
+ExecutionMode
+~~~~~~~~~~~~~
+
+.. autoclass:: onnxruntime.capi._pybind_state.ExecutionMode
     :members:
     :undoc-members:
 
-.. autoclass:: onnxruntime.capi._pybind_GraphOptimizationLevel
+GraphOptimizationLevel
+~~~~~~~~~~~~~~~~~~~~~~
+
+.. autoclass:: onnxruntime.capi._pybind_state.GraphOptimizationLevel
     :members:
     :undoc-members:
