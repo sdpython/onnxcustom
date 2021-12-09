@@ -65,7 +65,8 @@ lr = MLPRegressor(hidden_layer_sizes=tuple(),
                   activation='identity', max_iter=50,
                   batch_size=10, solver='sgd',
                   alpha=0, learning_rate_init=1e-2,
-                  n_iter_no_change=200)
+                  n_iter_no_change=200,
+                  momentum=0, nesterovs_momentum=False)
 lr.fit(X, y)
 print(lr.predict(X[:5]))
 

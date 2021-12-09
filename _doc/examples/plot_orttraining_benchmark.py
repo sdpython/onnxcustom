@@ -21,6 +21,7 @@ import warnings
 from pprint import pprint
 import time
 import numpy
+import matplotlib.pyplot as plt
 from pandas import DataFrame
 from onnxruntime import get_device
 from pyquickhelper.pycode.profiling import profile, profile2graph
@@ -45,8 +46,9 @@ batch_size = 15
 max_iter = 100
 
 nn = MLPRegressor(hidden_layer_sizes=(50, 10), max_iter=max_iter,
-                  solver='sgd', learning_rate_init=1e-4,
-                  n_iter_no_change=max_iter * 3, batch_size=batch_size)
+                  solver='sgd', learning_rate_init=1e-4, alpha=0,
+                  n_iter_no_change=max_iter * 3, batch_size=batch_size,
+                  nesterovs_momentum=False, momentum=0)
 
 with warnings.catch_warnings():
     warnings.simplefilter('ignore')
@@ -84,7 +86,9 @@ def benchmark(skl_model, train_session, name, verbose=True):
         length_ort, duration_ort))
 
     return dict(skl=duration_skl, ort=duration_ort, name=name,
-                iter_skl=length_skl, iter_ort=length_ort)
+                iter_skl=length_skl, iter_ort=length_ort,
+                losses_skl=skl_model.loss_curve_,
+                losses_ort=train_session.train_losses_)
 
 
 benches = [benchmark(nn, train_session, name='NN-CPU')]
@@ -129,8 +133,9 @@ if get_device() == 'GPU':
 # +++++++++++++++++
 
 lr = MLPRegressor(hidden_layer_sizes=tuple(), max_iter=max_iter,
-                  solver='sgd', learning_rate_init=1e-4,
-                  n_iter_no_change=max_iter * 3, batch_size=batch_size)
+                  solver='sgd', learning_rate_init=1e-4, alpha=0,
+                  n_iter_no_change=max_iter * 3, batch_size=batch_size,
+                  nesterovs_momentum=False, momentum=0)
 
 with warnings.catch_warnings():
     warnings.simplefilter('ignore')
@@ -186,8 +191,13 @@ print(df)
 #######################################
 # Graphs.
 
-ax = df[['skl', 'ort']].plot.bar(title="Processing time")
-ax.tick_params(axis='x', rotation=30)
+fig, ax = plt.subplots(1, 2, figsize=(10, 4))
+df[['skl', 'ort']].plot.bar(title="Processing time", ax=ax[0])
+ax[0].tick_params(axis='x', rotation=30)
+for bench in benches:
+    ax[1].plot(bench['losses_skl'], label='skl-' + bench['name'])
+    ax[1].plot(bench['losses_ort'], label='ort-' + bench['name'])
+ax[1].set_title("Losses")
+ax[1].legend()
 
-# import matplotlib.pyplot as plt
 # plt.show()

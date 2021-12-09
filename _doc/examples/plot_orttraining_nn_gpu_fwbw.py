@@ -39,7 +39,8 @@ X_train, X_test, y_train, y_test = train_test_split(X, y)
 
 nn = MLPRegressor(hidden_layer_sizes=(10, 10), max_iter=100,
                   solver='sgd', learning_rate_init=1e-5,
-                  n_iter_no_change=1000, batch_size=10)
+                  n_iter_no_change=1000, batch_size=10, alpha=0,
+                  momentum=0, nesterovs_momentum=False)
 
 with warnings.catch_warnings():
     warnings.simplefilter('ignore')

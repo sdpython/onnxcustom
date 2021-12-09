@@ -418,7 +418,8 @@ class OrtGradientForwardBackwardOptimizer(BaseEstimator):
 
             n = len(state) - n_weights
             for i in range(n, len(state)):
-                self._update_weights(state[i], gradient[i], -learning_rate / bs)
+                self._update_weights(
+                    state[i], gradient[i], -learning_rate / bs)
 
             if logger is not None:
                 logger.debug(
