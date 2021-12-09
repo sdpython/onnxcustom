@@ -18,7 +18,7 @@ ONNX graph to compute the gradient. This design gives more freedom
 to the user but it requires to write more code to implement the
 whole training.
 
-Both parts rely on classes this package (*onnxcustom*) implements 
+Both parts rely on classes this package (*onnxcustom*) implements
 to simplify the code.
 
 .. toctree::

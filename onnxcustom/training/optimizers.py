@@ -342,7 +342,8 @@ class OrtGradientOptimizer(BaseEstimator):
         lower_device = device.lower()
         if lower_device == 'cpu':
             provider = ['CPUExecutionProvider']
-        elif lower_device.startswith("cuda") or lower_device == 'gpu':  # pragma: no cover
+        elif (lower_device.startswith("cuda") or
+                lower_device == 'gpu'):  # pragma: no cover
             provider = ['CUDAExecutionProvider']
         else:
             raise ValueError(  # pragma: no cover

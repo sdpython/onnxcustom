@@ -159,8 +159,8 @@ ort_value = C_OrtValue.ortvalue_from_numpy(X, ort_device)
 # A function which calls the API for any device.
 
 
-def run_with_iobinding(sess, bind, ort_device, ort_value):
-    bind.bind_input('X', ort_device, X.dtype, X.shape,
+def run_with_iobinding(sess, bind, ort_device, ort_value, dtype):
+    bind.bind_input('X', ort_device, dtype, ort_value.shape(),
                     ort_value.data_ptr())
     bind.bind_output('variable', ort_device)
     sess._sess.run_with_iobinding(bind, None)
@@ -172,7 +172,7 @@ def run_with_iobinding(sess, bind, ort_device, ort_value):
 
 
 for i in tqdm(range(0, 10)):
-    run_with_iobinding(sess, bind, ort_device, ort_value)
+    run_with_iobinding(sess, bind, ort_device, ort_value, X.dtype)
 
 prof = sess.end_profiling()
 with open(prof, "r") as f:
