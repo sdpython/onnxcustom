@@ -1,23 +1,31 @@
 
-ONNX and Standard Machine Learning Tutorial
-===========================================
+Training Tutorial
+=================
 
 .. index:: tutorial
 
-The tutorial goes from a simple example which
-converts a pipeline to a more complex example
-involving operator not actually implemented in
-:epkg:`ONNX operators` or :epkg:`ONNX ML Operators`.
+The tutorial assumes there exist an ONNX graph saved and
+introduces two ways to train this model assuming a gradient can
+be computed for every node of this graph.
+
+First part looks into the first API of :epkg:`onnxruntime-runtime`
+based on class :epkg:`TrainingSession`. This class assumes the loss
+function is part of the graph to train. The tutorial shows how to
+do that.
+
+Second part relies on class :epkg:`TrainingAgent`. It build a new
+ONNX graph to compute the gradient. This design gives more freedom
+to the user but it requires to write more code to implement the
+whole training.
+
+Both parts rely on classes this package (*onnxcustom*) implements 
+to simplify the code.
 
 .. toctree::
     :maxdepth: 2
 
-    tutorial_1_simple
-    tutorial_1-5_external
-    tutorial_2_new_converter
-    tutorial_3_new_operator
-    tutorial_4_complex
-    tutorial_7_benchmark
+    tutorial_6_training
+    tutorial_6_training_partial
 
 The tutorial was tested with following version:
 

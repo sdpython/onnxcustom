@@ -84,7 +84,7 @@ def build_ort_op(op_version=14, save=None, **kwargs):  # opset=13, 14, ...
                 kwargs, slice1, slice2, expected.shape,
                 got.shape, rnd[slice1, slice2].shape)) from e
 
-    if get_device() == 'GPU':
+    if get_device().upper() == 'GPU':
         sessg = InferenceSession(onx.SerializeToString(),
                                  providers=["CUDAExecutionProvider"])
 

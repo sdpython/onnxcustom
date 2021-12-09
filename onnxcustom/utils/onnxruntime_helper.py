@@ -21,7 +21,7 @@ def device_to_provider(device_name):
     """
     if device_name in ('cpu', 'Cpu'):
         return 'CPUExecutionProvider'
-    if device_name in ('Gpu', 'gpu', 'Cuda', 'cuda'):
+    if device_name in ('Gpu', 'gpu', 'Cuda', 'cuda', 'cuda:0', 'cuda:1'):
         return 'CUDAExecutionProvider'
     raise ValueError(
         "Unexpected value for device_name=%r." % device_name)

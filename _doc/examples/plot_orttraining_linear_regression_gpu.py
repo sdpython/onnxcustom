@@ -100,7 +100,7 @@ plot_onnxs(onx_train, title="Graph with Loss")
 # the training needs an instance of class *TrainingSession*.
 # Next function creates this one.
 
-device = "cuda" if get_device() == 'GPU' else 'cpu'
+device = "cuda" if get_device().upper() == 'GPU' else 'cpu'
 
 print("device=%r get_device()=%r" % (device, get_device()))
 

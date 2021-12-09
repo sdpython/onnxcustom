@@ -71,7 +71,7 @@ print(weights)
 # Training graph with forward backward
 # ++++++++++++++++++++++++++++++++++++
 #
-device = "cuda" if get_device() == 'GPU' else 'cpu'
+device = "cuda" if get_device().upper() == 'GPU' else 'cpu'
 
 print("device=%r get_device()=%r" % (device, get_device()))
 

@@ -5,6 +5,7 @@ Other pages
 .. toctree::
     :maxdepth: 1
 
+    doc
     i_ex
     i_faq
     i_cmd

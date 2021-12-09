@@ -96,7 +96,7 @@ y_cpu = sess.run(None, {'X': x})[0]
 #
 # If available...
 
-if get_device() == 'GPU':
+if get_device().upper() == 'GPU':
     try:
         gx = OrtValue.ortvalue_from_numpy(x, 'cuda', 0)
         cuda = True

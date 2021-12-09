@@ -67,13 +67,13 @@ Among the tools this package implements, you may find:
 
     tutorial_onnx/index
     tutorial/index
-    doc
+    tutorial_training/index
     api/apis
+    onnxmd/index
     gyexamples/index
     all_notebooks
     license
     other_pages
-    onnxmd/index
 
 Sources are available on
 `github/onnxcustom <https://github.com/sdpython/onnxcustom>`_.

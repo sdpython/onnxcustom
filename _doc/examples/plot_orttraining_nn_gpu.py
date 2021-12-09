@@ -95,7 +95,7 @@ pprint(list((k, v[0].shape) for k, v in weights.items()))
 # The training session. If GPU is available, it chooses CUDA
 # otherwise it falls back to CPU.
 
-device = "cuda" if get_device() == 'GPU' else 'cpu'
+device = "cuda" if get_device().upper() == 'GPU' else 'cpu'
 
 print("device=%r get_device()=%r" % (device, get_device()))
 

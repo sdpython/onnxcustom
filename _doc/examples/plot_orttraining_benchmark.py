@@ -130,7 +130,7 @@ print(text)
 # if GPU is available
 # +++++++++++++++++++
 
-if get_device() == 'GPU':
+if get_device().upper() == 'GPU':
 
     train_session = OrtGradientOptimizer(
         onx_train, list(weights), device='cuda', learning_rate=5e-4,
@@ -166,7 +166,7 @@ train_session = OrtGradientOptimizer(
 
 benches.append(benchmark(lr, train_session, name='LR-CPU'))
 
-if get_device() == 'GPU':
+if get_device().upper() == 'GPU':
 
     train_session = OrtGradientOptimizer(
         onx_train, list(weights), device='cuda', learning_rate=1e-4,
@@ -179,7 +179,7 @@ if get_device() == 'GPU':
 # GPU profiling
 # +++++++++++++
 
-if get_device() == 'GPU':
+if get_device().upper() == 'GPU':
     ps = profile(lambda: benchmark(nn, train_session, name='LR-GPU'))[0]
     root, nodes = profile2graph(ps, clean_text=clean_name)
     text = root.to_text()

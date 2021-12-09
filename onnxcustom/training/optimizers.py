@@ -337,11 +337,12 @@ class OrtGradientOptimizer(BaseEstimator):
             name: {} for name in weights_to_train}
 
         session_options = SessionOptions()
-        session_options.use_deterministic_compute = True
+        # session_options.use_deterministic_compute = True
 
-        if device == 'cpu':
+        lower_device = device.lower()
+        if lower_device == 'cpu':
             provider = ['CPUExecutionProvider']
-        elif device.startswith("cuda"):  # pragma: no cover
+        elif lower_device.startswith("cuda") or lower_device == 'gpu':  # pragma: no cover
             provider = ['CUDAExecutionProvider']
         else:
             raise ValueError(  # pragma: no cover
