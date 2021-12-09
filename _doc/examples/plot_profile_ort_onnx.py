@@ -48,6 +48,7 @@ print(code_optimisation())
 
 filename = "onnx_to_profile.onnx"
 
+
 if not os.path.exists(filename):
     print("Generate a graph for %r." % filename)
     X = numpy.random.randn(1000, 10).astype(numpy.float64)
@@ -183,6 +184,8 @@ df
 
 gr_dur = df[['dur', "args_op_name"]].groupby(
     "args_op_name").sum().sort_values('dur')
+total = gr_dur['dur'].sum()
+gr_dur /= total
 gr_n = df[['dur', "args_op_name"]].groupby(
     "args_op_name").count().sort_values('dur')
 gr_n = gr_n.loc[gr_dur.index, :]
@@ -199,6 +202,8 @@ fig.suptitle(os.path.split(filename)[-1])
 
 gr_dur = df[['dur', "args_op_name", "name"]].groupby(
     ["args_op_name", "name"]).sum().sort_values('dur')
+total = gr_dur['dur'].sum()
+gr_dur /= total
 if gr_dur.shape[0] > 30:
     gr_dur = gr_dur.tail(n=30)
 
