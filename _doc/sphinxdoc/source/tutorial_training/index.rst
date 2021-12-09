@@ -8,7 +8,7 @@ The tutorial assumes there exist an ONNX graph saved and
 introduces two ways to train this model assuming a gradient can
 be computed for every node of this graph.
 
-First part looks into the first API of :epkg:`onnxruntime-runtime`
+First part looks into the first API of :epkg:`onnxruntime-training`
 based on class :epkg:`TrainingSession`. This class assumes the loss
 function is part of the graph to train. The tutorial shows how to
 do that.

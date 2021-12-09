@@ -59,25 +59,21 @@ OrtAllocatorType
 
 .. autoclass:: onnxruntime.capi._pybind_state.OrtAllocatorType
     :members:
-    :undoc-members:
 
 ExecutionOrder
 ~~~~~~~~~~~~~~
 
 .. autoclass:: onnxruntime.capi._pybind_state.ExecutionOrder
     :members:
-    :undoc-members:
 
 ExecutionMode
 ~~~~~~~~~~~~~
 
 .. autoclass:: onnxruntime.capi._pybind_state.ExecutionMode
     :members:
-    :undoc-members:
 
 GraphOptimizationLevel
 ~~~~~~~~~~~~~~~~~~~~~~
 
 .. autoclass:: onnxruntime.capi._pybind_state.GraphOptimizationLevel
     :members:
-    :undoc-members:

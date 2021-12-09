@@ -90,7 +90,7 @@ class OrtDataLoader:
         Iterates over the datasets by drawing
         *batch_size* consecutive observations.
         This iterator is slow as it copies the data of every
-        batch. The function yields :eplg:`OrtValue`.
+        batch. The function yields :epkg:`OrtValue`.
         """
         if self.device not in ('Cpu', 'cpu'):
             raise RuntimeError(
@@ -113,7 +113,7 @@ class OrtDataLoader:
         Iterates over the datasets by drawing
         *batch_size* consecutive observations.
         This iterator is slow as it copies the data of every
-        batch. The function yields :eplg:`OrtValue`.
+        batch. The function yields :epkg:`OrtValue`.
         """
         N = 0
         b = len(self) - self.batch_size

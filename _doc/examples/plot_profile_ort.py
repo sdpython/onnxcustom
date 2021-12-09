@@ -1,5 +1,5 @@
 """
-.. profile-ort-api:
+.. _l-profile-ort-api:
 
 Profile onnxruntime execution
 =============================

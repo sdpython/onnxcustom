@@ -28,7 +28,6 @@ OrtSparseFormat
 
 .. autoclass:: onnxruntime.capi._pybind_state.OrtSparseFormat
     :members:
-    :undoc-members:
 
 SparseCooView
 +++++++++++++

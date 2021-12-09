@@ -166,6 +166,9 @@ epkg_dictionary.update({
     'OnnxPipeline':
         'http://www.xavierdupre.fr/app/mlprodict/helpsphinx/mlprodict/'
         'sklapi/onnx_pipeline.html',
+    'ORTModule':
+        'http://www.xavierdupre.fr/app/onnxcustom/helpsphinx/'
+        'api/onnxruntime_python/training_torch.html#ortmodule',
     'OrtModuleGraphBuilder':
         'http://www.xavierdupre.fr/app/onnxcustom/helpsphinx/onnxmd/'
         'onnxruntime_python/training_partial.html'
@@ -203,6 +206,9 @@ epkg_dictionary.update({
         'http://www.xavierdupre.fr/app/onnxcustom/helpsphinx/onnxmd/'
         'onnxruntime_python/training_partial.html'
         "#trainingagent",
+    'TrainingSession':
+        'http://www.xavierdupre.fr/app/onnxcustom/helpsphinx/api/'
+        'onnxruntime_python/training.html#onnxruntime.TrainingSession',
     'TreeEnsembleRegressor':
         'https://github.com/onnx/onnx/blob/master/docs/Operators-ml.md'
         '#ai.onnx.ml.TreeEnsembleRegressor',

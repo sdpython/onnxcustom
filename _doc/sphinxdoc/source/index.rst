@@ -58,7 +58,8 @@ Among the tools this package implements, you may find:
   (see `Stochastic Gradient Descent
   <https://scikit-learn.org/stable/modules/sgd.html>`_)
   but based on :epkg:`onnxruntime-training` and able to train an CPU and GPU
-  (see example :ref:`l-orttraining-nn-gpu`).
+  (see examples :ref:`l-orttraining-nn-gpu` or
+  :ref:`l-orttraining-nn-gpu-fwbw`).
 
 **Contents**
 

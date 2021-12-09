@@ -39,15 +39,18 @@ C classes, frequent types
 
 .. autoclass:: onnxruntime.capi._pybind_state.OrtMemType
     :members:
-    :undoc-members:
 
 Rare functions
 ++++++++++++++
+
+.. autofunction:: onnxruntime.capi._pybind_state.clear_training_ep_instances
+
+.. autofunction:: onnxruntime.capi._pybind_state.create_and_register_allocator
 
 .. autofunction:: onnxruntime.capi._pybind_state.enable_telemetry_events
 
 .. autofunction:: onnxruntime.capi._pybind_state.disable_telemetry_events
 
-.. autofunction:: onnxruntime.capi._pybind_state.create_and_register_allocator
+.. autofunction:: onnxruntime.capi._pybind_state.get_available_providers
 
 .. autofunction:: onnxruntime.capi._pybind_state._register_provider_lib

@@ -9,7 +9,7 @@ This example rewrites :ref:`l-orttraining-linreg` with another
 optimizer :class:`OrtGradientForwardBackwardOptimizer
 <onnxcustom.training.optimizers_partial.OrtGradientForwardBackwardOptimizer>`.
 This optimizer relies on class :epkg:`TrainingAgent` from
-:epkg:`onnxruntime-trainin`. In this case, the user does not have to
+:epkg:`onnxruntime-training`. In this case, the user does not have to
 modify the graph to compute the error. The optimizer
 builds another graph which returns the gradient of every weights
 assuming the gradient on the output is known. Finally, the optimizer

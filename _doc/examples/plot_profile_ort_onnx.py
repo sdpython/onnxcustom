@@ -1,5 +1,5 @@
 """
-.. _profile-ort-onnx:
+.. _l-profile-ort-onnx:
 
 Profiling of ONNX graph with onnxruntime
 ========================================
