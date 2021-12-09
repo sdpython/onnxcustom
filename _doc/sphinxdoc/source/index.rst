@@ -66,7 +66,8 @@ Among the tools this package implements, you may find:
     :maxdepth: 1
 
     tutorial_onnx/index
-    tutorial/index
+    tutorial_skl/index
+    tutorial_bench/index
     tutorial_training/index
     api/apis
     onnxmd/index

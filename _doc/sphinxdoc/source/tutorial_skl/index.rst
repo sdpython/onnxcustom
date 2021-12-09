@@ -1,6 +1,6 @@
 
-ONNX and Standard Machine Learning Tutorial
-===========================================
+scikit-learn to ONNX Tutorial
+=============================
 
 .. index:: tutorial
 
@@ -17,7 +17,6 @@ involving operator not actually implemented in
     tutorial_2_new_converter
     tutorial_3_new_operator
     tutorial_4_complex
-    tutorial_7_benchmark
 
 The tutorial was tested with following version:
 
