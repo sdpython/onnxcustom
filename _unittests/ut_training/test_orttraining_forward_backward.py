@@ -45,10 +45,6 @@ class TestOrtTrainingForwardBackward(ExtTestCase):
         # starts testing
         self.assertRaise(
             lambda: OrtGradientForwardBackward(
-                onx, debug=True, enable_logging=True, weights_to_train=[]),
-            ValueError)
-        self.assertRaise(
-            lambda: OrtGradientForwardBackward(
                 onx, debug=True, enable_logging=True, providers=['NONE']),
             ValueError)
         forback = OrtGradientForwardBackward(

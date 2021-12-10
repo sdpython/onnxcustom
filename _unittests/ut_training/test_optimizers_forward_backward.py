@@ -5,6 +5,7 @@
 import unittest
 import io
 import pickle
+import logging
 from pyquickhelper.pycode import ExtTestCase, ignore_warnings
 import numpy
 from onnx.helper import set_model_props
@@ -17,6 +18,7 @@ from mlprodict.onnx_conv import to_onnx
 from onnxcustom import __max_supported_opset__ as opset
 from onnxcustom.training.sgd_learning_rate import LearningRateSGDRegressor
 from onnxcustom.utils.onnx_helper import onnx_rename_weights
+from onnxcustom.training import ConvergenceError
 try:
     from onnxruntime import TrainingSession
 except ImportError:
@@ -84,6 +86,54 @@ class TestOptimizersForwardBackward(ExtTestCase):
         losses = train_session.train_losses_
         self.assertGreater(len(losses), 1)
         self.assertFalse(any(map(numpy.isnan, losses)))
+
+    @unittest.skipIf(TrainingSession is None, reason="not training")
+    def test_ort_gradient_optimizers_use_numpy_exc(self):
+        from onnxcustom.training.optimizers_partial import OrtGradientForwardBackwardOptimizer
+        X, y = make_regression(  # pylint: disable=W0632
+            100, n_features=2, bias=2, random_state=0)
+        X[:10, :] = 0
+        X = X.astype(numpy.float32)
+        y = (X.sum(axis=1) + y / 1000).astype(numpy.float32)
+        X_train, _, y_train, __ = train_test_split(X, y)
+        reg = LinearRegression()
+        reg.fit(X_train, y_train)
+        reg.coef_ = reg.coef_.reshape((1, -1))
+        onx = to_onnx(reg, X_train, target_opset=opset,
+                      black_op={'LinearRegressor'})
+        # onx = onnx_rename_weights(onx)
+        set_model_props(onx, {'info': 'unit test'})
+        inits = ['coef', 'intercept']
+        train_session = OrtGradientForwardBackwardOptimizer(
+            onx, inits, enable_logging=False, learning_rate=1e3)
+        self.assertRaise(
+            lambda: train_session.fit(X, y, use_numpy=True),
+            ConvergenceError)
+
+    @unittest.skipIf(TrainingSession is None, reason="not training")
+    def test_ort_gradient_optimizers_use_numpy_log(self):
+        from onnxcustom.training.optimizers_partial import OrtGradientForwardBackwardOptimizer
+        X, y = make_regression(  # pylint: disable=W0632
+            100, n_features=2, bias=2, random_state=0)
+        X[:10, :] = 0
+        X = X.astype(numpy.float32)
+        y = (X.sum(axis=1) + y / 1000).astype(numpy.float32)
+        X_train, _, y_train, __ = train_test_split(X, y)
+        reg = LinearRegression()
+        reg.fit(X_train, y_train)
+        reg.coef_ = reg.coef_.reshape((1, -1))
+        onx = to_onnx(reg, X_train, target_opset=opset,
+                      black_op={'LinearRegressor'})
+        # onx = onnx_rename_weights(onx)
+        set_model_props(onx, {'info': 'unit test'})
+        inits = ['coef', 'intercept']
+        train_session = OrtGradientForwardBackwardOptimizer(
+            onx, inits, enable_logging=True)
+        res, logs = self.assertLogging(
+            lambda: train_session.fit(X, y, use_numpy=True),
+            'onnxcustom', level=logging.DEBUG)
+        self.assertTrue(res is train_session)
+        self.assertIn("[OrtGradientForwardBackwardOptimizer._iteration]", logs)
 
     @unittest.skipIf(TrainingSession is None, reason="not training")
     def test_ort_gradient_optimizers_use_numpy_pickle(self):

@@ -10,6 +10,7 @@ when executing with :epkg:`onnxruntime`.
 .. toctree::
     :maxdepth: 2
 
+    tutorial_op
     tutorial_benchmark
     tutorial_profile
     tutorial_training
