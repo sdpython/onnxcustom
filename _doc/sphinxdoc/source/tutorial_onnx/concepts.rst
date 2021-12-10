@@ -209,22 +209,43 @@ Sparse Tensor
 ~~~~~~~~~~~~~
 
 Sparse tensors are useful to represent arrays having many null coefficients.
-ONNX supports 2D sparse tensor.
+ONNX supports 2D sparse tensor. Class :ref:`l-onnx-sparsetensor-proto`
+defines attributes `dims`, `indices` and `values`.
 
 Other types
 ~~~~~~~~~~~
 
 In addition to tensors and sparse tensors, ONNX supports sequences of tensors,
-map of tensors, sequences of map of tensors.
+map of tensors, sequences of map of tensors through types
+:ref:`l-onnx-sequence-proto`, :ref:`l-onnx-map-proto`.
 
 What is an opset version?
 +++++++++++++++++++++++++
+
+The opset is mapped to the version of the :epkg:`onnx` package.
+It is incremented every time the minor version increases.
+Every version brings updated or new operators.
+Pages :ref:`l-md-change-logs` keeps tracks of these changes.
+The current version is the following.
 
 .. runpython::
     :showcode:
 
     import onnx
     print(onnx.__version__, onnx.defs.onnx_opset_version())
+
+An opset is also attached to every ONNX graphs. It is a global
+information and defines the version of all operators inside the graph.
+Operator *Add* was updated in version 6, 7, 13 and 14. If the
+graph opset is 15, it means operator *Add* follows specifications
+version 14. If the graph opset is 12, then operator *Add* follows
+specifications version 7. An operator in a graph follows its most
+recent update below the global graph opset.
+
+A graph may include operators from several domains, `ai.onnx` and
+`ai.onnx.ml` for example. In that case, the graph must defines a
+global opset for every domain. The rule is applied to every
+operators within the same domain.
 
 Subgraphs
 +++++++++

@@ -1,4 +1,6 @@
 
+.. _l-md-change-logs:
+
 Change Logs
 ===========
 
