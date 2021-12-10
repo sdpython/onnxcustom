@@ -186,4 +186,8 @@ speedup(df[~df.orient].pivot('dim', 'name', 'average')).plot(ax=ax[1])
 ax[1].set_title("LeakyRelu speedup, shape=(dim,%d)"
                 "\nThe higher the better" % N)
 
+####################################
+# This kind of benchmark helps finding better implementation
+# of operator runtime.
+
 # plt.show()
