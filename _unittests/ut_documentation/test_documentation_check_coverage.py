@@ -27,7 +27,7 @@ class TestDocumentationCheckCoverage(ExtTestCase):
         if len(done) != len(found):
             missing = found - done
             raise AssertionError(
-                "Following example were not tested:\n%s."
+                "Following examples were not tested:\n%s."
                 "" % "\n".join(sorted(missing)))
 
 

@@ -43,6 +43,8 @@ class TestDocumentationExampleU_(ExtTestCase):
         for name in sorted(found):
             if name < "plot_u":
                 continue
+            if 'benchmark' in name:
+                continue
             if not name.startswith("plot_") or not name.endswith(".py"):
                 continue
 
