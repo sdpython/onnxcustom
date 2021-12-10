@@ -66,12 +66,8 @@ Among the tools this package implements, you may find:
 .. toctree::
     :maxdepth: 1
 
-    tutorial_onnx/index
-    tutorial_skl/index
-    tutorial_bench/index
-    tutorial_training/index
+    tutorials
     api/apis
-    onnxmd/index
     gyexamples/index
     all_notebooks
     license

@@ -170,7 +170,7 @@ class OrtGradientForwardBackwardOptimizer(BaseEstimator):
         if self.enable_logging:
             self._logger = logging.getLogger("onnxcustom")
         else:
-            self._logger = None  # pragma: no cover
+            self._logger = None
 
     def fit(self, X, y, X_val=None, y_val=None, use_numpy=False):
         """
@@ -352,7 +352,7 @@ class OrtGradientForwardBackwardOptimizer(BaseEstimator):
                 shape=c_ortvalue.shape(),
                 buffer_ptr=c_ortvalue.data_ptr())
         else:
-            raise TypeError(
+            raise TypeError(  # pragma: no cover
                 "Unable to bind type %r for name %r." % (
                     type(c_ortvalue), name))
 

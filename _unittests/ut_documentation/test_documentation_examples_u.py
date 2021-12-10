@@ -108,6 +108,11 @@ class TestDocumentationExample_u(ExtTestCase):
                 finally:
                     if sys.path[0] == fold:
                         del sys.path[0]
+                with open(
+                        os.path.join(os.path.dirname(__file__),
+                                     "_test_example.txt"), "a",
+                        encoding='utf-8') as f:
+                    f.write(name + "\n")
                 tested += 1
         if tested == 0:
             raise RuntimeError("No example was tested.")

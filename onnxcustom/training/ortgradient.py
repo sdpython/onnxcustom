@@ -116,7 +116,7 @@ class OrtGradientForwardBackward:
                 "input_names and provider_options must have the same length.")
 
         if list(sorted(self.weights_to_train)) != self.weights_to_train:
-            raise ValueError(
+            raise ValueError(  # pragma: no cover
                 "List of weights to train must be sorted but %r is not. "
                 "You shoud use function onnx_rename_weights to do that "
                 "before calling this class." % self.weights_to_train)
@@ -181,7 +181,7 @@ class OrtGradientForwardBackward:
 
             if (len(config.initializer_names) !=  # noqa
                     len(config.initializer_names_to_train)):
-                raise RuntimeError(
+                raise RuntimeError(  # pragma: no cover
                     "Unable to automatically fill "
                     "OrtModuleGraphBuilderConfiguration, mismatch between "
                     "%r and %r (initializer_names=%r)." % (
@@ -278,8 +278,8 @@ class OrtGradientForwardBackward:
         if exc:
             raise RuntimeError(
                 "Unable to find name %r in %r." % (
-                    name, list(
-                        i.name for i in self.onnx_model.graph.initializer)))
+                    name,
+                    list(i.name for i in self.onnx_model.graph.initializer)))
         return None
 
     def _create_onnx_graphs(self):
@@ -479,7 +479,7 @@ class OrtGradientForwardBackward:
         })
 
         if len(kwargs['_onx_inp']) != len(kwargs['_onx_out']):
-            raise RuntimeError(
+            raise RuntimeError(  # pragma: no cover
                 "Gradient input and output are inconsistant: "
                 "%r != %r" % (kwargs['_onx_inp'], kwargs['_onx_out']))
         return kwargs
@@ -561,7 +561,7 @@ class OrtGradientForwardBackwardFunction:
             vect.push_back(C_OrtValue.ortvalue_from_numpy(t, dev))
         if debug:
             if len(vect) != len(tensors):
-                raise RuntimeError(
+                raise RuntimeError(  # pragma: no cover
                     "Unexpected array length %d != %d (len(devices)=%d)." % (
                         len(vect), len(tensors), len(devices)))
             _validate_(vect)

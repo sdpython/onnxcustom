@@ -227,7 +227,7 @@ class OrtGradientOptimizer(BaseEstimator):
                 shape=c_ortvalue.shape,
                 buffer_ptr=c_ortvalue.__array_interface__['data'][0])
         else:
-            raise TypeError(
+            raise TypeError(  # pragma: no cover
                 "Unable to bind type %r for name %r." % (
                     type(c_ortvalue), name))
 

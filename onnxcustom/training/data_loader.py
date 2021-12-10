@@ -93,8 +93,8 @@ class OrtDataLoader:
         batch. The function yields :epkg:`OrtValue`.
         """
         if self.device not in ('Cpu', 'cpu'):
-            raise RuntimeError(
-                "Only CPU device is allowed if numpy array are requested "
+            raise RuntimeError(  # pragma: no cover
+                "Only CPU device is allowed if numpy arrays are requested "
                 "not %r." % self.device)
         N = 0
         b = len(self) - self.batch_size

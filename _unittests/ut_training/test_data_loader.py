@@ -57,6 +57,13 @@ class TestDataLoader(ExtTestCase):
             data.desc,
             [((100, 10), numpy.float64), ((100, 1), numpy.float64)])
 
+    def test_ort_data_loader_numpy_exc(self):
+        X, y = make_regression(  # pylint: disable=W0632
+            100, n_features=10, bias=2)
+        self.assertRaise(
+            lambda: OrtDataLoader(X, y, batch_size=5, device='cpu2'),
+            Exception)
+
     def test_ort_data_loader_pickle(self):
         X, y = make_regression(  # pylint: disable=W0632
             100, n_features=10, bias=2)

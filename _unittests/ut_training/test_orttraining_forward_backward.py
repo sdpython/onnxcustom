@@ -43,8 +43,17 @@ class TestOrtTrainingForwardBackward(ExtTestCase):
                       black_op={'LinearRegressor'})
 
         # starts testing
+        self.assertRaise(
+            lambda: OrtGradientForwardBackward(
+                onx, debug=True, enable_logging=True, weights_to_train=[]),
+            ValueError)
+        self.assertRaise(
+            lambda: OrtGradientForwardBackward(
+                onx, debug=True, enable_logging=True, providers=['NONE']),
+            ValueError)
         forback = OrtGradientForwardBackward(
             onx, debug=True, enable_logging=True)
+        self.assertEqual(repr(forback), "OrtGradientForwardBackward(...)")
         self.assertTrue(hasattr(forback, 'cls_type_'))
         self.assertEqual(forback.cls_type_._onx_inp,
                          ['X', 'coef', 'intercept'])
