@@ -35,8 +35,8 @@ from the learning framework used to build the model.
 .. contents::
     :local:
 
-Input, Output, Node, Initializer
-++++++++++++++++++++++++++++++++
+Input, Output, Node, Initializer, Attributes
+++++++++++++++++++++++++++++++++++++++++++++
 
 Building an ONNX graph means implementing a function
 with the ONNX language or more precisely the :ref:`l-onnx-operators`.
@@ -81,6 +81,11 @@ it be turned into a constant and stored into the graph.
 Visually, this graph would look like this
 (initializers are hidden). This graph was obtained with this
 code :ref:`l-onnx-linear-regression-onnx-api-init`.
+
+An **attribute** is a fixed parameter of an operator. Operator :epkg:`Gemm`
+has four attributes, *alpha*, *beta*, *transA*, *transB*. Unless the runtime
+allows it through its API, once it has loaded the ONNX graph, these values
+cannot be changed and remain frozen for all the predictions.
 
 .. image:: images/linreg2.png
 
@@ -210,14 +215,14 @@ Sparse Tensor
 
 Sparse tensors are useful to represent arrays having many null coefficients.
 ONNX supports 2D sparse tensor. Class :ref:`l-onnx-sparsetensor-proto`
-defines attributes `dims`, `indices` and `values`.
+defines attributes `dims`, `indices` (int64) and `values`.
 
 Other types
 ~~~~~~~~~~~
 
 In addition to tensors and sparse tensors, ONNX supports sequences of tensors,
 map of tensors, sequences of map of tensors through types
-:ref:`l-onnx-sequence-proto`, :ref:`l-onnx-map-proto`.
+:ref:`l-onnx-sequence-proto`, :ref:`l-onnx-map-proto`. They are rarely used.
 
 What is an opset version?
 +++++++++++++++++++++++++

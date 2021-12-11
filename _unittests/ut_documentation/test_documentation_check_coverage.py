@@ -9,7 +9,7 @@ from pyquickhelper.pycode import ExtTestCase
 
 class TestDocumentationCheckCoverage(ExtTestCase):
 
-    def test_notebook_artificiel(self):
+    def test_examples_coverage(self):
         with open(
                 os.path.join(os.path.dirname(__file__),
                              "_test_example.txt"), "r", encoding='utf-8') as f:

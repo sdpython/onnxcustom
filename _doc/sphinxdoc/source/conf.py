@@ -156,6 +156,9 @@ epkg_dictionary.update({
     'C_OrtValue':
         'http://www.xavierdupre.fr/app/onnxcustom/helpsphinx/'
         'onnxmd/onnxruntime_python/ortvalue.html#c-class-ortvaluevector',
+    'Gemm':
+        'http://www.xavierdupre.fr/app/onnxcustom/helpsphinx/onnxmd/'
+        'onnx_docs/Operators.html#a-name-gemm-a-a-name-gemm-gemm-a',
     'InferenceSession':
         'http://www.xavierdupre.fr/app/onnxcustom/helpsphinx/onnxmd/'
         'onnxruntime_python/inference.html'

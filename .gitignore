@@ -53,3 +53,10 @@ _doc/examples/plot_*.png
 _doc/examples/plot_l*.xlsx
 _doc/examples/plot_*.csv
 _doc/examples/summary.csv
+_unittests/ut_documentation/bench.png
+_unittests/ut_documentation/data.csv
+_unittests/ut_documentation/_test_example.txt
+_unittests/ut_documentation/plot_linear_regression.png
+_unittests/ut_documentation/summary.csv
+_unittests/ut_documentation/_test_example.txt
+_unittests/ut_documentation/_test_example.txt
