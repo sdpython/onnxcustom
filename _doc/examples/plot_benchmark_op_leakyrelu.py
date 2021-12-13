@@ -6,7 +6,7 @@ Benchmark operator LeakyRelu
 
 The operator `LeakyRelu` is equivalent to the function:
 :math:`LeayRelu(x) = \\begin{array}{l} x \\text{ if } x > 0  \\\\
-\\alpha x \\text{otherwise} \\endarray`. But it could be rewritten into
+\\alpha x \\text{otherwise} \\end{array}`. But it could be rewritten into
 the following decomposition
 :math:`LeayRelu(x) = x (\\indicatrice{x} + \\alpha (1 - \\indicatrice{x})) =
 x ((1 - \\alpha) \\indicatrice{x} + \\alpha)`. Let's compare the
@@ -109,8 +109,8 @@ print(onnx_simple_text_plot(onx_leaky_dec_greater))
 # Visually
 
 plot_onnxs(onx_leaky, onx_leaky_dec, onx_leaky_dec_greater,
-           title=["One operator", "Decomposed LeakyRelu",
-                  "Decomposed LeakyRelu Greater"])
+           title=["One operator", "Decomposed\nLeakyRelu",
+                  "Decomposed\nLeakyRelu Greater"])
 
 
 ############################################
