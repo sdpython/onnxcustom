@@ -1,14 +1,16 @@
 """
 .. _benchmark-inference:
 
-Benchmark inference
-===================
+Benchmark inference for a linear regression
+===========================================
 
 This short code compares the execution of a couple of runtime
 for inference including :epkg:`onnxruntime`. This benchmark
 leverages the example `Benchmark Linear Regression
 <http://www.xavierdupre.fr/app/mlprodict/helpsphinx/
 gyexamples/plot_opml_linear_regression.html>`_.
+This simple model is useful to measure unsignificant cost
+for large models.
 
 .. contents::
     :local:

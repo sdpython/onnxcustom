@@ -1,8 +1,8 @@
 """
 .. _benchmark-ort-onnx-graph-opt:
 
-Benchmark graph optimization with onnxruntime
-=============================================
+Benchmark onnxruntime optimization
+==================================
 
 :epkg:`onnxruntime` does optimize the ONNX graph before
 running the inference. It tries for example to fuse a matrix multiplication

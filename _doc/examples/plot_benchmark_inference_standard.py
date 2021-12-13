@@ -1,8 +1,8 @@
 """
 .. _benchmark-inference-sklearn:
 
-Benchmark inference for standard models
-=======================================
+Benchmark inference for scikit-learn models
+===========================================
 
 This short code compares the execution of a couple of runtime
 for inference including :epkg:`onnxruntime`. It uses examples

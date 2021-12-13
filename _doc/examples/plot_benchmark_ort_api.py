@@ -1,8 +1,8 @@
 """
 .. _benchmark-ort-api:
 
-Benchmark onnxruntime API
-=========================
+Benchmark onnxruntime API: run or run_with_iobinding
+====================================================
 
 This short code compares different ways to call onnxruntime API.
 You may profile this code:
