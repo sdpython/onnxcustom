@@ -315,6 +315,8 @@ These outputs will be the output of the operator `If`.
     dot = OnnxInference(model_def).to_dot()
     print("DOT-SECTION", dot)
 
+.. _l-operator-scan-onnx-tutorial:
+
 Scan
 ~~~~
 
@@ -386,10 +388,47 @@ Second mechanism concatenates tensors into a sequence of tensors.
 Extensibility
 +++++++++++++
 
-Shape Inference
-+++++++++++++++
+ONNX defines a list of operators as the standard: :ref:`l-onnx-operators`.
+It extends this list with other operators specific to standard
+machine learning :ref:`l-onnx-operators-ml`. However it is very possible
+to define your own operators under this domain or a new one.
+:epkg:`onnxruntime` defines custom operators to improve inference
+performance: :epkg:`Contrib Operators`. Every node has a type, a name,
+named inputs and outputs, and attributes. As long as a node is described
+under these constraints, a node can be added to any ONNX graph.
+
+One example is the operator CDist. Notebook `Pairwise distances with ONNX (pdist)
+<http://www.xavierdupre.fr/app/mlprodict/helpsphinx/notebooks/onnx_pdist.html>`_
+goes into the details of it. Pairwise distances, as shown in section
+:ref:`l-operator-scan-onnx-tutorial`, can be implemented with operator
+Scan. However, a dedicated operator called CDist is proved significantly
+faster, significantly to make the effort to implement a dedicated runtime 
+for it.
+
+Shape (and Type) Inference
+++++++++++++++++++++++++++
+
+Knowning the shapes of results is not necessary to execute an ONNX graph
+but this information can be used to make it faster. If you have the following
+graph:
+
+::
+
+    Add(x, y) -> z
+    Abs(z) -> w
+
+If *x* and *y* have the same shape, then *z* and *w* also have the same
+shape. Knowing that, it is possible to reuse the buffer allocated for *z*,
+to compute the absolute value of *w* inplace. Shape inference helps the
+runtime to manage the memory and therefore to be more efficient.
+
+ONNX package can compute in most of the case the output shape
+knowing the input shape for every standard operator. It cannot
+obviously do that for any custom operator outside of the official
+list.
 
 Tools
 +++++
 
-netron
+:epkg:`netron` is very useful to help visualize ONNX graphs.
+That's the only without programming.
