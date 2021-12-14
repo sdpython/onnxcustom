@@ -159,6 +159,9 @@ epkg_dictionary.update({
     'Gemm':
         'http://www.xavierdupre.fr/app/onnxcustom/helpsphinx/onnxmd/'
         'onnx_docs/Operators.html#a-name-gemm-a-a-name-gemm-gemm-a',
+    'If':
+        'http://www.xavierdupre.fr/app/onnxcustom/helpsphinx/onnxmd/'
+        'onnx_docs/Operators.html#a-name-if-a-a-name-if-if-a',
     'InferenceSession':
         'http://www.xavierdupre.fr/app/onnxcustom/helpsphinx/onnxmd/'
         'onnxruntime_python/inference.html'
@@ -166,6 +169,9 @@ epkg_dictionary.update({
     'IOBinding':
         'http://www.xavierdupre.fr/app/onnxruntime_training/'
         'helpsphinx/api/tensors.html#iobinding',
+    'Loop':
+        'http://www.xavierdupre.fr/app/onnxcustom/helpsphinx/onnxmd/'
+        'onnx_docs/Operators.html#a-name-loop-a-a-name-loop-loop-a',
     'OnnxPipeline':
         'http://www.xavierdupre.fr/app/mlprodict/helpsphinx/mlprodict/'
         'sklapi/onnx_pipeline.html',
@@ -199,6 +205,9 @@ epkg_dictionary.update({
     'RunOptions':
         'http://www.xavierdupre.fr/app/onnxcustom/helpsphinx/onnxmd/'
         'onnxruntime_python/inference.html#runoptions',
+    'Scan':
+        'http://www.xavierdupre.fr/app/onnxcustom/helpsphinx/onnxmd/'
+        'onnx_docs/Operators.html#a-name-scan-a-a-name-scan-scan-a',
     'SessionOptions':
         'http://www.xavierdupre.fr/app/onnxcustom/helpsphinx/onnxmd/'
         'onnxruntime_python/inference.html#sessionoptions',

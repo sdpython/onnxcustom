@@ -111,7 +111,8 @@ class OrtGradientForwardBackwardOptimizer(BaseEstimator):
         Returns the trained weights.
         """
         if not hasattr(self, 'train_state_'):
-            raise AttributeError("Method fit must be called before.")
+            raise AttributeError(  # pragma: no cover
+                "Method fit must be called before.")
         return self.train_state_
 
     def get_state(self):
@@ -151,7 +152,7 @@ class OrtGradientForwardBackwardOptimizer(BaseEstimator):
                 self.train_state_.append(v)
                 self.train_state_numpy_.append(None)
             else:
-                raise TypeError(
+                raise TypeError(  # pragma: no cover
                     "Unexpected type %r for state %r." % (
                         type(v), i))
 
@@ -225,7 +226,7 @@ class OrtGradientForwardBackwardOptimizer(BaseEstimator):
         if not self.warm_start:
             state = self.get_full_state()
             if len(state) != len(self.input_names_):
-                raise RuntimeError(
+                raise RuntimeError(  # pragma: no cover
                     "Length mismatch %r != %r." % (
                         len(state), len(self.input_names_)))
             new_state = []
@@ -323,7 +324,7 @@ class OrtGradientForwardBackwardOptimizer(BaseEstimator):
                 shape=c_ortvalue.shape,
                 buffer_ptr=c_ortvalue.__array_interface__['data'][0])
         else:
-            raise TypeError(
+            raise TypeError(  # pragma: no cover
                 "Unable to bind type %r for name %r." % (
                     type(c_ortvalue), name))
 
@@ -412,7 +413,7 @@ class OrtGradientForwardBackwardOptimizer(BaseEstimator):
             gradient = self.train_function_.backward([loss_gradient])
 
             if len(gradient) != len(state):
-                raise RuntimeError(
+                raise RuntimeError(  # pragma: no cover
                     "gradient and state should have the same length but "
                     "%r != %r." % (len(gradient), len(state)))
 

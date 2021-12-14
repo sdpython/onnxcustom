@@ -252,8 +252,134 @@ A graph may include operators from several domains, `ai.onnx` and
 global opset for every domain. The rule is applied to every
 operators within the same domain.
 
-Subgraphs
-+++++++++
+Subgraphs, tests and loops
+++++++++++++++++++++++++++
+
+:epkg:`ONNX` implements tests and loops. They all take another ONNX
+graphs as an attribute. These structures are usually slow and complex.
+It is better to avoid them if possible.
+
+If
+~~
+
+Operator :epkg:`If` executes
+one of the two graphs depending one the condition evaluation.
+
+::
+
+    If(condition) then
+        exeute this ONNX graph (`then_branch`)
+    else
+        exeute this ONNX graph (`else_branch`)
+
+Those two graphs can use any result already computed in the
+graph and must produce the exact same number of outputs.
+These outputs will be the output of the operator `If`.
+
+.. gdot::
+    :script: DOT-SECTION
+
+    import numpy
+    from skl2onnx.common.data_types import FloatTensorType
+    from skl2onnx.algebra.onnx_ops import (
+        OnnxAdd, OnnxIf, OnnxSub, OnnxGreater, OnnxReduceSum)
+    from mlprodict.onnxrt import OnnxInference
+
+    opv = 15
+    x1 = numpy.array([[0, 3], [7, 0]], dtype=numpy.float32)
+    x2 = numpy.array([[1, 0], [2, 0]], dtype=numpy.float32)
+
+    node = OnnxAdd(
+        'x1', 'x2', output_names=['absxythen'], op_version=opv)
+    then_body = node.to_onnx(
+        {'x1': x1, 'x2': x2}, target_opset=opv,
+        outputs=[('absxythen', FloatTensorType())])
+    node = OnnxSub(
+        'x1', 'x2', output_names=['absxyelse'], op_version=opv)
+    else_body = node.to_onnx(
+        {'x1': x1, 'x2': x2}, target_opset=opv,
+        outputs=[('absxyelse', FloatTensorType())])
+    del else_body.graph.input[:]
+    del then_body.graph.input[:]
+
+    cond = OnnxGreater(
+        OnnxReduceSum('x1', op_version=opv),
+        OnnxReduceSum('x2', op_version=opv),
+        op_version=opv)
+    ifnode = OnnxIf(cond, then_branch=then_body.graph,
+                    else_branch=else_body.graph,
+                    op_version=opv, output_names=['y'])
+    model_def = ifnode.to_onnx(
+        {'x1': x1, 'x2': x2}, target_opset=opv,
+        outputs=[('y', FloatTensorType())])
+    dot = OnnxInference(model_def).to_dot()
+    print("DOT-SECTION", dot)
+
+Scan
+~~~~
+
+Operator :epkg:`Scan` implements a loop with a fixed number of iterations.
+It loops over the rows (or any other dimension) of the inputs and concatenate
+the outputs along the same axis. Let's see an example which implements
+pairwise distances: :math:`M(i,j) = \norm{X_i - X_j}^2`.
+
+.. gdot::
+    :script: DOT-SECTION
+
+    from collections import OrderedDict
+    import numpy
+    from skl2onnx.common.data_types import FloatTensorType
+    from skl2onnx.algebra.onnx_ops import (
+        OnnxIdentity, OnnxSub, OnnxReduceSumSquare, OnnxScan,
+        OnnxSqueezeApi11)
+    from mlprodict.onnxrt import OnnxInference
+
+    def squareform_pdist(X, op_version=None, **kwargs):
+        opv = op_version
+        diff = OnnxSub('next_in', 'next', output_names=[
+                       'diff'], op_version=opv)
+        id_next = OnnxIdentity('next_in', output_names=[
+                               'next_out'], op_version=opv)
+        norm = OnnxReduceSumSquare(
+            diff, output_names=['norm'], axes=[1], op_version=opv)
+        flat = OnnxSqueezeApi11(
+            norm, output_names=['scan_out'], axes=[1], op_version=opv)
+        scan_body = id_next.to_onnx(
+            OrderedDict([('next_in', FloatTensorType()),
+                         ('next', FloatTensorType())]),
+            outputs=[('next_out', FloatTensorType([None, None])),
+                     ('scan_out', FloatTensorType([None]))],
+            other_outputs=[flat])
+
+        node = OnnxScan(X, X, output_names=['scan0_{idself}', 'scan1_{idself}'],
+                        num_scan_inputs=1, body=scan_body.graph, op_version=opv,
+                        **kwargs)
+        return node[1]
+
+    opv = 15
+    onnx_fct = OnnxIdentity(
+        squareform_pdist('x', op_version=opv),
+        output_names='Y', op_version=opv)
+    model_def = onnx_fct.to_onnx(inputs=[('x', FloatTensorType())])
+
+    oinf1 = OnnxInference(model_def)
+    dot = oinf1.to_dot(recursive=True)
+    print("DOT-SECTION", dot)
+
+This loop is efficient even if it is still slower than a custom implementation
+of pairwise distances. It assumes inputs and outputs are tensors and
+automatically concatenate the outputs of every iteration into single
+tensors. The previous example only have one but it could have several.
+
+Loop
+~~~~
+
+Operator :epkg:`Loop` implements a for and a while loop. It can do a fixed
+number of iterators and/or ends when a condition is not met anymore.
+Outputs are processed in two different ways. First one is similar to
+loop :epkg:`Scan`, outputs are concatenate into tensors (along the first
+dimension). This also means that these outputs must have compatible shapes.
+Second mechanism concatenates tensors into a sequence of tensors.
 
 .. _l-onnx-extensibility:
 
