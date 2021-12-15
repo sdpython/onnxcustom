@@ -77,7 +77,6 @@ The package must be built first (see previous section).
     python onnx\defs\gen_doc.py
     set ONNX_ML=1
 
-
 Update an existing operator
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 

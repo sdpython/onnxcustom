@@ -122,9 +122,11 @@ class OrtGradientForwardBackwardOptimizer(BaseEstimator):
         if not hasattr(self, 'train_state_'):
             raise AttributeError("Method fit must be called before.")
         if self.train_state_ is None:
-            raise RuntimeError("No train_state_ available (None).")
+            raise RuntimeError(  # pragma: no cover
+                "No train_state_ available (None).")
         if self.weights_to_train is None:
-            raise RuntimeError("Unexpected self.weights_to_train (None).")
+            raise RuntimeError(  # pragma: no cover
+                "Unexpected self.weights_to_train (None).")
         n = len(self.train_state_) - len(self.weights_to_train)
         return self.train_state_[n:]
 

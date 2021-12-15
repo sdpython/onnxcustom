@@ -312,7 +312,7 @@ These outputs will be the output of the operator `If`.
     model_def = ifnode.to_onnx(
         {'x1': x1, 'x2': x2}, target_opset=opv,
         outputs=[('y', FloatTensorType())])
-    dot = OnnxInference(model_def).to_dot()
+    dot = OnnxInference(model_def).to_dot(recursive=True)
     print("DOT-SECTION", dot)
 
 .. _l-operator-scan-onnx-tutorial:
@@ -403,7 +403,7 @@ for it.
 Shape (and Type) Inference
 ++++++++++++++++++++++++++
 
-Knowning the shapes of results is not necessary to execute an ONNX graph
+Knowing the shapes of results is not necessary to execute an ONNX graph
 but this information can be used to make it faster. If you have the following
 graph:
 
@@ -417,7 +417,7 @@ shape. Knowing that, it is possible to reuse the buffer allocated for *z*,
 to compute the absolute value of *w* inplace. Shape inference helps the
 runtime to manage the memory and therefore to be more efficient.
 
-ONNX package can compute in most of the case the output shape
+ONNX package can compute in most of the cases the output shape
 knowing the input shape for every standard operator. It cannot
 obviously do that for any custom operator outside of the official
 list.

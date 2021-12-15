@@ -28,3 +28,4 @@ Other functions are dispatched accress following sections.
     potting
     spec
     hub
+    utils

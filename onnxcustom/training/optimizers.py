@@ -295,7 +295,7 @@ class OrtGradientOptimizer(BaseEstimator):
             self.train_session_.run_with_iobinding(bind)
             outputs = bind.copy_outputs_to_cpu()
             if numpy.isinf(outputs[0]) or numpy.isnan(outputs[0]):
-                raise EvaluationError(
+                raise EvaluationError(  # pragma: no cover
                     "Loss is nan or infinite (%r), "
                     "evaluation has failed." % outputs[0])
             actual_losses.append(outputs[0] / batch_size)

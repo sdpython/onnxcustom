@@ -61,7 +61,7 @@ class OrtGradientForwardBackward:
                 OrtGradientForwardBackward._select_initializer_names(
                     onnx_model))
             if len(weights_to_train) == 0:
-                raise RuntimeError(
+                raise RuntimeError(  # pragma: no cover
                     "Unable to guess the weights to train from initializers: "
                     "%r." % [i.name for i in onnx_model.graph.initializer])
 
@@ -92,7 +92,7 @@ class OrtGradientForwardBackward:
             self.output_names = [obj.name
                                  for obj in self.onnx_model.graph.output]
         if self.class_name is None:
-            self.class_name = "TorchOrtFunction_%r" % id(self)
+            self.class_name = "TorchOrtFunction_%r" % id(self)  # pragma: no cover
         if hasattr(self.providers, 'type'):
             if self.providers.type != 'cpu':
                 self.device_index = self.providers.index
@@ -276,7 +276,7 @@ class OrtGradientForwardBackward:
             if name == init.name:
                 return to_array(init)
         if exc:
-            raise RuntimeError(
+            raise RuntimeError(  # pragma: no cover
                 "Unable to find name %r in %r." % (
                     name,
                     list(i.name for i in self.onnx_model.graph.initializer)))
@@ -525,7 +525,7 @@ class OrtGradientForwardBackwardFunction:
                         OrtGradientForwardBackwardFunction.device_name(
                             tu[1])),
                     zip(tensors, devices))):
-                raise RuntimeError(
+                raise RuntimeError(  # pragma: no cover
                     "Not all inputs are on the same device %r != %r." % (
                         [OrtGradientForwardBackward.device_name(d)
                          for d in devices],
@@ -557,7 +557,7 @@ class OrtGradientForwardBackwardFunction:
                 raise NotImplementedError(  # pragma: no cover
                     "Empty vector found.")
             if not t.data.contiguous:
-                t = t.as_contiguous()
+                t = t.as_contiguous()  # pragma: no cover
             vect.push_back(C_OrtValue.ortvalue_from_numpy(t, dev))
         if debug:
             if len(vect) != len(tensors):
@@ -582,7 +582,7 @@ class OrtGradientForwardBackwardFunction:
         Returns saved tensors during forward step.
         """
         if self.saved_tensors_ is None:
-            raise RuntimeError(
+            raise RuntimeError(  # pragma: no cover
                 "No tensors was saved with save_for_backward.")
         return self.saved_tensors_
 
