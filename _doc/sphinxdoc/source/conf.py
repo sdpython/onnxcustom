@@ -153,6 +153,9 @@ epkg_dictionary.update({
 # APIs, links which should be replaced.
 
 epkg_dictionary.update({
+    'C_OrtDevice':
+        'http://www.xavierdupre.fr/app/onnxcustom/helpsphinx/api/'
+        'onnxruntime_python/helpers.html#c-class-ortdevice',
     'C_OrtValue':
         'http://www.xavierdupre.fr/app/onnxcustom/helpsphinx/'
         'onnxmd/onnxruntime_python/ortvalue.html#c-class-ortvaluevector',

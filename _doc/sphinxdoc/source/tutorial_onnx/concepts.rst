@@ -336,32 +336,27 @@ pairwise distances: :math:`M(i,j) = \norm{X_i - X_j}^2`.
         OnnxSqueezeApi11)
     from mlprodict.onnxrt import OnnxInference
 
-    def squareform_pdist(X, op_version=None, **kwargs):
-        opv = op_version
-        diff = OnnxSub('next_in', 'next', output_names=[
-                       'diff'], op_version=opv)
-        id_next = OnnxIdentity('next_in', output_names=[
-                               'next_out'], op_version=opv)
-        norm = OnnxReduceSumSquare(
-            diff, output_names=['norm'], axes=[1], op_version=opv)
-        flat = OnnxSqueezeApi11(
-            norm, output_names=['scan_out'], axes=[1], op_version=opv)
-        scan_body = id_next.to_onnx(
-            OrderedDict([('next_in', FloatTensorType()),
-                         ('next', FloatTensorType())]),
-            outputs=[('next_out', FloatTensorType([None, None])),
-                     ('scan_out', FloatTensorType([None]))],
-            other_outputs=[flat])
-
-        node = OnnxScan(X, X, output_names=['scan0_{idself}', 'scan1_{idself}'],
-                        num_scan_inputs=1, body=scan_body.graph, op_version=opv,
-                        **kwargs)
-        return node[1]
-
     opv = 15
-    onnx_fct = OnnxIdentity(
-        squareform_pdist('x', op_version=opv),
-        output_names='Y', op_version=opv)
+
+    diff = OnnxSub('next_in', 'next', output_names=[
+                   'diff'], op_version=opv)
+    id_next = OnnxIdentity('next_in', output_names=[
+                           'next_out'], op_version=opv)
+    norm = OnnxReduceSumSquare(
+        diff, output_names=['norm'], axes=[1], op_version=opv)
+    flat = OnnxSqueezeApi11(
+        norm, output_names=['scan_out'], axes=[1], op_version=opv)
+    scan_body = id_next.to_onnx(
+        OrderedDict([('next_in', FloatTensorType()),
+                     ('next', FloatTensorType())]),
+        outputs=[('next_out', FloatTensorType([None, None])),
+                 ('scan_out', FloatTensorType([None]))],
+        other_outputs=[flat])
+
+    pdist = OnnxScan('x', 'x', output_names=['scan0_{idself}', 'scan1_{idself}'],
+                     num_scan_inputs=1, body=scan_body.graph, op_version=opv)
+
+    onnx_fct = OnnxIdentity(pdist[1], output_names='Y', op_version=opv)
     model_def = onnx_fct.to_onnx(inputs=[('x', FloatTensorType())])
 
     oinf1 = OnnxInference(model_def)
