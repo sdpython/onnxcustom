@@ -27,7 +27,7 @@ class TestOrtTrainingForwardBackward(ExtTestCase):
 
     def forward_no_training(self):
         from onnxruntime.capi._pybind_state import (
-            OrtValue as C_OrtValue, OrtDevice, OrtMemType)
+            OrtValue as C_OrtValue, OrtDevice as C_OrtDevice, OrtMemType)
         from onnxruntime.capi._pybind_state import (
             OrtValueVector)
         from onnxcustom.training.ortgradient import OrtGradientForwardBackward
@@ -83,7 +83,7 @@ class TestOrtTrainingForwardBackward(ExtTestCase):
 
         # OrtValue
         inst = forback.new_instance()
-        device = OrtDevice(OrtDevice.cpu(), OrtMemType.DEFAULT, 0)
+        device = C_OrtDevice(C_OrtDevice.cpu(), OrtMemType.DEFAULT, 0)
 
         # list of OrtValues
         inputs = []
@@ -122,7 +122,7 @@ class TestOrtTrainingForwardBackward(ExtTestCase):
     @unittest.skipIf(TrainingSession is None, reason="no training")
     def test_forward_no_training_pickle(self):
         from onnxruntime.capi._pybind_state import (
-            OrtValue as C_OrtValue, OrtDevice, OrtMemType)
+            OrtValue as C_OrtValue, OrtMemType, OrtDevice as C_OrtDevice)
         from onnxruntime.capi._pybind_state import (
             OrtValueVector)
         from onnxcustom.training.ortgradient import OrtGradientForwardBackward
@@ -176,7 +176,7 @@ class TestOrtTrainingForwardBackward(ExtTestCase):
         # OrtValue
         inst = forback.new_instance()
         inputs = []
-        device = OrtDevice(OrtDevice.cpu(), OrtMemType.DEFAULT, 0)
+        device = C_OrtDevice(C_OrtDevice.cpu(), OrtMemType.DEFAULT, 0)
         for a in [X_test, coef, intercept]:
             inputs.append(C_OrtValue.ortvalue_from_numpy(a, device))
         got_ort = inst.forward(inputs)
@@ -203,7 +203,7 @@ class TestOrtTrainingForwardBackward(ExtTestCase):
 
     def forward_training(self, model, debug=False, n_classes=3, add_print=False):
         from onnxruntime.capi._pybind_state import (
-            OrtValue as C_OrtValue, OrtDevice, OrtMemType)
+            OrtValue as C_OrtValue, OrtMemType, OrtDevice as C_OrtDevice)
         from onnxruntime.capi._pybind_state import (
             OrtValueVector)
         from onnxcustom.training.ortgradient import OrtGradientForwardBackward
@@ -284,7 +284,7 @@ class TestOrtTrainingForwardBackward(ExtTestCase):
 
         # OrtValue
         inst = forback.new_instance()
-        device = OrtDevice(OrtDevice.cpu(), OrtMemType.DEFAULT, 0)
+        device = C_OrtDevice(C_OrtDevice.cpu(), OrtMemType.DEFAULT, 0)
 
         # OrtValueVector
         if add_print:

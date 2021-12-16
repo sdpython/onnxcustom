@@ -121,7 +121,7 @@ Then unit test must be updated.
 * Update unit test.
 
 The PR should include the modified files and the modified markdown documentation,
-usually a subset of 
+usually a subset of
 `docs/docs/Changelog-ml.md`, `docs/Changelog.md`,
 `docs/Operators-ml.md`, `docs/Operators.md`,
 `docs/TestCoverage-ml.md`, `docs/TestCoverage.md`.

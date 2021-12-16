@@ -397,7 +397,7 @@ One example is the operator CDist. Notebook `Pairwise distances with ONNX (pdist
 goes into the details of it. Pairwise distances, as shown in section
 :ref:`l-operator-scan-onnx-tutorial`, can be implemented with operator
 Scan. However, a dedicated operator called CDist is proved significantly
-faster, significantly to make the effort to implement a dedicated runtime 
+faster, significantly to make the effort to implement a dedicated runtime
 for it.
 
 Shape (and Type) Inference
