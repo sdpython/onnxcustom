@@ -25,12 +25,15 @@ from onnxcustom import __max_supported_opset__ as opset
 
 class TestOrtTrainingForwardBackward(ExtTestCase):
 
-    def forward_no_training(self):
+    def forward_no_training(self, exc=None, verbose=False):
+        if exc is None:
+            exc = __name__ != '__main__'
         from onnxruntime.capi._pybind_state import (
             OrtValue as C_OrtValue, OrtDevice as C_OrtDevice, OrtMemType)
         from onnxruntime.capi._pybind_state import (
             OrtValueVector)
         from onnxcustom.training.ortgradient import OrtGradientForwardBackward
+
         X, y = make_regression(  # pylint: disable=W0632
             100, n_features=10, bias=2)
         X = X.astype(numpy.float32)
@@ -43,10 +46,17 @@ class TestOrtTrainingForwardBackward(ExtTestCase):
                       black_op={'LinearRegressor'})
 
         # starts testing
-        self.assertRaise(
-            lambda: OrtGradientForwardBackward(
-                onx, debug=True, enable_logging=True, providers=['NONE']),
-            ValueError)
+        if verbose:
+            print("[forward_no_training] start testing")
+        if exc:
+            if verbose:
+                print("[forward_no_training] check exception")
+            self.assertRaise(
+                lambda: OrtGradientForwardBackward(
+                    onx, debug=True, enable_logging=True, providers=['NONE']),
+                ValueError)
+        if verbose:
+            print("[forward_no_training] instantiate")
         forback = OrtGradientForwardBackward(
             onx, debug=True, enable_logging=True)
         self.assertEqual(repr(forback), "OrtGradientForwardBackward(...)")
@@ -64,15 +74,24 @@ class TestOrtTrainingForwardBackward(ExtTestCase):
                          ['X_grad', 'coef_grad', 'intercept_grad'])
         self.assertEqual(forback.cls_type_._output_names, ['variable'])
 
+        if verbose:
+            print("[forward_no_training] expected prediction")
+
         expected = reg.predict(X_test)
         coef = reg.coef_.astype(numpy.float32).reshape((-1, 1))
         intercept = numpy.array([reg.intercept_], dtype=numpy.float32)
+
+        if verbose:
+            print("[forward_no_training] InferenceSession")
 
         sess0 = InferenceSession(onx.SerializeToString())
         inames = [i.name for i in sess0.get_inputs()]  # pylint: disable=E1101
         self.assertEqual(inames, ['X'])
         got = sess0.run(None, {'X': X_test})
         self.assertEqualArray(expected.ravel(), got[0].ravel(), decimal=4)
+
+        if verbose:
+            print("[forward_no_training] evaluation")
 
         sess_eval = forback.cls_type_._sess_eval  # pylint: disable=E1101
         inames = [i.name for i in sess_eval.get_inputs()]
@@ -82,6 +101,8 @@ class TestOrtTrainingForwardBackward(ExtTestCase):
         self.assertEqualArray(expected.ravel(), got[0].ravel(), decimal=4)
 
         # OrtValue
+        if verbose:
+            print("[forward_no_training] OrtValue")
         inst = forback.new_instance()
         device = C_OrtDevice(C_OrtDevice.cpu(), OrtMemType.DEFAULT, 0)
 
@@ -95,6 +116,8 @@ class TestOrtTrainingForwardBackward(ExtTestCase):
         self.assertEqualArray(expected.ravel(), got[0].ravel(), decimal=4)
 
         # OrtValueVector
+        if verbose:
+            print("[forward_no_training] OrtValueVector")
         inputs = OrtValueVector()
         for a in [X_test, coef, intercept]:
             inputs.push_back(C_OrtValue.ortvalue_from_numpy(a, device))
@@ -104,16 +127,20 @@ class TestOrtTrainingForwardBackward(ExtTestCase):
             expected.ravel(), got[0].numpy().ravel(), decimal=4)
 
         # numpy
+        if verbose:
+            print("[forward_no_training] numpy")
         inputs = [X_test, coef, intercept]
         got = inst.forward(inputs)
         self.assertEqual(len(got), 1)
         self.assertEqualArray(
             expected.ravel(), got[0].numpy().ravel(), decimal=4)
+        if verbose:
+            print("[forward_no_training] end")
 
     @unittest.skipIf(TrainingSession is None, reason="no training")
     def test_forward_no_training(self):
         res, logs = self.assertLogging(
-            self.forward_no_training, 'onnxcustom')
+            self.forward_no_training, 'onnxcustom', exc=True)
         self.assertEmpty(res)
         if len(logs) > 0:
             self.assertIn("[OrtGradientForwardBackward]", logs)
@@ -370,4 +397,5 @@ class TestOrtTrainingForwardBackward(ExtTestCase):
 
 
 if __name__ == "__main__":
-    unittest.main()
+    # TestOrtTrainingForwardBackward().forward_no_training(verbose=True)
+    unittest.main(verbosity=2)

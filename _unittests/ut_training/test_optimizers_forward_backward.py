@@ -6,7 +6,7 @@ import unittest
 import io
 import pickle
 import logging
-from pyquickhelper.pycode import ExtTestCase, ignore_warnings
+from pyquickhelper.pycode import ExtTestCase, ignore_warnings, skipif_appveyor
 import numpy
 from onnx.helper import set_model_props
 from sklearn.datasets import make_regression
@@ -111,6 +111,7 @@ class TestOptimizersForwardBackward(ExtTestCase):
             ConvergenceError)
 
     @unittest.skipIf(TrainingSession is None, reason="not training")
+    @skipif_appveyor("logging issue")
     def test_ort_gradient_optimizers_use_numpy_log(self):
         from onnxcustom.training.optimizers_partial import OrtGradientForwardBackwardOptimizer
         X, y = make_regression(  # pylint: disable=W0632
@@ -134,6 +135,30 @@ class TestOptimizersForwardBackward(ExtTestCase):
             'onnxcustom', level=logging.DEBUG)
         self.assertTrue(res is train_session)
         self.assertIn("[OrtGradientForwardBackwardOptimizer._iteration]", logs)
+
+    @unittest.skipIf(TrainingSession is None, reason="not training")
+    def test_ort_gradient_optimizers_use_numpy_log_appveyor(self):
+        from onnxcustom.training.optimizers_partial import OrtGradientForwardBackwardOptimizer
+        X, y = make_regression(  # pylint: disable=W0632
+            100, n_features=2, bias=2, random_state=0)
+        X[:10, :] = 0
+        X = X.astype(numpy.float32)
+        y = (X.sum(axis=1) + y / 1000).astype(numpy.float32)
+        X_train, _, y_train, __ = train_test_split(X, y)
+        reg = LinearRegression()
+        reg.fit(X_train, y_train)
+        reg.coef_ = reg.coef_.reshape((1, -1))
+        onx = to_onnx(reg, X_train, target_opset=opset,
+                      black_op={'LinearRegressor'})
+        # onx = onnx_rename_weights(onx)
+        set_model_props(onx, {'info': 'unit test'})
+        inits = ['coef', 'intercept']
+        train_session = OrtGradientForwardBackwardOptimizer(
+            onx, inits, enable_logging=True)
+        res, logs = self.assertLogging(
+            lambda: train_session.fit(X, y, use_numpy=True),
+            'onnxcustom', level=logging.DEBUG)
+        self.assertTrue(res is train_session)
 
     @unittest.skipIf(TrainingSession is None, reason="not training")
     def test_ort_gradient_optimizers_use_numpy_pickle(self):
