@@ -32,3 +32,10 @@ to render it and make it searchable.
     :maxdepth: 2
 
     onnxmd/index
+
+Build
++++++
+
+Some useful pages.
+
+* :ref:`Build onnxruntime on WSL (Windows Linux Subsystem) (2021) <blog-build-wsl-2021>`.
