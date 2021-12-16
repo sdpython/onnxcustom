@@ -25,7 +25,7 @@ import matplotlib.pyplot as plt
 from onnxruntime import InferenceSession, get_device, OrtValue, SessionOptions
 from skl2onnx.common.data_types import FloatTensorType
 from skl2onnx.algebra.onnx_ops import OnnxSlice, OnnxAdd, OnnxMul
-from mlprodict.tools import measure_time
+from cpyquickhelper.numbers import measure_time
 from tqdm import tqdm
 from mlprodict.testing.experimental_c import code_optimisation
 from mlprodict.onnxrt.ops_whole.session import OnnxWholeSession
@@ -136,7 +136,7 @@ def benchmark_op(repeat=10, number=10, name="Slice", shape_slice_fct=None,
         # numpy
         ctx['fct'] = npy_fct
         obs = measure_time(
-            "loop_fct(fct, xs)",
+            lambda: loop_fct(npy_fct, xs),
             div_by_number=True, context=ctx, repeat=repeat, number=number)
         obs['dim'] = dim
         obs['fct'] = 'numpy'
@@ -148,7 +148,7 @@ def benchmark_op(repeat=10, number=10, name="Slice", shape_slice_fct=None,
         # onnxruntime
         ctx['fct'] = ort_fct
         obs = measure_time(
-            "loop_fct(fct, xs)",
+            lambda: loop_fct(ort_fct, xs),
             div_by_number=True, context=ctx, repeat=repeat, number=number)
         obs['dim'] = dim
         obs['fct'] = 'ort'
@@ -165,7 +165,7 @@ def benchmark_op(repeat=10, number=10, name="Slice", shape_slice_fct=None,
                     x, 'cuda', 0) for x in xs]
             ctx['fct'] = ort_fct_gpu
             obs = measure_time(
-                "loop_fct(fct, xs)",
+                lambda: loop_fct(ort_fct_gpu, xs),
                 div_by_number=True, context=ctx, repeat=repeat, number=number)
             obs['dim'] = dim
             obs['fct'] = 'ort_gpu'
