@@ -155,9 +155,7 @@ class TestOptimizersForwardBackward(ExtTestCase):
         inits = ['coef', 'intercept']
         train_session = OrtGradientForwardBackwardOptimizer(
             onx, inits, enable_logging=True)
-        res, logs = self.assertLogging(
-            lambda: train_session.fit(X, y, use_numpy=True),
-            'onnxcustom', level=logging.DEBUG)
+        res = train_session.fit(X, y, use_numpy=True)
         self.assertTrue(res is train_session)
 
     @unittest.skipIf(TrainingSession is None, reason="not training")

@@ -140,7 +140,7 @@ class TestOrtTrainingForwardBackward(ExtTestCase):
     @unittest.skipIf(TrainingSession is None, reason="no training")
     def test_forward_no_training(self):
         res, logs = self.assertLogging(
-            self.forward_no_training, 'onnxcustom', exc=True)
+            lambda: self.forward_no_training(exc=True), 'onnxcustom')
         self.assertEmpty(res)
         if len(logs) > 0:
             self.assertIn("[OrtGradientForwardBackward]", logs)
