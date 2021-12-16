@@ -15,7 +15,6 @@ two implementation with onnx runtimes.
 .. contents::
     :local:
 
-
 The ONNX graphs for both implementations of LeakyRely
 +++++++++++++++++++++++++++++++++++++++++++++++++++++
 

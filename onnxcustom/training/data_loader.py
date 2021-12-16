@@ -3,7 +3,8 @@
 @brief Manipulate data for training.
 """
 import numpy
-from onnxruntime import OrtValue as PyOrtValue
+from ..utils.onnxruntime_helper import (
+    get_ort_device, numpy_to_ort_value, ort_device_to_string)
 
 
 class OrtDataLoader:
@@ -15,14 +16,13 @@ class OrtDataLoader:
     :param X: features
     :param y: labels
     :param batch_size: batch size (consecutive observations)
-    :param device: `'cpu'` or `'cuda'`
-    :param device_index: device index
+    :param device: :epkg:`C_OrtDevice` or a string such as `'cpu'`
     :param random_iter: random iteration
 
     See example :ref:`l-orttraining-nn-gpu`.
     """
 
-    def __init__(self, X, y, batch_size=20, device='cpu', device_index=0,
+    def __init__(self, X, y, batch_size=20, device='cpu',
                  random_iter=True):
         if len(y.shape) == 1:
             y = y.reshape((-1, 1))
@@ -30,45 +30,42 @@ class OrtDataLoader:
             raise ValueError(  # pragma: no cover
                 "Shape mismatch X.shape=%r, y.shape=%r." % (X.shape, y.shape))
 
+        self.batch_size = batch_size
+        self.device = get_ort_device(device)
+        self.random_iter = random_iter
+
         self.X_np = numpy.ascontiguousarray(X)
         self.y_np = numpy.ascontiguousarray(y).reshape((-1, 1))
 
-        self.X_ort = PyOrtValue.ortvalue_from_numpy(
-            self.X_np, device, device_index)._ortvalue
-        self.y_ort = PyOrtValue.ortvalue_from_numpy(
-            self.y_np, device, device_index)._ortvalue
+        self.X_ort = numpy_to_ort_value(self.X_np, self.device)
+        self.y_ort = numpy_to_ort_value(self.y_np, self.device)
 
         self.desc = [(self.X_np.shape, self.X_np.dtype),
                      (self.y_np.shape, self.y_np.dtype)]
-
-        self.batch_size = batch_size
-        self.device = device
-        self.device_index = device_index
-        self.random_iter = random_iter
 
     def __getstate__(self):
         "Removes any non pickable attribute."
         state = {}
         for att in ['X_np', 'y_np', 'desc', 'batch_size',
-                    'device', 'device_index', 'random_iter']:
+                    'random_iter']:
             state[att] = getattr(self, att)
+        state['device'] = ort_device_to_string(self.device)
         return state
 
     def __setstate__(self, state):
         "Restores any non pickable attribute."
         for att, v in state.items():
             setattr(self, att, v)
-        self.X_ort = PyOrtValue.ortvalue_from_numpy(
-            self.X_np, self.device, self.device_index)._ortvalue
-        self.y_ort = PyOrtValue.ortvalue_from_numpy(
-            self.y_np, self.device, self.device_index)._ortvalue
+        self.device = get_ort_device(self.device)
+        self.X_ort = numpy_to_ort_value(self.X_np, self.device)
+        self.y_ort = numpy_to_ort_value(self.y_np, self.device)
         return self
 
     def __repr__(self):
         "usual"
-        return "%s(..., ..., batch_size=%r, device=%r, device_index=%r)" % (
-            self.__class__.__name__, self.batch_size, self.device,
-            self.device_index)
+        return "%s(..., ..., batch_size=%r, device=%r)" % (
+            self.__class__.__name__, self.batch_size,
+            ort_device_to_string(self.device))
 
     def __len__(self):
         "Returns the number of observations."
@@ -92,10 +89,10 @@ class OrtDataLoader:
         This iterator is slow as it copies the data of every
         batch. The function yields :epkg:`OrtValue`.
         """
-        if self.device not in ('Cpu', 'cpu'):
+        if self.device.device_type() != self.device.cpu():
             raise RuntimeError(  # pragma: no cover
                 "Only CPU device is allowed if numpy arrays are requested "
-                "not %r." % self.device)
+                "not %r." % ort_device_to_string(self.device))
         N = 0
         b = len(self) - self.batch_size
         if b <= 0 or self.batch_size <= 0:
@@ -119,10 +116,8 @@ class OrtDataLoader:
         b = len(self) - self.batch_size
         if b <= 0 or self.batch_size <= 0:
             yield (
-                PyOrtValue.ortvalue_from_numpy(
-                    self.X_np, self.device, self.device_index)._ortvalue,
-                PyOrtValue.ortvalue_from_numpy(
-                    self.y_np, self.device, self.device_index)._ortvalue)
+                numpy_to_ort_value(self.X_np, self.device),
+                numpy_to_ort_value(self.y_np, self.device))
         else:
             i = -1
             while N < len(self):
@@ -131,10 +126,8 @@ class OrtDataLoader:
                 xp = self.X_np[i:i + self.batch_size]
                 yp = self.y_np[i:i + self.batch_size]
                 yield (
-                    PyOrtValue.ortvalue_from_numpy(
-                        xp, self.device, self.device_index)._ortvalue,
-                    PyOrtValue.ortvalue_from_numpy(
-                        yp, self.device, self.device_index)._ortvalue)
+                    numpy_to_ort_value(xp, self.device),
+                    numpy_to_ort_value(yp, self.device))
 
     def iter_bind(self, bind, names):
         """
@@ -158,20 +151,11 @@ class OrtDataLoader:
             shape_y = (n, n_col_y)
 
             bind.bind_input(
-                name=names[0],
-                device_type=self.device,
-                device_id=self.device_index,
-                element_type=self.desc[0][1],
-                shape=shape_X,
-                buffer_ptr=self.X_ort.data_ptr() + offset * n_col_x * size_x)
-
+                names[0], self.device, self.desc[0][1], shape_X,
+                self.X_ort.data_ptr() + offset * n_col_x * size_x)
             bind.bind_input(
-                name=names[1],
-                device_type=self.device,
-                device_id=self.device_index,
-                element_type=self.desc[0][1],
-                shape=shape_y,
-                buffer_ptr=self.y_ort.data_ptr() + offset * n_col_y * size_y)
+                names[1], self.device, self.desc[0][1], shape_y,
+                self.y_ort.data_ptr() + offset * n_col_y * size_y)
 
         N = 0
         b = len(self) - self.batch_size

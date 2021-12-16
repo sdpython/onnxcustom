@@ -3,28 +3,7 @@
 @brief Onnxruntime helper.
 """
 from onnxruntime.capi._pybind_state import (  # pylint: disable=E0611
-    OrtDevice as C_OrtDevice)
-
-
-def device_to_provider(device_name):
-    """
-    Converts device into a provider.
-
-    :param device_name: device name (cpu or gpu or cuda)
-    :return: provider
-
-    .. runpython::
-        :showcode:
-
-        from onnxcustom.utils.onnxruntime_helper import device_to_provider
-        print(device_to_provider('cpu'))
-    """
-    if device_name in ('cpu', 'Cpu'):
-        return 'CPUExecutionProvider'
-    if device_name in ('Gpu', 'gpu', 'Cuda', 'cuda', 'cuda:0', 'cuda:1'):
-        return 'CUDAExecutionProvider'
-    raise ValueError(
-        "Unexpected value for device_name=%r." % device_name)
+    OrtDevice as C_OrtDevice, OrtValue as C_OrtValue)
 
 
 def provider_to_device(provider_name):
@@ -50,10 +29,10 @@ def provider_to_device(provider_name):
 
 def get_ort_device_type(device):
     """
-    Converts device into :epkg:`C_OrtDevice`.
+    Converts device into device type.
 
     :param device: string
-    :return: :epkg:`C_OrtDevice`
+    :return: device type
     """
     device_type = device if isinstance(device, str) else device.type
     if device_type == 'cuda':
@@ -61,3 +40,89 @@ def get_ort_device_type(device):
     if device_type == 'cpu':
         return C_OrtDevice.cpu()
     raise ValueError('Unsupported device type: %r.' % device_type)
+
+
+def get_ort_device(device):
+    """
+    Converts device into :epkg:`C_OrtDevice`.
+
+    :param device: any type
+    :return: :epkg:`C_OrtDevice`
+    """
+    if isinstance(device, C_OrtDevice):
+        return device
+    if isinstance(device, str):
+        if device == 'cpu':
+            return C_OrtDevice(
+                C_OrtDevice.cpu(), C_OrtDevice.default_memory(), 0)
+        if device in {'gpu', 'cuda:0', 'cuda', 'gpu:0'}:
+            return C_OrtDevice(
+                C_OrtDevice.cuda(), C_OrtDevice.default_memory(), 0)
+        if device.startswith('gpu:'):
+            idx = int(device[4:])
+            return C_OrtDevice(
+                C_OrtDevice.cuda(), C_OrtDevice.default_memory(), idx)
+        if device.startswith('cuda:'):
+            idx = int(device[5:])
+            return C_OrtDevice(
+                C_OrtDevice.cuda(), C_OrtDevice.default_memory(), idx)
+        raise ValueError(
+            "Unable to interpret string %r as a device." % device)
+    raise TypeError(
+        "Unable to interpret type %r, (%r) as de device." % (
+            type(device), device))
+
+
+def ort_device_to_string(device):
+    """
+    Returns a string representing the device.
+    Opposite of function @see fn get_ort_device.
+
+    :param device: see :epkg:`C_OrtDevice`
+    :return: string
+    """
+    if not isinstance(device, C_OrtDevice):
+        raise TypeError(
+            "device must be of type C_OrtDevice not %r." % type(device))
+    ty = device.device_type()
+    if ty == C_OrtDevice.cpu():
+        sty = 'cpu'
+    elif ty == C_OrtDevice.cuda():
+        sty = 'cuda'
+    else:
+        raise NotImplementedError(  # pragma: no cover
+            "Unable to guess device for %r and type=%r." % (device, ty))
+    idx = device.device_id()
+    if idx == 0:
+        return sty
+    return "%s:%d" % (sty, idx)
+
+
+def numpy_to_ort_value(arr, device=None):
+    """
+    Converts a numpy array to :epkg:`C_OrtValue`.
+
+    :param arr: numpy array
+    :param device: :epkg:`C_OrtDevice` or None for cpu
+    :return: :epkg:`C_OrtValue`
+    """
+    if device is None:
+        device = get_ort_device('cpu')
+    return C_OrtValue.ortvalue_from_numpy(arr, device)
+
+
+def device_to_providers(device):
+    """
+    Returns the corresponding providers for a specific device.
+
+    :param device: :epkg:`C_OrtDevice`
+    :return: providers
+    """
+    if isinstance(device, str):
+        device = get_ort_device(device)
+    if device.device_type() == device.cpu():
+        return ['CPUExecutionProvider']
+    if device.device_type() == device.cuda():
+        return ['CUDAExecutionProvider']
+    raise ValueError(  # pragma: no cover
+        "Unexpected device %r." % device)

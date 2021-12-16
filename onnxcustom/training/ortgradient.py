@@ -92,7 +92,8 @@ class OrtGradientForwardBackward:
             self.output_names = [obj.name
                                  for obj in self.onnx_model.graph.output]
         if self.class_name is None:
-            self.class_name = "TorchOrtFunction_%r" % id(self)  # pragma: no cover
+            self.class_name = "TorchOrtFunction_%r" % id(
+                self)  # pragma: no cover
         if hasattr(self.providers, 'type'):
             if self.providers.type != 'cpu':
                 self.device_index = self.providers.index

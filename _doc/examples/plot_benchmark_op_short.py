@@ -149,8 +149,9 @@ for shape, slices in tqdm(shape_slices):
         shape=str(shape).replace(
             " ", ""), slice=str(slices).replace(
             " ", ""))
-    r = measure_time('sess.run(None, dx)', number=number, div_by_number=True,
-                     context={'sess': sess, 'dx': {'X': x}})
+    r = measure_time(lambda: sess.run(None, {'X': x}),
+                     number=number, div_by_number=True,
+                     context={})
     obs.update(r)
     obs['provider'] = 'CPU'
     data.append(obs)
