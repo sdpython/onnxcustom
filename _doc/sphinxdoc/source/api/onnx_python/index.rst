@@ -1,4 +1,6 @@
 
+.. _l-python-onnx-api:
+
 Selected onnx API
 =================
 

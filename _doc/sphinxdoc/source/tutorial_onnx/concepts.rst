@@ -426,4 +426,12 @@ Tools
 +++++
 
 :epkg:`netron` is very useful to help visualize ONNX graphs.
-That's the only without programming.
+That's the only one without programming. The first screenshot was
+made with this tool.
+
+.. image:: images/linreg1.png
+
+`onnx2py.py <https://github.com/microsoft/onnxconverter-common/
+blob/master/onnxconverter_common/onnx2py.py>`_
+creates a python file from an ONNX graph. This script can create
+the same graph. It may be modified by a user to change the graph.

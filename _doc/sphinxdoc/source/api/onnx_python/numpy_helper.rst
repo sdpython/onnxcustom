@@ -5,6 +5,8 @@ onnx.numpy_helper
 .. contents::
     :local:
 
+.. _l-numpy-helper-onnx-array:
+
 array
 +++++
 

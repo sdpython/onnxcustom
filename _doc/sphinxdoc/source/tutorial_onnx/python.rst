@@ -3,19 +3,42 @@
 Build ONNX Graph with Python
 ============================
 
-Next sections highlight the main function used to build
-an ONNX graph.
+Next sections highlight the main functions used to build
+an ONNX graph with the :ref:`Python API <l-python-onnx-api>`
+:epkg:`onnx` offers.
 
 .. contents::
     :local:
 
+.. _l-onnx-linear-regression-onnx-api:
+
 A simple example: a linear regression
 =====================================
 
-.. _l-onnx-linear-regression-onnx-api:
+The linear regression is the most simple model
+in machine learning described by the following expression
+:math:`Y = XA + B`. We can see it as a function of three
+variables :math:`Y = f(X, A, B)` decomposed into
+`y = Add(MatMul(X, A), B))`. That what's we need to represent
+with ONNX operators. The first is to implement a function
+with :ref:`ONNX operators <l-onnx-operators>`.
+ONNX is strongly typed. Shape and type must be defined for both
+input and output of the function. That said, we need four functions
+to build the graph among the :ref:`l-onnx-make-function`:
 
-Linear Regression, no initializer
-+++++++++++++++++++++++++++++++++
+* `make_tensor_value_info`: declares a variable (input or output)
+  given its shape and type
+* `make_node`: creates a node defined by an operation
+  (an operator type), its inputs and outputs
+* `make_graph`: a function to create an ONNX graph with
+  the objects created by the two previous functions
+* `make_model`: a last function with merges the graph and
+  additional metadata
+
+All along the creation, we need to give a name to every input,
+output of every node of the graph. Input and output of the graph
+are defined by :epkg:`onnx` objects, strings are used to refer to
+intermediate results. This is how it looks like.
 
 .. runpython::
     :showcode:
@@ -31,24 +54,38 @@ Linear Regression, no initializer
     from mlprodict.plotting.text_plot import onnx_simple_text_plot
 
     # inputs
+
+    # 'X' is the name, TensorProto.FLOAT the type, [None, None] the shape
     X = make_tensor_value_info('X', TensorProto.FLOAT, [None, None])
     A = make_tensor_value_info('A', TensorProto.FLOAT, [None, None])
     B = make_tensor_value_info('B', TensorProto.FLOAT, [None, None])
 
-    # outputs
+    # outputs, the shape is left undefined
+
     Y = make_tensor_value_info('Y', TensorProto.FLOAT, None)
 
     # nodes
+
+    # It creates a node defined by the operator type MatMul,
+    # 'X', 'A' are the inputs of the node, 'XA' the output.
     node1 = make_node('MatMul', ['X', 'A'], ['XA'])
     node2 = make_node('Add', ['XA', 'B'], ['Y'])
 
     # from nodes to graph
+    # the graph is built from the list of nodes, the list of inputs,
+    # the list of outputs and a name.
+
     graph = make_graph([node1, node2],  # nodes
                         'lr',  # a name
                         [X, A, B],  # inputs
                         [Y])  # outputs
+
+    # onnx graph
+    # there is no metata in this case.
+
     onnx_model = make_model(graph)
 
+    # the work is done, let's display it...
     print(onnx_simple_text_plot(onnx_model))
 
 .. gdot::
@@ -63,30 +100,146 @@ Linear Regression, no initializer
     from mlprodict.onnxrt import OnnxInference
     from mlprodict.plotting.text_plot import onnx_simple_text_plot
 
-    # inputs
     X = make_tensor_value_info('X', TensorProto.FLOAT, [None, None])
     A = make_tensor_value_info('A', TensorProto.FLOAT, [None, None])
     B = make_tensor_value_info('B', TensorProto.FLOAT, [None, None])
-
-    # outputs
     Y = make_tensor_value_info('Y', TensorProto.FLOAT, None)
-
-    # nodes
     node1 = make_node('MatMul', ['X', 'A'], ['XA'])
     node2 = make_node('Add', ['XA', 'B'], ['Y'])
-
-    # from nodes to graph
-    graph = make_graph([node1, node2],  # nodes
-                        'lr',  # a name
-                        [X, A, B],  # inputs
-                        [Y])  # outputs
+    graph = make_graph([node1, node2], 'lr', [X, A, B], [Y])
     onnx_model = make_model(graph)
     print(OnnxInference(onnx_model).to_dot())
 
+An empty shape (`None`) means any shape, a shapes defines as `[None, None]`
+tells this object is a tensor with two dimensions without any further precision.
+The ONNX graph can also be inspected by looking into the fields
+of each object of the graph.
+
+.. runpython::
+    :showcode:
+    
+    import numpy
+    from onnx import numpy_helper, TensorProto
+    from onnx.helper import (
+        make_model, make_node, set_model_props, make_tensor,
+        make_graph, make_tensor_value_info)
+    from mlprodict.plotting.text_plot import onnx_simple_text_plot
+
+    def shape2tuple(shape):
+        return tuple(getattr(d, 'dim_value', 0) for d in shape.dim)
+
+    X = make_tensor_value_info('X', TensorProto.FLOAT, [None, None])
+    A = make_tensor_value_info('A', TensorProto.FLOAT, [None, None])
+    B = make_tensor_value_info('B', TensorProto.FLOAT, [None, None])
+    Y = make_tensor_value_info('Y', TensorProto.FLOAT, None)
+    node1 = make_node('MatMul', ['X', 'A'], ['XA'])
+    node2 = make_node('Add', ['XA', 'B'], ['Y'])
+    graph = make_graph([node1, node2], 'lr', [X, A, B], [Y])
+    onnx_model = make_model(graph)
+
+    # the list of inputs
+    print(onnx_model.graph.input)
+
+    # in a more nicely format
+    for obj in onnx_model.graph.input:
+        print("name=%r dtype=%r shape=%r" % (
+            obj.name, obj.type.tensor_type.elem_type,
+            shape2tuple(obj.type.tensor_type.shape)))
+
+    # the list of outputs
+    print(onnx_model.graph.output)
+
+    # in a more nicely format
+    for obj in onnx_model.graph.output:
+        print("name=%r dtype=%r shape=%r" % (
+            obj.name, obj.type.tensor_type.elem_type,
+            shape2tuple(obj.type.tensor_type.shape)))
+
+    # the list of nodes
+    print(onnx_model.graph.output)
+
+    # in a more nicely format
+    for node in onnx_model.graph.node:
+        print("name=%r type=%r input=%r output=%r" % (
+            node.name, node.op_type, node.input, node.output))
+
+The tensor type is an integer. The following array gives the
+equivalent type with :epkg:`numpy`.
+
+.. runpython::
+    :showcode:
+
+    import pprint
+    from onnx.mapping import TENSOR_TYPE_TO_NP_TYPE
+
+    pprint.pprint(TENSOR_TYPE_TO_NP_TYPE)
+    
+Serialization
+=============
+
+ONNX is based on :epkg:`protobuf`. It minimizes the space needed
+to save the graph on disk. Every object (see :ref:`l-onnx-classes`)
+in :epkg:`onnx` can be serialized with method `SerializeToString`. That's
+the case for the whole model.
+
+.. runpython::
+    :showcode:
+    
+    import numpy
+    from onnx import numpy_helper, TensorProto
+    from onnx.helper import (
+        make_model, make_node, set_model_props, make_tensor,
+        make_graph, make_tensor_value_info)
+    from mlprodict.plotting.text_plot import onnx_simple_text_plot
+
+    def shape2tuple(shape):
+        return tuple(getattr(d, 'dim_value', 0) for d in shape.dim)
+
+    X = make_tensor_value_info('X', TensorProto.FLOAT, [None, None])
+    A = make_tensor_value_info('A', TensorProto.FLOAT, [None, None])
+    B = make_tensor_value_info('B', TensorProto.FLOAT, [None, None])
+    Y = make_tensor_value_info('Y', TensorProto.FLOAT, None)
+    node1 = make_node('MatMul', ['X', 'A'], ['XA'])
+    node2 = make_node('Add', ['XA', 'B'], ['Y'])
+    graph = make_graph([node1, node2], 'lr', [X, A, B], [Y])
+    onnx_model = make_model(graph)
+    
+    # The serialization
+    with open("linear_regression.onnx", "wb") as f:
+        f.write(onnx_model.SerializeToString())
+
+The graph can be restored with function `load`:
+
+.. runpython::
+    :showcode:
+    
+    from onnx import load
+    from mlprodict.plotting.text_plot import onnx_simple_text_plot
+    
+    with open("linear_regression.onnx", "rb") as f:
+        onnx_model = load(f)
+    
+    print(onnx_simple_text_plot(onnx_model))    
+
+It looks exactly the same. Any model can be serialized this way
+unless they are bigger than 2 Gb. :epkg:`protobuf` is limited to size
+smaller than this threshold. Next section show how to overcome that limit.
+
 .. _l-onnx-linear-regression-onnx-api-init:
 
-Linear Regression, initializer
-++++++++++++++++++++++++++++++
+Initializer, default value
+++++++++++++++++++++++++++
+
+The previous model assumed the coefficients of the linear regression
+were also input of the model. That's not very convenient. They should be
+part of the model itself as constant or **initializer** to follow
+onnx semantic. Next example modifies the previous one to change inputs
+`A` and `B` into initializer. The package implements two functions to
+convert from :epkg:`numpy` into :epkg:`onnx` and the other way around
+(see :ref:`l-numpy-helper-onnx-array`).
+
+* `onnx.numpy_helper.to_array`: converts from onnx to numpy
+* `onnx.numpy_helper.from_array`: converts from numpy to onnx
 
 .. runpython::
     :showcode:
@@ -107,19 +260,14 @@ Linear Regression, initializer
     value = numpy.array([0.4], dtype=numpy.float32)
     C = numpy_helper.from_array(value, name='C')
 
-    # input
+    # the part which does not change
     X = make_tensor_value_info('X', TensorProto.FLOAT, [None, None])
-
-    # output
     Y = make_tensor_value_info('Y', TensorProto.FLOAT, None)
-
-    # nodes
     node1 = make_node('MatMul', ['X', 'C'], ['AX'])
     node2 = make_node('Add', ['AX', 'C'], ['Y'])
-
-    # graph
     graph = make_graph([node1, node2], 'lr', [X], [Y], [A, C])
     onnx_model = make_model(graph)
+
     print(onnx_simple_text_plot(onnx_model))
 
 .. gdot::
@@ -134,6 +282,31 @@ Linear Regression, initializer
     from mlprodict.onnxrt import OnnxInference
     from mlprodict.plotting.text_plot import onnx_simple_text_plot
 
+    value = numpy.array([0.5, -0.6], dtype=numpy.float32)
+    A = numpy_helper.from_array(value, name='A')
+    value = numpy.array([0.4], dtype=numpy.float32)
+    C = numpy_helper.from_array(value, name='C')
+    X = make_tensor_value_info('X', TensorProto.FLOAT, [None, None])
+    Y = make_tensor_value_info('Y', TensorProto.FLOAT, None)
+    node1 = make_node('MatMul', ['X', 'C'], ['AX'])
+    node2 = make_node('Add', ['AX', 'C'], ['Y'])
+    graph = make_graph([node1, node2], 'lr', [X], [Y], [A, C])
+    onnx_model = make_model(graph)
+    print(OnnxInference(onnx_model).to_dot())
+
+Again, it is possible to go through the onnx structure to check
+how the initializer look like.
+
+.. runpython::
+    :showcode:
+
+    import numpy
+    from onnx import numpy_helper, TensorProto
+    from onnx.helper import (
+        make_model, make_node, set_model_props, make_tensor, make_graph,
+        make_tensor_value_info)
+    from mlprodict.plotting.text_plot import onnx_simple_text_plot
+
     # initializers
     value = numpy.array([0.5, -0.6], dtype=numpy.float32)
     A = numpy_helper.from_array(value, name='A')
@@ -141,32 +314,97 @@ Linear Regression, initializer
     value = numpy.array([0.4], dtype=numpy.float32)
     C = numpy_helper.from_array(value, name='C')
 
-    # input
+    # the part which does not change
     X = make_tensor_value_info('X', TensorProto.FLOAT, [None, None])
-
-    # output
     Y = make_tensor_value_info('Y', TensorProto.FLOAT, None)
-
-    # nodes
     node1 = make_node('MatMul', ['X', 'C'], ['AX'])
     node2 = make_node('Add', ['AX', 'C'], ['Y'])
-
-    # graph
     graph = make_graph([node1, node2], 'lr', [X], [Y], [A, C])
+    onnx_model = make_model(graph)
+
+    for init in onnx_model.graph.initializer:
+        print(init)
+
+The type is defined as integer as well with the same meaning.
+In this second example, there is only one input left.
+Input `A` and `B` were removed. They could be kept. In that case,
+they are optional. The user can compute the predictions. Every undefined
+input is replaced by the corresponding initializer. It is a default value.
+
+Attributes
+==========
+
+Some operators needs attributes such as :epkg:`Transpose` operator.
+Let's build the graph for expression :epkg:`y = XA' + B` or
+`y = Add(MatMul(X, Transpose(A)) + B)`. Tranpose needs an attribute
+defining the permutation of axes: `perm=[1, 0]`. It is added
+as a named attribute in function `make_node`.
+
+.. runpython::
+    :showcode:
+
+    import numpy
+    from onnx import numpy_helper, TensorProto
+    from onnx.helper import (
+        make_model, make_node, set_model_props, make_tensor,
+        make_graph, make_tensor_value_info)
+    from mlprodict.plotting.text_plot import onnx_simple_text_plot
+
+    # unchanged
+    X = make_tensor_value_info('X', TensorProto.FLOAT, [None, None])
+    A = make_tensor_value_info('A', TensorProto.FLOAT, [None, None])
+    B = make_tensor_value_info('B', TensorProto.FLOAT, [None, None])
+    Y = make_tensor_value_info('Y', TensorProto.FLOAT, None)
+
+    # added
+    node_transpose = make_node('Transpose', ['A'], ['tA'], perm=[1, 0])
+    
+    # unchanged except A is replaced by tA
+    node1 = make_node('MatMul', ['X', 'tA'], ['XA'])
+    node2 = make_node('Add', ['XA', 'B'], ['Y'])
+
+    # node_transpose is added to the list
+    graph = make_graph([node_transpose, node1, node2],
+                       'lr', [X, A, B], [Y])
+    onnx_model = make_model(graph)
+
+    # the work is done, let's display it...
+    print(onnx_simple_text_plot(onnx_model))
+
+.. gdot::
+    :script:
+
+    from mlprodict.testing.einsum import decompose_einsum_equation
+    import numpy
+    from onnx import numpy_helper, TensorProto
+    from onnx.helper import (
+        make_model, make_node, set_model_props, make_tensor,
+        make_graph, make_tensor_value_info)
+    from mlprodict.onnxrt import OnnxInference
+    from mlprodict.plotting.text_plot import onnx_simple_text_plot
+
+    X = make_tensor_value_info('X', TensorProto.FLOAT, [None, None])
+    A = make_tensor_value_info('A', TensorProto.FLOAT, [None, None])
+    B = make_tensor_value_info('B', TensorProto.FLOAT, [None, None])
+    Y = make_tensor_value_info('Y', TensorProto.FLOAT, None)
+    node_transpose = make_node('Transpose', ['A'], ['tA'], perm=[1, 0])
+    node1 = make_node('MatMul', ['X', 'tA'], ['XA'])
+    node2 = make_node('Add', ['XA', 'B'], ['Y'])
+    graph = make_graph([node_transpose, node1, node2],
+                       'lr', [X, A, B], [Y])
     onnx_model = make_model(graph)
     print(OnnxInference(onnx_model).to_dot())
 
-ONNX Python API
-===============
+Opset and metadata
+==================
 
-make functions
-++++++++++++++
 
-Write, Read an ONNX graph
-+++++++++++++++++++++++++
+Subgraph: if, scan, loop
+========================
 
 What is a converting library?
 +++++++++++++++++++++++++++++
 
 Other API
 +++++++++
+

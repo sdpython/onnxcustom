@@ -17,6 +17,7 @@ and how to train them with :epkg:`onnxruntime-training`.
     :maxdepth: 2
 
     tutorial_onnx/index
+    tutorial_onnxruntime/index
     tutorial_skl/index
     tutorial_bench/index
     tutorial_training/index

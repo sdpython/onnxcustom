@@ -1,0 +1,6 @@
+
+Challenges
+==========
+
+.. contents::
+    :local:

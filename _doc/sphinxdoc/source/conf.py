@@ -227,6 +227,10 @@ epkg_dictionary.update({
     'TrainingSession':
         'http://www.xavierdupre.fr/app/onnxcustom/helpsphinx/api/'
         'onnxruntime_python/training.html#onnxruntime.TrainingSession',
+    'Transpose':
+        'http://www.xavierdupre.fr/app/onnxcustom/helpsphinx/onnxmd/'
+        'onnx_docs/Operators.html'
+        '#a-name-transpose-a-a-name-transpose-transpose-a',
     'TreeEnsembleRegressor':
         'https://github.com/onnx/onnx/blob/master/docs/Operators-ml.md'
         '#ai.onnx.ml.TreeEnsembleRegressor',
