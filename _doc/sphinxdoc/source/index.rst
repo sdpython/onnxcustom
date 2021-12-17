@@ -72,9 +72,12 @@ Among the tools this package implements, you may find:
     all_notebooks
     license
     other_pages
+    blog/blogindex
 
 Sources are available on
 `github/onnxcustom <https://github.com/sdpython/onnxcustom>`_.
+Package is available on `pypi <https://pypi.python.org/pypi/onnxcustom/>`_,
+:ref:`l-README`, and a blog for unclassified topics :ref:`blog <ap-main-0>`.
 
 +----------------------+---------------------+---------------------+--------------------+------------------------+------------------------------------------------+
 | :ref:`l-modules`     |  :ref:`l-functions` | :ref:`l-classes`    | :ref:`l-methods`   | :ref:`l-staticmethods` | :ref:`l-properties`                            |
