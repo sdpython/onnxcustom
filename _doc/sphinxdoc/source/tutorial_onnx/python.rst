@@ -232,7 +232,7 @@ smaller than this threshold. Next section show how to overcome that limit.
 .. _l-onnx-linear-regression-onnx-api-init:
 
 Initializer, default value
-++++++++++++++++++++++++++
+==========================
 
 The previous model assumed the coefficients of the linear regression
 were also input of the model. That's not very convenient. They should be
@@ -491,7 +491,7 @@ See `training_tool_test.py
 <https://github.com/onnx/onnx/blob/master/onnx/test/training_tool_test.py>`_
 to see how it works.
 
-Subgraph: If, Scan, Loop
+Subgraph: test and loops
 ========================
 
 Parsing
@@ -522,9 +522,38 @@ pipeline.
     onnx_model = onnx.parser.parse_model(input)
 
     print(onnx_simple_text_plot(onnx_model))
+    
+Shape Inference
+===============
 
 What is a converting library?
-+++++++++++++++++++++++++++++
+=============================
+
+:epkg:`skearn-onnx` converts :epkg:`scikit-learn` models
+into ONNX. It rewrites the prediction function of a model,
+whatever it is, with ONNX operators using the API introduced
+above. It ensures that the predictions are very close to
+the expected predictions computed with the original model.
+
+Machine learning libraries usually has their own design.
+That's why there exists a specific converting library for
+each of them. Many of them are listed
+`Converting to ONNX format
+<https://github.com/onnx/tutorials#converting-to-onnx-format>`_
+
+* :epkg:`sklearn-onnx`: converts models from :epkg:`scikit-learn`
+* `tensorflow-onnx <https://github.com/onnx/tensorflow-onnx>`_:
+  converts models from :epkg:`tensorflow`
+* :epkg:`onnxmltools`: converts models from :epkg:`lightgbm`,
+  :epkg:`xgboost`, :epkg:`pyspark`, `libsvm
+  <https://github.com/cjlin1/libsvm>`_
+* `torch.onnx <https://pytorch.org/docs/master/onnx.html>`_:
+  converts model from :epkg:`pytorch`
+
+The main challenge for all these libraries is to keep up the rythm.
+They must be updated everytime ONNX or the library they support
+have a new released version. That means three to five new releases
+per year.
 
 Other API
-+++++++++
+=========

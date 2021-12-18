@@ -22,6 +22,31 @@ and how to train them with :epkg:`onnxruntime-training`.
     tutorial_bench/index
     tutorial_training/index
 
+Readings
+++++++++
+
+* `Add AI to mobile applications with Xamarin and ONNX Runtime
+  <https://cloudblogs.microsoft.com/opensource/2021/12/14/add-ai-to-mobile-applications-with-xamarin-and-onnx-runtime/>`_
+* `Announcing ONNX Runtime Availability in the NVIDIA Jetson Zoo for High Performance Inferencing
+  <https://developer.nvidia.com/blog/announcing-onnx-runtime-for-jetson/>`_
+  (8/2021)
+* `Speeding Up Deep Learning Inference Using TensorFlow, ONNX, and NVIDIA TensorRT
+  <https://developer.nvidia.com/blog/speeding-up-deep-learning-inference-using-tensorflow-onnx-and-tensorrt/>`_
+  (7/2021)
+* `Journey to optimize large scale transformer model inference with ONNX Runtime
+  <https://cloudblogs.microsoft.com/opensource/2021/06/30/journey-to-optimize-large-scale-transformer-model-inference-with-onnx-runtime/>`_
+  (6/2021)
+* `Accelerating Model Training with the ONNX Runtime
+  <https://medium.com/microsoftazure/accelerating-model-training-with-the-onnx-runtime-519d75a97166>`_
+  (5/2020)
+* `Accelerate and simplify Scikit-learn model inference with ONNX Runtime
+  <https://cloudblogs.microsoft.com/opensource/2020/12/17/accelerate-simplify-scikit-learn-model-inference-onnx-runtime/>`_
+  (12/2020)
+* `Model Persistence scikit-learn and ONNX
+  <https://scikit-learn.fondation-inria.fr/wp-content/uploads/sites/3/2019/04/slides_xavier-dupre_microsoft.pdf>`_,
+  short talk at `scikit-learn foundation <https://scikit-learn.fondation-inria.fr/home/>`_
+  (2019)
+
 Current documention of ONNX and onnxruntime
 +++++++++++++++++++++++++++++++++++++++++++
 
