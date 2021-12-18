@@ -10,7 +10,7 @@
     on :epkg:`WSL` (Windows Linux Subsystem). I took
     the distribution `Ubuntu 20.04`. Paths should be updated
     according to your installation.
-    
+
     **some useful commands once installed**
 
     ::
@@ -24,14 +24,13 @@
 
         # see all local distributions
         wsl -s -l
-        
+
         # see available distributions online
         wsl --list --online
-        
+
         # install one distribution
         wsl --install -d Ubuntu-20.04
 
-    
     Installation of required packages.
 
     ::
@@ -51,10 +50,10 @@
         tar -zxvf cmake-3.22.1.tar.gz
         cd cmake-3.22.1
         ./bootstrap
-        make 
+        make
         sudo make install
         export PATH=~/install/cmake-3.22.1/bin/:$PATH
-        
+
     Installation of :epkg:`openmpi`:
 
     ::
@@ -89,9 +88,9 @@
         sudo apt-get update
         sudo apt-get install libcudnn8
         sudo apt-get install libcudnn8-dev
-        
+
     Installation of :epkg:`nccl`
-    
+
     See `Install NCCL <https://docs.nvidia.com/deeplearning/nccl/install-guide/index.html>`_.
 
     ::
@@ -123,12 +122,10 @@
         export CUDACXX=/usr/local/cuda-${CUDA_VERSION}/bin/nvcc
         export MPI_HOME=~/install/openmpi-4.1.2
         python3 ./tools/ci_build/build.py --config RelWithDebInfo --use_mpi false --enable_training --use_cuda --cuda_home /usr/local/cuda-${CUDA_VERSION}/ --cudnn_home /usr/local/cuda-${CUDA_VERSION}/ --build_wheel --parallel --cuda_version=${CUDA_VERSION} --skip_tests --enable_training_torch_interop --build_dir ./build/linux_gpu
-    
+
     Option ``--parallel 1`` can be used to fix the parallelism while building onnxruntime.
-    Option `--use_mpi false` can be replaced by `--mpi_home /usr/local/lib/openmpi`. 
+    Option `--use_mpi false` can be replaced by `--mpi_home /usr/local/lib/openmpi`.
 
     Another option is to use a docker:
     `Running Existing GPU Accelerated Containers on WSL 2
     <https://docs.nvidia.com/cuda/wsl-user-guide/index.html#ch05-running-containers>`_.
-
-    

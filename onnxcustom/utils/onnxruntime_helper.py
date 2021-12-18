@@ -34,12 +34,22 @@ def get_ort_device_type(device):
     :param device: string
     :return: device type
     """
-    device_type = device if isinstance(device, str) else device.type
+    if isinstance(device, str):
+        if device == 'cuda':
+            return C_OrtDevice.cuda()
+        if device == 'cpu':
+            return C_OrtDevice.cpu()
+        raise ValueError(  # pragma: no cover
+            'Unsupported device type: %r.' % device)
+    if not hasattr(device, 'type'):
+        raise TypeError('Unsupported device type: %r.' % type(device))
+    device_type = device.type
     if device_type == 'cuda':
         return C_OrtDevice.cuda()
     if device_type == 'cpu':
         return C_OrtDevice.cpu()
-    raise ValueError('Unsupported device type: %r.' % device_type)
+    raise ValueError(  # pragma: no cover
+        'Unsupported device type: %r.' % device_type)
 
 
 def get_ort_device(device):

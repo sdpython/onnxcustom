@@ -175,6 +175,9 @@ epkg_dictionary.update({
     'IOBinding':
         'http://www.xavierdupre.fr/app/onnxruntime_training/'
         'helpsphinx/api/tensors.html#iobinding',
+    'IR':
+        'http://www.xavierdupre.fr/app/onnxcustom/helpsphinx/onnxmd/'
+        'onnx_docs/IR.html',
     'Loop':
         'http://www.xavierdupre.fr/app/onnxcustom/helpsphinx/onnxmd/'
         'onnx_docs/Operators.html#a-name-loop-a-a-name-loop-loop-a',

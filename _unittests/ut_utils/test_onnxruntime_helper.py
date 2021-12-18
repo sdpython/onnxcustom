@@ -2,11 +2,14 @@
 @brief      test log(time=1s)
 """
 import unittest
+import numpy
 from pyquickhelper.pycode import ExtTestCase
+from onnxruntime.capi._pybind_state import (  # pylint: disable=E0611
+    OrtValue as C_OrtValue)
 from onnxcustom.utils.onnxruntime_helper import (
     provider_to_device, get_ort_device_type,
     get_ort_device, ort_device_to_string,
-    device_to_providers)
+    device_to_providers, numpy_to_ort_value)
 
 
 class TestOnnxRuntimeHelper(ExtTestCase):
@@ -26,6 +29,14 @@ class TestOnnxRuntimeHelper(ExtTestCase):
         self.assertEqual(get_ort_device_type('cuda'), 1)
         self.assertRaise(lambda: get_ort_device_type('none'), ValueError)
 
+    def test_get_ort_device_type_exc(self):
+        self.assertRaise(
+            lambda: get_ort_device_type(['cpu']),
+            TypeError)
+        self.assertRaise(
+            lambda: get_ort_device_type('upc'),
+            ValueError)
+
     def test_ort_device_to_string(self):
         for value in ['cpu', 'cuda', ('gpu', 'cuda'),
                       ('gpu:0', 'cuda'), ('cuda:0', 'cuda'),
@@ -38,6 +49,13 @@ class TestOnnxRuntimeHelper(ExtTestCase):
                 dev = get_ort_device(a)
                 back = ort_device_to_string(dev)
                 self.assertEqual(b, back)
+
+    def test_ort_device_to_string_exc(self):
+        self.assertRaise(lambda: ort_device_to_string('gg'), TypeError)
+
+    def test_numpy_to_ort_value(self):
+        res = numpy_to_ort_value(numpy.array([0]))
+        self.assertIsInstance(res, C_OrtValue)
 
 
 if __name__ == "__main__":

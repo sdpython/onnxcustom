@@ -117,7 +117,7 @@ of each object of the graph.
 
 .. runpython::
     :showcode:
-    
+
     import numpy
     from onnx import numpy_helper, TensorProto
     from onnx.helper import (
@@ -173,7 +173,7 @@ equivalent type with :epkg:`numpy`.
     from onnx.mapping import TENSOR_TYPE_TO_NP_TYPE
 
     pprint.pprint(TENSOR_TYPE_TO_NP_TYPE)
-    
+
 Serialization
 =============
 
@@ -184,7 +184,7 @@ the case for the whole model.
 
 .. runpython::
     :showcode:
-    
+
     import numpy
     from onnx import numpy_helper, TensorProto
     from onnx.helper import (
@@ -203,23 +203,27 @@ the case for the whole model.
     node2 = make_node('Add', ['XA', 'B'], ['Y'])
     graph = make_graph([node1, node2], 'lr', [X, A, B], [Y])
     onnx_model = make_model(graph)
-    
+
     # The serialization
     with open("linear_regression.onnx", "wb") as f:
         f.write(onnx_model.SerializeToString())
+
+    # display
+    print(onnx_simple_text_plot(onnx_model))
 
 The graph can be restored with function `load`:
 
 .. runpython::
     :showcode:
-    
+
     from onnx import load
     from mlprodict.plotting.text_plot import onnx_simple_text_plot
-    
+
     with open("linear_regression.onnx", "rb") as f:
         onnx_model = load(f)
-    
-    print(onnx_simple_text_plot(onnx_model))    
+
+    # display
+    print(onnx_simple_text_plot(onnx_model))
 
 It looks exactly the same. Any model can be serialized this way
 unless they are bigger than 2 Gb. :epkg:`protobuf` is limited to size
@@ -243,7 +247,6 @@ convert from :epkg:`numpy` into :epkg:`onnx` and the other way around
 
 .. runpython::
     :showcode:
-    :toggle: out
     :warningout: DeprecationWarning
 
     import numpy
@@ -299,6 +302,7 @@ how the initializer look like.
 
 .. runpython::
     :showcode:
+    :warningout: DeprecationWarning
 
     import numpy
     from onnx import numpy_helper, TensorProto
@@ -358,7 +362,7 @@ as a named attribute in function `make_node`.
 
     # added
     node_transpose = make_node('Transpose', ['A'], ['tA'], perm=[1, 0])
-    
+
     # unchanged except A is replaced by tA
     node1 = make_node('MatMul', ['X', 'tA'], ['XA'])
     node2 = make_node('Add', ['XA', 'B'], ['Y'])
@@ -398,13 +402,129 @@ as a named attribute in function `make_node`.
 Opset and metadata
 ==================
 
+Let's load the ONNX file previously created and check
+what kind of metadata it has.
 
-Subgraph: if, scan, loop
+.. runpython::
+    :showcode:
+
+    from onnx import load
+
+    with open("linear_regression.onnx", "rb") as f:
+        onnx_model = load(f)
+
+    for field in ['doc_string', 'domain', 'functions',
+                  'ir_version', 'metadata_props', 'model_version',
+                  'opset_import', 'producer_name', 'producer_version',
+                  'training_info']:
+        print(field, getattr(onnx_model, field))
+
+Most of them are empty because it was not filled when the ONNX
+graph was created. Two of them have a value:
+
+.. runpython::
+    :showcode:
+
+    from onnx import load
+
+    with open("linear_regression.onnx", "rb") as f:
+        onnx_model = load(f)
+
+    print("ir_version:", onnx_model.ir_version)
+    for opset in onnx_model.opset_import:
+        print("opset domain=%r version=%r" % (opset.domain, opset.version))
+
+:epkg:`IR` defined the version of ONNX language version.
+Opset defines the version of operators being used.
+Without any precision, ONNX uses the latest version available
+coming from the installed package.
+Another one can be used.
+
+.. runpython::
+    :showcode:
+
+    from onnx import load
+
+    with open("linear_regression.onnx", "rb") as f:
+        onnx_model = load(f)
+
+    del onnx_model.opset_import[:]
+    opset = onnx_model.opset_import.add()
+    opset.domain = ''
+    opset.version = 14
+
+    for opset in onnx_model.opset_import:
+        print("opset domain=%r version=%r" % (opset.domain, opset.version))
+
+Any opset can be used as long as all operators are defined
+the way ONNX specifies it. Version 5 of operator *Reshape*
+defines the shape as an input and not as an attribute like in
+version 1. The opset tells which specifications is followed
+while describing the graph.
+
+The other metadata can be used to store any information,
+to store information about the way the model was generated,
+a way to distinguish a model from another one with a version
+number.
+
+.. runpython::
+    :showcode:
+
+    from onnx import load, helper, TrainingInfoProto
+
+    with open("linear_regression.onnx", "rb") as f:
+        onnx_model = load(f)
+
+    onnx_model.model_version = 15
+    onnx_model.producer_name = "something"
+    onnx_model.producer_version = "some other thing"
+    onnx_model.doc_string = "documentation about this model"
+    prop = onnx_model.metadata_props
+
+    data = dict(key1="value1", key2="value2")
+    helper.set_model_props(onnx_model, data)
+
+    print(onnx_model)
+
+Field `training_info` can be used to store additional graphs.
+See `training_tool_test.py
+<https://github.com/onnx/onnx/blob/master/onnx/test/training_tool_test.py>`_
+to see how it works.
+
+Subgraph: If, Scan, Loop
 ========================
+
+Parsing
+=======
+
+Module :epkg:`onnx` provides a faster way to define a graph
+a lot easier to read. That's easy to use when the graph is built
+in a single function, less easy when the graph is built from many
+different functions converting each piece of a machine learning
+pipeline.
+
+.. runpython::
+    :showcode:
+
+    import onnx.parser
+    from mlprodict.plotting.text_plot import onnx_simple_text_plot
+
+    input = '''
+        <
+            ir_version: 8,
+            opset_import: [ "" : 15]
+        >
+        agraph (float[I,J] X, float[] A, float[] B) => (float[I] Y) {
+            XA = MatMul(X, A)
+            Y = Add(XA, B)
+        }
+        '''
+    onnx_model = onnx.parser.parse_model(input)
+
+    print(onnx_simple_text_plot(onnx_model))
 
 What is a converting library?
 +++++++++++++++++++++++++++++
 
 Other API
 +++++++++
-
