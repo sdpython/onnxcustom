@@ -1,23 +1,57 @@
 
+==========
 Challenges
 ==========
 
 .. contents::
     :local:
 
+
 Opsets
-++++++
+======
+
+What is a converting library?
+=============================
+
+:epkg:`skearn-onnx` converts :epkg:`scikit-learn` models
+into ONNX. It rewrites the prediction function of a model,
+whatever it is, with ONNX operators using the API introduced
+above. It ensures that the predictions are very close to
+the expected predictions computed with the original model.
+
+Machine learning libraries usually has their own design.
+That's why there exists a specific converting library for
+each of them. Many of them are listed
+`Converting to ONNX format
+<https://github.com/onnx/tutorials#converting-to-onnx-format>`_
+
+* :epkg:`sklearn-onnx`: converts models from :epkg:`scikit-learn`
+* `tensorflow-onnx <https://github.com/onnx/tensorflow-onnx>`_:
+  converts models from :epkg:`tensorflow`
+* :epkg:`onnxmltools`: converts models from :epkg:`lightgbm`,
+  :epkg:`xgboost`, :epkg:`pyspark`, `libsvm
+  <https://github.com/cjlin1/libsvm>`_
+* `torch.onnx <https://pytorch.org/docs/master/onnx.html>`_:
+  converts model from :epkg:`pytorch`
+
+The main challenge for all these libraries is to keep up the rythm.
+They must be updated everytime ONNX or the library they support
+have a new released version. That means three to five new releases
+per year.
+
+Other API
+=========
 
 Tricks learned from experience
-++++++++++++++++++++++++++++++
+==============================
 
 Discrepancies
-~~~~~~~~~~~~~
++++++++++++++
 
 Types, order of computation, parallelization
 
 IsolationForest trick
-~~~~~~~~~~~~~~~~~~~~~
++++++++++++++++++++++
 
 Contribute
 ++++++++++
@@ -25,7 +59,7 @@ Contribute
 `onnx repository <https://github.com/onnx/onnx>`_ must be forked and cloned.
 
 Build
-~~~~~
++++++
 
 The windows build requires conda. The following steps might not be up to date.
 Folder `onnx/.azure-pipelines
@@ -57,7 +91,7 @@ Then build the package:
 The package can now be installed.
 
 Build the documentation
-~~~~~~~~~~~~~~~~~~~~~~~
++++++++++++++++++++++++
 
 The package must be built first (see previous section).
 
@@ -78,7 +112,7 @@ The package must be built first (see previous section).
     set ONNX_ML=1
 
 Update an existing operator
-~~~~~~~~~~~~~~~~~~~~~~~~~~~
++++++++++++++++++++++++++++
 
 All operators are defined in folder
 `onnx/onnx/defs <https://github.com/onnx/onnx/tree/master/onnx/defs>`_.

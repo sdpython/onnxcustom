@@ -1,7 +1,7 @@
 
-==========================
-Use onnxruntime in Python
-=========================
+=======================
+onnxruntime with Python
+=======================
 
 .. contents::
     :local:
