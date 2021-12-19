@@ -309,11 +309,10 @@ class TestOrtTrainingForwardBackward(ExtTestCase):
             y_test1 = y_test[0].reshape((1, -1))
             expected1 = expected[:1]
 
-        # OrtValue
+        # OrtValueVector
         inst = forback.new_instance()
         device = C_OrtDevice(C_OrtDevice.cpu(), OrtMemType.DEFAULT, 0)
 
-        # OrtValueVector
         if add_print:
             print("\n\n######################\nFORWARD")
         inputs = OrtValueVector()

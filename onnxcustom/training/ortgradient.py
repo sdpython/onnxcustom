@@ -271,7 +271,7 @@ class OrtGradientForwardBackward:
 
         :param name: initializer name
         :param exc: raises an exception if not found or return None
-        :return: the initializer as a :epkg:`OrtValue`
+        :return: the initializer as a :epkg:`C_OrtValue`
         """
         for init in self.onnx_model.graph.initializer:
             if name == init.name:

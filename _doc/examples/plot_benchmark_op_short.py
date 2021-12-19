@@ -18,13 +18,16 @@ A simple example
 import numpy
 from numpy.testing import assert_almost_equal
 from pandas import DataFrame, pivot_table
-from onnxruntime import InferenceSession, get_device, OrtValue
+from onnxruntime import InferenceSession, get_device
+from onnxruntime.capi._pybind_state import (  # pylint: disable=E0611
+    OrtValue as C_OrtValue)
 from skl2onnx.common.data_types import FloatTensorType
 from skl2onnx.algebra.onnx_ops import OnnxSlice, OnnxAdd, OnnxMul
 from cpyquickhelper.numbers.speed_measure import measure_time
 from mlprodict.testing.experimental_c import code_optimisation
 from mlprodict.onnxrt import OnnxInference
 from mlprodict.plotting.plotting_onnx import plot_onnx
+from onnxcustom.utils.onnxruntime_helper import get_ort_device
 from tqdm import tqdm
 
 
@@ -97,8 +100,9 @@ y_cpu = sess.run(None, {'X': x})[0]
 # If available...
 
 if get_device().upper() == 'GPU':
+    dev = get_ort_device('cuda:0')
     try:
-        gx = OrtValue.ortvalue_from_numpy(x, 'cuda', 0)
+        gx = C_OrtValue.ortvalue_from_numpy(x, dev)
         cuda = True
     except RuntimeError as e:
         print(e)
@@ -169,7 +173,8 @@ for shape, slices in tqdm(shape_slices):
         sess = InferenceSession(
             onx.SerializeToString(),
             providers=["CUDAExecutionProvider"])
-        gx = OrtValue.ortvalue_from_numpy(x, 'cuda', 0)
+        dev = get_ort_device('cuda:0')
+        gx = C_OrtValue.ortvalue_from_numpy(x, dev)
         sess_run(sess, gx)
         obs = dict(
             shape=str(shape).replace(

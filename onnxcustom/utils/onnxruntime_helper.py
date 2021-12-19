@@ -58,6 +58,15 @@ def get_ort_device(device):
 
     :param device: any type
     :return: :epkg:`C_OrtDevice`
+
+    Example:
+
+    ::
+
+        get_ort_device('cpu')
+        get_ort_device('gpu')
+        get_ort_device('cuda')
+        get_ort_device('cuda:0')
     """
     if isinstance(device, C_OrtDevice):
         return device

@@ -87,7 +87,7 @@ class OrtDataLoader:
         Iterates over the datasets by drawing
         *batch_size* consecutive observations.
         This iterator is slow as it copies the data of every
-        batch. The function yields :epkg:`OrtValue`.
+        batch. The function yields :epkg:`C_OrtValue`.
         """
         if self.device.device_type() != self.device.cpu():
             raise RuntimeError(  # pragma: no cover
@@ -110,7 +110,7 @@ class OrtDataLoader:
         Iterates over the datasets by drawing
         *batch_size* consecutive observations.
         This iterator is slow as it copies the data of every
-        batch. The function yields :epkg:`OrtValue`.
+        batch. The function yields :epkg:`C_OrtValue`.
         """
         N = 0
         b = len(self) - self.batch_size
@@ -179,5 +179,5 @@ class OrtDataLoader:
 
     @property
     def data_ort(self):
-        "Returns a tuple of the datasets in onnxruntime OrtValue."
+        "Returns a tuple of the datasets in onnxruntime C_OrtValue."
         return self.X_ort, self.y_ort
