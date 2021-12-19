@@ -89,7 +89,7 @@ intermediate results. This is how it looks like.
     print(onnx_simple_text_plot(onnx_model))
 
 .. gdot::
-    :script:
+    :script: DOT-SECTION
 
     from mlprodict.testing.einsum import decompose_einsum_equation
     import numpy
@@ -108,7 +108,7 @@ intermediate results. This is how it looks like.
     node2 = make_node('Add', ['XA', 'B'], ['Y'])
     graph = make_graph([node1, node2], 'lr', [X, A, B], [Y])
     onnx_model = make_model(graph)
-    print(OnnxInference(onnx_model).to_dot())
+    print("DOT-SECTION", OnnxInference(onnx_model).to_dot())
 
 An empty shape (`None`) means any shape, a shapes defines as `[None, None]`
 tells this object is a tensor with two dimensions without any further precision.
@@ -274,7 +274,7 @@ convert from :epkg:`numpy` into :epkg:`onnx` and the other way around
     print(onnx_simple_text_plot(onnx_model))
 
 .. gdot::
-    :script:
+    :script: DOT-SECTION
 
     from mlprodict.testing.einsum import decompose_einsum_equation
     import numpy
@@ -295,7 +295,7 @@ convert from :epkg:`numpy` into :epkg:`onnx` and the other way around
     node2 = make_node('Add', ['AX', 'C'], ['Y'])
     graph = make_graph([node1, node2], 'lr', [X], [Y], [A, C])
     onnx_model = make_model(graph)
-    print(OnnxInference(onnx_model).to_dot())
+    print("DOT-SECTION", OnnxInference(onnx_model).to_dot())
 
 Again, it is possible to go through the onnx structure to check
 how the initializer look like.
@@ -376,7 +376,7 @@ as a named attribute in function `make_node`.
     print(onnx_simple_text_plot(onnx_model))
 
 .. gdot::
-    :script:
+    :script: DOT-SECTION
 
     from mlprodict.testing.einsum import decompose_einsum_equation
     import numpy
@@ -397,7 +397,7 @@ as a named attribute in function `make_node`.
     graph = make_graph([node_transpose, node1, node2],
                        'lr', [X, A, B], [Y])
     onnx_model = make_model(graph)
-    print(OnnxInference(onnx_model).to_dot())
+    print("DOT-SECTION", OnnxInference(onnx_model).to_dot())
 
 Opset and metadata
 ==================
@@ -494,6 +494,122 @@ to see how it works.
 Subgraph: test and loops
 ========================
 
+They are usually grouped in a category called *control flow*.
+It is usually better to avoid them as they are not as afficient
+as the matrix operation are much faster and optimized.
+
+If
+~~
+
+A test can be implemented with operator :epkg:`If`.
+It executes one subgraph or another depending on one
+boolean. This is not used very often as a function usually
+needs the result of many comparisons in a batch.
+The following example computes the sum of all floats
+in a matrix based on the sign, returns 1 or -1.
+
+.. runpython::
+    :showcode:
+
+    import numpy
+    import onnx
+    from onnx.helper import (
+        make_node, make_graph, make_model, make_tensor_value_info)
+    from onnx.numpy_helper import from_array
+    from onnxruntime import InferenceSession
+    from mlprodict.plotting.text_plot import onnx_simple_text_plot
+
+    # initializers
+    value = numpy.array([0], dtype=numpy.float32)
+    zero = from_array(value, name='zero')
+
+    # Same as before, X is the input, Y is the output.
+    X = make_tensor_value_info('X', onnx.TensorProto.FLOAT, None)
+    Y = make_tensor_value_info('Y', onnx.TensorProto.FLOAT, None)
+
+    # The node building the condition. The first one
+    # sum over all axes.
+    rsum = make_node('ReduceSum', ['X'], ['rsum'])
+    # The second compares the result to 0.
+    cond = make_node('Greater', ['rsum', 'zero'], ['cond'])
+
+    # Builds the graph is the condition is True.
+    # Input for then
+    then_out = make_tensor_value_info(
+        'then_out', onnx.TensorProto.FLOAT, [5])
+    # The constant to return.
+    then_cst = from_array(numpy.array([1]).astype(numpy.float32))
+
+    # The only node.
+    then_const_node = make_node(
+        'Constant', inputs=[],
+        outputs=['then_out'],
+        value=then_cst)
+
+    # And the graph wrapping these elements.
+    then_body = make_graph(
+        [then_const_node], 'then_body',
+        [], [then_out])
+
+    # Same process for the else branch.
+    else_out = make_tensor_value_info(
+        'else_out', onnx.TensorProto.FLOAT, [5])
+    else_cst = from_array(numpy.array([-1]).astype(numpy.float32))
+
+    else_const_node = make_node(
+        'Constant', inputs=[],
+        outputs=['else_out'],
+        value=else_cst)
+
+    else_body = make_graph(
+        [else_const_node], 'else_body',
+        [], [else_out])
+
+    # Finally the node If taking both graphs as attributes.
+    if_node = onnx.helper.make_node(
+        'If',
+        inputs=['cond'],
+        outputs=['Y'],
+        then_branch=then_body,
+        else_branch=else_body)
+
+    # The final graph.
+    graph = make_graph([if_node, rsum, cond], 'if', [X], [Y], [zero])
+    onnx_model = make_model(graph)
+
+    # Save.
+    with open("onnx_if_sign.onnx", "wb") as f:
+        f.write(onnx_model.SerializeToString())
+
+    # Let's see the output.
+    sess = InferenceSession(onnx_model.SerializeToString())
+
+    x = numpy.ones(3, 2).astype(numpy.float32)
+    res = sess.run(None, {'X': x})
+
+    # It works.
+    print(res)
+
+    # Some display.
+    print(onnx_simple_text_plot(onnx_model))
+
+The whole is easier to visualize with the following image.
+
+.. gdot::
+    :script: DOT-SECTION
+
+    import onnx
+    from mlprodict.onnxrt import OnnxInference
+
+    with open("onnx_if_sign.onnx", "rb") as f:
+        onnx_model = onnx.load(f)
+    print("DOT-SECTION", OnnxInference(onnx_model).to_dot())
+
+Both else and then branches are very simple.
+Node *If* could even be replace with a node *Where* and
+that would be faster. It becomes interesting when both branches
+are bigger and skipping one is more efficient.
+
 Parsing
 =======
 
@@ -522,7 +638,7 @@ pipeline.
     onnx_model = onnx.parser.parse_model(input)
 
     print(onnx_simple_text_plot(onnx_model))
-    
+
 Shape Inference
 ===============
 
