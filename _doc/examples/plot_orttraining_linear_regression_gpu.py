@@ -26,11 +26,14 @@ import numpy
 from pandas import DataFrame
 from onnx import helper, numpy_helper, TensorProto
 from onnxruntime import (
-    __version__ as ort_version, get_device, OrtValue,
+    __version__ as ort_version, get_device,
     TrainingParameters, SessionOptions, TrainingSession)
+from onnxruntime.capi._pybind_state import (  # pylint: disable=E0611
+    OrtValue as C_OrtValue)
 from sklearn.datasets import make_regression
 from sklearn.model_selection import train_test_split
 from onnxcustom.plotting.plotting_onnx import plot_onnxs
+from onnxcustom.utils.onnxruntime_helper import get_ort_device
 from tqdm import tqdm
 
 X, y = make_regression(n_features=2, bias=2)
@@ -165,11 +168,11 @@ pprint(state_tensors)
 ######################################
 # We can now check the coefficients are updated after one iteration.
 
-
-ortx = OrtValue.ortvalue_from_numpy(X_train[:1], device, 0)
-orty = OrtValue.ortvalue_from_numpy(y_train[:1].reshape((-1, 1)), device, 0)
-ortlr = OrtValue.ortvalue_from_numpy(
-    numpy.array([0.01], dtype=numpy.float32), device, 0)
+dev = get_ort_device(device)
+ortx = C_OrtValue.ortvalue_from_numpy(X_train[:1], dev)
+orty = C_OrtValue.ortvalue_from_numpy(y_train[:1].reshape((-1, 1)), dev)
+ortlr = C_OrtValue.ortvalue_from_numpy(
+    numpy.array([0.01], dtype=numpy.float32), dev)
 
 inputs = {'X': ortx, 'label': orty, "Learning_Rate": ortlr}
 outputs = train_session.run(None, inputs)
@@ -200,11 +203,10 @@ class DataLoaderDevice:
     :param X: features
     :param y: labels
     :param batch_size: batch size (consecutive observations)
-    :param device: `'cpu'` or `'cuda'`
-    :param device_idx: device index
+    :param device: `'cpu'`, `'cuda'`, `'cuda:0'`, ...
     """
 
-    def __init__(self, X, y, batch_size=20, device='cpu', device_idx=0):
+    def __init__(self, X, y, batch_size=20, device='cpu'):
         if len(y.shape) == 1:
             y = y.reshape((-1, 1))
         if X.shape[0] != y.shape[0]:
@@ -214,7 +216,6 @@ class DataLoaderDevice:
         self.y = numpy.ascontiguousarray(y)
         self.batch_size = batch_size
         self.device = device
-        self.device_idx = device_idx
 
     def __len__(self):
         "Returns the number of observations."
@@ -231,12 +232,12 @@ class DataLoaderDevice:
             i = numpy.random.randint(0, b)
             N += self.batch_size
             yield (
-                OrtValue.ortvalue_from_numpy(
+                C_OrtValue.ortvalue_from_numpy(
                     self.X[i:i + self.batch_size],
-                    self.device, self.device_idx),
-                OrtValue.ortvalue_from_numpy(
+                    self.device),
+                C_OrtValue.ortvalue_from_numpy(
                     self.y[i:i + self.batch_size],
-                    self.device, self.device_idx))
+                    self.device))
 
     @property
     def data(self):
@@ -349,9 +350,9 @@ class CustomTraining:
             if self.verbose else range(self.max_iter))
         train_losses = []
         for it in loop:
-            bind_lr = OrtValue.ortvalue_from_numpy(
+            bind_lr = C_OrtValue.ortvalue_from_numpy(
                 numpy.array([lr], dtype=numpy.float32),
-                self.device, self.device_idx)
+                self.device)
             loss = self._iteration(data_loader, bind_lr, bind)
             lr = self._update_learning_rate(it, lr)
             if self.verbose > 1:

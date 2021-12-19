@@ -22,13 +22,16 @@ from numpy.testing import assert_almost_equal
 import pandas
 from pandas import DataFrame
 import matplotlib.pyplot as plt
-from onnxruntime import InferenceSession, get_device, OrtValue, SessionOptions
+from onnxruntime import InferenceSession, get_device, SessionOptions
+from onnxruntime.capi._pybind_state import (  # pylint: disable=E0611
+    OrtValue as C_OrtValue)
 from skl2onnx.common.data_types import FloatTensorType
 from skl2onnx.algebra.onnx_ops import OnnxSlice, OnnxAdd, OnnxMul
 from cpyquickhelper.numbers import measure_time
 from tqdm import tqdm
 from mlprodict.testing.experimental_c import code_optimisation
 from mlprodict.onnxrt.ops_whole.session import OnnxWholeSession
+from onnxcustom.utils.onnxruntime_helper import get_ort_device
 
 print([code_optimisation(), get_device()])
 
@@ -160,9 +163,10 @@ def benchmark_op(repeat=10, number=10, name="Slice", shape_slice_fct=None,
         if ort_fct_gpu is not None:
 
             # onnxruntime
+            dev = get_ort_device('cuda:0')
             ctx['xs'] = [
-                OrtValue.ortvalue_from_numpy(
-                    x, 'cuda', 0) for x in xs]
+                C_OrtValue.ortvalue_from_numpy(
+                    x, dev) for x in xs]
             ctx['fct'] = ort_fct_gpu
             obs = measure_time(
                 lambda: loop_fct(ort_fct_gpu, xs),
