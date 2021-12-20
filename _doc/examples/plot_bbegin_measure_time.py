@@ -87,7 +87,8 @@ df_skl.set_index('size')[['mean_obs']].plot(
 
 onx = to_onnx(ereg, X_train[:1].astype(numpy.float32),
               target_opset=14)
-sess = InferenceSession(onx.SerializeToString())
+sess = InferenceSession(onx.SerializeToString(),
+                        providers=['CPUExecutionProvider'])
 oinf = OnnxInference(onx, runtime="python_compiled")
 
 obs = []

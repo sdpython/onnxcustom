@@ -150,7 +150,8 @@ def diff(p1, p2):
 
 onx = to_onnx(model, Xi_train[:1].astype(numpy.float32))
 
-sess = InferenceSession(onx.SerializeToString())
+sess = InferenceSession(onx.SerializeToString(),
+                        providers=['CPUExecutionProvider'])
 
 X32 = Xi_test.astype(numpy.float32)
 
@@ -208,7 +209,8 @@ model2.fit(Xi_train, yi_train)
 
 onx2 = to_onnx(model2, Xi_train[:1].astype(numpy.float32))
 
-sess2 = InferenceSession(onx2.SerializeToString())
+sess2 = InferenceSession(onx2.SerializeToString(),
+                         providers=['CPUExecutionProvider'])
 
 skl2 = model2.predict(X32)
 ort2 = sess2.run(None, {'X': X32})[0]
@@ -233,7 +235,8 @@ model3.fit(Xi_train, yi_train)
 onx3 = to_onnx(model3, Xi_train[:1].astype(numpy.float32),
                options={StandardScaler: {'div': 'div_cast'}})
 
-sess3 = InferenceSession(onx3.SerializeToString())
+sess3 = InferenceSession(onx3.SerializeToString(),
+                         providers=['CPUExecutionProvider'])
 
 skl3 = model3.predict(X32)
 ort3 = sess3.run(None, {'X': X32})[0]
@@ -278,7 +281,8 @@ model_onx.fit(Xi_train, yi_train)
 
 onx4 = to_onnx(model_onx, Xi_train[:1].astype(numpy.float32))
 
-sess4 = InferenceSession(onx4.SerializeToString())
+sess4 = InferenceSession(onx4.SerializeToString(),
+                         providers=['CPUExecutionProvider'])
 
 skl4 = model_onx.predict(X32)
 ort4 = sess4.run(None, {'X': X32})[0]
@@ -348,7 +352,8 @@ ctree.fit(Xi_train, yi_train)
 
 onx6 = to_onnx(ctree, Xi_train[:1].astype(numpy.float32))
 
-sess6 = InferenceSession(onx6.SerializeToString())
+sess6 = InferenceSession(onx6.SerializeToString(),
+                         providers=['CPUExecutionProvider'])
 
 skl6 = ctree.predict(X32)
 ort6 = sess6.run(None, {'X': X32})[0]

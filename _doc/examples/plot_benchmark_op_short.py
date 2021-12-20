@@ -114,13 +114,11 @@ if cuda:
     sessg = InferenceSession(onx.SerializeToString(),
                              providers=["CUDAExecutionProvider"])
 
-    io_binding = sessg.io_binding()
+    io_binding = sessg.io_binding()._iobinding
     io_binding.bind_input(
-        name='X', device_type=gx.device_name(), device_id=0,
-        element_type=numpy.float32, shape=gx.shape(),
-        buffer_ptr=gx.data_ptr())
-    io_binding.bind_output('Y')
-    sessg.run_with_iobinding(io_binding)
+        'X', dev, numpy.float32, gx.shape(), gx.data_ptr())
+    io_binding.bind_output('Y', dev)
+    sessg._sess.run_with_iobinding(io_binding, None)
     y_gpu = io_binding.copy_outputs_to_cpu()[0]
     assert_almost_equal(y_cpu, y_gpu)
 
@@ -161,33 +159,30 @@ for shape, slices in tqdm(shape_slices):
     data.append(obs)
 
     if cuda:
-        def sess_run(sess, x):
-            io_binding = sess.io_binding()
+        def sess_run(sess, io_binding, x, dev):
             io_binding.bind_input(
-                name='X', device_type=gx.device_name(), device_id=0,
-                element_type=numpy.float32, shape=gx.shape(),
-                buffer_ptr=gx.data_ptr())
-            io_binding.bind_output('Y')
-            sess.run_with_iobinding(io_binding)
+                'X', dev, numpy.float32, gx.shape(), gx.data_ptr())
+            io_binding.bind_output('Y', dev)
+            sess._sess.run_with_iobinding(io_binding)
 
+        io_binding = sess.io_binding()._iobinding
         sess = InferenceSession(
             onx.SerializeToString(),
             providers=["CUDAExecutionProvider"])
         dev = get_ort_device('cuda:0')
         gx = C_OrtValue.ortvalue_from_numpy(x, dev)
-        sess_run(sess, gx)
+        sess_run(sess, io_binding, gx, dev)
         obs = dict(
             shape=str(shape).replace(
                 " ", ""), slice=str(slices).replace(
                 " ", ""))
         r = measure_time(
-            'sess_run(sess, gx)',
+            lambda: sess_run(sess, io_binding, io_binding, gx, dev),
             number=number,
             div_by_number=True,
             context={
-                'sess': sess,
-                'gx': gx,
-                'sess_run': sess_run})
+                'sess': sess, 'gx': gx, 'io_binding': io_binding,
+                'dev': dev, 'sess_run': sess_run})
         obs.update(r)
         obs['provider'] = 'GPU'
         data.append(obs)

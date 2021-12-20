@@ -9,6 +9,7 @@ from mlprodict.onnxrt import OnnxInference
 from mlprodict.onnx_tools.onnx_export import export2onnx
 from onnxcustom import get_max_opset
 from onnxcustom.utils.onnx_function import function_onnx_graph, get_supported_functions
+from onnxcustom.utils.onnxruntime_helper import device_to_providers
 
 
 class TestOnnxFunction(ExtTestCase):
@@ -25,7 +26,8 @@ class TestOnnxFunction(ExtTestCase):
         got = oinf.run({'X1': expected, 'X2': predicted})
         self.assertEqualArray(fin, got['Y'], decimal=5)
 
-        sess = InferenceSession(onx.SerializeToString())
+        providers = device_to_providers('cpu')
+        sess = InferenceSession(onx.SerializeToString(), providers=providers)
         got = sess.run(None, {'X1': expected, 'X2': predicted})
         self.assertEqualArray(fin, got[0], decimal=5)
 
@@ -58,7 +60,8 @@ class TestOnnxFunction(ExtTestCase):
         got = oinf.run({'X1': x1, 'X2': x2, 'alpha': alpha})
         self.assertEqualArray(fin, got['Y'], decimal=5)
 
-        sess = InferenceSession(onx.SerializeToString())
+        providers = device_to_providers('cpu')
+        sess = InferenceSession(onx.SerializeToString(), providers=providers)
         got = sess.run(None, {'X1': x1, 'X2': x2, 'alpha': alpha})
         self.assertEqualArray(fin, got[0], decimal=5)
 
@@ -78,7 +81,8 @@ class TestOnnxFunction(ExtTestCase):
         self.assertEqualArray(exp_loss, got['Y'], decimal=5)
         self.assertEqualArray(exp_grad, got['Z'], decimal=5)
 
-        sess = InferenceSession(onx.SerializeToString())
+        providers = device_to_providers('cpu')
+        sess = InferenceSession(onx.SerializeToString(), providers=providers)
         got = sess.run(None, {'X1': x1, 'X2': x2})
         self.assertEqualArray(exp_loss, got[0], decimal=5)
         self.assertEqualArray(exp_grad, got[1], decimal=5)
@@ -105,7 +109,8 @@ class TestOnnxFunction(ExtTestCase):
         got = oinf.run({'X': x, 'A': a, 'B': b})
         self.assertEqualArray(y, got['Y'], decimal=5)
 
-        sess = InferenceSession(onx.SerializeToString())
+        providers = device_to_providers('cpu')
+        sess = InferenceSession(onx.SerializeToString(), providers=providers)
         got = sess.run(None, {'X': x, 'A': a, 'B': b})
         self.assertEqualArray(y, got[0], decimal=5)
 

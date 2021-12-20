@@ -56,7 +56,8 @@ def fcts_model(X, y, n_jobs):
     initial_types = [('X', FloatTensorType([None, X.shape[1]]))]
     onx = to_onnx(model, initial_types=initial_types,
                   black_op={'LinearRegressor'})
-    sess = InferenceSession(onx.SerializeToString())
+    sess = InferenceSession(onx.SerializeToString(),
+                            providers=['CPUExecutionProvider'])
     outputs = [o.name for o in sess.get_outputs()]
     oinf = OnnxInference(onx, runtime="python")
     bind = SessionIOBinding(sess._sess)

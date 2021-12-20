@@ -158,12 +158,15 @@ class OrtGradientForwardBackwardOptimizer(BaseEstimator):
         self.loss_grad_onnx_ = function_onnx_graph(
             "grad_loss_" + self.loss_function, target_opset=opset)
         self.loss_grad_sess_ = InferenceSession(
-            self.loss_grad_onnx_.SerializeToString())
+            self.loss_grad_onnx_.SerializeToString(),
+            providers=device_to_providers(self.device))
         self.loss_grad_sess_bind_ = (
             self.loss_grad_sess_.io_binding()._iobinding)
 
         self.axpy_onnx_ = function_onnx_graph("axpy")
-        self.axpy_sess_ = InferenceSession(self.axpy_onnx_.SerializeToString())
+        self.axpy_sess_ = InferenceSession(
+            self.axpy_onnx_.SerializeToString(),
+            providers=device_to_providers(self.device))
         self.axpy_sess_bind_ = self.axpy_sess_.io_binding()._iobinding
 
         if self.enable_logging:

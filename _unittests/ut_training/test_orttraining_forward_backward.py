@@ -21,6 +21,7 @@ except ImportError:
 from mlprodict.onnx_conv import to_onnx
 from mlprodict.onnx_tools.onnx_manipulations import select_model_inputs_outputs
 from onnxcustom import __max_supported_opset__ as opset
+from onnxcustom.utils.onnxruntime_helper import device_to_providers
 
 
 class TestOrtTrainingForwardBackward(ExtTestCase):
@@ -84,7 +85,8 @@ class TestOrtTrainingForwardBackward(ExtTestCase):
         if verbose:
             print("[forward_no_training] InferenceSession")
 
-        sess0 = InferenceSession(onx.SerializeToString())
+        providers = device_to_providers('cpu')
+        sess0 = InferenceSession(onx.SerializeToString(), providers=providers)
         inames = [i.name for i in sess0.get_inputs()]  # pylint: disable=E1101
         self.assertEqual(inames, ['X'])
         got = sess0.run(None, {'X': X_test})
@@ -187,7 +189,8 @@ class TestOrtTrainingForwardBackward(ExtTestCase):
         coef = reg.coef_.astype(numpy.float32).reshape((-1, 1))
         intercept = numpy.array([reg.intercept_], dtype=numpy.float32)
 
-        sess0 = InferenceSession(onx.SerializeToString())
+        providers = device_to_providers('cpu')
+        sess0 = InferenceSession(onx.SerializeToString(), providers=providers)
         inames = [i.name for i in sess0.get_inputs()]
         self.assertEqual(inames, ['X'])
         got = sess0.run(None, {'X': X_test})
@@ -274,7 +277,8 @@ class TestOrtTrainingForwardBackward(ExtTestCase):
         #onx.graph.input[0].type.tensor_type.shape.dim[0].dim_param = "batch_size"
         #onx.graph.output[0].type.tensor_type.shape.dim[0].dim_value = 0
         #onx.graph.output[0].type.tensor_type.shape.dim[0].dim_param = "batch_size"
-        sess = InferenceSession(onx.SerializeToString())
+        providers = device_to_providers('cpu')
+        sess = InferenceSession(onx.SerializeToString(), providers=providers)
         sess.run(None, {'X': X_test[:1]})
 
         # starts testing

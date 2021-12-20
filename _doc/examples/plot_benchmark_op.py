@@ -90,15 +90,14 @@ def build_ort_op(op_version=14, save=None, **kwargs):  # opset=13, 14, ...
     if get_device().upper() == 'GPU':
         sessg = InferenceSession(onx.SerializeToString(),
                                  providers=["CUDAExecutionProvider"])
+        io_binding = sessg.io_binding()._iobinding
+        device = get_ort_device('cuda:0')
 
         def run_gpu(x):
-            io_binding = sessg.io_binding()
             io_binding.bind_input(
-                name='X', device_type=x.device_name(), device_id=0,
-                element_type=numpy.float32, shape=x.shape(),
-                buffer_ptr=x.data_ptr())
-            io_binding.bind_output('Y')
-            return sessg.run_with_iobinding(io_binding)
+                'X', device, numpy.float32, x.shape(), x.data_ptr())
+            io_binding.bind_output('Y', device)
+            return sessg._sess.run_with_iobinding(io_binding, None)
 
         return onx, lambda x: sess.run(None, {'X': x}), npy_fct, run_gpu
     else:
@@ -165,11 +164,11 @@ def benchmark_op(repeat=10, number=10, name="Slice", shape_slice_fct=None,
             # onnxruntime
             dev = get_ort_device('cuda:0')
             ctx['xs'] = [
-                C_OrtValue.ortvalue_from_numpy(
-                    x, dev) for x in xs]
+                C_OrtValue.ortvalue_from_numpy(x, dev)
+                for x in xs]
             ctx['fct'] = ort_fct_gpu
             obs = measure_time(
-                lambda: loop_fct(ort_fct_gpu, xs),
+                lambda: loop_fct(ort_fct_gpu, ctx['xs']),
                 div_by_number=True, context=ctx, repeat=repeat, number=number)
             obs['dim'] = dim
             obs['fct'] = 'ort_gpu'
@@ -205,15 +204,15 @@ def benchmark_op(repeat=10, number=10, name="Slice", shape_slice_fct=None,
         so.enable_profiling = True
         sess = InferenceSession(onx.SerializeToString(), so,
                                 providers=["CUDAExecutionProvider"])
+        io_binding = sess.io_binding()._iobinding
+        device = get_ort_device('cpu')
+
         for i in range(0, repeat_profile):
             x = ctx['xs'][-1]
-            io_binding = sess.io_binding()
             io_binding.bind_input(
-                name='X', device_type=x.device_name(), device_id=0,
-                element_type=numpy.float32, shape=x.shape(),
-                buffer_ptr=x.data_ptr())
-            io_binding.bind_output('Y')
-            sess.run_with_iobinding(io_binding)
+                'X', device, numpy.float32, x.shape(), x.data_ptr())
+            io_binding.bind_output('Y', device)
+            sess._sess.run_with_iobinding(io_binding, None)
 
         prof = sess.end_profiling()
         with open(prof, "r") as f:

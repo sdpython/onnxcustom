@@ -125,7 +125,7 @@ batch = 200
 
 if get_device().upper() == 'GPU':
     ort_device = C_OrtDevice(
-        C_OrtDevice.gpu(), C_OrtDevice.default_memory(), 0)
+        C_OrtDevice.cuda(), C_OrtDevice.default_memory(), 0)
     provider = 'CUDAExecutionProvider'
 else:
     ort_device = C_OrtDevice(

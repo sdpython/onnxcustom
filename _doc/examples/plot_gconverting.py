@@ -31,7 +31,8 @@ clr.fit(X_train, y_train)
 
 onx = to_onnx(clr, X, options={'zipmap': False})
 
-sess = InferenceSession(onx.SerializeToString())
+sess = InferenceSession(onx.SerializeToString(),
+                        providers=['CPUExecutionProvider'])
 input_names = [i.name for i in sess.get_inputs()]
 output_names = [o.name for o in sess.get_outputs()]
 print("inputs=%r, outputs=%r" % (input_names, output_names))
@@ -49,7 +50,8 @@ print(sess.run(None, {input_names[0]: X_test[:2]}))
 onx = to_onnx(clr, X, options={'zipmap': False},
               initial_types=[('X56', FloatTensorType([None, X.shape[1]]))])
 
-sess = InferenceSession(onx.SerializeToString())
+sess = InferenceSession(onx.SerializeToString(),
+                        providers=['CPUExecutionProvider'])
 input_names = [i.name for i in sess.get_inputs()]
 output_names = [o.name for o in sess.get_outputs()]
 print("inputs=%r, outputs=%r" % (input_names, output_names))
@@ -67,7 +69,8 @@ onx = to_onnx(clr, X, options={'zipmap': False},
               final_types=[('L', Int64TensorType([None])),
                            ('P', FloatTensorType([None, 3]))])
 
-sess = InferenceSession(onx.SerializeToString())
+sess = InferenceSession(onx.SerializeToString(),
+                        providers=['CPUExecutionProvider'])
 input_names = [i.name for i in sess.get_inputs()]
 output_names = [o.name for o in sess.get_outputs()]
 print("inputs=%r, outputs=%r" % (input_names, output_names))
@@ -93,7 +96,8 @@ def rename_results(proposed_name, existing_names):
 onx = to_onnx(clr, X, options={'zipmap': False},
               naming=rename_results)
 
-sess = InferenceSession(onx.SerializeToString())
+sess = InferenceSession(onx.SerializeToString(),
+                        providers=['CPUExecutionProvider'])
 input_names = [i.name for i in sess.get_inputs()]
 output_names = [o.name for o in sess.get_outputs()]
 print("inputs=%r, outputs=%r" % (input_names, output_names))

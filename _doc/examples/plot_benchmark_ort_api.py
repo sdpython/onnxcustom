@@ -89,7 +89,8 @@ data.append(obs)
 ###################################
 # onnxruntime: run
 print('ort')
-sess = InferenceSession(onx.SerializeToString())
+sess = InferenceSession(onx.SerializeToString(),
+                        providers=['CPUExecutionProvider'])
 obs = measure_time(lambda: sess.run(None, {'X': X}),
                    context=dict(sess=sess, X=X),
                    repeat=repeat, number=number)
@@ -100,7 +101,8 @@ data.append(obs)
 ###################################
 # onnxruntime: run_with_iobinding
 print('ort-bind')
-sess = InferenceSession(onx.SerializeToString())
+sess = InferenceSession(onx.SerializeToString(),
+                        providers=['CPUExecutionProvider'])
 bind = SessionIOBinding(sess._sess)
 ort_device = C_OrtDevice(C_OrtDevice.cpu(), C_OrtDevice.default_memory(), 0)
 
@@ -134,7 +136,8 @@ data.append(obs)
 # inplace.
 
 print('ort-bind-inplace')
-sess = InferenceSession(onx.SerializeToString())
+sess = InferenceSession(onx.SerializeToString(),
+                        providers=['CPUExecutionProvider'])
 bind = SessionIOBinding(sess._sess)
 ort_device = C_OrtDevice(C_OrtDevice.cpu(), C_OrtDevice.default_memory(), 0)
 

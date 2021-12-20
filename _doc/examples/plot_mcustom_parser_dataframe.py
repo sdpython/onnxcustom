@@ -318,7 +318,8 @@ update_registered_converter(
 initial_types = guess_schema_from_data(data)
 pprint(initial_types)
 onx = to_onnx(dec, initial_types=initial_types, target_opset=12)
-sess = InferenceSession(onx.SerializeToString())
+sess = InferenceSession(onx.SerializeToString(),
+                        providers=['CPUExecutionProvider'])
 
 
 def cvt_col(values):

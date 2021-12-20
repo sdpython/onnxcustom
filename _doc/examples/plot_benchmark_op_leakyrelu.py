@@ -116,9 +116,12 @@ plot_onnxs(onx_leaky, onx_leaky_dec, onx_leaky_dec_greater,
 # Check that both graph returns are equivalent
 # ++++++++++++++++++++++++++++++++++++++++++++
 
-sess1 = InferenceSession(onx_leaky.SerializeToString())
-sess_dec = InferenceSession(onx_leaky_dec.SerializeToString())
-sess_dec_greater = InferenceSession(onx_leaky_dec_greater.SerializeToString())
+sess1 = InferenceSession(onx_leaky.SerializeToString(),
+                         providers=['CPUExecutionProvider'])
+sess_dec = InferenceSession(onx_leaky_dec.SerializeToString(),
+                            providers=['CPUExecutionProvider'])
+sess_dec_greater = InferenceSession(onx_leaky_dec_greater.SerializeToString(),
+                                    providers=['CPUExecutionProvider'])
 
 for shape in [(1, ), (10, ), (5, 5), (7, 2, 4)]:
     rnd = numpy.random.randn(*shape).astype(numpy.float32)

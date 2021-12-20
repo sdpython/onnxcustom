@@ -54,7 +54,8 @@ new_onx = add_output_initializer(
 # Inference
 # +++++++++
 
-sess = InferenceSession(new_onx.SerializeToString())
+sess = InferenceSession(new_onx.SerializeToString(),
+                        providers=['CPUExecutionProvider'])
 print("output names:", [o.name for o in sess.get_outputs()])
 res = sess.run(None, {'X': X_test[:2]})
 print("outputs")
@@ -75,7 +76,8 @@ pprint.pprint(res)
 
 simple_onx = select_model_inputs_outputs(new_onx, ['probabilities'])
 
-sess = InferenceSession(simple_onx.SerializeToString())
+sess = InferenceSession(simple_onx.SerializeToString(),
+                        providers=['CPUExecutionProvider'])
 print("output names:", [o.name for o in sess.get_outputs()])
 res = sess.run(None, {'X': X_test[:2]})
 print("outputs")
@@ -101,7 +103,8 @@ with open("simplified_model.onnx", "wb") as f:
 
 model = load("simplified_model.onnx", "wb")
 
-sess = InferenceSession(model.SerializeToString())
+sess = InferenceSession(model.SerializeToString(),
+                        providers=['CPUExecutionProvider'])
 print("output names:", [o.name for o in sess.get_outputs()])
 res = sess.run(None, {'X': X_test[:2]})
 print("outputs")
