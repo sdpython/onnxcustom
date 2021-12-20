@@ -6,7 +6,6 @@ Challenges
 .. contents::
     :local:
 
-
 Opsets
 ======
 
