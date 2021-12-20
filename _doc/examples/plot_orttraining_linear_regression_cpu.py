@@ -2,8 +2,8 @@
 
 .. _l-orttraining-linreg-cpu:
 
-Train a linear regression with onnxruntime-training
-===================================================
+Train a linear regression with onnxruntime-training in details
+==============================================================
 
 :epkg:`onnxruntime-training` only computes the gradient values.
 A gradient descent can then use it to train a model.

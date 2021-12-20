@@ -339,7 +339,7 @@ Attributes
 ==========
 
 Some operators needs attributes such as :epkg:`Transpose` operator.
-Let's build the graph for expression :epkg:`y = XA' + B` or
+Let's build the graph for expression :math:`y = XA' + B` or
 `y = Add(MatMul(X, Transpose(A)) + B)`. Tranpose needs an attribute
 defining the permutation of axes: `perm=[1, 0]`. It is added
 as a named attribute in function `make_node`.

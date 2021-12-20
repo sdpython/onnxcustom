@@ -65,7 +65,8 @@
 
     Installation of CUDA (choose a compatible version with :epkg:`pytorch`, 11.3 for example).
 
-    See ` <https://docs.nvidia.com/cuda/wsl-user-guide/index.html#ch03-running-cuda>`_
+    See `CUDA on WSL User Guide
+    <https://docs.nvidia.com/cuda/wsl-user-guide/index.html#ch03-running-cuda>`_
 
     ::
 

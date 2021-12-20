@@ -2,8 +2,8 @@
 
 .. _l-orttraining-linreg-gpu:
 
-Train a linear regression with onnxruntime-training on GPU
-==========================================================
+Train a linear regression with onnxruntime-training on GPU in details
+=====================================================================
 
 This example follows the same steps introduced in example
 :ref:`l-orttraining-linreg-cpu` but on GPU. This example works
@@ -142,12 +142,20 @@ def create_training_session(
     session_options = SessionOptions()
     session_options.use_deterministic_compute = True
 
-    if device == 'cpu':
-        provider = ['CPUExecutionProvider']
-    elif device.startswith("cuda"):
-        provider = ['CUDAExecutionProvider']
+    if hasattr(device, 'device_type'):
+        if device.device_type() == device.cpu():
+            provider = ['CPUExecutionProvider']
+        elif device.device_type() == device.cuda():
+            provider = ['CUDAExecutionProvider']
+        else:
+            raise ValueError("Unexpected device %r." % device)
     else:
-        raise ValueError("Unexpected device %r." % device)
+        if device == 'cpu':
+            provider = ['CPUExecutionProvider']
+        elif device.startswith("cuda"):
+            provider = ['CUDAExecutionProvider']
+        else:
+            raise ValueError("Unexpected device %r." % device)
 
     session = TrainingSession(
         training_onnx.SerializeToString(), ort_parameters, session_options,
@@ -174,8 +182,13 @@ orty = C_OrtValue.ortvalue_from_numpy(y_train[:1].reshape((-1, 1)), dev)
 ortlr = C_OrtValue.ortvalue_from_numpy(
     numpy.array([0.01], dtype=numpy.float32), dev)
 
-inputs = {'X': ortx, 'label': orty, "Learning_Rate": ortlr}
-outputs = train_session.run(None, inputs)
+bind = train_session.io_binding()._iobinding
+bind.bind_ortvalue_input('X', ortx)
+bind.bind_ortvalue_input('label', orty)
+bind.bind_ortvalue_input('Learning_Rate', ortlr)
+bind.bind_output('loss', dev)
+train_session._sess.run_with_iobinding(bind, None)
+outputs = bind.copy_outputs_to_cpu()
 pprint(outputs)
 
 
@@ -215,7 +228,7 @@ class DataLoaderDevice:
         self.X = numpy.ascontiguousarray(X)
         self.y = numpy.ascontiguousarray(y)
         self.batch_size = batch_size
-        self.device = device
+        self.device = get_ort_device(device)
 
     def __len__(self):
         "Returns the number of observations."
@@ -280,15 +293,13 @@ class CustomTraining:
             by a heuristic proposed by Leon Bottou.
         * `'invscaling'`: `eta = eta0 / pow(t, power_t)`
     :param device: `'cpu'` or `'cuda'`
-    :param device_idx: device index
     :param verbose: use :epkg:`tqdm` to display the training progress
     """
 
     def __init__(self, model_onnx, weights_to_train, loss_output_name='loss',
                  max_iter=100, training_optimizer_name='SGDOptimizer',
                  batch_size=10, eta0=0.01, alpha=0.0001, power_t=0.25,
-                 learning_rate='invscaling', device='cpu', device_idx=0,
-                 verbose=0):
+                 learning_rate='invscaling', device='cpu', verbose=0):
         # See https://scikit-learn.org/stable/modules/generated/
         # sklearn.linear_model.SGDRegressor.html
         self.model_onnx = model_onnx
@@ -302,8 +313,7 @@ class CustomTraining:
         self.alpha = alpha
         self.power_t = power_t
         self.learning_rate = learning_rate.lower()
-        self.device = device
-        self.device_idx = device_idx
+        self.device = get_ort_device(device)
 
     def _init_learning_rate(self):
         self.eta0_ = self.eta0
@@ -343,7 +353,7 @@ class CustomTraining:
             o.name for o in self.train_session_.get_outputs()]
         self.loss_index_ = self.output_names_.index(self.loss_output_name)
 
-        bind = self.train_session_.io_binding()
+        bind = self.train_session_.io_binding()._iobinding
 
         loop = (
             tqdm(range(self.max_iter))
@@ -366,31 +376,11 @@ class CustomTraining:
         actual_losses = []
         for batch_idx, (data, target) in enumerate(data_loader):
 
-            bind.bind_input(
-                name=self.input_names_[0],
-                device_type=self.device,
-                device_id=self.device_idx,
-                element_type=numpy.float32,
-                shape=data.shape(),
-                buffer_ptr=data.data_ptr())
-
-            bind.bind_input(
-                name=self.input_names_[1],
-                device_type=self.device,
-                device_id=self.device_idx,
-                element_type=numpy.float32,
-                shape=target.shape(),
-                buffer_ptr=target.data_ptr())
-
-            bind.bind_input(
-                name=self.input_names_[2],
-                device_type=learning_rate.device_name(), device_id=0,
-                element_type=numpy.float32, shape=learning_rate.shape(),
-                buffer_ptr=learning_rate.data_ptr())
-
-            bind.bind_output('loss')
-
-            self.train_session_.run_with_iobinding(bind)
+            bind.bind_ortvalue_input(self.input_names_[0], data)
+            bind.bind_ortvalue_input(self.input_names_[1], target)
+            bind.bind_ortvalue_input(self.input_names_[2], learning_rate)
+            bind.bind_output('loss', self.device)
+            self.train_session_._sess.run_with_iobinding(bind, None)
             outputs = bind.copy_outputs_to_cpu()
             actual_losses.append(outputs[self.loss_index_])
         return numpy.array(actual_losses).mean()

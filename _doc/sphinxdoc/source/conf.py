@@ -102,6 +102,8 @@ epkg_dictionary.update({
     'C++': 'https://en.wikipedia.org/wiki/C%2B%2B',
     'chrome-tracing':
         'https://www.chromium.org/developers/how-tos/trace-event-profiling-tool',
+    'cmake': 'https://cmake.org/',
+    'cudnn': 'https://developer.nvidia.com/cudnn',
     'cython': 'https://cython.org/',
     'docker': 'https://en.wikipedia.org/wiki/Docker_(software)',
     'DOT': 'https://www.graphviz.org/doc/info/lang.html',
@@ -110,6 +112,7 @@ epkg_dictionary.update({
     'lightgbm': 'https://lightgbm.readthedocs.io/en/latest/',
     'mlprodict':
         'http://www.xavierdupre.fr/app/mlprodict/helpsphinx/index.html',
+    'nccl': 'https://developer.nvidia.com/nccl',
     'netron': 'https://github.com/lutzroeder/netron',
     'NMF':
         'https://scikit-learn.org/stable/modules/generated/'
@@ -128,6 +131,7 @@ epkg_dictionary.update({
     'onnxruntime-training':
         'https://github.com/microsoft/onnxruntime/tree/master/orttraining',
     'openmp': 'https://en.wikipedia.org/wiki/OpenMP',
+    'openmpi': 'https://www.open-mpi.org/',
     'pandas_streaming':
         'http://www.xavierdupre.fr/app/pandas_streaming/helpsphinx/index.html',
     'protobuf': 'https://developers.google.com/protocol-buffers',
@@ -148,6 +152,7 @@ epkg_dictionary.update({
     'tqdm': 'https://github.com/tqdm/tqdm',
     'xgboost': 'https://xgboost.readthedocs.io/en/latest/',
     'XGBoost': 'https://xgboost.readthedocs.io/en/latest/',
+    'WSL': 'https://docs.microsoft.com/en-us/windows/wsl/install',
 })
 
 # APIs, links which should be replaced.

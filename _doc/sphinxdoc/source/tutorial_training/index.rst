@@ -46,12 +46,14 @@ The tutorial was tested with following version:
     import pyquickhelper
     import mlprodict
     import onnxcustom
+    import torch
 
     print("python {}".format(sys.version_info))
     mods = [numpy, scipy, sklearn, lightgbm, xgboost,
             onnx, onnxmltools, onnxruntime, onnxcustom,
             onnxconverter_common,
-            skl2onnx, mlprodict, pyquickhelper]
+            skl2onnx, mlprodict, pyquickhelper,
+            torch]
     mods = [(m.__name__, m.__version__) for m in mods]
     mx = max(len(_[0]) for _ in mods) + 1
     for name, vers in sorted(mods):
