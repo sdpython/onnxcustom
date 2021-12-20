@@ -584,7 +584,7 @@ in a matrix based on the sign, returns 1 or -1.
     # Let's see the output.
     sess = InferenceSession(onnx_model.SerializeToString())
 
-    x = numpy.ones(3, 2).astype(numpy.float32)
+    x = numpy.ones((3, 2), dtype=numpy.float32)
     res = sess.run(None, {'X': x})
 
     # It works.

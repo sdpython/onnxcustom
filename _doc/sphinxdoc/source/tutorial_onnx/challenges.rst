@@ -12,7 +12,7 @@ Opsets
 What is a converting library?
 =============================
 
-:epkg:`skearn-onnx` converts :epkg:`scikit-learn` models
+:epkg:`sklearn-onnx` converts :epkg:`scikit-learn` models
 into ONNX. It rewrites the prediction function of a model,
 whatever it is, with ONNX operators using the API introduced
 above. It ensures that the predictions are very close to
