@@ -266,7 +266,7 @@ convert from :epkg:`numpy` into :epkg:`onnx` and the other way around
     # the part which does not change
     X = make_tensor_value_info('X', TensorProto.FLOAT, [None, None])
     Y = make_tensor_value_info('Y', TensorProto.FLOAT, None)
-    node1 = make_node('MatMul', ['X', 'C'], ['AX'])
+    node1 = make_node('MatMul', ['X', 'A'], ['AX'])
     node2 = make_node('Add', ['AX', 'C'], ['Y'])
     graph = make_graph([node1, node2], 'lr', [X], [Y], [A, C])
     onnx_model = make_model(graph)
@@ -291,7 +291,7 @@ convert from :epkg:`numpy` into :epkg:`onnx` and the other way around
     C = numpy_helper.from_array(value, name='C')
     X = make_tensor_value_info('X', TensorProto.FLOAT, [None, None])
     Y = make_tensor_value_info('Y', TensorProto.FLOAT, None)
-    node1 = make_node('MatMul', ['X', 'C'], ['AX'])
+    node1 = make_node('MatMul', ['X', 'A'], ['AX'])
     node2 = make_node('Add', ['AX', 'C'], ['Y'])
     graph = make_graph([node1, node2], 'lr', [X], [Y], [A, C])
     onnx_model = make_model(graph)
@@ -321,7 +321,7 @@ how the initializer look like.
     # the part which does not change
     X = make_tensor_value_info('X', TensorProto.FLOAT, [None, None])
     Y = make_tensor_value_info('Y', TensorProto.FLOAT, None)
-    node1 = make_node('MatMul', ['X', 'C'], ['AX'])
+    node1 = make_node('MatMul', ['X', 'A'], ['AX'])
     node2 = make_node('Add', ['AX', 'C'], ['Y'])
     graph = make_graph([node1, node2], 'lr', [X], [Y], [A, C])
     onnx_model = make_model(graph)
@@ -603,7 +603,7 @@ The whole is easier to visualize with the following image.
 
     with open("onnx_if_sign.onnx", "rb") as f:
         onnx_model = onnx.load(f)
-    print("DOT-SECTION", OnnxInference(onnx_model).to_dot())
+    print("DOT-SECTION", OnnxInference(onnx_model).to_dot(recursive=True))
 
 Both else and then branches are very simple.
 Node *If* could even be replace with a node *Where* and
