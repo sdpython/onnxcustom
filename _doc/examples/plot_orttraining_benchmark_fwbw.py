@@ -121,7 +121,8 @@ def clean_name(text):
     return text
 
 
-ps = profile(lambda: benchmark(X_train, y_train, nn, train_session, name='NN-CPU'))[0]
+ps = profile(lambda: benchmark(X_train, y_train,
+             nn, train_session, name='NN-CPU'))[0]
 root, nodes = profile2graph(ps, clean_text=clean_name)
 text = root.to_text()
 print(text)
@@ -136,7 +137,8 @@ if get_device().upper() == 'GPU':
         onx, device='cuda', learning_rate=1e-5,
         warm_start=False, max_iter=200, batch_size=batch_size)
 
-    benches.append(benchmark(X_train, y_train, nn, train_session, name='NN-GPU'))
+    benches.append(benchmark(X_train, y_train, nn,
+                   train_session, name='NN-GPU'))
 
 ######################################
 # Linear Regression
@@ -167,7 +169,8 @@ if get_device().upper() == 'GPU':
         onx, device='cuda', learning_rate=5e-4,
         warm_start=False, max_iter=200, batch_size=batch_size)
 
-    benches.append(benchmark(X_train, y_train, nn, train_session, name='LR-GPU'))
+    benches.append(benchmark(X_train, y_train, nn,
+                   train_session, name='LR-GPU'))
 
 
 ######################################
@@ -175,7 +178,8 @@ if get_device().upper() == 'GPU':
 # +++++++++++++
 
 if get_device().upper() == 'GPU':
-    ps = profile(lambda: benchmark(X_train, y_train, lr, train_session, name='LR-GPU'))[0]
+    ps = profile(lambda: benchmark(X_train, y_train,
+                 lr, train_session, name='LR-GPU'))[0]
     root, nodes = profile2graph(ps, clean_text=clean_name)
     text = root.to_text()
     print(text)
