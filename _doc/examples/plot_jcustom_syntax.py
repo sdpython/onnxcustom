@@ -1,4 +1,6 @@
 """
+.. _j-plot-custom-syntax:
+
 Two ways to implement a converter
 =================================
 

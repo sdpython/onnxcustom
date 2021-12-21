@@ -6,9 +6,6 @@ Challenges
 .. contents::
     :local:
 
-Opsets
-======
-
 What is a converting library?
 =============================
 
@@ -38,8 +35,76 @@ They must be updated everytime ONNX or the library they support
 have a new released version. That means three to five new releases
 per year.
 
+Converting libraries are not compatible among each others.
+:epkg:`tf2onnx` is dedicated to :epkg:`tensorflow` and only
+:epkg:`tensorflow`. The same goes for :epkg:`sklearn-onnx`
+specialized into :epkg:`scikit-learn`.
+
+One challenge is customization. It is difficult to support
+custom models from users. They have to write the specific
+converter for the model is implemented. It is like implementing
+twice the prediction function. There is one easy case:
+deep learning frameworks have their own primitives to ensure
+the same code can be executed on different environment.
+As long as a custom layer or subpart is using pieces of
+:epkg:`pytorch` or :epkg:`tensorflow`, there is not much to do.
+It is a different story for :epkg:`scikit-learn`. This package
+does not have its own addition or multiplication, it relies
+on :epkg:`numpy` or :epkg:`scipy`. The user must implement
+its transformer or predictor with ONNX primitives, whether or
+not it was implemented with :epkg:`numpy`. Example
+:ref:`l-plot-custom-converter` shows what it looks like.
+
+Opsets
+======
+
+ONNX releases package with version number like
+`major.minor.fix`. Every minor update means the list of operators
+is different or the signature has changed. It is also associated to
+an opset, version `1.10` is opset 15, `1.11` will be opset 16.
+Every ONNX graph should define the opset it follows. Changing this
+version without updating the operators could make the graph invalid.
+If the opset is left unspecified, ONN will consider that the graph
+is valid for the latest opset.
+
+New opsets usually introduce new operators and the same function
+could be implemented differenty with these new operators and
+more efficient. However, the runtime the model is running on may not
+support newest opsets. That's why every converting library offers the
+possibility to create an ONNX graph for a specific opset.
+ONNX language describes heavy operators. Changing the opset is similar
+to upgrade a library but :epkg:`onnx` and onnx runtimes must support
+backward compatibility.
+
 Other API
 =========
+
+Examples in previous sections shows that :epkg:`onnx` API is
+very verbose. It is also difficult to get a whole picture of
+a graph by reading the code unless it is a small one. Almost
+every converting library has implemented a different API
+to create a graph, usually more simple.
+
+:epkg:`tf2onnx` implements a class graph.
+It rewrites tensorflow function with ONNX operator when
+ONNX does not have a similar function (see `Erf
+<https://github.com/onnx/tensorflow-onnx/blob/master/
+tf2onnx/onnx_opset/math.py#L414>`_.
+
+:epkg:`sklearn-onnx` defines two different API. The first one
+introduced in that example :ref:`j-plot-custom-syntax`
+follows a similar design that :epkg:`tf2onnx`. The second
+:ref:`l-plot-custom-converter` is more compact and defines
+every ONNX operator as composable functions.
+
+A last approach aims at removing one implementation (:epkg:`numpy`
++ :epkg:`onnx`).
+`Numpy to ONNX: Create ONNX graphs with an API similar to numpy
+<http://www.xavierdupre.fr/app/mlprodict/helpsphinx/
+tutorial/numpy_api_onnx.html>`_.
+Many :epkg:`numpy` functions are implemented with ONNX operators.
+Implementing a transformer with these functions automatically
+offers the conversion to ONNX for free.
 
 Tricks learned from experience
 ==============================
@@ -47,10 +112,40 @@ Tricks learned from experience
 Discrepancies
 +++++++++++++
 
-Types, order of computation, parallelization
+ONNX is strongly typed and optimizes for float32, the most
+common type in deep learning. Libraries in standard
+machine learning use both float32 and float64. :epkg:`numpy`
+usually cast to the most generic type, float64. It has no significant
+impact when the prediction function is contiguous.
+When it is not, the right type must be used. Example
+:ref:`l-example-discrepencies-float-double` gives more
+insights on that topic.
 
-IsolationForest trick
+Parallelization changes the order of computation. It is usually
+not significant but it may explain some weird discrepancies.
+`1 + 1e17 - 1e17 = 0` but `1e17 - 1e17 + 1 = 1`. High order of
+magnitude are rare but not so rare when a model uses the inverse
+of a matrix.
+
+IsolationForest Trick
 +++++++++++++++++++++
+
+ONNX only implements a :epkg:`TreeEnsembleRegressor` but
+it does not offer the possibility to retrieve any information
+about the path the decision followed or statistics to the graph.
+The trick is to used one forest to predict the leave index and map
+this leave index one or multiple times with the information needed.
+
+.. image:: images/iff.png
+
+Discretization
+++++++++++++++
+
+Looking in which interval a feature falls into. That's easy to do
+with :epkg:`numpy` but not so easy to do efficiently with ONNX.
+The fastest way is to use a TreeEnsembleRegressor, a binary search,
+which outputs the interval index. That's what this example
+implements: :ref:`example-woe-transformer`.
 
 Contribute
 ++++++++++

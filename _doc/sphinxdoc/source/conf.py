@@ -234,6 +234,9 @@ epkg_dictionary.update({
         'http://www.xavierdupre.fr/app/onnxcustom/helpsphinx/onnxmd/'
         'onnxruntime_python/training_partial.html'
         "#trainingagent",
+    'TopK':
+        'http://www.xavierdupre.fr/app/onnxcustom/helpsphinx/onnxmd/'
+        'onnx_docs/Operators.html#a-name-topk-a-a-name-topk-topk-a',
     'TrainingSession':
         'http://www.xavierdupre.fr/app/onnxcustom/helpsphinx/api/'
         'onnxruntime_python/training.html#onnxruntime.TrainingSession',

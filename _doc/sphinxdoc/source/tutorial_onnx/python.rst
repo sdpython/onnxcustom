@@ -620,7 +620,7 @@ the results in preallocated tensor.
 The following example implements a classic nearest neighbors for
 a regression problem. The first step consists in computing the
 pairwise distances between the input features *X* and the training
-set *W*: :math:`dist(X,W) = (M_{ij}) = (\norm{X_i - W_j}^2`. It is
+set *W*: :math:`dist(X,W) = (M_{ij}) = (\norm{X_i - W_j}^2)_{ij}`. It is
 followed by an operator :epkg:`TopK` which extracts the *k* nearest
 neighbors.
 
@@ -878,3 +878,38 @@ pipeline.
 
 Shape Inference
 ===============
+
+Shape inference serves one purpose: tries to estimate the shape
+and the type of intermediate results based on the input shapes.
+If known, the runtime can estimate the memory consumption
+beforehand and optimize the computation. It can fuse some
+operators, it can do the computation inplace.
+
+.. runpython::
+    :showcode:
+
+    import onnx.parser
+    from onnx import helper, shape_inference
+
+    input = '''
+        <
+            ir_version: 8,
+            opset_import: [ "" : 15]
+        >
+        agraph (float[I,4] X, float[4,2] A, float[4] B) => (float[I] Y) {
+            XA = MatMul(X, A)
+            Y = Add(XA, B)
+        }
+        '''
+    onnx_model = onnx.parser.parse_model(input)
+    inferred_model = shape_inference.infer_shapes(onnx_model)
+
+    print(inferred_model)
+
+There is a new attribute `value_info` which stores the inferred shapes.
+Letter `I` can be seen as a variable. It depends on the inputs
+but the function is able to tell which intermediate result will share
+the same dimension.
+
+Shape inference does not work all the time. For example,
+a Reshape operator. Shape inference only works if the shape is constant.
