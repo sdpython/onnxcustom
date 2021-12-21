@@ -17,3 +17,10 @@ class EvaluationError(RuntimeError):
     Raised when an evaluation failed.
     """
     pass
+
+
+class ProviderError(RuntimeError):
+    """
+    Raised when an input is not on the expected device (CPU, GPU).
+    """
+    pass
