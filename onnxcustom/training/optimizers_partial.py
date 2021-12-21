@@ -315,6 +315,9 @@ class OrtGradientForwardBackwardOptimizer(BaseEstimator):
                 name, self.device, dtype, c_ortvalue.shape(),
                 c_ortvalue.data_ptr())
         elif isinstance(c_ortvalue, numpy.ndarray):
+            if self.device_type() != self.device.cpu():
+                raise ProviderError(
+                    "device=%s is not CPU." % ort_device_to_string(self.device))
             bind.bind_input(
                 name, self.device, c_ortvalue.dtype, c_ortvalue.shape,
                 c_ortvalue.__array_interface__['data'][0])
@@ -366,8 +369,9 @@ class OrtGradientForwardBackwardOptimizer(BaseEstimator):
         self._bind_input_ortvalue("X1", self.axpy_sess_bind_, gradienti)
         self._bind_input_ortvalue("X2", self.axpy_sess_bind_, statei)
         alpha_alive = numpy.array([alpha], dtype=numpy.float32)
+        ort_alpha_alive = C_OrtValue.ortvalue_from_numpy(alpha_alive, self.device)
         self._bind_input_ortvalue(
-            "alpha", self.axpy_sess_bind_, alpha_alive)
+            "alpha", self.axpy_sess_bind_, ort_alpha_alive)
         self._bind_output_ortvalue('Y', self.axpy_sess_bind_, statei)
         self.axpy_sess_._sess.run_with_iobinding(self.axpy_sess_bind_, None)
         return self.axpy_sess_bind_.get_outputs()[0]
