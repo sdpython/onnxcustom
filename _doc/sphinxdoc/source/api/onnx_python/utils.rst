@@ -20,6 +20,25 @@ extract_model
 
 .. autofunction:: onnx.utils.extract_model
 
+merge_graphs
+++++++++++++
+
+.. autofunction:: onnx.compose.merge_graphs
+
+prefix
+++++++
+
+.. autofunction:: onnx.compose.add_prefix_graph
+
+.. autofunction:: onnx.compose.add_prefix
+
+dimension
++++++++++
+
+.. autofunction:: onnx.compose.expand_out_dim_graph
+
+.. autofunction:: onnx.compose.expand_out_dim
+
 merge_models
 ++++++++++++
 
