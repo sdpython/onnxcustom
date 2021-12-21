@@ -91,7 +91,8 @@ plot_onnxs(onx, title="Linear Regression")
 ###################################
 # We check it produces the same outputs.
 
-sess = InferenceSession(onx.SerializeToString())
+sess = InferenceSession(onx.SerializeToString(),
+                        providers=['CPUExecutionProvider'])
 print(sess.run(None, {'X': X[:5]})[0])
 
 #####################################
@@ -470,7 +471,8 @@ print("onnxruntime", trainer.trained_coef_)
 #
 # Let's first check the output of the first model in ONNX.
 
-sess = InferenceSession(onx.SerializeToString())
+sess = InferenceSession(onx.SerializeToString(),
+                        providers=['CPUExecutionProvider'])
 before = sess.run(None, {'X': X[:5]})[0]
 print(before)
 
@@ -497,7 +499,8 @@ update_onnx_graph(onx, trainer.trained_coef_)
 ########################################
 # Let's compare with the previous output.
 
-sess = InferenceSession(onx.SerializeToString())
+sess = InferenceSession(onx.SerializeToString(),
+                        providers=['CPUExecutionProvider'])
 after = sess.run(None, {'X': X[:5]})[0]
 print(after)
 

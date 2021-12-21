@@ -92,7 +92,8 @@ plot_onnxs(onx, onx_train,
 #####################################
 # Let's check inference is working.
 
-sess = InferenceSession(onx_train.SerializeToString())
+sess = InferenceSession(onx_train.SerializeToString(),
+                        providers=['CPUExecutionProvider'])
 res = sess.run(None, {'X': X_test, 'label': y_test.reshape((-1, 1))})
 print("onnx loss=%r" % (res[0][0, 0] / X_test.shape[0]))
 

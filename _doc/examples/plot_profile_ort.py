@@ -73,7 +73,8 @@ plot_onnx(onx, ax=ax)
 
 so = SessionOptions()
 so.enable_profiling = True
-sess = InferenceSession(onx.SerializeToString(), so)
+sess = InferenceSession(onx.SerializeToString(), so,
+                        providers=['CPUExecutionProvider'])
 feeds = {'X': X[:100]}
 
 for i in tqdm(range(0, 10)):
@@ -141,7 +142,7 @@ make_axes_area_auto_adjustable(ax)
 
 if get_device().upper() == 'GPU':
     ort_device = C_OrtDevice(
-        C_OrtDevice.gpu(), C_OrtDevice.default_memory(), 0)
+        C_OrtDevice.cuda(), C_OrtDevice.default_memory(), 0)
 else:
     ort_device = C_OrtDevice(
         C_OrtDevice.cpu(), C_OrtDevice.default_memory(), 0)

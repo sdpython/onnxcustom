@@ -43,7 +43,7 @@ X_train, X_test, y_train, y_test = train_test_split(X, y)
 # Benchmark function.
 
 
-def benchmark(skl_model, train_session, name, verbose=True):
+def benchmark(X, y, skl_model, train_session, name, verbose=True):
     """
     :param skl_model: model from scikit-learn
     :param train_session: instance of OrtGradientForwardBackwardOptimizer
@@ -98,7 +98,7 @@ train_session = OrtGradientForwardBackwardOptimizer(
     warm_start=False, max_iter=max_iter, batch_size=batch_size)
 
 
-benches = [benchmark(nn, train_session, name='NN-CPU')]
+benches = [benchmark(X_train, y_train, nn, train_session, name='NN-CPU')]
 
 ######################################
 # Profiling
@@ -121,7 +121,7 @@ def clean_name(text):
     return text
 
 
-ps = profile(lambda: benchmark(nn, train_session, name='NN-CPU'))[0]
+ps = profile(lambda: benchmark(X_train, y_train, nn, train_session, name='NN-CPU'))[0]
 root, nodes = profile2graph(ps, clean_text=clean_name)
 text = root.to_text()
 print(text)
@@ -136,7 +136,7 @@ if get_device().upper() == 'GPU':
         onx, device='cuda', learning_rate=1e-5,
         warm_start=False, max_iter=200, batch_size=batch_size)
 
-    benches.append(benchmark(nn, train_session, name='NN-GPU'))
+    benches.append(benchmark(X_train, y_train, nn, train_session, name='NN-GPU'))
 
 ######################################
 # Linear Regression
@@ -159,7 +159,7 @@ train_session = OrtGradientForwardBackwardOptimizer(
     onx, device='cpu', learning_rate=5e-4,
     warm_start=False, max_iter=max_iter, batch_size=batch_size)
 
-benches.append(benchmark(lr, train_session, name='LR-CPU'))
+benches.append(benchmark(X_train, y_train, lr, train_session, name='LR-CPU'))
 
 if get_device().upper() == 'GPU':
 
@@ -167,7 +167,7 @@ if get_device().upper() == 'GPU':
         onx, device='cuda', learning_rate=5e-4,
         warm_start=False, max_iter=200, batch_size=batch_size)
 
-    benches.append(benchmark(nn, train_session, name='LR-GPU'))
+    benches.append(benchmark(X_train, y_train, nn, train_session, name='LR-GPU'))
 
 
 ######################################
@@ -175,7 +175,7 @@ if get_device().upper() == 'GPU':
 # +++++++++++++
 
 if get_device().upper() == 'GPU':
-    ps = profile(lambda: benchmark(lr, train_session, name='LR-GPU'))[0]
+    ps = profile(lambda: benchmark(X_train, y_train, lr, train_session, name='LR-GPU'))[0]
     root, nodes = profile2graph(ps, clean_text=clean_name)
     text = root.to_text()
     print(text)
