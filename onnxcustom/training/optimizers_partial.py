@@ -9,14 +9,14 @@ from onnxruntime.capi._pybind_state import (  # pylint: disable=E0611
     OrtValue as C_OrtValue)
 from ..utils.onnx_helper import get_onnx_opset, proto_type_to_dtype
 from ..utils.onnxruntime_helper import (
-    device_to_providers, numpy_to_ort_value)
+    device_to_providers, numpy_to_ort_value, ort_device_to_string)
 from ..utils.onnx_function import function_onnx_graph
 from ..utils.print_helper import str_ortvalue
 from ..utils.onnx_orttraining import get_train_initializer
 from .ortgradient import OrtGradientForwardBackward
 from .optimizers import BaseEstimator
 from .data_loader import OrtDataLoader
-from .excs import ConvergenceError
+from .excs import ConvergenceError, ProviderError
 
 
 class OrtGradientForwardBackwardOptimizer(BaseEstimator):
