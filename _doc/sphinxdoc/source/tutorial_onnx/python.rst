@@ -879,8 +879,37 @@ pipeline.
 
     print(onnx_simple_text_plot(onnx_model))
 
-Shape Inference
-===============
+Checker and Shape Inference
+===========================
+
+:epkg:`onnx` provides a function to check the model is valid.
+It checks input type or shapes whenever it can detect inconsistency.
+The following example multiplies two matrices of different types
+which is not allowed.
+
+.. runpython::
+    :showcode:
+    :exception:
+
+    import onnx.parser
+    import onnx.checker
+
+    input = '''
+        <
+            ir_version: 8,
+            opset_import: [ "" : 15]
+        >
+        agraph (float[I,4] X, float[4,2] A, int[4] B) => (float[I] Y) {
+            XA = MatMul(X, A)
+            Y = Add(XA, B)
+        }
+        '''
+    onnx_model = onnx.parser.parse_model(input)
+    onnx.checker.check_model(onnx_model)
+
+`check_model` raises an error due to that inconsistency.
+This work for all operators defined in the main domain or the ML domain.
+It remains silent for any custom operator not defined in any specification.
 
 Shape inference serves one purpose: tries to estimate the shape
 and the type of intermediate results based on the input shapes.
