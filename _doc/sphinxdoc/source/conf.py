@@ -151,6 +151,8 @@ epkg_dictionary.update({
     'Tensor': 'https://en.wikipedia.org/wiki/Tensor',
     'tensor': 'https://en.wikipedia.org/wiki/Tensor',
     'tensorflow': 'https://www.tensorflow.org/',
+    'tensorflow-onnx': 'https://github.com/onnx/tensorflow-onnx',
+    'tf2onnx': 'https://github.com/onnx/tensorflow-onnx',
     'torch': 'https://pytorch.org/',
     'tqdm': 'https://github.com/tqdm/tqdm',
     'xgboost': 'https://xgboost.readthedocs.io/en/latest/',

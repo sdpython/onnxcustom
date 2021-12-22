@@ -160,7 +160,7 @@ and easier to read.
     y2s = OnnxSqrt(y2, output_names=out[1:], op_version=opv)
 
 Imitating existing API
-+++++++++++++=+=++++++
+++++++++++++++++++++++
 
 A last approach aims at removing one implementation (:epkg:`numpy`
 + :epkg:`onnx`).

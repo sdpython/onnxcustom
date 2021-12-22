@@ -911,11 +911,11 @@ which is not allowed.
 This work for all operators defined in the main domain or the ML domain.
 It remains silent for any custom operator not defined in any specification.
 
-Shape inference serves one purpose: tries to estimate the shape
-and the type of intermediate results based on the input shapes.
+Shape inference serves one purpose: estimate the shape
+and the type of intermediate results.
 If known, the runtime can estimate the memory consumption
 beforehand and optimize the computation. It can fuse some
-operators, it can do the computation inplace.
+operators, it can do the computation inplace...
 
 .. runpython::
     :showcode:
