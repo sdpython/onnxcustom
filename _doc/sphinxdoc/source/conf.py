@@ -112,6 +112,7 @@ epkg_dictionary.update({
     'lightgbm': 'https://lightgbm.readthedocs.io/en/latest/',
     'mlprodict':
         'http://www.xavierdupre.fr/app/mlprodict/helpsphinx/index.html',
+    'myst-parser': 'https://myst-parser.readthedocs.io/en/latest/',
     'nccl': 'https://developer.nvidia.com/nccl',
     'netron': 'https://github.com/lutzroeder/netron',
     'NMF':

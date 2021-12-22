@@ -84,6 +84,12 @@ very verbose. It is also difficult to get a whole picture of
 a graph by reading the code unless it is a small one. Almost
 every converting library has implemented a different API
 to create a graph, usually more simple.
+All API automate the addition of initializers, hide the creation
+of a name of every intermediate result, deal with different
+version for different opset.
+
+A class Graph with a method add_node
+++++++++++++++++++++++++++++++++++++
 
 :epkg:`tf2onnx` implements a class graph.
 It rewrites tensorflow function with ONNX operator when
@@ -93,9 +99,68 @@ tf2onnx/onnx_opset/math.py#L414>`_.
 
 :epkg:`sklearn-onnx` defines two different API. The first one
 introduced in that example :ref:`j-plot-custom-syntax`
-follows a similar design that :epkg:`tf2onnx`. The second
-:ref:`l-plot-custom-converter` is more compact and defines
+follows a similar design that :epkg:`tf2onnx`.
+Following line are extracted from the converter of a linear
+classifier.
+
+::
+
+    # initializer
+
+    coef = scope.get_unique_variable_name('coef')
+    model_coef = np.array(
+        classifier_attrs['coefficients'], dtype=np.float64)
+    model_coef = model_coef.reshape((number_of_classes, -1)).T
+    container.add_initializer(
+        coef, proto_dtype, model_coef.shape, model_coef.ravel().tolist())
+
+    intercept = scope.get_unique_variable_name('intercept')
+    model_intercept = np.array(
+        classifier_attrs['intercepts'], dtype=np.float64)
+    model_intercept = model_intercept.reshape((number_of_classes, -1)).T
+    container.add_initializer(
+        intercept, proto_dtype, model_intercept.shape,
+        model_intercept.ravel().tolist())
+
+    # add nodes
+
+    multiplied = scope.get_unique_variable_name('multiplied')
+    container.add_node(
+        'MatMul', [operator.inputs[0].full_name, coef], multiplied,
+        name=scope.get_unique_operator_name('MatMul'))
+
+    # [...]
+
+    argmax_output_name = scope.get_unique_variable_name('label')
+    container.add_node('ArgMax', raw_score_name, argmax_output_name,
+                       name=scope.get_unique_operator_name('ArgMax'),
+                       axis=1)
+
+Operator as function
+++++++++++++++++++++
+
+The second API shown in :ref:`l-plot-custom-converter`
+is more compact and defines
 every ONNX operator as composable functions.
+The syntax looks like this for KMeans, less verbose
+and easier to read.
+
+::
+
+    rs = OnnxReduceSumSquare(
+        input_name, axes=[1], keepdims=1, op_version=opv)
+
+    gemm_out = OnnxMatMul(
+        input_name, (C.T * (-2)).astype(dtype), op_version=opv)
+
+    z = OnnxAdd(rs, gemm_out, op_version=opv)
+    y2 = OnnxAdd(C2, z, op_version=opv)
+    ll = OnnxArgMin(y2, axis=1, keepdims=0, output_names=out[:1],
+                    op_version=opv)
+    y2s = OnnxSqrt(y2, output_names=out[1:], op_version=opv)
+
+Imitating existing API
++++++++++++++=+=++++++
 
 A last approach aims at removing one implementation (:epkg:`numpy`
 + :epkg:`onnx`).
@@ -105,6 +170,32 @@ tutorial/numpy_api_onnx.html>`_.
 Many :epkg:`numpy` functions are implemented with ONNX operators.
 Implementing a transformer with these functions automatically
 offers the conversion to ONNX for free.
+The following come from the example linked above.
+It looks like :epkg:`numpy` syntax but every function is
+converted into ONNX primitives.
+
+::
+
+    @onnxsklearn_class("onnx_graph")
+    class CustomTransformerOnnx(TransformerMixin, BaseEstimator):
+
+        # [...__init__...fit...]
+
+        def onnx_graph(self, X):
+            h = self.hyperplan_.astype(X.dtype)
+            c = self.centers_.astype(X.dtype)
+
+            sign = ((X - c[0]) @ h) >= numpy.array([0], dtype=X.dtype)
+            cast = sign.astype(X.dtype).reshape((-1, 1))
+
+            # Function logistic_regression is not a numpy function.
+            # It calls the converter for a LogisticRegression
+            # implemented in sklearn-onnx.
+            prob0 = nxnpskl.logistic_regression(X, model=self.lr0_)[1]
+            prob1 = nxnpskl.logistic_regression(X, model=self.lr1_)[1]
+            prob = prob1 * cast - prob0 * (cast - numpy.array([1], dtype=X.dtype))
+            label = nxnp.argmax(prob, axis=1)
+            return MultiOnnxVar(label, prob)
 
 Tricks learned from experience
 ==============================

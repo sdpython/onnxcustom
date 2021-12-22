@@ -510,6 +510,7 @@ in a matrix based on the sign, returns 1 or -1.
 
 .. runpython::
     :showcode:
+    :warningout: DeprecationWarning
 
     import numpy
     import onnx
@@ -544,7 +545,7 @@ in a matrix based on the sign, returns 1 or -1.
     then_const_node = make_node(
         'Constant', inputs=[],
         outputs=['then_out'],
-        value=then_cst)
+        value=then_cst, name='cst1')
 
     # And the graph wrapping these elements.
     then_body = make_graph(
@@ -559,7 +560,7 @@ in a matrix based on the sign, returns 1 or -1.
     else_const_node = make_node(
         'Constant', inputs=[],
         outputs=['else_out'],
-        value=else_cst)
+        value=else_cst, name='cst2')
 
     else_body = make_graph(
         [else_const_node], 'else_body',
@@ -626,6 +627,7 @@ neighbors.
 
 .. runpython::
     :showcode:
+    :warningout: DeprecationWarning
 
     import numpy
     from onnx import numpy_helper, TensorProto
@@ -846,6 +848,7 @@ second input of the subgraph is the second row of *X2*.
 Here is a short summary. Green is the first iteration, blue the second.
 
 .. image:: images/scanop.png
+    :width: 400
 
 Parsing
 =======
