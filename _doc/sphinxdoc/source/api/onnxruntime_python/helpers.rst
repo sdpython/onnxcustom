@@ -8,14 +8,6 @@ onnxruntime helpers
 Frequent functions
 ++++++++++++++++++
 
-.. autofunction:: onnxruntime.get_default_logger_severity
-
-.. runpython::
-    :showcode:
-
-    import onnxruntime
-    print(onnxruntime.get_default_logger_severity())
-
 .. autofunction:: onnxruntime.get_device
 
 .. runpython::
