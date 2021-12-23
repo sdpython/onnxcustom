@@ -92,7 +92,14 @@ imgmath_latex_preamble += custom_preamble
 latex_elements['preamble'] += custom_preamble
 
 intersphinx_mapping.update({
+    'torch': ('https://pytorch.org/docs/stable/', None),
+    'mlprodict':
+        ('http://www.xavierdupre.fr/app/mlprodict/helpsphinx/', None),
+    'onnxcustom':
+        ('http://www.xavierdupre.fr/app/onnxcustom/helpsphinx/', None),
     'pandas_streaming':
+        ('http://www.xavierdupre.fr/app/pyquickhelper/helpsphinx/', None),
+    'pyquickhelper':
         ('http://www.xavierdupre.fr/app/pyquickhelper/helpsphinx/', None),
 })
 
@@ -105,6 +112,7 @@ epkg_dictionary.update({
     'cmake': 'https://cmake.org/',
     'cudnn': 'https://developer.nvidia.com/cudnn',
     'cython': 'https://cython.org/',
+    'DLPack': 'https://github.com/dmlc/dlpack',
     'docker': 'https://en.wikipedia.org/wiki/Docker_(software)',
     'DOT': 'https://www.graphviz.org/doc/info/lang.html',
     'ImageNet': 'http://www.image-net.org/',

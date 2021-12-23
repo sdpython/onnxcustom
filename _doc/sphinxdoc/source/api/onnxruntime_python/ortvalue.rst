@@ -24,8 +24,8 @@ Python Wrapper for OrtValue
     :members:
     :undoc-members:
 
-C Class OrtValue
-++++++++++++++++
+C Class OrtValue or C_OrtValue
+++++++++++++++++++++++++++++++
 
 .. autoclass:: onnxruntime.capi._pybind_state.OrtValue
     :members:

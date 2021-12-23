@@ -13,5 +13,6 @@ available on many other platforms.
 .. toctree::
     :maxdepth: 2
 
-    python
+    inference
+    ortvalue
     challenges
