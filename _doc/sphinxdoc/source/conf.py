@@ -137,6 +137,8 @@ epkg_dictionary.update({
     'ONNX Zoo': 'https://github.com/onnx/models',
     'onnxmltools': 'https://github.com/onnx/onnxmltools',
     'onnxruntime': 'https://microsoft.github.io/onnxruntime/',
+    'onnxruntime-extensions':
+        'https://github.com/microsoft/onnxruntime-extensions',
     'onnxruntime-training':
         'https://github.com/microsoft/onnxruntime/tree/master/orttraining',
     'openmp': 'https://en.wikipedia.org/wiki/OpenMP',

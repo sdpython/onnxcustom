@@ -72,8 +72,77 @@ inputs and outputs.
     for t in sess.get_outputs():
         print("output:", t.name, t.type, t.shape)
 
-Session and Running options
-===========================
+The class :epkg:`InferenceSession` is not pickable.
+
+Session Options
+===============
+
+Many options can change the behaviour of the class during predictions.
+First class is :epkg:`SessionOptions`. It may change the default
+behaviour. Next sections describe some of the members.
+This class can also be used to profile the execution or
+adjust graph optimization. This will be seen in further sections.
+Next sections just give an overview, you should go to classes
+:epkg:`SessionOptions` and :epkg:`RunOptions` to get the full list.
+
+::
+
+    from onnxruntime import InferenceSession, SessionOptions
+    so = SessionOptions()
+    # so.... =
+    sess = InferenceSession(...., so)
+
+logging
+~~~~~~~
+
+Parameters *log_severity_level* and *log_verbosity_level* may change
+the verbosity level when the model is loaded.
+
+The logging during execution can be modified with the same
+attributes but in class :epkg:`RunOptions`. This class is given
+to method `run`.
+
+memory
+~~~~~~
+
+:epkg:`onnxruntime` focuses on efficiency first and memory peaks.
+Following what should be the priority, following members
+may be changed to trade efficiency against memory usage.
+
+* *enable_cpu_mem_arena*: Enables the memory arena on CPU.
+  Arena may pre-allocate memory for future usage.
+  Set this option to false if you don’t want it.
+  Default is True.
+
+* *enable_mem_pattern*: Enable the memory pattern optimization.
+  Default is true.
+
+* *enable_mem_reuse*: Enable the memory reuse optimization.
+  Default is true.
+
+multithreading
+~~~~~~~~~~~~~~
+
+By default, :epkg:`onnxruntime` parallelizes the execution
+within every node but does not run multiple node at the same time.
+But that can be changed.
+
+* *inter_op_num_threads*: Sets the number of threads used to
+  parallelize the execution of the graph (across nodes).
+  Default is 0 to let onnxruntime choose.
+
+* *intra_op_num_threads*:  Sets the number of threads used to
+  parallelize the execution within nodes.
+  Default is 0 to let onnxruntime choose.
+
+extensions
+~~~~~~~~~~
+
+Attribute `register_custom_ops_library` to register an
+assembly implementing the runtime for custom nodes.
+:epkg:`onnxruntime-extensions` is one of these extensions
+mostly focusing on text processing (tokenizers) or simple
+text manipulations.
 
 Providers
 =========
@@ -195,3 +264,24 @@ Another example can be found in the tutorial:
 
 Graph Optimisations
 ===================
+
+By default, :epkg:`onnxruntime` optimizes an ONNX graph as much
+as it can. It removes every node it can, merges duplicates initializer,
+fuses node into more complex node but more efficient such
+*FusedMatMul* which deals with transposition as well.
+
+There are four level of optimization and the final can be saved
+on a disk to look at it.
+
+::
+
+    so = SessionOptions()
+    so.graph_optimization_level = GraphOptimizationLevel.ORT_DISABLE_ALL
+    # or GraphOptimizationLevel.ORT_ENABLE_BASIC
+    # or GraphOptimizationLevel.ORT_ENABLE_EXTENDED
+    # or GraphOptimizationLevel.ORT_ENABLE_ALL
+    so.optimized_model_filepath = "to_save_the_optimized_onnx_file.onnx"
+
+Example shows how to enable or disable optimizations on a simple
+graph. The bigger the graph is, the more efficient they are.
+See :ref:`benchmark-ort-onnx-graph-opt`.
