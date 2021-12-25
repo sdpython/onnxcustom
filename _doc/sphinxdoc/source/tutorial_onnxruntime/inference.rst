@@ -124,7 +124,7 @@ may be changed to trade efficiency against memory usage.
 
 * *enable_cpu_mem_arena*: Enables the memory arena on CPU.
   Arena may pre-allocate memory for future usage.
-  Set this option to false if you don’t want it.
+  Set this option to false if you don't want it.
   Default is True.
 
 * *enable_mem_pattern*: Enable the memory pattern optimization.
