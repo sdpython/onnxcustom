@@ -15,4 +15,5 @@ available on many other platforms.
 
     inference
     ortvalue
+    training
     challenges

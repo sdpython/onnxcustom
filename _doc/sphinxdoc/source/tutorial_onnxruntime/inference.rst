@@ -74,6 +74,19 @@ inputs and outputs.
 
 The class :epkg:`InferenceSession` is not pickable.
 
+Inference on a device different from CPU
+========================================
+
+By default, everything happens on CPU.
+Next lines shows how to do computation on GPU
+with :epkg:`onnxruntime`.
+
+C_OrtValue
+++++++++++
+
+IOBinding
++++++++++
+
 Session Options
 ===============
 
@@ -285,3 +298,11 @@ on a disk to look at it.
 Example shows how to enable or disable optimizations on a simple
 graph. The bigger the graph is, the more efficient they are.
 See :ref:`benchmark-ort-onnx-graph-opt`.
+
+Class :epkg:`InferenceSession` as any other class from
+:epkg:`onnxruntime` cannot be pickled. Everything can
+be created again from the ONNX file it loads. It also means
+graph optimization are computed again. To speed up
+the process, the optimized graph can be saved
+and loaded with disabled optimization next time.
+It can save the optimization time.

@@ -32,8 +32,56 @@ on CPU, CUDA, ...
             OrtValue as C_OrtValue,
             OrtDevice as C_OrtDevice)
 
+.. _l-doc-device:
+
 Device
 ======
+
+A device is associated to a tensor. It indicates
+where the data is stored. It is defined by:
+
+* a device type: CPU, CUDA, FGPA
+* a device index: if there are many devices of the
+  same type, it tells which one is used.
+* an allocator: it is possible to change the way
+  memory is allocated.
+
+Next example shows how to create a CPU device.
+
+.. runpython::
+    :showcode:
+
+    from onnxruntime.capi._pybind_state import (
+        OrtDevice as C_OrtDevice)
+
+    ort_device = C_OrtDevice(
+        C_OrtDevice.cpu(), C_OrtDevice.default_memory(), 0)
+
+    print(ort_device)
+    print(ort_device.device_type(), C_OrtDevice.cpu())
+
+And the next one how to create a CUDA device.
+
+.. runpython::
+    :showcode:
+
+    from onnxruntime.capi._pybind_state import (
+        OrtDevice as C_OrtDevice)
+
+    ort_device = C_OrtDevice(
+        C_OrtDevice.cuda(), C_OrtDevice.default_memory(), 0)
+
+    print(ort_device)
+    print(ort_device.device_type(), C_OrtDevice.cuda())
+
+The class has three methods:
+
+* *device_type()*: returns the device type
+* *device_id()*: returns the device index
+* *device_mem()*: ????????????????????????????????????????
+
+Memory Allocator
+================
 
 OrtValue
 ========
