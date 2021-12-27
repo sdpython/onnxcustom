@@ -277,7 +277,6 @@ into a table.
     ax[2].set_title("n occurences");
     for a in ax:
         a.legend().set_visible(False)
-        a.axis["left"].label.set_visible(False)
 
     plt.show()
 

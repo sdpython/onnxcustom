@@ -1,10 +1,15 @@
 """
 .. _benchmark-ort-api:
 
-Benchmark onnxruntime API: run or run_with_iobinding
-====================================================
+Benchmark onnxruntime API: run or ...
+=====================================
 
-This short code compares different ways to call onnxruntime API.
+This short code compares different methods to call onnxruntime API.
+
+* `run`
+* `run_with_ort_values`
+* `run_with_iobinding`
+
 You may profile this code:
 
 ::
@@ -24,7 +29,8 @@ import numpy
 import pandas
 from onnxruntime import InferenceSession
 from onnxruntime.capi._pybind_state import (  # pylint: disable=E0611
-    SessionIOBinding, OrtDevice as C_OrtDevice)
+    SessionIOBinding, OrtDevice as C_OrtDevice,
+    OrtMemType, OrtValue as C_OrtValue, RunOptions)
 from sklearn import config_context
 from sklearn.linear_model import LinearRegression
 from skl2onnx import to_onnx
@@ -80,8 +86,9 @@ with config_context(assume_finite=True):
 # numpy runtime
 print('numpy')
 oinf = OnnxInference(onx, runtime="python_compiled")
-obs = measure_time(lambda: oinf.run({'X': X}), context=dict(oinf=oinf, X=X),
-                   repeat=repeat, number=number)
+obs = measure_time(
+    lambda: oinf.run({'X': X}), context=dict(oinf=oinf, X=X),
+    repeat=repeat, number=number)
 obs['name'] = 'numpy'
 data.append(obs)
 
@@ -95,6 +102,41 @@ obs = measure_time(lambda: sess.run(None, {'X': X}),
                    context=dict(sess=sess, X=X),
                    repeat=repeat, number=number)
 obs['name'] = 'ort-run'
+data.append(obs)
+
+
+###################################
+# onnxruntime: run
+print('ort-c')
+sess = InferenceSession(onx.SerializeToString(),
+                        providers=['CPUExecutionProvider'])
+ro = RunOptions()
+output_names = [o.name for o in sess.get_outputs()]
+obs = measure_time(
+    lambda: sess._sess.run(output_names, {'X': X}, ro),
+    context=dict(sess=sess, X=X),
+    repeat=repeat, number=number)
+obs['name'] = 'ort-c'
+data.append(obs)
+
+
+###################################
+# onnxruntime: run_with_ort_values
+print('ort-ov-c')
+device = C_OrtDevice(C_OrtDevice.cpu(), OrtMemType.DEFAULT, 0)
+
+Xov = C_OrtValue.ortvalue_from_numpy(X, device)
+
+sess = InferenceSession(onx.SerializeToString(),
+                        providers=['CPUExecutionProvider'])
+ro = RunOptions()
+output_names = [o.name for o in sess.get_outputs()]
+obs = measure_time(
+    lambda: sess._sess.run_with_ort_values(
+        {'X': Xov}, output_names, ro),
+    context=dict(sess=sess),
+    repeat=repeat, number=number)
+obs['name'] = 'ort-ov'
 data.append(obs)
 
 
