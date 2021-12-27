@@ -74,19 +74,6 @@ inputs and outputs.
 
 The class :epkg:`InferenceSession` is not pickable.
 
-Inference on a device different from CPU
-========================================
-
-By default, everything happens on CPU.
-Next lines shows how to do computation on GPU
-with :epkg:`onnxruntime`.
-
-C_OrtValue
-++++++++++
-
-IOBinding
-+++++++++
-
 Session Options
 ===============
 
@@ -186,13 +173,27 @@ by filling argument `providers`:
 
     sess = InferenceSession(
         ...
-        providers=['CPUExecutionProvider', 'CUDAExecutionProvider']
+        providers=['CUDAExecutionProvider',  # first one takes precedence
+                   'CPUExecutionProvider']
         ...)
 
 All operators are not available in all providers, using multiple may improve
 the processing time. Switching from one provider to another may mean
 moving data from one memory manager to another, like the transition from CPU
 to CUDA or the other way.
+
+Inference on a device different from CPU
+========================================
+
+By default, everything happens on CPU.
+Next lines shows how to do computation on GPU
+with :epkg:`onnxruntime`.
+
+C_OrtValue
+++++++++++
+
+IOBinding
++++++++++
 
 Profiling
 =========
@@ -206,8 +207,8 @@ as a json file whose name is returned by the method.
 The end of the example uses a tool to convert the json
 into a table.
 
-.. plot::
-    :include-source:
+.. runpython::
+    :showcode:
 
     import json
     import numpy
@@ -217,7 +218,6 @@ into a table.
     from sklearn.cluster import KMeans
     from skl2onnx import to_onnx
     from mlprodict.onnxrt.ops_whole.session import OnnxWholeSession
-    import matplotlib.pyplot as plt
 
     # creation of an ONNX graph.
     X, y = make_classification(100000)
@@ -252,6 +252,15 @@ into a table.
 
     # and looks this way
     print(df.head(n=10))
+    df.to_csv("inference_profiling.csv", index=False)
+
+.. plot::..
+    :include-source:
+
+    import pandas
+    import matplotlib.pyplot as plt
+
+    df = pandas.read_csv("inference_profiling.csv")
 
     # but a graph is usually better...
     gr_dur = df[['dur', "args_op_name"]].groupby("args_op_name").sum().sort_values('dur')

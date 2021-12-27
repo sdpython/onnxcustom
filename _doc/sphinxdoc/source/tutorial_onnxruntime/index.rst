@@ -13,7 +13,7 @@ available on many other platforms.
 .. toctree::
     :maxdepth: 2
 
-    inference
     ortvalue
+    inference
     training
     challenges

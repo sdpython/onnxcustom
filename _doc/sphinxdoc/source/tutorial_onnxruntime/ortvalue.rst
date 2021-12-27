@@ -124,6 +124,32 @@ warpping the same memory buffer. As a result, the numpy array must
 If it does not, the program usually crashes with no exception but a
 segmentation fault.
 
+create a new buffer
+~~~~~~~~~~~~~~~~~~~
+
+Method `ortvalue_from_shape_and_type` can create a new
+:epkg:`C_OrtValue` owning its buffer.
+
+.. runpython::
+    :showcode:
+
+    import numpy
+    from onnxruntime.capi._pybind_state import (  # pylint: disable=E0611
+        OrtValue as C_OrtValue,
+        OrtDevice as C_OrtDevice,
+        OrtMemType)
+    from onnxcustom.utils.print_helper import str_ortvalue
+
+    device = C_OrtDevice(C_OrtDevice.cpu(), OrtMemType.DEFAULT, 0)
+    ort_value = C_OrtValue.ortvalue_from_shape_and_type(
+        [100, 100], numpy.float32, device)
+
+    print(ort_value)
+    print(str_ortvalue(ort_value))
+
+    # Address can be given to another C function to populate the buffer.
+    print(ort_value.data_ptr())
+
 DLPack
 ======
 
@@ -153,3 +179,52 @@ structure as well.
 :epkg:`onnxruntime-training` implements a couple of scenarios based
 on :epkg:`pytorch` and needs this protocol to avoid unnecessary
 data transfer.
+
+Conversion
+++++++++++
+
+Method `to_dlpack` exports a :epkg:`C_OrtValue` into a DLPack stucture.
+Static method `from_dlpack` creates :epkg:`C_OrtValue` from a DLPack stucture.
+Everytime one of these methods is used, the previous container loses
+ownership to the next one. Only this one must be used. It becomes
+responsibles for the data deletion.
+
+.. runpython::
+    :showcode:
+
+    import numpy
+    from onnxruntime.capi._pybind_state import (  # pylint: disable=E0611
+        OrtValue as C_OrtValue,
+        OrtDevice as C_OrtDevice,
+        OrtMemType)
+    from onnxcustom.utils.print_helper import str_ortvalue
+
+    vect = numpy.array([100, 100], dtype=numpy.float32)
+    device = C_OrtDevice(C_OrtDevice.cpu(), OrtMemType.DEFAULT, 0)
+    ort_value = C_OrtValue.ortvalue_from_numpy(vect, device)
+    print("ptr", ort_value.data_ptr())
+
+    # export
+    dlp = ort_value.to_dlpack()
+    print(dlp)
+
+    # export back to onnxruntime
+    ort_value_back = C_OrtValue.from_dlpack(dlp, False)
+    # dlp structure is no longer valid
+    print("ptr", ort_value_back.data_ptr())
+    print(str_ortvalue(ort_value_back))
+
+Boolean ambiguity
++++++++++++++++++
+
+Boolean type is usually represented as a vector of unsigned bytes.
+This information is not actually stored in the DLPack structure
+and there is no way to distringuish between the two. That's why
+method `from_dlpack` has an additional parameter. You can read
+more about this in issue `75 <https://github.com/dmlc/dlpack/issues/75>`_.
+
+OrtValueVector
+++++++++++++++
+
+Sparse Tensors
+==============

@@ -52,6 +52,13 @@ C class, OrtDevice or C_OrtDevice
     :members:
     :undoc-members:
 
+OrtMemoryInfo
++++++++++++++
+
+.. autoclass:: onnxruntime.capi._pybind_state.OrtMemoryInfo
+    :members:
+    :undoc-members:
+
 C classes, frequent types
 +++++++++++++++++++++++++
 
