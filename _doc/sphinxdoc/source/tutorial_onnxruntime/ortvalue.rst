@@ -78,19 +78,27 @@ The class has three methods:
 
 * *device_type()*: returns the device type
 * *device_id()*: returns the device index
-* *device_mem()*: ????????????????????????????????????????
+* *device_mem_type()*: not available yet*
 
 Memory Allocator
 ================
 
+*to be continued*
+
 OrtValue
 ========
 
-Creation
-++++++++
+This class is a generic type. It hides any supported type
+by :epkg:`onnxruntime`, a tensor, a sparse tensor,
+a sequence of tensors, a map of tensors. From python point of view,
+it is only a container. It is only possible to export,
+convert or get information about it. The only way to manipulate
+*OrtValue* is to go through an ONNX graph loaded by
+an :epkg:`InferenceSession`.
+Following section refers to the C implementation of :epkg:`C_OrtValue`.
 
-from numpy
-~~~~~~~~~~
+Creation from numpy
++++++++++++++++++++
 
 The most easier way is to create an :epkg:`C_OrtValue` from
 a :class:`numpy.array`. Next example does that on CPU.
@@ -118,14 +126,14 @@ However even that simple example hides some important detail.
     print(vect.__array_interface__['data'])
 
 The last two lines show that both objects points to the same location.
-To avoid copying the data, :epkg:`onxruntime` only creates a structure
+To avoid copying the data, :epkg:`onnxruntime` only creates a structure
 warpping the same memory buffer. As a result, the numpy array must
 **remain alive** as long as the instance of `C_OrtValue` is.
 If it does not, the program usually crashes with no exception but a
 segmentation fault.
 
-create a new buffer
-~~~~~~~~~~~~~~~~~~~
+Creation from a new buffer
+++++++++++++++++++++++++++
 
 Method `ortvalue_from_shape_and_type` can create a new
 :epkg:`C_OrtValue` owning its buffer.
@@ -149,6 +157,41 @@ Method `ortvalue_from_shape_and_type` can create a new
 
     # Address can be given to another C function to populate the buffer.
     print(ort_value.data_ptr())
+
+Export to numpy
++++++++++++++++
+
+Unless it is reused by another library or :epkg:`onnxruntime`
+itself, the only way to access the data is contains is to
+create a numpy array with method `numpy`.
+
+.. runpython::
+    :showcode:
+
+    import numpy
+    from onnxruntime.capi._pybind_state import (  # pylint: disable=E0611
+        OrtValue as C_OrtValue,
+        OrtDevice as C_OrtDevice,
+        OrtMemType)
+    from onnxcustom.utils.print_helper import str_ortvalue
+
+    vect = numpy.array([100, 100], dtype=numpy.float32)
+
+    device = C_OrtDevice(C_OrtDevice.cpu(), OrtMemType.DEFAULT, 0)
+    ort_value = C_OrtValue.ortvalue_from_numpy(vect, device)
+    print(ort_value)
+    print(str_ortvalue(ort_value))
+
+    # Data pointers?
+    print(ort_value.data_ptr())
+    print(vect.__array_interface__['data'])
+
+    # to numpy
+    vect2 = ort_value.numpy()
+    print(vect2.__array_interface__['data'])
+
+Method `numpy` makes a copy. Next section brings more details
+about avoiding that copy.
 
 DLPack
 ======
@@ -221,7 +264,7 @@ Boolean type is usually represented as a vector of unsigned bytes.
 This information is not actually stored in the DLPack structure
 and there is no way to distringuish between the two. That's why
 method `from_dlpack` has an additional parameter. You can read
-more about this in issue `75 <https://github.com/dmlc/dlpack/issues/75>`_.
+more about this in `issue 75 <https://github.com/dmlc/dlpack/issues/75>`_.
 
 OrtValueVector
 ++++++++++++++

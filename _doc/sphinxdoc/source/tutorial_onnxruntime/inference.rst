@@ -190,10 +190,10 @@ Next lines shows how to do computation on GPU
 with :epkg:`onnxruntime`.
 
 C_OrtValue
-++++++++++
+~~~~~~~~~~
 
 IOBinding
-+++++++++
+~~~~~~~~~
 
 Profiling
 =========
@@ -209,6 +209,7 @@ into a table.
 
 .. runpython::
     :showcode:
+    :warningout: DeprecationWarning
 
     import json
     import numpy
@@ -254,7 +255,7 @@ into a table.
     print(df.head(n=10))
     df.to_csv("inference_profiling.csv", index=False)
 
-.. plot::..
+.. plot::
     :include-source:
 
     import pandas
