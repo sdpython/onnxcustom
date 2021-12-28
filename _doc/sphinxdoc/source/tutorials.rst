@@ -19,8 +19,8 @@ and how to train them with :epkg:`onnxruntime-training`.
     tutorial_onnx/index
     tutorial_onnxruntime/index
     tutorial_skl/index
-    tutorial_bench/index
     tutorial_training/index
+    tutorial_bench/index
 
 Readings
 ++++++++

@@ -73,6 +73,22 @@ inputs and outputs.
         print("output:", t.name, t.type, t.shape)
 
 The class :epkg:`InferenceSession` is not pickable.
+It must be restored from the ONNX file.
+C API is slightly different. The C object is
+stored in attribute `sess_`.
+
+.. runpython::
+    :showcode:
+
+    import numpy
+    from onnxruntime import InferenceSession, RunOptions
+
+    X = numpy.random.randn(5, 10).astype(numpy.float64)
+    sess = InferenceSession("linreg_model.onnx")
+    names = [o.name for o in sess._sess.outputs_meta]
+    ro = RunOptions()
+    result = sess._sess.run(names, {'X': X}, ro)
+    print(result)
 
 Session Options
 ===============
@@ -189,12 +205,136 @@ By default, everything happens on CPU.
 Next lines shows how to do computation on GPU
 with :epkg:`onnxruntime`. Method `run` was using numpy arrays,
 another method is needed to use another device.
+Example :ref:`benchmark-ort-api` shows which API is the fastest.
 
 C_OrtValue
 ~~~~~~~~~~
 
+Method `run_with_ort_values` works the same way as `run`.
+Next example shows how to call the API with any OrtValue
+whatever the device it is stored on.
+
+.. runpython::
+    :showcode:
+
+    import numpy
+    from onnxruntime import InferenceSession
+    from onnxruntime.capi._pybind_state import (  # pylint: disable=E0611
+        OrtDevice as C_OrtDevice,
+        OrtValue as C_OrtValue,
+        OrtMemType)
+
+    sess = InferenceSession("linreg_model.onnx")
+
+    X = numpy.random.randn(5, 10).astype(numpy.float64)
+
+    device = C_OrtDevice(C_OrtDevice.cpu(), OrtMemType.DEFAULT, 0)
+    ort_X = C_OrtValue.ortvalue_from_numpy(X, device)
+
+    names = [o.name for o in sess._sess.outputs_meta]
+    result = sess._sess.run_with_ort_values( {'X': ort_X}, names, None)
+    print(result[0].numpy())
+
 IOBinding
 ~~~~~~~~~
+
+This API is slower than the previous one but is convenient when
+not all inputs change between two calls to the API.
+It relies on an intermediate structure
+:epkg:`SessionIOBinding`. The structure is used to bind an array
+knowing its shape, its type, its address, to an input name.
+
+.. runpython::
+    :showcode:
+
+    import numpy
+    from onnxruntime import InferenceSession
+    from onnxruntime.capi._pybind_state import (  # pylint: disable=E0611
+        OrtDevice as C_OrtDevice,
+        OrtValue as C_OrtValue,
+        OrtMemType, SessionIOBinding)
+
+    sess = InferenceSession("linreg_model.onnx")
+    X = numpy.random.randn(5, 10).astype(numpy.float64)
+
+    bind = SessionIOBinding(sess._sess)
+    device = C_OrtDevice(C_OrtDevice.cpu(), OrtMemType.DEFAULT, 0)
+
+    # Next line binds the array to the input name.
+    bind.bind_input('X', device, X.dtype, X.shape,
+                    X.__array_interface__['data'][0])
+
+    # This line tells on which device the result should be stored.
+    bind.bind_output('variable', device)
+
+    # Inference.
+    sess._sess.run_with_iobinding(bind, None)
+
+    # Next line retrieves the outputs as a list of OrtValue.
+    result = bind.get_outputs()
+
+    # Conversion to numpy to see the result.
+    print(result[0].numpy())
+
+When the input is an OrtValue, another method is available.
+
+.. runpython::
+    :showcode:
+
+    import numpy
+    from onnxruntime import InferenceSession
+    from onnxruntime.capi._pybind_state import (  # pylint: disable=E0611
+        OrtDevice as C_OrtDevice,
+        OrtValue as C_OrtValue,
+        OrtMemType, SessionIOBinding)
+
+    sess = InferenceSession("linreg_model.onnx")
+    X = numpy.random.randn(5, 10).astype(numpy.float64)
+
+    bind = SessionIOBinding(sess._sess)
+    device = C_OrtDevice(C_OrtDevice.cpu(), OrtMemType.DEFAULT, 0)
+
+    # Next line was changed.
+    ort_X = C_OrtValue.ortvalue_from_numpy(X, device)
+    bind.bind_ortvalue_input('X', ort_X)
+
+    bind.bind_output('variable', device)
+    sess._sess.run_with_iobinding(bind, None)
+    result = bind.get_outputs()
+    print(result[0].numpy())
+
+The last example binds the output to avoid a copy of the results.
+It gives an existing and allocated OrtValue which receives
+this output, as if it was inplace.
+
+.. runpython::
+    :showcode:
+
+    import numpy
+    from onnxruntime import InferenceSession
+    from onnxruntime.capi._pybind_state import (  # pylint: disable=E0611
+        OrtDevice as C_OrtDevice,
+        OrtValue as C_OrtValue,
+        OrtMemType, SessionIOBinding)
+
+    sess = InferenceSession("linreg_model.onnx")
+    X = numpy.random.randn(5, 10).astype(numpy.float64)
+    prediction = numpy.random.randn(5, 1).astype(numpy.float64)
+
+    bind = SessionIOBinding(sess._sess)
+    device = C_OrtDevice(C_OrtDevice.cpu(), OrtMemType.DEFAULT, 0)
+    ort_X = C_OrtValue.ortvalue_from_numpy(X, device)
+    bind.bind_ortvalue_input('X', ort_X)
+
+    # This line tells on which device the result should be stored.
+    ort_prediction = C_OrtValue.ortvalue_from_numpy(prediction, device)
+    bind.bind_ortvalue_output('variable', ort_prediction)
+
+    # Inference.
+    sess._sess.run_with_iobinding(bind, None)
+
+    # Result.
+    print(prediction)
 
 Profiling
 =========

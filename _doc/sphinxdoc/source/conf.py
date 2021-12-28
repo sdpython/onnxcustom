@@ -257,6 +257,10 @@ epkg_dictionary.update({
     'Scan':
         'http://www.xavierdupre.fr/app/onnxcustom/helpsphinx/onnxmd/'
         'onnx_docs/Operators.html#a-name-scan-a-a-name-scan-scan-a',
+    'SessionIOBinding':
+        'http://www.xavierdupre.fr/app/onnxcustom/helpsphinx/api/'
+        'onnxruntime_python/inference.html#'
+        'onnxruntime.capi._pybind_state.SessionIOBinding',
     'SessionOptions':
         'http://www.xavierdupre.fr/app/onnxcustom/helpsphinx/onnxmd/'
         'onnxruntime_python/inference.html#sessionoptions',
