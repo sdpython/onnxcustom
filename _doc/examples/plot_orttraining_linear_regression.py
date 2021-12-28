@@ -161,7 +161,7 @@ with open("saved_gradient.onnx.training.onnx", "rb") as f:
                 if node.output[i] == "":
                     node.output[i] = "n%d-%d" % (inode, i)
 
-plot_onnxs(graph, title=['Training graph'])
+plot_onnxs(graph, title='Training graph')
 
 #######################################
 # The convergence speed is not the same but both gradient descents

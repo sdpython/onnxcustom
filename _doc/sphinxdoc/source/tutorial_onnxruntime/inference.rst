@@ -259,10 +259,12 @@ into a table.
 .. plot::
     :include-source:
 
+    import os
     import pandas
     import matplotlib.pyplot as plt
 
-    df = pandas.read_csv("inference_profiling.csv")
+    full_name = os.path.abspath("inference_profiling.csv")
+    df = pandas.read_csv(full_name)
 
     # but a graph is usually better...
     gr_dur = df[['dur', "args_op_name"]].groupby("args_op_name").sum().sort_values('dur')
