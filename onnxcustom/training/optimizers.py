@@ -102,6 +102,8 @@ class OrtGradientOptimizer(BaseEstimator):
     :param verbose: use :epkg:`tqdm` to display the training progress
     :param validation_every: validation with a test set every
         *validation_every* iterations
+    :param saved_gradient: if not None, a filename,
+        the optimizer saves the gradient into it
 
     Once initialized, the class creates the attribute
     `train_session_` which holds an instance of :ref:`l-ort-training-session`.
@@ -113,7 +115,7 @@ class OrtGradientOptimizer(BaseEstimator):
                  max_iter=100, training_optimizer_name='SGDOptimizer',
                  batch_size=10, learning_rate='SGDRegressor',
                  device='cpu', warm_start=False, verbose=0,
-                 validation_every=0.1):
+                 validation_every=0.1, saved_gradient=None):
         BaseEstimator.__init__(self, learning_rate, device)
         self.model_onnx = model_onnx
         self.batch_size = batch_size
@@ -123,6 +125,7 @@ class OrtGradientOptimizer(BaseEstimator):
         self.verbose = verbose
         self.max_iter = max_iter
         self.warm_start = warm_start
+        self.saved_gradient = saved_gradient
         if validation_every < 1:
             self.validation_every = int(self.max_iter * validation_every)
         else:
@@ -327,6 +330,11 @@ class OrtGradientOptimizer(BaseEstimator):
         # ort_parameters.set_gradients_as_graph_outputs = False
         # ort_parameters.use_memory_efficient_gradient = False
         # ort_parameters.enable_adasum = False
+        if self.saved_gradient is not None:
+            name = self.saved_gradient
+            name2 = name + ".training.onnx"
+            ort_parameters.model_with_gradient_graph_path = name
+            ort_parameters.model_with_training_graph_path = name2
 
         output_types = {}
         for output in training_onnx.graph.output:

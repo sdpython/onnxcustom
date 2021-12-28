@@ -1,11 +1,11 @@
 """
 @brief      test log(time=8s)
 """
-
+import os
 import unittest
 import io
 import pickle
-from pyquickhelper.pycode import ExtTestCase
+from pyquickhelper.pycode import ExtTestCase, get_temp_folder
 import numpy
 from onnx.helper import set_model_props
 from sklearn.datasets import make_regression
@@ -53,6 +53,40 @@ class TestOptimizers(ExtTestCase):
         losses = train_session.train_losses_
         self.assertGreater(len(losses), 1)
         self.assertFalse(any(map(numpy.isnan, losses)))
+
+    @unittest.skipIf(TrainingSession is None, reason="not training")
+    def test_ort_gradient_optimizers_use_numpy_saved(self):
+        from onnxcustom.utils.onnx_orttraining import add_loss_output
+        from onnxcustom.training.optimizers import OrtGradientOptimizer
+        X, y = make_regression(  # pylint: disable=W0632
+            100, n_features=10, bias=2, random_state=0)
+        X = X.astype(numpy.float32)
+        y = y.astype(numpy.float32)
+        X_train, _, y_train, __ = train_test_split(X, y)
+        reg = LinearRegression()
+        reg.fit(X_train, y_train)
+        reg.coef_ = reg.coef_.reshape((1, -1))
+        onx = to_onnx(reg, X_train, target_opset=opset,
+                      black_op={'LinearRegressor'})
+        set_model_props(onx, {'info': 'unit test'})
+        onx_loss = add_loss_output(onx)
+        inits = ['intercept', 'coef']
+        temp = get_temp_folder(__file__, "temp_OrtGradientOptimizer")
+        filename = os.path.join(temp, "saved.onnx")
+        train_session = OrtGradientOptimizer(
+            onx_loss, inits, learning_rate=1e-3,
+            saved_gradient=filename)
+        self.assertRaise(lambda: train_session.get_state(), AttributeError)
+        train_session.fit(X, y, use_numpy=True)
+        state_tensors = train_session.get_state()
+        self.assertEqual(len(state_tensors), 2)
+        r = repr(train_session)
+        self.assertIn("OrtGradientOptimizer(model_onnx=", r)
+        self.assertIn("learning_rate='invscaling'", r)
+        losses = train_session.train_losses_
+        self.assertGreater(len(losses), 1)
+        self.assertFalse(any(map(numpy.isnan, losses)))
+        self.assertExists(filename)
 
     @unittest.skipIf(TrainingSession is None, reason="not training")
     def test_ort_gradient_optimizers_use_numpy_nan(self):
