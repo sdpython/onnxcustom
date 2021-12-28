@@ -95,12 +95,20 @@ intersphinx_mapping.update({
     'torch': ('https://pytorch.org/docs/stable/', None),
     'mlprodict':
         ('http://www.xavierdupre.fr/app/mlprodict/helpsphinx/', None),
+    'numpy': ('https://docs.scipy.org/doc/numpy/', None),
     'onnxcustom':
         ('http://www.xavierdupre.fr/app/onnxcustom/helpsphinx/', None),
+    'pandas': ('https://pandas.pydata.org/pandas-docs/stable/', None),
     'pandas_streaming':
         ('http://www.xavierdupre.fr/app/pyquickhelper/helpsphinx/', None),
     'pyquickhelper':
         ('http://www.xavierdupre.fr/app/pyquickhelper/helpsphinx/', None),
+    'python': (
+        'https://docs.python.org/{.major}'.format(sys.version_info),
+        None),
+    'scikit-learn': ('https://scikit-learn.org/stable/', None),
+    'scipy': ('https://docs.scipy.org/doc/scipy/reference', None),
+    'sklearn': ('https://scikit-learn.org/stable/', None)
 })
 
 
@@ -110,6 +118,10 @@ epkg_dictionary.update({
     'chrome-tracing':
         'https://www.chromium.org/developers/how-tos/trace-event-profiling-tool',
     'cmake': 'https://cmake.org/',
+    'COO': 'https://en.wikipedia.org/wiki/Sparse_matrix#Coordinate_list_(COO)',
+    'CSR':
+        'https://en.wikipedia.org/wiki/Sparse_matrix'
+        '#Compressed_sparse_row_(CSR,_CRS_or_Yale_format)',
     'cudnn': 'https://developer.nvidia.com/cudnn',
     'cython': 'https://cython.org/',
     'DLPack': 'https://github.com/dmlc/dlpack',
@@ -179,6 +191,9 @@ epkg_dictionary.update({
     'C_OrtValue':
         'http://www.xavierdupre.fr/app/onnxcustom/helpsphinx/'
         'onnxmd/onnxruntime_python/ortvalue.html#c-class-ortvaluevector',
+    'C_SparseTensor':
+        'http://www.xavierdupre.fr/app/onnxruntime_training/'
+        'helpsphinx/api/tensors.html#sparsetensor',
     'Contrib Operators':
         'http://www.xavierdupre.fr/app/onnxcustom/helpsphinx/onnxmd/'
         'onnxruntime_docs/ContribOperators.html',
@@ -204,6 +219,11 @@ epkg_dictionary.update({
     'OnnxPipeline':
         'http://www.xavierdupre.fr/app/mlprodict/helpsphinx/mlprodict/'
         'sklapi/onnx_pipeline.html',
+    'OneHotEncoder':
+        'http://www.xavierdupre.fr/app/onnxcustom/helpsphinx/onnxmd/'
+        'onnx_docs/Operators-ml.html?highlight=onehotencoding'
+        '#a-name-ai-onnx-ml-onehotencoder-a-a-name-ai-onnx-'
+        'ml-onehotencoder-ai-onnx-ml-onehotencoder-a',
     'ORTModule':
         'http://www.xavierdupre.fr/app/onnxcustom/helpsphinx/'
         'api/onnxruntime_python/training_torch.html#ortmodule',
@@ -243,13 +263,17 @@ epkg_dictionary.update({
     'SparseTensor':
         'http://www.xavierdupre.fr/app/onnxruntime_training/'
         'helpsphinx/api/tensors.html#sparsetensor',
+    'TfIdfVectorizer':
+        'http://www.xavierdupre.fr/app/onnxcustom/helpsphinx/onnxmd/'
+        'onnx_docs/Operators.html#'
+        'a-name-tfidfvectorizer-a-a-name-tfidfvectorizer-tfidfvectorizer-a',
+    'TopK':
+        'http://www.xavierdupre.fr/app/onnxcustom/helpsphinx/onnxmd/'
+        'onnx_docs/Operators.html#a-name-topk-a-a-name-topk-topk-a',
     'TrainingAgent':
         'http://www.xavierdupre.fr/app/onnxcustom/helpsphinx/onnxmd/'
         'onnxruntime_python/training_partial.html'
         "#trainingagent",
-    'TopK':
-        'http://www.xavierdupre.fr/app/onnxcustom/helpsphinx/onnxmd/'
-        'onnx_docs/Operators.html#a-name-topk-a-a-name-topk-topk-a',
     'TrainingSession':
         'http://www.xavierdupre.fr/app/onnxcustom/helpsphinx/api/'
         'onnxruntime_python/training.html#onnxruntime.TrainingSession',

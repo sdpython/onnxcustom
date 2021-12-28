@@ -187,7 +187,8 @@ Inference on a device different from CPU
 
 By default, everything happens on CPU.
 Next lines shows how to do computation on GPU
-with :epkg:`onnxruntime`.
+with :epkg:`onnxruntime`. Method `run` was using numpy arrays,
+another method is needed to use another device.
 
 C_OrtValue
 ~~~~~~~~~~

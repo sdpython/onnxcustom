@@ -83,7 +83,9 @@ The class has three methods:
 Memory Allocator
 ================
 
-*to be continued*
+.. index:: incomplete
+
+**to be continued later**
 
 OrtValue
 ========
@@ -257,6 +259,24 @@ responsibles for the data deletion.
     print("ptr", ort_value_back.data_ptr())
     print(str_ortvalue(ort_value_back))
 
+.. index:: incomplete
+
+**to be continued later**
+
+See `PR 9610
+<https://github.com/microsoft/onnxruntime/pull/9610>`_.
+
+OrtValueVector
+++++++++++++++
+
+This container is equivalent to a list of :epkg:`C_OrtValue`.
+It optimizes the conversion to DLPack structure (see `PR 9610
+<https://github.com/microsoft/onnxruntime/pull/9610>`_).
+
+.. index:: incomplete
+
+**to be continued later**
+
 Boolean ambiguity
 +++++++++++++++++
 
@@ -266,8 +286,97 @@ and there is no way to distringuish between the two. That's why
 method `from_dlpack` has an additional parameter. You can read
 more about this in `issue 75 <https://github.com/dmlc/dlpack/issues/75>`_.
 
-OrtValueVector
-++++++++++++++
-
 Sparse Tensors
 ==============
+
+Sparse tensors only represents 2D matrices and are much more efficient
+in standard machine learning to represent categories or text features.
+This structure is usually created by an operator such as
+:epkg:`OneHotEncoder` or :epkg:`TfIdfVectorizer`.
+
+CSR
+~~~
+
+The following example shows how to create a sparse tensor
+(C version, :epkg:`C_SparseTensor`) from a :epkg:`CSR` matrix
+and to convert it back to this format.
+
+.. runpython::
+    :showcode:
+
+    import numpy
+    from scipy.sparse import csr_matrix
+    from onnxruntime.capi._pybind_state import (
+        SparseTensor as C_SparseTensor,
+        OrtDevice as C_OrtDevice)
+
+    ort_device = C_OrtDevice(
+        C_OrtDevice.cpu(), C_OrtDevice.default_memory(), 0)
+
+    dense = (numpy.random.randn(100, 10) >= 2).astype(numpy.float32)
+    print("sparse ratio:", dense.sum() * 1.0 / dense.size)
+
+    csr = csr_matrix(dense)
+    print("csr_matrix:")
+    print(csr)
+
+    ort_sparse = C_SparseTensor.sparse_csr_from_numpy(
+        csr.shape,
+        csr.data, csr.indices, csr.indptr,
+        ort_device)
+
+    print("ort_sparse.values() ->", ort_sparse.values())
+
+    # Back to csr_matrix.
+    ort_csr = ort_sparse.get_csrc_data()
+
+    csr2 = csr_matrix(
+        (ort_sparse.values(), ort_csr.inner(), ort_csr.outer()),
+        shape=ort_sparse.dense_shape())
+
+    print("retrieved:")
+    print(csr2)
+
+COO
+~~~
+
+Previous example was changed to do the same with format
+:epkg:`COO`.
+
+.. runpython::
+    :showcode:
+
+    import numpy
+    from scipy.sparse import coo_matrix
+    from onnxruntime.capi._pybind_state import (
+        SparseTensor as C_SparseTensor,
+        OrtDevice as C_OrtDevice)
+
+    ort_device = C_OrtDevice(
+        C_OrtDevice.cpu(), C_OrtDevice.default_memory(), 0)
+
+    dense = (numpy.random.randn(100, 10) >= 2).astype(numpy.float32)
+    print("sparse ratio:", dense.sum() * 1.0 / dense.size)
+
+    coo = coo_matrix(dense)
+    print("coo_matrix:")
+    print(coo)
+
+    ort_sparse = C_SparseTensor.sparse_coo_from_numpy(
+        coo.shape,
+        coo.data,
+        numpy.hstack([coo.row.reshape((-1, 1)), coo.col.reshape((-1, 1))]),
+        ort_device)
+
+    print("ort_sparse.values() ->", ort_sparse.values())
+
+    # Back to coo_matrix.
+    ort_coo = ort_sparse.get_coo_data()
+
+    indices = ort_coo.indices()
+    coo2 = coo_matrix(
+        (ort_sparse.values(), (indices[:, 0], indices[:, 1])),
+        shape=ort_sparse.dense_shape())
+
+    print("retrieved:")
+    print(coo2)
