@@ -403,7 +403,8 @@ into a table.
     import pandas
     import matplotlib.pyplot as plt
 
-    full_name = os.path.abspath("inference_profiling.csv")
+    full_name = os.path.normpath(os.path.abspath(
+        os.path.join("..", "..", "inference_profiling.csv")))
     df = pandas.read_csv(full_name)
 
     # but a graph is usually better...

@@ -278,6 +278,9 @@ epkg_dictionary.update({
         'http://www.xavierdupre.fr/app/onnxcustom/helpsphinx/onnxmd/'
         'onnxruntime_python/training_partial.html'
         "#trainingagent",
+    'TrainingParameters':
+        'http://www.xavierdupre.fr/app/onnxcustom/helpsphinx/api/'
+        'onnxruntime_python/training.html#trainingparameters',
     'TrainingSession':
         'http://www.xavierdupre.fr/app/onnxcustom/helpsphinx/api/'
         'onnxruntime_python/training.html#onnxruntime.TrainingSession',

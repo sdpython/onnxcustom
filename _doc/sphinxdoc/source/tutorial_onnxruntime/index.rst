@@ -16,4 +16,4 @@ available on many other platforms.
     ortvalue_doc
     inference
     training
-    challenges
+    extensions

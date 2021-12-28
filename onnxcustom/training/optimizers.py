@@ -314,6 +314,16 @@ class OrtGradientOptimizer(BaseEstimator):
             loss_output_name='loss',
             training_optimizer_name='SGDOptimizer',
             device='cpu'):
+        """
+        Creates an instance of :epkg:`TrainingSession`.
+
+        :param training_onnx: an ONNX graph with a loss function
+        :param weights_to_train: list of initializer names to optimize
+        :param loss_output_name: output name for the loss
+        :param training_optimizer_name: optimizer name
+        :param device: one :epkg:`C_OrtDevice` or a string
+        :return: an instance of :epkg:`TrainingSession`
+        """
         if training_optimizer_name != 'SGDOptimizer':
             raise NotImplementedError(
                 "Only the SGDOptimizer is implemented not %r."
