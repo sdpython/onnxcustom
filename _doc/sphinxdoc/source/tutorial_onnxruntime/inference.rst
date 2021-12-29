@@ -158,7 +158,8 @@ Attribute `register_custom_ops_library` to register an
 assembly implementing the runtime for custom nodes.
 :epkg:`onnxruntime-extensions` is one of these extensions
 mostly focusing on text processing (tokenizers) or simple
-text manipulations.
+text manipulations. An exemple can be seen in section
+:ref:`l-custom-runtime-extensions`.
 
 Providers
 =========

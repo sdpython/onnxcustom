@@ -21,6 +21,8 @@ Other languages
 :epkg:`onnxruntime` is available in others languages such as C#, java, javascript,
 webassembly, Objective C.
 
+.. _l-custom-runtime-extensions:
+
 Custom runtime
 ==============
 
