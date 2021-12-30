@@ -80,101 +80,153 @@ class OrtGradientForwardBackwardOptimizer(BaseEstimator):
             self.validation_every = validation_every  # pragma: no cover
         self._build_loss_function()
 
+    @property
+    def needs_grad(self):
+        """
+        Returns the True if the gradient update needs to retain
+        past gradients.
+        """
+        return self.learning_rate.needs_grad
+
     def __getstate__(self):
         "Removes any non pickable attribute."
         state = BaseEstimator.__getstate__(self)
-        if hasattr(self, 'train_state_'):
-            train_state = []
-            for v in self.get_state():
-                if v is None:
-                    train_state.append(v)
-                else:
-                    train_state.append(v.numpy())
-            state['train_state'] = train_state
+        for att in ['train_state_', 'train_grad_state_']:
+            if hasattr(self, att):
+                train_state = []
+                for v in self.get_state():
+                    if v is None:
+                        train_state.append(v)
+                    else:
+                        train_state.append(v.numpy())
+                state[att[:-1]] = train_state
         return state
 
     def __setstate__(self, state):
         "Restores any non pickable attribute."
-        if 'train_state' in state:
-            train_state = state.pop('train_state')
-        else:
-            train_state = None
+        popped = {}
+        for att in ['train_state', 'train_grad_state']:
+            if att in state:
+                popped[att] = state.pop(att)
         BaseEstimator.__setstate__(self, state)
-        if train_state is not None:
-            self.set_state(train_state, check_trained=False)
+        for k, v in popped.items():
+            if k == 'train_state':
+                self.set_state(v, check_trained=False, kind='weight')
+            elif k == 'train_grad_state':
+                self.set_state(v, check_trained=False, kind='grad')
+            else:
+                raise ValueError(
+                    "Unexpected key state %r." % k)
         self._build_loss_function()
         return self
 
-    def get_full_state(self):
+    def _get_att_state(self, kind):
+        if kind == 'weight':
+            return 'train_state_'
+        if kind == 'grad':
+            return 'train_grad_state_'
+        raise ValueError(  # pragma: no cover
+            "Unexpected kind=%r." % kind)
+
+    def get_full_state(self, kind='weight'):
         """
         Returns the trained weights.
         """
-        if not hasattr(self, 'train_state_'):
+        if isinstance(kind, list):
+            return [self.get_full_state(kind=k) for k in kind]
+        att = self._get_att_state(kind)
+        if not hasattr(self, att):
             raise AttributeError(  # pragma: no cover
                 "Method fit must be called before.")
-        return self.train_state_
+        return getattr(self, att)
 
-    def get_state(self):
+    def get_state(self, kind='weight'):
         """
         Returns the trained weights.
         """
-        if not hasattr(self, 'train_state_'):
+        att = self._get_att_state(kind)
+        if not hasattr(self, att):
             raise AttributeError("Method fit must be called before.")
-        if self.train_state_ is None:
+        if getattr(self, att, None) is None:
             raise RuntimeError(  # pragma: no cover
-                "No train_state_ available (None).")
+                "No attribute %r available (None)." % att)
         if self.weights_to_train is None:
             raise RuntimeError(  # pragma: no cover
                 "Unexpected self.weights_to_train (None).")
-        n = len(self.train_state_) - len(self.weights_to_train)
-        return self.train_state_[n:]
+        value = getattr(self, att)
+        n = len(value) - len(self.weights_to_train)
+        return value[n:]
 
-    def set_state(self, state, check_trained=True):
+    def set_state(self, state, check_trained=True, kind='weight', zero=False):
         """
         Changes the trained weights.
         """
         if check_trained and not hasattr(self, 'train_session_'):
             raise AttributeError(  # pragma: no cover
                 "Method fit must be called before.")
-        self.train_state_ = []
-        self.train_state_numpy_ = []
+        state_ = []
+        state_numpy_ = []
         for i, v in enumerate(state):
             if v is None:
-                self.train_state_.append(None)
-                self.train_state_numpy_.append(None)
+                state_.append(None)
+                state_numpy_.append(None)
             elif isinstance(v, numpy.ndarray):
+                if zero:
+                    v = numpy.zeros(v.shape, dtype=v.dtype)
                 ortvalue = numpy_to_ort_value(v, self.device)
-                self.train_state_.append(ortvalue)
+                state_.append(ortvalue)
                 # The numpy container must be retained as the ortvalue
                 # just borrows the pointer.
-                self.train_state_numpy_.append(v)
+                state_numpy_.append(v)
             elif isinstance(v, C_OrtValue):
-                self.train_state_.append(v)
-                self.train_state_numpy_.append(None)
+                if zero:
+                    v = self.zero_sess_.run_with_ort_values(['Y'], {'X': v})
+                state_.append(v)
+                state_numpy_.append(None)
             else:
                 raise TypeError(  # pragma: no cover
                     "Unexpected type %r for state %r." % (
                         type(v), i))
+        att = self._get_att_state(kind)
+        setattr(self, att, state_)
+        setattr(self, att + "numpy_", state_numpy_)
 
     def _build_loss_function(self):
         opset = get_onnx_opset(self.model_onnx)
+        so = SessionOptions()
+        so.log_severity_level = 4
+
+        # loss_grad
         self.loss_grad_onnx_ = function_onnx_graph(
             "grad_loss_" + self.loss_function, target_opset=opset,
             weight_name=self.weight_name)
-        so = SessionOptions()
-        so.log_severity_level = 4
         self.loss_grad_sess_ = InferenceSession(
             self.loss_grad_onnx_.SerializeToString(), so,
             providers=device_to_providers(self.device))
         self.loss_grad_sess_bind_ = (
             self.loss_grad_sess_.io_binding()._iobinding)
 
-        self.axpy_onnx_ = function_onnx_graph("axpy")
-        self.axpy_sess_ = InferenceSession(
-            self.axpy_onnx_.SerializeToString(), so,
-            providers=device_to_providers(self.device))
-        self.axpy_sess_bind_ = self.axpy_sess_.io_binding()._iobinding
+        # axpy
+        if self.needs_grad:
+            self.axpyw_onnx_ = function_onnx_graph("axpyw")
+            self.axpyw_sess_ = InferenceSession(
+                self.axpyw_onnx_.SerializeToString(), so,
+                providers=device_to_providers(self.device))
+            self.axpyw_sess_bind_ = self.axpyw_sess_.io_binding()._iobinding
+        else:
+            self.axpy_onnx_ = function_onnx_graph("axpy")
+            self.axpy_sess_ = InferenceSession(
+                self.axpy_onnx_.SerializeToString(), so,
+                providers=device_to_providers(self.device))
+            self.axpy_sess_bind_ = self.axpy_sess_.io_binding()._iobinding
 
+        # zero
+        self.zero_onnx_ = function_onnx_graph("zero")
+        self.zero_sess_ = InferenceSession(
+            self.zero_onnx_.SerializeToString(), so,
+            providers=device_to_providers(self.device))
+
+        # logging
         if self.enable_logging:
             self._logger = logging.getLogger("onnxcustom")
         else:
@@ -232,6 +284,11 @@ class OrtGradientForwardBackwardOptimizer(BaseEstimator):
             self.set_state([
                 self.train_session_.get_initializer(name, exc=False)
                 for name in self.input_names_])
+        if self.needs_grad and not hasattr(self, 'state_grad_'):
+            self.set_state([
+                self.train_session_.get_initializer(name, exc=False)
+                for name in self.input_names_],
+                kind='grad', zero=True)
         if not self.warm_start:
             state = self.get_full_state()
             if len(state) != len(self.input_names_):
@@ -258,9 +315,12 @@ class OrtGradientForwardBackwardOptimizer(BaseEstimator):
                         new_state.append(
                             numpy.random.randn(1).astype(dtype))
             self.set_state(new_state)
+            if self.needs_grad:
+                self.set_state(new_state, kind='grad', zero=True)
 
         data_loader = OrtDataLoader(
-            X, y, sample_weight, batch_size=self.batch_size, device=self.device)
+            X, y, sample_weight, batch_size=self.batch_size,
+            device=self.device)
         if X_val is not None:
             data_loader_val = OrtDataLoader(
                 X_val, y_val, batch_size=X_val.shape[0], device=self.device,
@@ -279,9 +339,11 @@ class OrtGradientForwardBackwardOptimizer(BaseEstimator):
         train_losses = []
         val_losses = []
         lr = self.learning_rate.value
+        kinds = ['weight', 'grad'] if self.needs_grad else ['weight']
         for it in loop:
-            loss = self._iteration(data_loader, lr, self.get_full_state(),
-                                   len(weights_to_train))
+            loss = self._iteration(
+                data_loader, lr, self.get_full_state(kind=kinds),
+                len(weights_to_train))
             lr = self.learning_rate.update_learning_rate(it).value
             if self.verbose > 1:  # pragma: no cover
                 loop.set_description(
@@ -313,19 +375,12 @@ class OrtGradientForwardBackwardOptimizer(BaseEstimator):
             it can be also a numpy array
         """
         if isinstance(c_ortvalue, C_OrtValue):
-            # does not work
-            # bind._iobinding.bind_ortvalue_input(name, c_ortvalue)
-            if hasattr(c_ortvalue, 'proto_type'):
-                dtype = proto_type_to_dtype(c_ortvalue.proto_type())
-            else:
-                dtype = proto_type_to_dtype(c_ortvalue.data_type())
-            bind.bind_input(
-                name, self.device, dtype, c_ortvalue.shape(),
-                c_ortvalue.data_ptr())
+            bind.bind_ortvalue_input(name, c_ortvalue)
         elif isinstance(c_ortvalue, numpy.ndarray):
             if self.device_type() != self.device.cpu():  # pylint: disable=E1101
                 raise ProviderError(
-                    "device=%s is not CPU." % ort_device_to_string(self.device))
+                    "device=%s is not CPU." % ort_device_to_string(
+                        self.device))
             bind.bind_input(
                 name, self.device, c_ortvalue.dtype, c_ortvalue.shape,
                 c_ortvalue.__array_interface__['data'][0])
@@ -346,15 +401,7 @@ class OrtGradientForwardBackwardOptimizer(BaseEstimator):
         This method can be used for inplace computation.
         """
         if isinstance(c_ortvalue, C_OrtValue):
-            # does not work
-            # bind._iobinding.bind_ortvalue_input(name, c_ortvalue)
-            if hasattr(c_ortvalue, 'proto_type'):
-                dtype = proto_type_to_dtype(c_ortvalue.proto_type())
-            else:
-                dtype = proto_type_to_dtype(c_ortvalue.data_type())
-            bind.bind_output(
-                name, self.device, dtype, c_ortvalue.shape(),
-                c_ortvalue.data_ptr())
+            bind.bind_ortvalue_output(name, c_ortvalue)
         else:
             raise TypeError(  # pragma: no cover
                 "Unable to bind type %r for name %r." % (
@@ -390,10 +437,15 @@ class OrtGradientForwardBackwardOptimizer(BaseEstimator):
         self.axpy_sess_._sess.run_with_iobinding(self.axpy_sess_bind_, None)
         return self.axpy_sess_bind_.get_outputs()[0]
 
-    def _iteration(self, data_loader, learning_rate, state, n_weights):
+    def _iteration(self, data_loader, learning_rate, states, n_weights):
         actual_losses = []
         bs = data_loader.batch_size
         logger = self._logger
+        if len(states) == 1:
+            state = states[0]
+            grad = None
+        else:
+            state, grad = states
 
         if logger is not None:
             logger.debug(
@@ -413,7 +465,7 @@ class OrtGradientForwardBackwardOptimizer(BaseEstimator):
                     "[OrtGradientForwardBackwardOptimizer._iteration] "
                     "batch %d", ib)
 
-            prediction = self.train_function_.forward(state, training=True)
+            prediction = self.train_function_.forward(states[0], training=True)
             loss, loss_gradient = self._loss_gradient(
                 orty, prediction[0], weight=ortw)
             cpu_loss = loss.numpy()

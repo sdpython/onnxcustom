@@ -173,6 +173,59 @@ def _onnx_grad_square_error(target_opset=None, dtype=numpy.float32,
     return onx
 
 
+def _onnx_copy(target_opset=None, dtype=numpy.float32):
+    """
+    Returns the ONNX graph for function
+    :math:`Y = X`.
+
+    .. gdot::
+        :script: DOT-SECTION
+
+        from mlprodict.onnxrt import OnnxInference
+        from onnxcustom.utils.onnx_function import function_onnx_graph
+
+        model_onnx = function_onnx_graph('copy')
+        oinf = OnnxInference(model_onnx, inplace=False)
+
+        print("DOT-SECTION", oinf.to_dot())
+    """
+    from skl2onnx.algebra.onnx_ops import OnnxIdentity
+    res = OnnxIdentity('X', op_version=target_opset,
+                       output_names=['Y'])
+    var_type = dtype_to_var_type(dtype)
+    varsx = [('X', var_type())]
+    onx = res.to_onnx(varsx, outputs=[('Y', var_type())],
+                      target_opset=target_opset)
+    return onx
+
+
+def _onnx_zero(target_opset=None, dtype=numpy.float32):
+    """
+    Returns the ONNX graph for function
+    :math:`Y = X * 0`.
+
+    .. gdot::
+        :script: DOT-SECTION
+
+        from mlprodict.onnxrt import OnnxInference
+        from onnxcustom.utils.onnx_function import function_onnx_graph
+
+        model_onnx = function_onnx_graph('zero')
+        oinf = OnnxInference(model_onnx, inplace=False)
+
+        print("DOT-SECTION", oinf.to_dot())
+    """
+    from skl2onnx.algebra.onnx_ops import OnnxMul
+    res = OnnxMul('X', numpy.array([0], dtype=dtype),
+                  op_version=target_opset,
+                  output_names=['Y'])
+    var_type = dtype_to_var_type(dtype)
+    varsx = [('X', var_type())]
+    onx = res.to_onnx(varsx, outputs=[('Y', var_type())],
+                      target_opset=target_opset)
+    return onx
+
+
 def _onnx_axpy(target_opset=None, dtype=numpy.float32):
     """
     Returns the ONNX graph for function
