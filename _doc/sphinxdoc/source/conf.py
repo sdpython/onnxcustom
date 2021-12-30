@@ -31,7 +31,7 @@ def callback_begin():
         shutil.copy(os.path.join(source, img), dest)
 
 
-set_sphinx_variables(__file__, "onnxcustom", "Xavier Dupré", 2021,
+set_sphinx_variables(__file__, "onnxcustom", "Xavier Dupré", 2022,
                      "pydata_sphinx_theme", pydata_sphinx_theme.get_html_theme_path(),
                      locals(), extlinks=dict(
                          issue=('https://github.com/sdpython/onnxcustom/issues/%s', 'issue')),
