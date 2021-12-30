@@ -187,6 +187,23 @@ class TestOnnxFunction(ExtTestCase):
         self.common_check_3(
             "linear_regression", lambda x, a, b: x @ a + b)
 
+    def test_251(self):
+        onx = function_onnx_graph(
+            "grad_loss_square_error",
+            target_opset=get_max_opset(),
+            dtype=numpy.float32, weight_name='weight')
+        expected = numpy.random.randn(25, 1).astype(numpy.float32)
+        predicted = numpy.random.randn(25, 1).astype(numpy.float32)
+
+        oinf = OnnxInference(onx)
+        got1 = oinf.run({'X1': expected, 'X2': predicted})
+        so = SessionOptions()
+        so.log_severity_level = 4
+        sess = InferenceSession(onx.SerializeToString(), so)
+        got2 = sess.run(None, {'X1': expected, 'X2': predicted})
+        self.assertEqualArray(got1['Y'], got2[0], decimal=5)
+        self.assertEqualArray(got1['Z'], got2[1])
+
 
 if __name__ == "__main__":
     unittest.main()

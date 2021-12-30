@@ -134,7 +134,8 @@ class OrtGradientOptimizer(BaseEstimator):
         else:
             self.validation_every = validation_every  # pragma: no cover
 
-    def fit(self, X, y, sample_weight=None, X_val=None, y_val=None, use_numpy=False):
+    def fit(self, X, y, sample_weight=None, X_val=None, y_val=None,
+            use_numpy=False):
         """
         Trains the model.
 

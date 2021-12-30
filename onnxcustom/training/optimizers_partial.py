@@ -364,11 +364,13 @@ class OrtGradientForwardBackwardOptimizer(BaseEstimator):
         """
         Returns the loss and the gradient as OrtValue.
         """
-        self._bind_input_ortvalue("X1", self.loss_grad_sess_bind_, expected)
-        self._bind_input_ortvalue("X2", self.loss_grad_sess_bind_, predicted)
         if weight is not None:
             self._bind_input_ortvalue(
                 "weight", self.loss_grad_sess_bind_, weight)
+        else:
+            self.loss_grad_sess_bind_.clear_binding_inputs()
+        self._bind_input_ortvalue("X1", self.loss_grad_sess_bind_, expected)
+        self._bind_input_ortvalue("X2", self.loss_grad_sess_bind_, predicted)
         self.loss_grad_sess_bind_.bind_output('Y', self.device)
         self.loss_grad_sess_bind_.bind_output('Z', self.device)
         self.loss_grad_sess_._sess.run_with_iobinding(
