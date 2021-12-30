@@ -15,6 +15,7 @@ class OrtDataLoader:
 
     :param X: features
     :param y: labels
+    :param sample_weight: weight or None
     :param batch_size: batch size (consecutive observations)
     :param device: :epkg:`C_OrtDevice` or a string such as `'cpu'`
     :param random_iter: random iteration
@@ -22,8 +23,8 @@ class OrtDataLoader:
     See example :ref:`l-orttraining-nn-gpu`.
     """
 
-    def __init__(self, X, y, batch_size=20, device='cpu',
-                 random_iter=True):
+    def __init__(self, X, y, sample_weight=None,
+                 batch_size=20, device='cpu', random_iter=True):
         if len(y.shape) == 1:
             y = y.reshape((-1, 1))
         if X.shape[0] != y.shape[0]:
@@ -43,11 +44,24 @@ class OrtDataLoader:
         self.desc = [(self.X_np.shape, self.X_np.dtype),
                      (self.y_np.shape, self.y_np.dtype)]
 
+        if sample_weight is None:
+            self.w_np = None
+            self.w_ort = None
+        else:
+            if X.shape[0] != sample_weight.shape[0]:
+                raise ValueError(  # pragma: no cover
+                    "Shape mismatch X.shape=%r, sample_weight.shape=%r."
+                    "" % (X.shape, sample_weight.shape))
+            self.w_np = numpy.ascontiguousarray(
+                sample_weight).reshape((-1, ))
+            self.w_ort = numpy_to_ort_value(self.w_np, self.device)
+            self.desc.append((self.w_np.shape, self.w_np.dtype))
+
     def __getstate__(self):
         "Removes any non pickable attribute."
         state = {}
-        for att in ['X_np', 'y_np', 'desc', 'batch_size',
-                    'random_iter']:
+        for att in ['X_np', 'y_np', 'w_np',
+                    'desc', 'batch_size', 'random_iter']:
             state[att] = getattr(self, att)
         state['device'] = ort_device_to_string(self.device)
         return state
@@ -59,6 +73,11 @@ class OrtDataLoader:
         self.device = get_ort_device(self.device)
         self.X_ort = numpy_to_ort_value(self.X_np, self.device)
         self.y_ort = numpy_to_ort_value(self.y_np, self.device)
+        if self.w_np is None:
+            self.w_ort = None
+        else:
+            self.w_ort = numpy_to_ort_value(
+                self.w_np, self.device)
         return self
 
     def __repr__(self):
@@ -95,15 +114,27 @@ class OrtDataLoader:
                 "not %r." % ort_device_to_string(self.device))
         N = 0
         b = len(self) - self.batch_size
-        if b <= 0 or self.batch_size <= 0:
-            yield (self.X_np, self.y_np)
+        if self.w_np is None:
+            if b <= 0 or self.batch_size <= 0:
+                yield (self.X_np, self.y_np)
+            else:
+                i = -1
+                while N < len(self):
+                    i = self._next_iter(i)
+                    N += self.batch_size
+                    yield (self.X_np[i:i + self.batch_size],
+                           self.y_np[i:i + self.batch_size])
         else:
-            i = -1
-            while N < len(self):
-                i = self._next_iter(i)
-                N += self.batch_size
-                yield (self.X_np[i:i + self.batch_size],
-                       self.y_np[i:i + self.batch_size])
+            if b <= 0 or self.batch_size <= 0:
+                yield (self.X_np, self.y_np, self.w_np)
+            else:
+                i = -1
+                while N < len(self):
+                    i = self._next_iter(i)
+                    N += self.batch_size
+                    yield (self.X_np[i:i + self.batch_size],
+                           self.y_np[i:i + self.batch_size],
+                           self.w_np[i:i + self.batch_size])
 
     def iter_ortvalue(self):
         """
@@ -114,20 +145,34 @@ class OrtDataLoader:
         """
         N = 0
         b = len(self) - self.batch_size
-        if b <= 0 or self.batch_size <= 0:
-            yield (
-                numpy_to_ort_value(self.X_np, self.device),
-                numpy_to_ort_value(self.y_np, self.device))
+        if self.w_ort is None:
+            if b <= 0 or self.batch_size <= 0:
+                yield (self.X_ort, self.y_ort)
+            else:
+                i = -1
+                while N < len(self):
+                    i = self._next_iter(i)
+                    N += self.batch_size
+                    xp = self.X_np[i:i + self.batch_size]
+                    yp = self.y_np[i:i + self.batch_size]
+                    yield (
+                        numpy_to_ort_value(xp, self.device),
+                        numpy_to_ort_value(yp, self.device))
         else:
-            i = -1
-            while N < len(self):
-                i = self._next_iter(i)
-                N += self.batch_size
-                xp = self.X_np[i:i + self.batch_size]
-                yp = self.y_np[i:i + self.batch_size]
-                yield (
-                    numpy_to_ort_value(xp, self.device),
-                    numpy_to_ort_value(yp, self.device))
+            if b <= 0 or self.batch_size <= 0:
+                yield (self.X_ort, self.y_ort, self.w_ort)
+            else:
+                i = -1
+                while N < len(self):
+                    i = self._next_iter(i)
+                    N += self.batch_size
+                    xp = self.X_np[i:i + self.batch_size]
+                    yp = self.y_np[i:i + self.batch_size]
+                    wp = self.w_np[i:i + self.batch_size]
+                    yield (
+                        numpy_to_ort_value(xp, self.device),
+                        numpy_to_ort_value(yp, self.device),
+                        numpy_to_ort_value(wp, self.device))
 
     def iter_bind(self, bind, names):
         """
@@ -135,15 +180,17 @@ class OrtDataLoader:
         *batch_size* consecutive observations.
         Modifies a bind structure.
         """
-        if len(names) != 3:
+        if len(names) not in (3, 4):
             raise NotImplementedError(
                 "The dataloader expects three (feature name, label name, "
+                "learning rate) or (feature name, label name, sample_weight, "
                 "learning rate), not %r." % names)
 
         n_col_x = self.desc[0][0][1]
         n_col_y = self.desc[1][0][1]
         size_x = self.desc[0][1].itemsize
         size_y = self.desc[1][1].itemsize
+        size_w = None if len(self.desc) <= 2 else self.desc[2][1].itemsize
 
         def local_bind(bind, offset, n):
             # This function assumes the data is contiguous.
@@ -154,30 +201,58 @@ class OrtDataLoader:
                 names[0], self.device, self.desc[0][1], shape_X,
                 self.X_ort.data_ptr() + offset * n_col_x * size_x)
             bind.bind_input(
-                names[1], self.device, self.desc[0][1], shape_y,
+                names[1], self.device, self.desc[1][1], shape_y,
                 self.y_ort.data_ptr() + offset * n_col_y * size_y)
+
+        def local_bindw(bind, offset, n):
+            # This function assumes the data is contiguous.
+            shape_w = (n, )
+
+            bind.bind_input(
+                names[2], self.device, self.desc[2][1], shape_w,
+                self.w_ort.data_ptr() + offset * size_w)
 
         N = 0
         b = len(self) - self.batch_size
-        if b <= 0 or self.batch_size <= 0:
-            shape_x = self.desc[0][0]
-            local_bind(bind, 0, shape_x[0])
-            yield shape_x[0]
+        if self.w_ort is None:
+            if b <= 0 or self.batch_size <= 0:
+                shape_x = self.desc[0][0]
+                local_bind(bind, 0, shape_x[0])
+                yield shape_x[0]
+            else:
+                n = self.batch_size
+                i = -1
+                while N < len(self):
+                    i = self._next_iter(i)
+                    N += self.batch_size
+                    local_bind(bind, i, n)
+                    yield n
         else:
-            n = self.batch_size
-            i = -1
-            while N < len(self):
-                i = self._next_iter(i)
-                N += self.batch_size
-                local_bind(bind, i, n)
-                yield n
+            if b <= 0 or self.batch_size <= 0:
+                shape_x = self.desc[0][0]
+                local_bind(bind, 0, shape_x[0])
+                local_bindw(bind, 0, shape_x[0])
+                yield shape_x[0]
+            else:
+                n = self.batch_size
+                i = -1
+                while N < len(self):
+                    i = self._next_iter(i)
+                    N += self.batch_size
+                    local_bind(bind, i, n)
+                    local_bindw(bind, i, n)
+                    yield n
 
     @property
     def data_np(self):
         "Returns a tuple of the datasets in numpy."
-        return self.X_np, self.y_np
+        if self.w_np is None:
+            return self.X_np, self.y_np
+        return self.X_np, self.y_np, self.w_np
 
     @property
     def data_ort(self):
         "Returns a tuple of the datasets in onnxruntime C_OrtValue."
-        return self.X_ort, self.y_ort
+        if self.w_ort is None:
+            return self.X_ort, self.y_ort
+        return self.X_ort, self.y_ort, self.w_ort

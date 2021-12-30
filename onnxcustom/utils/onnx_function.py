@@ -4,7 +4,7 @@
 @brief Onnx helper.
 """
 import numpy
-from .onnx_helper import dtype_to_var_type
+from .onnx_helper import dtype_to_var_type, add_initializer
 
 
 def get_supported_functions():
@@ -19,13 +19,15 @@ def get_supported_functions():
     return res
 
 
-def function_onnx_graph(name, target_opset=None, dtype=numpy.float32):
+def function_onnx_graph(name, target_opset=None, dtype=numpy.float32,
+                        weight_name=None):
     """
     Returns the ONNX graph corresponding to a function.
 
     :param name: name
     :param target_opset: opset version
     :param dtype: computation type
+    :param weight_name: weight name if any
     :return: ONNX graph
 
     A wrong name will raise an exception giving the whole of
@@ -69,17 +71,23 @@ def function_onnx_graph(name, target_opset=None, dtype=numpy.float32):
     glo = globals()
     full_name = "_onnx_" + name
     if full_name in glo:
-        return glo[full_name](target_opset=target_opset, dtype=dtype)
+        if weight_name is None:
+            return glo[full_name](target_opset=target_opset, dtype=dtype)
+        return glo[full_name](target_opset=target_opset, dtype=dtype,
+                              weight_name=weight_name)
     raise ValueError(
         "Unable to find function %r in %r." % (
             full_name, list(sorted(
                 k for k in glo if k.startswith('_onnx_')))))
 
 
-def _onnx_square_error(target_opset=None, dtype=numpy.float32):
+def _onnx_square_error(target_opset=None, dtype=numpy.float32,
+                       weight_name=None):
     """
     Returns the ONNX graph for function
-    :math:`Y = f(X1, X2) = \\lVert X1 - X2 \\rVert ^2`.
+    :math:`Y = f(X1, X2) = \\lVert X1 - X2 \\rVert ^2` or
+    :math:`Y = f(X1, X2) = \\lVert X1 - X2 \\rVert ^2 w` if
+    *weight_name* is not None
 
     .. gdot::
         :script: DOT-SECTION
@@ -92,21 +100,42 @@ def _onnx_square_error(target_opset=None, dtype=numpy.float32):
 
         print("DOT-SECTION", oinf.to_dot())
     """
-    from skl2onnx.algebra.onnx_ops import OnnxSub, OnnxReduceSumSquare
+    from skl2onnx.algebra.onnx_ops import (
+        OnnxSub, OnnxReduceSumSquare, OnnxReshape,
+        OnnxReduceSum, OnnxMul)
     diff = OnnxSub('X1', 'X2', op_version=target_opset)
-    res = OnnxReduceSumSquare(diff, op_version=target_opset,
-                              keepdims=0, output_names=['Y'])
+    if weight_name is None:
+        res = OnnxReduceSumSquare(diff, op_version=target_opset,
+                                  keepdims=0, output_names=['Y'])
+    else:
+        mul = OnnxMul(
+            OnnxMul(diff, diff, op_version=target_opset),
+            OnnxReshape(weight_name,
+                        numpy.array([-1, 1], dtype=numpy.int64),
+                        op_version=target_opset),
+            op_version=target_opset)
+        res = OnnxReduceSum(mul, op_version=target_opset,
+                            keepdims=0, output_names=['Y'])
     var_type = dtype_to_var_type(dtype)
-    varsx = [('X1', var_type([None, None])), ('X2', var_type([None, None]))]
+    varsx = [('X1', var_type([None, None])),
+             ('X2', var_type([None, None]))]
+    if weight_name is not None:
+        varsx.append((weight_name, var_type([None])))
     onx = res.to_onnx(varsx, outputs=[('Y', var_type())],
                       target_opset=target_opset)
+    if weight_name is not None:
+        onx = add_initializer(
+            onx, weight_name, numpy.array([1], dtype=dtype))
     return onx
 
 
-def _onnx_grad_square_error(target_opset=None, dtype=numpy.float32):
+def _onnx_grad_square_error(target_opset=None, dtype=numpy.float32,
+                            weight_name=None):
     """
     Returns the ONNX graph for the gradient of function
-    :math:`Y = f(X1, X2) = \\lVert X1 - X2 \\rVert ^2`.
+    :math:`Y = f(X1, X2) = \\lVert X1 - X2 \\rVert ^2` or
+    :math:`Y = f(X1, X2) = \\lVert X1 - X2 \\rVert ^2 w` if
+    *weight_name* is not None
 
     .. gdot::
         :script: DOT-SECTION
@@ -119,14 +148,28 @@ def _onnx_grad_square_error(target_opset=None, dtype=numpy.float32):
 
         print("DOT-SECTION", oinf.to_dot())
     """
-    from skl2onnx.algebra.onnx_ops import OnnxSub, OnnxMul
+    from skl2onnx.algebra.onnx_ops import OnnxSub, OnnxMul, OnnxReshape
     diff = OnnxSub('X1', 'X2', op_version=target_opset)
-    res = OnnxMul(diff, numpy.array([-2], dtype=dtype),
-                  op_version=target_opset, output_names=['Y'])
+    if weight_name is None:
+        res = OnnxMul(diff, numpy.array([-2], dtype=dtype),
+                      op_version=target_opset, output_names=['Y'])
+    else:
+        res = OnnxMul(
+            OnnxMul(diff, numpy.array([-2], dtype=dtype),
+                    op_version=target_opset),
+            OnnxReshape(weight_name,
+                        numpy.array([-1, 1], dtype=numpy.int64),
+                        op_version=target_opset),
+            op_version=target_opset, output_names=['Y'])
     var_type = dtype_to_var_type(dtype)
     varsx = [('X1', var_type([None, None])), ('X2', var_type([None, None]))]
+    if weight_name is not None:
+        varsx.append((weight_name, var_type([None])))
     onx = res.to_onnx(varsx, outputs=[('Y', var_type())],
                       target_opset=target_opset)
+    if weight_name is not None:
+        onx = add_initializer(
+            onx, weight_name, numpy.array([1], dtype=dtype))
     return onx
 
 
@@ -157,11 +200,13 @@ def _onnx_axpy(target_opset=None, dtype=numpy.float32):
     return onx
 
 
-def _onnx_grad_loss_square_error(target_opset=None, dtype=numpy.float32):
+def _onnx_grad_loss_square_error(target_opset=None, dtype=numpy.float32,
+                                 weight_name=None):
     """
     Returns the ONNX graph for function
-    :math:`Y = f(X1, X2) = \\lVert X1 - X2 \\rVert ^2`
-    and its gradient.
+    :math:`Y = f(X1, X2) = \\lVert X1 - X2 \\rVert ^2` or
+    :math:`Y = f(X1, X2) = \\lVert X1 - X2 \\rVert ^2 w` if
+    *weight_name* is not None and its gradient.
 
     .. gdot::
         :script: DOT-SECTION
@@ -175,18 +220,39 @@ def _onnx_grad_loss_square_error(target_opset=None, dtype=numpy.float32):
         print("DOT-SECTION", oinf.to_dot())
     """
     from skl2onnx.algebra.onnx_ops import (
-        OnnxSub, OnnxReduceSumSquare, OnnxMul)
+        OnnxSub, OnnxReduceSumSquare, OnnxMul,
+        OnnxReduceSum, OnnxReshape)
     diff = OnnxSub('X1', 'X2', op_version=target_opset)
-    res = OnnxReduceSumSquare(diff, op_version=target_opset,
-                              keepdims=0, output_names=['Y'])
-    res2 = OnnxMul(diff, numpy.array([-2], dtype=dtype),
-                   op_version=target_opset, output_names=['Z'])
+    if weight_name is None:
+        res = OnnxReduceSumSquare(diff, op_version=target_opset,
+                                  keepdims=0, output_names=['Y'])
+        res2 = OnnxMul(diff, numpy.array([-2], dtype=dtype),
+                       op_version=target_opset, output_names=['Z'])
+    else:
+        resh = OnnxReshape(weight_name,
+                           numpy.array([-1, 1], dtype=numpy.int64),
+                           op_version=target_opset)
+        mul = OnnxMul(
+            OnnxMul(diff, diff, op_version=target_opset),
+            resh, op_version=target_opset)
+        res = OnnxReduceSum(mul, op_version=target_opset,
+                            keepdims=0, output_names=['Y'])
+        res2 = OnnxMul(
+            OnnxMul(diff, numpy.array([-2], dtype=dtype),
+                    op_version=target_opset),
+            resh, op_version=target_opset, output_names=['Z'])
+
     var_type = dtype_to_var_type(dtype)
     varsx = [('X1', var_type([None, None])),
              ('X2', var_type([None, None]))]
+    if weight_name is not None:
+        varsx.append((weight_name, var_type([None])))
     onx = res.to_onnx(
         varsx, outputs=[('Y', var_type()), ('Z', var_type())],
         target_opset=target_opset, other_outputs=[res2])
+    if weight_name is not None:
+        onx = add_initializer(
+            onx, weight_name, numpy.array([1], dtype=dtype))
     return onx
 
 
