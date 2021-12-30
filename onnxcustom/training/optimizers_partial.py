@@ -14,7 +14,7 @@ from ..utils.onnx_function import function_onnx_graph
 from ..utils.print_helper import str_ortvalue
 from ..utils.onnx_orttraining import get_train_initializer
 from .ortgradient import OrtGradientForwardBackward
-from .optimizers import BaseEstimator
+from .base_estimator import BaseEstimator
 from .data_loader import OrtDataLoader
 from .excs import ConvergenceError, ProviderError
 

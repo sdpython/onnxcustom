@@ -605,6 +605,28 @@ class TestOptimizers(ExtTestCase):
         self.assertGreater(len(vlosses), 1)
         self.assertFalse(any(map(numpy.isnan, losses)))
 
+    @unittest.skipIf(TrainingSession is None, reason="not training")
+    def test_ort_gradient_optimizers_use_numpy_nesterov(self):
+        from onnxcustom.utils.onnx_orttraining import add_loss_output
+        from onnxcustom.training.optimizers import OrtGradientOptimizer
+        X, y = make_regression(  # pylint: disable=W0632
+            100, n_features=10, bias=2, random_state=0)
+        X = X.astype(numpy.float32)
+        y = y.astype(numpy.float32)
+        X_train, _, y_train, __ = train_test_split(X, y)
+        reg = LinearRegression()
+        reg.fit(X_train, y_train)
+        reg.coef_ = reg.coef_.reshape((1, -1))
+        onx = to_onnx(reg, X_train, target_opset=opset,
+                      black_op={'LinearRegressor'})
+        set_model_props(onx, {'info': 'unit test'})
+        onx_loss = add_loss_output(onx)
+        inits = ['intercept', 'coef']
+        self.assertRaise(
+            lambda: OrtGradientOptimizer(
+                onx_loss, inits, learning_rate="Nesterov"),
+            NotImplementedError)
+
 
 if __name__ == "__main__":
     unittest.main()
