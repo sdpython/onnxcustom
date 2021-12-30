@@ -41,6 +41,16 @@ class TestPlotOnnx(ExtTestCase):
                 return
             raise e
         self.assertNotEmpty(ax)
+
+        try:
+            ax = plot_onnxs(model_def, title="GRAPH", ax='new')
+        except FileNotFoundError as e:
+            if "No such file or directory: 'dot'" in str(e):
+                warnings.warn(
+                    "Unable to test the dot syntax, dot is mssing", UserWarning)
+                return
+            raise e
+        self.assertNotEmpty(ax)
         plt.close('all')
 
     @skipif_travis('graphviz is not installed')
@@ -73,6 +83,15 @@ class TestPlotOnnx(ExtTestCase):
         self.assertNotEmpty(ax)
         try:
             ax = plot_onnxs(model_def, model_def, title="GRAPH1")
+        except FileNotFoundError as e:
+            if "No such file or directory: 'dot'" in str(e):
+                warnings.warn(
+                    "Unable to test the dot syntax, dot is mssing", UserWarning)
+                return
+            raise e
+        self.assertNotEmpty(ax)
+        try:
+            ax = plot_onnxs(model_def, model_def, title="GRAPH1", ax='new')
         except FileNotFoundError as e:
             if "No such file or directory: 'dot'" in str(e):
                 warnings.warn(

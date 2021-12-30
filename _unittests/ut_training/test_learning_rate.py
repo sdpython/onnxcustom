@@ -24,6 +24,11 @@ class TestLearningRate(ExtTestCase):
         self.assertEqual(val[0], 0.01)
         self.assertGreater(val[-1], 0.001)
 
+    def test_learning_rate_sgd_regressor_exc(self):
+        self.assertRaise(
+            lambda: LearningRateSGDRegressor(learning_rate='EXC'),
+            ValueError)
+
     def test_learning_rate_sgd_regressor_optimal(self):
         cllr = LearningRateSGDRegressor(learning_rate='optimal')
         val = list(cllr.loop())

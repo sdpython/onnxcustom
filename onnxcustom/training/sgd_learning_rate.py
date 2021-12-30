@@ -73,7 +73,7 @@ class BaseLearningRate:
         for cl, aliases in cls.items():
             if class_name == cl.__class__.__name__ or class_name in aliases:
                 return cl(**kwargs)
-        raise ValueError(
+        raise ValueError(  # pragma: no cover
             "Unexpected class name %r. It should be one of %r." % (
                 class_name, list(map(lambda c: c.__name__, cls))))
 

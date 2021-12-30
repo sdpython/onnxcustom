@@ -16,8 +16,8 @@ Python Wrapper for C Classes
 C classes
 =========
 
-SparseTensor
-++++++++++++
+C++ class SparseTensor
+++++++++++++++++++++++
 
 .. autoclass:: onnxruntime.capi._pybind_state.SparseTensor
     :members:
@@ -28,7 +28,6 @@ OrtSparseFormat
 
 .. autoclass:: onnxruntime.capi._pybind_state.OrtSparseFormat
     :members:
-    :undoc-members:
 
 SparseCooView
 +++++++++++++

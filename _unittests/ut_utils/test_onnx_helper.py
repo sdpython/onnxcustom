@@ -37,6 +37,7 @@ class TestOnnxHelper(ExtTestCase):
         self.assertEqual(dtype_to_var_type(numpy.float32), FloatTensorType)
         self.assertEqual(dtype_to_var_type(numpy.float64), DoubleTensorType)
         self.assertRaise(lambda: dtype_to_var_type(numpy.int64), ValueError)
+        self.assertEqual(proto_type_to_dtype('tensor(double)'), numpy.float64)
 
     def test_proto_type_to_dtype(self):
         self.assertEqual(proto_type_to_dtype(1), numpy.float32)

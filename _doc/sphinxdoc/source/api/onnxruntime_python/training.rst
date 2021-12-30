@@ -36,6 +36,13 @@ Python Wrapper for TrainingSession
 C Class TrainingSession
 +++++++++++++++++++++++
 
-.. autoclass:: onnxruntime.capi._pybind_state.OrtValue
+.. autoclass:: onnxruntime.capi._pybind_state.TrainingSession
+    :members:
+    :undoc-members:
+
+TrainingParameters
+++++++++++++++++++
+
+.. autoclass:: onnxruntime.capi._pybind_state.TrainingParameters
     :members:
     :undoc-members:

@@ -1,4 +1,6 @@
 
+.. _l-onnx-classes:
+
 onnx classes
 ============
 
@@ -9,6 +11,14 @@ AttributeProto
 ++++++++++++++
 
 .. autoclass:: onnx.AttributeProto
+    :members:
+
+.. _l-onnx-map-proto:
+
+MapProto
+++++++++
+
+.. autoclass:: onnx.MapProto
     :members:
 
 .. _l-modelproto:
@@ -26,6 +36,16 @@ NodeProto
 
 .. autoclass:: onnx.NodeProto
     :members:
+
+.. _l-onnx-sequence-proto:
+
+SequenceProto
++++++++++++++
+
+.. autoclass:: onnx.SequenceProto
+    :members:
+
+.. _l-onnx-sparsetensor-proto:
 
 SparseTensorProto
 +++++++++++++++++

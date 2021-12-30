@@ -2,8 +2,8 @@
 
 .. _l-orttraining-linreg-gpu:
 
-Train a linear regression with onnxruntime-training on GPU
-==========================================================
+Train a linear regression with onnxruntime-training on GPU in details
+=====================================================================
 
 This example follows the same steps introduced in example
 :ref:`l-orttraining-linreg-cpu` but on GPU. This example works
@@ -26,11 +26,14 @@ import numpy
 from pandas import DataFrame
 from onnx import helper, numpy_helper, TensorProto
 from onnxruntime import (
-    __version__ as ort_version, get_device, OrtValue,
+    __version__ as ort_version, get_device,
     TrainingParameters, SessionOptions, TrainingSession)
+from onnxruntime.capi._pybind_state import (  # pylint: disable=E0611
+    OrtValue as C_OrtValue)
 from sklearn.datasets import make_regression
 from sklearn.model_selection import train_test_split
 from onnxcustom.plotting.plotting_onnx import plot_onnxs
+from onnxcustom.utils.onnxruntime_helper import get_ort_device
 from tqdm import tqdm
 
 X, y = make_regression(n_features=2, bias=2)
@@ -100,7 +103,7 @@ plot_onnxs(onx_train, title="Graph with Loss")
 # the training needs an instance of class *TrainingSession*.
 # Next function creates this one.
 
-device = "cuda" if get_device() == 'GPU' else 'cpu'
+device = "cuda" if get_device().upper() == 'GPU' else 'cpu'
 
 print("device=%r get_device()=%r" % (device, get_device()))
 
@@ -139,12 +142,20 @@ def create_training_session(
     session_options = SessionOptions()
     session_options.use_deterministic_compute = True
 
-    if device == 'cpu':
-        provider = ['CPUExecutionProvider']
-    elif device.startswith("cuda"):
-        provider = ['CUDAExecutionProvider']
+    if hasattr(device, 'device_type'):
+        if device.device_type() == device.cpu():
+            provider = ['CPUExecutionProvider']
+        elif device.device_type() == device.cuda():
+            provider = ['CUDAExecutionProvider']
+        else:
+            raise ValueError("Unexpected device %r." % device)
     else:
-        raise ValueError("Unexpected device %r." % device)
+        if device == 'cpu':
+            provider = ['CPUExecutionProvider']
+        elif device.startswith("cuda"):
+            provider = ['CUDAExecutionProvider']
+        else:
+            raise ValueError("Unexpected device %r." % device)
 
     session = TrainingSession(
         training_onnx.SerializeToString(), ort_parameters, session_options,
@@ -165,14 +176,19 @@ pprint(state_tensors)
 ######################################
 # We can now check the coefficients are updated after one iteration.
 
+dev = get_ort_device(device)
+ortx = C_OrtValue.ortvalue_from_numpy(X_train[:1], dev)
+orty = C_OrtValue.ortvalue_from_numpy(y_train[:1].reshape((-1, 1)), dev)
+ortlr = C_OrtValue.ortvalue_from_numpy(
+    numpy.array([0.01], dtype=numpy.float32), dev)
 
-ortx = OrtValue.ortvalue_from_numpy(X_train[:1], device, 0)
-orty = OrtValue.ortvalue_from_numpy(y_train[:1].reshape((-1, 1)), device, 0)
-ortlr = OrtValue.ortvalue_from_numpy(
-    numpy.array([0.01], dtype=numpy.float32), device, 0)
-
-inputs = {'X': ortx, 'label': orty, "Learning_Rate": ortlr}
-outputs = train_session.run(None, inputs)
+bind = train_session.io_binding()._iobinding
+bind.bind_ortvalue_input('X', ortx)
+bind.bind_ortvalue_input('label', orty)
+bind.bind_ortvalue_input('Learning_Rate', ortlr)
+bind.bind_output('loss', dev)
+train_session._sess.run_with_iobinding(bind, None)
+outputs = bind.copy_outputs_to_cpu()
 pprint(outputs)
 
 
@@ -200,11 +216,10 @@ class DataLoaderDevice:
     :param X: features
     :param y: labels
     :param batch_size: batch size (consecutive observations)
-    :param device: `'cpu'` or `'cuda'`
-    :param device_idx: device index
+    :param device: `'cpu'`, `'cuda'`, `'cuda:0'`, ...
     """
 
-    def __init__(self, X, y, batch_size=20, device='cpu', device_idx=0):
+    def __init__(self, X, y, batch_size=20, device='cpu'):
         if len(y.shape) == 1:
             y = y.reshape((-1, 1))
         if X.shape[0] != y.shape[0]:
@@ -213,8 +228,7 @@ class DataLoaderDevice:
         self.X = numpy.ascontiguousarray(X)
         self.y = numpy.ascontiguousarray(y)
         self.batch_size = batch_size
-        self.device = device
-        self.device_idx = device_idx
+        self.device = get_ort_device(device)
 
     def __len__(self):
         "Returns the number of observations."
@@ -231,12 +245,12 @@ class DataLoaderDevice:
             i = numpy.random.randint(0, b)
             N += self.batch_size
             yield (
-                OrtValue.ortvalue_from_numpy(
+                C_OrtValue.ortvalue_from_numpy(
                     self.X[i:i + self.batch_size],
-                    self.device, self.device_idx),
-                OrtValue.ortvalue_from_numpy(
+                    self.device),
+                C_OrtValue.ortvalue_from_numpy(
                     self.y[i:i + self.batch_size],
-                    self.device, self.device_idx))
+                    self.device))
 
     @property
     def data(self):
@@ -279,15 +293,13 @@ class CustomTraining:
             by a heuristic proposed by Leon Bottou.
         * `'invscaling'`: `eta = eta0 / pow(t, power_t)`
     :param device: `'cpu'` or `'cuda'`
-    :param device_idx: device index
     :param verbose: use :epkg:`tqdm` to display the training progress
     """
 
     def __init__(self, model_onnx, weights_to_train, loss_output_name='loss',
                  max_iter=100, training_optimizer_name='SGDOptimizer',
                  batch_size=10, eta0=0.01, alpha=0.0001, power_t=0.25,
-                 learning_rate='invscaling', device='cpu', device_idx=0,
-                 verbose=0):
+                 learning_rate='invscaling', device='cpu', verbose=0):
         # See https://scikit-learn.org/stable/modules/generated/
         # sklearn.linear_model.SGDRegressor.html
         self.model_onnx = model_onnx
@@ -301,8 +313,7 @@ class CustomTraining:
         self.alpha = alpha
         self.power_t = power_t
         self.learning_rate = learning_rate.lower()
-        self.device = device
-        self.device_idx = device_idx
+        self.device = get_ort_device(device)
 
     def _init_learning_rate(self):
         self.eta0_ = self.eta0
@@ -342,16 +353,16 @@ class CustomTraining:
             o.name for o in self.train_session_.get_outputs()]
         self.loss_index_ = self.output_names_.index(self.loss_output_name)
 
-        bind = self.train_session_.io_binding()
+        bind = self.train_session_.io_binding()._iobinding
 
         loop = (
             tqdm(range(self.max_iter))
             if self.verbose else range(self.max_iter))
         train_losses = []
         for it in loop:
-            bind_lr = OrtValue.ortvalue_from_numpy(
+            bind_lr = C_OrtValue.ortvalue_from_numpy(
                 numpy.array([lr], dtype=numpy.float32),
-                self.device, self.device_idx)
+                self.device)
             loss = self._iteration(data_loader, bind_lr, bind)
             lr = self._update_learning_rate(it, lr)
             if self.verbose > 1:
@@ -365,31 +376,11 @@ class CustomTraining:
         actual_losses = []
         for batch_idx, (data, target) in enumerate(data_loader):
 
-            bind.bind_input(
-                name=self.input_names_[0],
-                device_type=self.device,
-                device_id=self.device_idx,
-                element_type=numpy.float32,
-                shape=data.shape(),
-                buffer_ptr=data.data_ptr())
-
-            bind.bind_input(
-                name=self.input_names_[1],
-                device_type=self.device,
-                device_id=self.device_idx,
-                element_type=numpy.float32,
-                shape=target.shape(),
-                buffer_ptr=target.data_ptr())
-
-            bind.bind_input(
-                name=self.input_names_[2],
-                device_type=learning_rate.device_name(), device_id=0,
-                element_type=numpy.float32, shape=learning_rate.shape(),
-                buffer_ptr=learning_rate.data_ptr())
-
-            bind.bind_output('loss')
-
-            self.train_session_.run_with_iobinding(bind)
+            bind.bind_ortvalue_input(self.input_names_[0], data)
+            bind.bind_ortvalue_input(self.input_names_[1], target)
+            bind.bind_ortvalue_input(self.input_names_[2], learning_rate)
+            bind.bind_output('loss', self.device)
+            self.train_session_._sess.run_with_iobinding(bind, None)
             outputs = bind.copy_outputs_to_cpu()
             actual_losses.append(outputs[self.loss_index_])
         return numpy.array(actual_losses).mean()

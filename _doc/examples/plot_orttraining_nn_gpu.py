@@ -39,8 +39,9 @@ y = y.astype(numpy.float32)
 X_train, X_test, y_train, y_test = train_test_split(X, y)
 
 nn = MLPRegressor(hidden_layer_sizes=(10, 10), max_iter=200,
-                  solver='sgd', learning_rate_init=1e-4,
-                  n_iter_no_change=1000, batch_size=10)
+                  solver='sgd', learning_rate_init=1e-4, alpha=0,
+                  n_iter_no_change=1000, batch_size=10,
+                  momentum=0, nesterovs_momentum=False)
 
 with warnings.catch_warnings():
     warnings.simplefilter('ignore')
@@ -74,7 +75,8 @@ plot_onnxs(onx_train)
 #####################################
 # Let's check inference is working.
 
-sess = InferenceSession(onx_train.SerializeToString())
+sess = InferenceSession(onx_train.SerializeToString(),
+                        providers=['CPUExecutionProvider'])
 res = sess.run(None, {'X': X_test, 'label': y_test.reshape((-1, 1))})
 print("onnx loss=%r" % (res[0][0, 0] / X_test.shape[0]))
 
@@ -94,7 +96,7 @@ pprint(list((k, v[0].shape) for k, v in weights.items()))
 # The training session. If GPU is available, it chooses CUDA
 # otherwise it falls back to CPU.
 
-device = "cuda" if get_device() == 'GPU' else 'cpu'
+device = "cuda" if get_device().upper() == 'GPU' else 'cpu'
 
 print("device=%r get_device()=%r" % (device, get_device()))
 

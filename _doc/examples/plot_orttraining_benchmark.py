@@ -21,6 +21,7 @@ import warnings
 from pprint import pprint
 import time
 import numpy
+import matplotlib.pyplot as plt
 from pandas import DataFrame
 from onnxruntime import get_device
 from pyquickhelper.pycode.profiling import profile, profile2graph
@@ -39,35 +40,16 @@ y = y.astype(numpy.float32)
 X_train, X_test, y_train, y_test = train_test_split(X, y)
 
 ########################################
-# Common parameters and model
-
-batch_size = 15
-max_iter = 100
-
-nn = MLPRegressor(hidden_layer_sizes=(50, 10), max_iter=max_iter,
-                  solver='sgd', learning_rate_init=1e-4,
-                  n_iter_no_change=max_iter * 3, batch_size=batch_size)
-
-with warnings.catch_warnings():
-    warnings.simplefilter('ignore')
-    nn.fit(X_train, y_train)
-
-########################################
-# Conversion to ONNX and trainer initialization
-
-onx = to_onnx(nn, X_train[:1].astype(numpy.float32), target_opset=15)
-onx_train = add_loss_output(onx)
-
-weights = get_train_initializer(onx)
-pprint(list((k, v[0].shape) for k, v in weights.items()))
-
-train_session = OrtGradientOptimizer(
-    onx_train, list(weights), device='cpu', learning_rate=1e-4,
-    warm_start=False, max_iter=max_iter, batch_size=batch_size)
+# Benchmark function.
 
 
 def benchmark(skl_model, train_session, name, verbose=True):
-
+    """
+    :param skl_model: model from scikit-learn
+    :param train_session: instance of OrtGradientOptimizer
+    :param name: experiment name
+    :param verbose: to debug
+    """
     print("[benchmark] %s" % name)
     begin = time.perf_counter()
     skl_model.fit(X, y)
@@ -84,7 +66,39 @@ def benchmark(skl_model, train_session, name, verbose=True):
         length_ort, duration_ort))
 
     return dict(skl=duration_skl, ort=duration_ort, name=name,
-                iter_skl=length_skl, iter_ort=length_ort)
+                iter_skl=length_skl, iter_ort=length_ort,
+                losses_skl=skl_model.loss_curve_,
+                losses_ort=train_session.train_losses_)
+
+
+########################################
+# Common parameters and model
+
+batch_size = 15
+max_iter = 100
+
+nn = MLPRegressor(hidden_layer_sizes=(50, 10), max_iter=max_iter,
+                  solver='sgd', learning_rate_init=5e-4, alpha=0,
+                  n_iter_no_change=max_iter * 3, batch_size=batch_size,
+                  nesterovs_momentum=False, momentum=0,
+                  learning_rate='invscaling')
+
+with warnings.catch_warnings():
+    warnings.simplefilter('ignore')
+    nn.fit(X_train, y_train)
+
+########################################
+# Conversion to ONNX and trainer initialization
+
+onx = to_onnx(nn, X_train[:1].astype(numpy.float32), target_opset=15)
+onx_train = add_loss_output(onx)
+
+weights = get_train_initializer(onx)
+pprint(list((k, v[0].shape) for k, v in weights.items()))
+
+train_session = OrtGradientOptimizer(
+    onx_train, list(weights), device='cpu', learning_rate=1e-5,
+    warm_start=False, max_iter=max_iter, batch_size=batch_size)
 
 
 benches = [benchmark(nn, train_session, name='NN-CPU')]
@@ -116,10 +130,10 @@ print(text)
 # if GPU is available
 # +++++++++++++++++++
 
-if get_device() == 'GPU':
+if get_device().upper() == 'GPU':
 
     train_session = OrtGradientOptimizer(
-        onx_train, list(weights), device='cuda', learning_rate=1e-4,
+        onx_train, list(weights), device='cuda', learning_rate=5e-4,
         warm_start=False, max_iter=200, batch_size=batch_size)
 
     benches.append(benchmark(nn, train_session, name='NN-GPU'))
@@ -129,8 +143,10 @@ if get_device() == 'GPU':
 # +++++++++++++++++
 
 lr = MLPRegressor(hidden_layer_sizes=tuple(), max_iter=max_iter,
-                  solver='sgd', learning_rate_init=1e-4,
-                  n_iter_no_change=max_iter * 3, batch_size=batch_size)
+                  solver='sgd', learning_rate_init=5e-2, alpha=0,
+                  n_iter_no_change=max_iter * 3, batch_size=batch_size,
+                  nesterovs_momentum=False, momentum=0,
+                  learning_rate='invscaling')
 
 with warnings.catch_warnings():
     warnings.simplefilter('ignore')
@@ -150,10 +166,10 @@ train_session = OrtGradientOptimizer(
 
 benches.append(benchmark(lr, train_session, name='LR-CPU'))
 
-if get_device() == 'GPU':
+if get_device().upper() == 'GPU':
 
     train_session = OrtGradientOptimizer(
-        onx_train, list(weights), device='cuda', learning_rate=5e-4,
+        onx_train, list(weights), device='cuda', learning_rate=1e-4,
         warm_start=False, max_iter=200, batch_size=batch_size)
 
     benches.append(benchmark(nn, train_session, name='LR-GPU'))
@@ -163,7 +179,7 @@ if get_device() == 'GPU':
 # GPU profiling
 # +++++++++++++
 
-if get_device() == 'GPU':
+if get_device().upper() == 'GPU':
     ps = profile(lambda: benchmark(nn, train_session, name='LR-GPU'))[0]
     root, nodes = profile2graph(ps, clean_text=clean_name)
     text = root.to_text()
@@ -186,8 +202,18 @@ print(df)
 #######################################
 # Graphs.
 
-ax = df[['skl', 'ort']].plot.bar(title="Processing time")
-ax.tick_params(axis='x', rotation=30)
+fig, ax = plt.subplots(1, 2, figsize=(10, 4))
+df[['skl', 'ort']].plot.bar(title="Processing time", ax=ax[0])
+ax[0].tick_params(axis='x', rotation=30)
+for bench in benches:
+    ax[1].plot(bench['losses_skl'][1:], label='skl-' + bench['name'])
+    ax[1].plot(bench['losses_ort'][1:], label='ort-' + bench['name'])
+ax[1].set_title("Losses")
+ax[1].set_yscale('log')
+ax[1].legend()
 
-# import matplotlib.pyplot as plt
+########################################
+# The gradient update are not exactly the same.
+# It should be improved for a fair comprison.
+
 # plt.show()

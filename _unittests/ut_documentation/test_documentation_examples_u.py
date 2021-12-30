@@ -44,6 +44,8 @@ class TestDocumentationExample_u(ExtTestCase):
                 break
             if 'lightgbm' in name:
                 continue
+            if 'benchmark' in name:
+                continue
             if 'training' in name:
                 continue
             if not name.startswith("plot_") or not name.endswith(".py"):
@@ -108,6 +110,11 @@ class TestDocumentationExample_u(ExtTestCase):
                 finally:
                     if sys.path[0] == fold:
                         del sys.path[0]
+                with open(
+                        os.path.join(os.path.dirname(__file__),
+                                     "_test_example.txt"), "a",
+                        encoding='utf-8') as f:
+                    f.write(name + "\n")
                 tested += 1
         if tested == 0:
             raise RuntimeError("No example was tested.")

@@ -9,7 +9,7 @@ This example rewrites :ref:`l-orttraining-linreg` with another
 optimizer :class:`OrtGradientForwardBackwardOptimizer
 <onnxcustom.training.optimizers_partial.OrtGradientForwardBackwardOptimizer>`.
 This optimizer relies on class :epkg:`TrainingAgent` from
-:epkg:`onnxruntime-trainin`. In this case, the user does not have to
+:epkg:`onnxruntime-training`. In this case, the user does not have to
 modify the graph to compute the error. The optimizer
 builds another graph which returns the gradient of every weights
 assuming the gradient on the output is known. Finally, the optimizer
@@ -65,7 +65,8 @@ lr = MLPRegressor(hidden_layer_sizes=tuple(),
                   activation='identity', max_iter=50,
                   batch_size=10, solver='sgd',
                   alpha=0, learning_rate_init=1e-2,
-                  n_iter_no_change=200)
+                  n_iter_no_change=200,
+                  momentum=0, nesterovs_momentum=False)
 lr.fit(X, y)
 print(lr.predict(X[:5]))
 
@@ -106,7 +107,7 @@ pprint(list((k, v[0].shape) for k, v in weights.items()))
 # Train on CPU or GPU if available
 # ++++++++++++++++++++++++++++++++
 
-device = "cuda" if get_device() == 'GPU' else 'cpu'
+device = "cuda" if get_device().upper() == 'GPU' else 'cpu'
 print("device=%r get_device()=%r" % (device, get_device()))
 
 #######################################

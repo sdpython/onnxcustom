@@ -67,7 +67,8 @@ download_file(url_name, model_name, 100000)
 ################################################
 # Loading the ONNX file and use it on one image.
 
-sess = InferenceSession(model_name)
+sess = InferenceSession(model_name,
+                        providers=['CPUExecutionProvider'])
 
 for inp in sess.get_inputs():
     print(inp)

@@ -5,11 +5,14 @@
 import inspect
 import numpy
 from onnxruntime import (  # pylint: disable=E0611
-    OrtValue as PyOrtValue, TrainingParameters,
-    SessionOptions, TrainingSession)
+    TrainingParameters, SessionOptions, TrainingSession)
 from onnxruntime.capi._pybind_state import (  # pylint: disable=E0611
-    OrtValue as C_OrtValue)
+    OrtValue as C_OrtValue, SessionIOBinding as C_IOBinding,
+    OrtDevice as C_OrtDevice)
 from ..utils.onnx_helper import proto_type_to_dtype
+from ..utils.onnxruntime_helper import (
+    get_ort_device, ort_device_to_string, numpy_to_ort_value,
+    device_to_providers)
 from .data_loader import OrtDataLoader
 from .sgd_learning_rate import BaseLearningRate
 from .excs import ConvergenceError, EvaluationError
@@ -22,10 +25,13 @@ class BaseEstimator:
 
     :param learning_rate: learning rate class,
         see module :mod:`onnxcustom.training.sgd_learning_rate`
+    :param device: device as :epkg:`C_OrtDevice` or a string
+        representing this device
     """
 
-    def __init__(self, learning_rate):
+    def __init__(self, learning_rate, device):
         self.learning_rate = BaseLearningRate.select(learning_rate)
+        self.device = get_ort_device(device)
 
     @classmethod
     def _get_param_names(cls):
@@ -47,6 +53,8 @@ class BaseEstimator:
             ov = getattr(self, k)
             if isinstance(ov, BaseLearningRate):
                 ps.append("%s=%s" % (k, repr(ov)))
+            elif isinstance(ov, C_OrtDevice):
+                ps.append("%s=%r" % (k, ort_device_to_string(ov)))
             elif v is not inspect._empty or ov != v:
                 ro = repr(ov)
                 if len(ro) > 50 or "\n" in ro:
@@ -55,6 +63,22 @@ class BaseEstimator:
                 else:
                     ps.append("%s=%r" % (k, ov))
         return "%s(%s)" % (self.__class__.__name__, ", ".join(ps))
+
+    def __getstate__(self):
+        "Removes any non pickable attribute."
+        atts = [k for k in self.__dict__ if not k.endswith('_')]
+        if hasattr(self, 'trained_coef_'):
+            atts.append('trained_coef_')
+        state = {att: getattr(self, att) for att in atts}
+        state['device'] = ort_device_to_string(state['device'])
+        return state
+
+    def __setstate__(self, state):
+        "Restores any non pickable attribute."
+        for att, v in state.items():
+            setattr(self, att, v)
+        self.device = get_ort_device(self.device)
+        return self
 
 
 class OrtGradientOptimizer(BaseEstimator):
@@ -70,14 +94,17 @@ class OrtGradientOptimizer(BaseEstimator):
     :param batch_size: batch size (see class *DataLoader*)
     :param learning_rate: a name or a learning rate instance or a float,
         see module :mod:`onnxcustom.training.sgd_learning_rate`
-    :param device: `'cpu'` or `'cuda'`
-    :param device_index: device index
+    :param device: device as :epkg:`C_OrtDevice` or a string
+        representing this device
     :param warm_start: when set to True, reuse the solution of the previous
         call to fit as initialization, otherwise, just erase the previous
         solution.
     :param verbose: use :epkg:`tqdm` to display the training progress
     :param validation_every: validation with a test set every
         *validation_every* iterations
+    :param saved_gradient: if not None, a filename,
+        the optimizer saves the gradient into it
+    :param sample_weight_name: name of the sample weight input
 
     Once initialized, the class creates the attribute
     `train_session_` which holds an instance of :ref:`l-ort-training-session`.
@@ -88,9 +115,10 @@ class OrtGradientOptimizer(BaseEstimator):
     def __init__(self, model_onnx, weights_to_train, loss_output_name='loss',
                  max_iter=100, training_optimizer_name='SGDOptimizer',
                  batch_size=10, learning_rate='SGDRegressor',
-                 device='cpu', device_index=0,
-                 warm_start=False, verbose=0, validation_every=0.1):
-        BaseEstimator.__init__(self, learning_rate)
+                 device='cpu', warm_start=False, verbose=0,
+                 validation_every=0.1, saved_gradient=None,
+                 sample_weight_name="weight"):
+        BaseEstimator.__init__(self, learning_rate, device)
         self.model_onnx = model_onnx
         self.batch_size = batch_size
         self.weights_to_train = weights_to_train
@@ -98,39 +126,34 @@ class OrtGradientOptimizer(BaseEstimator):
         self.training_optimizer_name = training_optimizer_name
         self.verbose = verbose
         self.max_iter = max_iter
-        self.device = device
-        self.device_index = device_index
         self.warm_start = warm_start
+        self.saved_gradient = saved_gradient
+        self.sample_weight_name = sample_weight_name
         if validation_every < 1:
             self.validation_every = int(self.max_iter * validation_every)
         else:
             self.validation_every = validation_every  # pragma: no cover
 
-    def __getstate__(self):
-        "Removes any non pickable attribute."
-        atts = [k for k in self.__dict__ if not k.endswith('_')]
-        if hasattr(self, 'trained_coef_'):
-            atts.append('trained_coef_')
-        return {att: getattr(self, att) for att in atts}
-
-    def __setstate__(self, state):
-        "Restores any non pickable attribute."
-        for att, v in state.items():
-            setattr(self, att, v)
-        return self
-
-    def fit(self, X, y, X_val=None, y_val=None, use_numpy=False):
+    def fit(self, X, y, sample_weight=None, X_val=None, y_val=None,
+            use_numpy=False):
         """
         Trains the model.
 
         :param X: features
         :param y: expected output
+        :param sample_weight: sample weight if any
         :param X_val: evaluation dataset
         :param y_val: evaluation dataset
         :param use_numpy: if True, slow iterator using numpy,
             otherwise, minimizes copy
         :return: self
         """
+        input_names = [i.name for i in self.model_onnx.graph.input]
+        if ((len(input_names) == 2 and sample_weight is not None) or
+                (len(input_names) == 3 and sample_weight is None)):
+            raise RuntimeError(
+                "Number of inputs should be 2 if sample_weight is None "
+                "or 3 if not None but it is %d." % len(input_names))
         self.train_session_ = self._create_training_session(
             self.model_onnx, self.weights_to_train,
             loss_output_name=self.loss_output_name,
@@ -150,7 +173,8 @@ class OrtGradientOptimizer(BaseEstimator):
             self.set_state(new_state)
 
         data_loader = OrtDataLoader(
-            X, y, batch_size=self.batch_size, device=self.device)
+            X, y, sample_weight=sample_weight,
+            batch_size=self.batch_size, device=self.device)
         if X_val is not None:
             data_loader_val = OrtDataLoader(
                 X_val, y_val, batch_size=X_val.shape[0], device=self.device,
@@ -164,7 +188,7 @@ class OrtGradientOptimizer(BaseEstimator):
             o.name for o in self.train_session_.get_outputs()]
         self.loss_index_ = self.output_names_.index(self.loss_output_name)
 
-        bind = self.train_session_.io_binding()
+        bind = self.train_session_.io_binding()._iobinding
 
         if self.verbose > 0:  # pragma: no cover
             from tqdm import tqdm  # pylint: disable=C0415
@@ -177,10 +201,10 @@ class OrtGradientOptimizer(BaseEstimator):
         lr = self.learning_rate.value
         for it in loop:
             lr_alive = numpy.array([lr / self.batch_size], dtype=numpy.float32)
-            ort_lr = PyOrtValue.ortvalue_from_numpy(
-                lr_alive, self.device, self.device_index)._ortvalue
+            ort_lr = numpy_to_ort_value(lr_alive, self.device)
             loss = self._iteration(data_loader, ort_lr,
-                                   bind, use_numpy=use_numpy)
+                                   bind, use_numpy=use_numpy,
+                                   sample_weight=sample_weight is not None)
             lr = self.learning_rate.update_learning_rate(it).value
             if self.verbose > 1:  # pragma: no cover
                 loop.set_description(
@@ -207,6 +231,9 @@ class OrtGradientOptimizer(BaseEstimator):
         :param c_ortvalue: C structure for OrtValue (:epkg:`C_OrtValue`),
             it can be also a numpy array
         """
+        if not isinstance(bind, C_IOBinding):
+            raise TypeError(
+                "Unexpected type %r." % type(bind))
         if isinstance(c_ortvalue, C_OrtValue):
             # does not work
             # bind._iobinding.bind_ortvalue_input(name, c_ortvalue)
@@ -214,44 +241,48 @@ class OrtGradientOptimizer(BaseEstimator):
                 c_ortvalue.proto_type() if hasattr(c_ortvalue, 'proto_type')
                 else c_ortvalue.data_type())
             bind.bind_input(
-                name=name, device_type=self.device,
-                device_id=self.device_index,
-                element_type=dtype,
-                shape=c_ortvalue.shape(),
-                buffer_ptr=c_ortvalue.data_ptr())
+                name, self.device, dtype, c_ortvalue.shape(),
+                c_ortvalue.data_ptr())
         elif isinstance(c_ortvalue, numpy.ndarray):
             bind.bind_input(
-                name, device_type=self.device,
-                device_id=self.device_index,
-                element_type=c_ortvalue.dtype,
-                shape=c_ortvalue.shape,
-                buffer_ptr=c_ortvalue.__array_interface__['data'][0])
+                name, self.device, c_ortvalue.dtype, c_ortvalue.shape,
+                c_ortvalue.__array_interface__['data'][0])
         else:
-            raise TypeError(
+            raise TypeError(  # pragma: no cover
                 "Unable to bind type %r for name %r." % (
                     type(c_ortvalue), name))
 
-    def _iteration(self, data_loader, ort_lr, bind, use_numpy):
+    def _iteration(self, data_loader, ort_lr, bind, use_numpy, sample_weight):
         actual_losses = []
 
-        bind.bind_output('loss')
+        bind.bind_output('loss', self.device)
 
         if use_numpy:
             # onnxruntime does not copy the data, so the numpy
             # array must remain alive all along the iteration
             lr_alive = ort_lr.numpy()
+            idx = 3 if sample_weight else 2
             self._bind_input_ortvalue(
-                self.input_names_[2], bind, lr_alive)
+                self.input_names_[idx], bind, lr_alive)
 
             # Slow iterations.
-            for data, target in data_loader.iter_numpy():
+            for it in data_loader.iter_numpy():
+                if len(it) == 2:
+                    data, target = it
+                    self._bind_input_ortvalue(
+                        self.input_names_[0], bind, data)
+                    self._bind_input_ortvalue(
+                        self.input_names_[1], bind, target)
+                else:
+                    data, target, weight = it
+                    self._bind_input_ortvalue(
+                        self.input_names_[0], bind, data)
+                    self._bind_input_ortvalue(
+                        self.input_names_[1], bind, target)
+                    self._bind_input_ortvalue(
+                        self.input_names_[2], bind, weight)
 
-                self._bind_input_ortvalue(
-                    self.input_names_[0], bind, data)
-                self._bind_input_ortvalue(
-                    self.input_names_[1], bind, target)
-
-                self.train_session_.run_with_iobinding(bind)
+                self.train_session_._sess.run_with_iobinding(bind, None)
                 outputs = bind.copy_outputs_to_cpu()
                 if numpy.isinf(outputs[0]) or numpy.isnan(outputs[0]):
                     raise ConvergenceError(
@@ -264,12 +295,13 @@ class OrtGradientOptimizer(BaseEstimator):
                                 else actual_losses[-5:])]))
                 actual_losses.append(outputs[0] / data.shape[0])
         else:
-            self._bind_input_ortvalue(self.input_names_[2], bind, ort_lr)
+            idx = 3 if sample_weight else 2
+            self._bind_input_ortvalue(self.input_names_[idx], bind, ort_lr)
 
             # Fast iterations
             # Slow iterations.
             for batch_size in data_loader.iter_bind(bind, self.input_names_):
-                self.train_session_.run_with_iobinding(bind)
+                self.train_session_._sess.run_with_iobinding(bind, None)
                 # We copy the predicted output as well which is not needed.
                 outputs = bind.copy_outputs_to_cpu()
                 if numpy.isinf(outputs[0]) or numpy.isnan(outputs[0]):
@@ -288,14 +320,14 @@ class OrtGradientOptimizer(BaseEstimator):
     def _evaluation(self, data_loader, bind):
         lr_alive = numpy.array([0], dtype=numpy.float32)
         self._bind_input_ortvalue(self.input_names_[2], bind, lr_alive)
-        bind.bind_output('loss')
+        bind.bind_output('loss', self.device)
 
         actual_losses = []
         for batch_size in data_loader.iter_bind(bind, self.input_names_):
-            self.train_session_.run_with_iobinding(bind)
+            self.train_session_._sess.run_with_iobinding(bind, None)
             outputs = bind.copy_outputs_to_cpu()
             if numpy.isinf(outputs[0]) or numpy.isnan(outputs[0]):
-                raise EvaluationError(
+                raise EvaluationError(  # pragma: no cover
                     "Loss is nan or infinite (%r), "
                     "evaluation has failed." % outputs[0])
             actual_losses.append(outputs[0] / batch_size)
@@ -306,6 +338,16 @@ class OrtGradientOptimizer(BaseEstimator):
             loss_output_name='loss',
             training_optimizer_name='SGDOptimizer',
             device='cpu'):
+        """
+        Creates an instance of :epkg:`TrainingSession`.
+
+        :param training_onnx: an ONNX graph with a loss function
+        :param weights_to_train: list of initializer names to optimize
+        :param loss_output_name: output name for the loss
+        :param training_optimizer_name: optimizer name
+        :param device: one :epkg:`C_OrtDevice` or a string
+        :return: an instance of :epkg:`TrainingSession`
+        """
         if training_optimizer_name != 'SGDOptimizer':
             raise NotImplementedError(
                 "Only the SGDOptimizer is implemented not %r."
@@ -322,6 +364,11 @@ class OrtGradientOptimizer(BaseEstimator):
         # ort_parameters.set_gradients_as_graph_outputs = False
         # ort_parameters.use_memory_efficient_gradient = False
         # ort_parameters.enable_adasum = False
+        if self.saved_gradient is not None:
+            name = self.saved_gradient
+            name2 = name + ".training.onnx"
+            ort_parameters.model_with_gradient_graph_path = name
+            ort_parameters.model_with_training_graph_path = name2
 
         output_types = {}
         for output in training_onnx.graph.output:
@@ -337,19 +384,12 @@ class OrtGradientOptimizer(BaseEstimator):
             name: {} for name in weights_to_train}
 
         session_options = SessionOptions()
-        session_options.use_deterministic_compute = True
+        # session_options.use_deterministic_compute = True
 
-        if device == 'cpu':
-            provider = ['CPUExecutionProvider']
-        elif device.startswith("cuda"):  # pragma: no cover
-            provider = ['CUDAExecutionProvider']
-        else:
-            raise ValueError(  # pragma: no cover
-                "Unexpected device %r." % device)
-
+        providers = device_to_providers(self.device)
         session = TrainingSession(
             training_onnx.SerializeToString(), ort_parameters, session_options,
-            providers=provider)
+            providers=providers)
 
         return session
 

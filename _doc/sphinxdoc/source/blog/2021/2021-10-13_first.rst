@@ -1,8 +1,11 @@
 
 .. blogpost::
     :title: First blog
-    :keywords: inégalités
+    :keywords: first blog
     :date: 2021-10-13
     :categories: blog
 
-    :epkg:`onnxruntime-training`
+    This package proposes many examples to discover
+    `onnxruntume <https://github.com/microsoft/onnxruntime/>`_ or
+    `onnxruntime-training <https://github.com/microsoft/
+    onnxruntime/tree/master/orttraining>`_.

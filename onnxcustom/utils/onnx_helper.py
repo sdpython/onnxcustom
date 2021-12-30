@@ -5,7 +5,7 @@
 """
 import math
 import numpy
-from onnx import TensorProto
+from onnx import TensorProto, numpy_helper, helper
 
 
 def onnx_rename_weights(onx):
@@ -80,3 +80,43 @@ def dtype_to_var_type(dtype):
         return DoubleTensorType
     raise ValueError(
         "Unexpected value dtype=%r." % dtype)
+
+
+def add_initializer(model, name, value):
+    """
+    Adds an initializer to graph.
+
+    :param model: onnx model
+    :param name: initializer name
+    :param value: value
+    :return: new ONNX graph
+    """
+    inits = set(i.name for i in model.graph.initializer)
+    if name in inits:
+        raise ValueError(
+            "Name %r is already taken among %r." % (
+                name, inits))
+    list_inits = list(model.graph.initializer)
+    list_inits.append(
+        numpy_helper.from_array(value, name=name))
+    graph_def = helper.make_graph(
+        model.graph.node, model.graph.name,
+        model.graph.input, model.graph.output,
+        list_inits)
+    onnx_model = helper.make_model(graph_def)
+    onnx_model.ir_version = model.ir_version
+    onnx_model.producer_name = model.producer_name
+    onnx_model.producer_version = model.producer_version
+    onnx_model.domain = model.domain
+    onnx_model.model_version = model.model_version
+    onnx_model.doc_string = model.doc_string
+    if len(model.metadata_props) > 0:  # pragma: no cover
+        values = {p.key: p.value for p in model.metadata_props}
+        helper.set_model_props(onnx_model, values)
+
+    del onnx_model.opset_import[:]  # pylint: disable=E1101
+    for oimp in model.opset_import:
+        op_set = onnx_model.opset_import.add()  # pylint: disable=E1101
+        op_set.domain = oimp.domain
+        op_set.version = oimp.version
+    return onnx_model

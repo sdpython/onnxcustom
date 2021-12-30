@@ -58,25 +58,26 @@ Among the tools this package implements, you may find:
   (see `Stochastic Gradient Descent
   <https://scikit-learn.org/stable/modules/sgd.html>`_)
   but based on :epkg:`onnxruntime-training` and able to train an CPU and GPU
-  (see example :ref:`l-orttraining-nn-gpu`).
+  (see examples :ref:`l-orttraining-nn-gpu` or
+  :ref:`l-orttraining-nn-gpu-fwbw`).
 
 **Contents**
 
 .. toctree::
     :maxdepth: 1
 
-    tutorial_onnx/index
-    tutorial/index
-    doc
+    tutorials
     api/apis
     gyexamples/index
     all_notebooks
     license
     other_pages
-    onnxmd/index
+    blog/blogindex
 
 Sources are available on
 `github/onnxcustom <https://github.com/sdpython/onnxcustom>`_.
+Package is available on `pypi <https://pypi.python.org/pypi/onnxcustom/>`_,
+:ref:`l-README`, and a blog for unclassified topics :ref:`blog <ap-main-0>`.
 
 +----------------------+---------------------+---------------------+--------------------+------------------------+------------------------------------------------+
 | :ref:`l-modules`     |  :ref:`l-functions` | :ref:`l-classes`    | :ref:`l-methods`   | :ref:`l-staticmethods` | :ref:`l-properties`                            |

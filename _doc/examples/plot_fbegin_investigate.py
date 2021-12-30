@@ -73,7 +73,8 @@ for step in steps:
     print('----------------------------')
     print(step['model'])
     onnx_step = step['onnx_step']
-    sess = InferenceSession(onnx_step.SerializeToString())
+    sess = InferenceSession(onnx_step.SerializeToString(),
+                            providers=['CPUExecutionProvider'])
     onnx_outputs = sess.run(None, {'X': X.astype(numpy.float32)})
     onnx_output = onnx_outputs[-1]
     skl_outputs = step['model']._debug.outputs['transform']

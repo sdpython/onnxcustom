@@ -12,6 +12,8 @@ tools
 
 .. autofunction:: onnx.helper.split_complex_to_pairs
 
+.. _l-onnx-make-function:
+
 make function
 +++++++++++++
 

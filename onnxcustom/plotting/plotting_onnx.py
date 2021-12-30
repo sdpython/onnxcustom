@@ -34,6 +34,8 @@ def plot_onnxs(*onx, ax=None, dpi=300, temp_dot=None, temp_img=None,
         if title is not None:
             ax.set_title(title)
         return ax
+    elif len(onx) > 1 and isinstance(ax, str) and ax == 'new':
+        ax = None
 
     if len(onx) == 0:
         raise ValueError(
@@ -54,9 +56,12 @@ def plot_onnxs(*onx, ax=None, dpi=300, temp_dot=None, temp_img=None,
             continue
         if i < len(title):
             ax[i].set_title(title[i])
-    if isinstance(title, str):
+    if len(onx) > 1 and isinstance(title, str):
         if fig is None:
             raise ValueError(  # pragma: no cover
-                "Main title cannot be set if ax is defined.")
+                "Main title cannot be set if fig is undefined (title=%r, "
+                "len(onx)=%d)" % (title, len(onx)))
         fig.suptitle(title)
+    elif len(onx) == 1:
+        ax.set_title(title)
     return ax

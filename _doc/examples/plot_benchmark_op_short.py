@@ -18,13 +18,16 @@ A simple example
 import numpy
 from numpy.testing import assert_almost_equal
 from pandas import DataFrame, pivot_table
-from onnxruntime import InferenceSession, get_device, OrtValue
+from onnxruntime import InferenceSession, get_device
+from onnxruntime.capi._pybind_state import (  # pylint: disable=E0611
+    OrtValue as C_OrtValue)
 from skl2onnx.common.data_types import FloatTensorType
 from skl2onnx.algebra.onnx_ops import OnnxSlice, OnnxAdd, OnnxMul
 from cpyquickhelper.numbers.speed_measure import measure_time
 from mlprodict.testing.experimental_c import code_optimisation
 from mlprodict.onnxrt import OnnxInference
 from mlprodict.plotting.plotting_onnx import plot_onnx
+from onnxcustom.utils.onnxruntime_helper import get_ort_device
 from tqdm import tqdm
 
 
@@ -96,9 +99,10 @@ y_cpu = sess.run(None, {'X': x})[0]
 #
 # If available...
 
-if get_device() == 'GPU':
+if get_device().upper() == 'GPU':
+    dev = get_ort_device('cuda:0')
     try:
-        gx = OrtValue.ortvalue_from_numpy(x, 'cuda', 0)
+        gx = C_OrtValue.ortvalue_from_numpy(x, dev)
         cuda = True
     except RuntimeError as e:
         print(e)
@@ -110,13 +114,11 @@ if cuda:
     sessg = InferenceSession(onx.SerializeToString(),
                              providers=["CUDAExecutionProvider"])
 
-    io_binding = sessg.io_binding()
+    io_binding = sessg.io_binding()._iobinding
     io_binding.bind_input(
-        name='X', device_type=gx.device_name(), device_id=0,
-        element_type=numpy.float32, shape=gx.shape(),
-        buffer_ptr=gx.data_ptr())
-    io_binding.bind_output('Y')
-    sessg.run_with_iobinding(io_binding)
+        'X', dev, numpy.float32, gx.shape(), gx.data_ptr())
+    io_binding.bind_output('Y', dev)
+    sessg._sess.run_with_iobinding(io_binding, None)
     y_gpu = io_binding.copy_outputs_to_cpu()[0]
     assert_almost_equal(y_cpu, y_gpu)
 
@@ -149,39 +151,38 @@ for shape, slices in tqdm(shape_slices):
         shape=str(shape).replace(
             " ", ""), slice=str(slices).replace(
             " ", ""))
-    r = measure_time('sess.run(None, dx)', number=number, div_by_number=True,
-                     context={'sess': sess, 'dx': {'X': x}})
+    r = measure_time(lambda: sess.run(None, {'X': x}),
+                     number=number, div_by_number=True,
+                     context={})
     obs.update(r)
     obs['provider'] = 'CPU'
     data.append(obs)
 
     if cuda:
-        def sess_run(sess, x):
-            io_binding = sess.io_binding()
+        def sess_run(sess, io_binding, x, dev):
             io_binding.bind_input(
-                name='X', device_type=gx.device_name(), device_id=0,
-                element_type=numpy.float32, shape=gx.shape(),
-                buffer_ptr=gx.data_ptr())
-            io_binding.bind_output('Y')
-            sess.run_with_iobinding(io_binding)
+                'X', dev, numpy.float32, gx.shape(), gx.data_ptr())
+            io_binding.bind_output('Y', dev)
+            sess._sess.run_with_iobinding(io_binding)
 
+        io_binding = sess.io_binding()._iobinding
         sess = InferenceSession(
             onx.SerializeToString(),
             providers=["CUDAExecutionProvider"])
-        gx = OrtValue.ortvalue_from_numpy(x, 'cuda', 0)
-        sess_run(sess, gx)
+        dev = get_ort_device('cuda:0')
+        gx = C_OrtValue.ortvalue_from_numpy(x, dev)
+        sess_run(sess, io_binding, gx, dev)
         obs = dict(
             shape=str(shape).replace(
                 " ", ""), slice=str(slices).replace(
                 " ", ""))
         r = measure_time(
-            'sess_run(sess, gx)',
+            lambda: sess_run(sess, io_binding, io_binding, gx, dev),
             number=number,
             div_by_number=True,
             context={
-                'sess': sess,
-                'gx': gx,
-                'sess_run': sess_run})
+                'sess': sess, 'gx': gx, 'io_binding': io_binding,
+                'dev': dev, 'sess_run': sess_run})
         obs.update(r)
         obs['provider'] = 'GPU'
         data.append(obs)
@@ -194,12 +195,7 @@ print(df)
 # ++++++++++++++
 
 piv = pivot_table(
-    df,
-    index=[
-        "shape",
-        "slice"],
-    columns="provider",
-    values="average")
+    df, index=["shape", "slice"], columns="provider", values="average")
 if 'GPU' in piv.columns:
     piv['ratio'] = piv['GPU'] / piv['CPU']
 print(piv)

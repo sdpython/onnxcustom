@@ -194,7 +194,7 @@ print(text)
 # if GPU is available
 # +++++++++++++++++++
 
-if get_device() == 'GPU':
+if get_device().upper() == 'GPU':
 
     device = torch.device('cuda:0')
     benches.append(benchmark(model_torch, model_ort, device, name='LR-GPU'))
@@ -221,7 +221,7 @@ device = torch.device('cpu')
 benches.append(benchmark(model_torch, model_ort, device, name='LR-CPU'))
 
 
-if get_device() == 'GPU':
+if get_device().upper() == 'GPU':
 
     device = torch.device('cuda:0')
     benches.append(benchmark(model_torch, model_ort, device, name='LR-GPU'))
@@ -230,7 +230,7 @@ if get_device() == 'GPU':
     # GPU profiling
     # +++++++++++++
 
-    if get_device() == 'GPU':
+    if get_device().upper() == 'GPU':
         ps = profile(lambda: benchmark(
             model_torch, model_ort, device, name='LR-GPU'))[0]
         root, nodes = profile2graph(ps, clean_text=clean_name)

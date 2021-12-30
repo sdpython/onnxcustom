@@ -61,7 +61,7 @@ class OrtGradientForwardBackward:
                 OrtGradientForwardBackward._select_initializer_names(
                     onnx_model))
             if len(weights_to_train) == 0:
-                raise RuntimeError(
+                raise RuntimeError(  # pragma: no cover
                     "Unable to guess the weights to train from initializers: "
                     "%r." % [i.name for i in onnx_model.graph.initializer])
 
@@ -92,7 +92,8 @@ class OrtGradientForwardBackward:
             self.output_names = [obj.name
                                  for obj in self.onnx_model.graph.output]
         if self.class_name is None:
-            self.class_name = "TorchOrtFunction_%r" % id(self)
+            self.class_name = "TorchOrtFunction_%r" % id(
+                self)  # pragma: no cover
         if hasattr(self.providers, 'type'):
             if self.providers.type != 'cpu':
                 self.device_index = self.providers.index
@@ -116,7 +117,7 @@ class OrtGradientForwardBackward:
                 "input_names and provider_options must have the same length.")
 
         if list(sorted(self.weights_to_train)) != self.weights_to_train:
-            raise ValueError(
+            raise ValueError(  # pragma: no cover
                 "List of weights to train must be sorted but %r is not. "
                 "You shoud use function onnx_rename_weights to do that "
                 "before calling this class." % self.weights_to_train)
@@ -181,7 +182,7 @@ class OrtGradientForwardBackward:
 
             if (len(config.initializer_names) !=  # noqa
                     len(config.initializer_names_to_train)):
-                raise RuntimeError(
+                raise RuntimeError(  # pragma: no cover
                     "Unable to automatically fill "
                     "OrtModuleGraphBuilderConfiguration, mismatch between "
                     "%r and %r (initializer_names=%r)." % (
@@ -270,16 +271,16 @@ class OrtGradientForwardBackward:
 
         :param name: initializer name
         :param exc: raises an exception if not found or return None
-        :return: the initializer as a :epkg:`OrtValue`
+        :return: the initializer as a :epkg:`C_OrtValue`
         """
         for init in self.onnx_model.graph.initializer:
             if name == init.name:
                 return to_array(init)
         if exc:
-            raise RuntimeError(
+            raise RuntimeError(  # pragma: no cover
                 "Unable to find name %r in %r." % (
-                    name, list(
-                        i.name for i in self.onnx_model.graph.initializer)))
+                    name,
+                    list(i.name for i in self.onnx_model.graph.initializer)))
         return None
 
     def _create_onnx_graphs(self):
@@ -479,7 +480,7 @@ class OrtGradientForwardBackward:
         })
 
         if len(kwargs['_onx_inp']) != len(kwargs['_onx_out']):
-            raise RuntimeError(
+            raise RuntimeError(  # pragma: no cover
                 "Gradient input and output are inconsistant: "
                 "%r != %r" % (kwargs['_onx_inp'], kwargs['_onx_out']))
         return kwargs
@@ -525,7 +526,7 @@ class OrtGradientForwardBackwardFunction:
                         OrtGradientForwardBackwardFunction.device_name(
                             tu[1])),
                     zip(tensors, devices))):
-                raise RuntimeError(
+                raise RuntimeError(  # pragma: no cover
                     "Not all inputs are on the same device %r != %r." % (
                         [OrtGradientForwardBackward.device_name(d)
                          for d in devices],
@@ -557,11 +558,11 @@ class OrtGradientForwardBackwardFunction:
                 raise NotImplementedError(  # pragma: no cover
                     "Empty vector found.")
             if not t.data.contiguous:
-                t = t.as_contiguous()
+                t = t.as_contiguous()  # pragma: no cover
             vect.push_back(C_OrtValue.ortvalue_from_numpy(t, dev))
         if debug:
             if len(vect) != len(tensors):
-                raise RuntimeError(
+                raise RuntimeError(  # pragma: no cover
                     "Unexpected array length %d != %d (len(devices)=%d)." % (
                         len(vect), len(tensors), len(devices)))
             _validate_(vect)
@@ -582,7 +583,7 @@ class OrtGradientForwardBackwardFunction:
         Returns saved tensors during forward step.
         """
         if self.saved_tensors_ is None:
-            raise RuntimeError(
+            raise RuntimeError(  # pragma: no cover
                 "No tensors was saved with save_for_backward.")
         return self.saved_tensors_
 

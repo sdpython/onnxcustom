@@ -19,6 +19,7 @@ A simple linear regression with scikit-learn
 """
 from pprint import pprint
 import numpy
+import onnx
 from pandas import DataFrame
 from onnxruntime import (
     InferenceSession, get_device)
@@ -53,7 +54,8 @@ lr = MLPRegressor(hidden_layer_sizes=tuple(),
                   activation='identity', max_iter=200,
                   batch_size=10, solver='sgd',
                   alpha=0, learning_rate_init=1e-2,
-                  n_iter_no_change=200)
+                  n_iter_no_change=200,
+                  momentum=0, nesterovs_momentum=False)
 lr.fit(X, y)
 print(lr.predict(X[:5]))
 
@@ -91,7 +93,8 @@ plot_onnxs(onx, onx_train,
 #####################################
 # Let's check inference is working.
 
-sess = InferenceSession(onx_train.SerializeToString())
+sess = InferenceSession(onx_train.SerializeToString(),
+                        providers=['CPUExecutionProvider'])
 res = sess.run(None, {'X': X_test, 'label': y_test.reshape((-1, 1))})
 print("onnx loss=%r" % (res[0][0, 0] / X_test.shape[0]))
 
@@ -113,7 +116,7 @@ pprint(list((k, v[0].shape) for k, v in weights.items()))
 # Train on CPU or GPU if available
 # ++++++++++++++++++++++++++++++++
 
-device = "cuda" if get_device() == 'GPU' else 'cpu'
+device = "cuda" if get_device().upper() == 'GPU' else 'cpu'
 print("device=%r get_device()=%r" % (device, get_device()))
 
 #######################################
@@ -130,7 +133,8 @@ print("device=%r get_device()=%r" % (device, get_device()))
 
 train_session = OrtGradientOptimizer(
     onx_train, list(weights), device=device, verbose=1, learning_rate=1e-2,
-    warm_start=False, max_iter=200, batch_size=10)
+    warm_start=False, max_iter=200, batch_size=10,
+    saved_gradient="saved_gradient.onnx")
 
 train_session.fit(X, y)
 
@@ -145,6 +149,19 @@ min_length = min(len(train_session.train_losses_), len(lr.loss_curve_))
 df = DataFrame({'ort losses': train_session.train_losses_[:min_length],
                 'skl losses': lr.loss_curve_[:min_length]})
 df.plot(title="Train loss against iterations")
+
+########################################
+# the training graph looks like the following...
+
+with open("saved_gradient.onnx.training.onnx", "rb") as f:
+    graph = onnx.load(f)
+    for inode, node in enumerate(graph.graph.node):
+        if '' in node.output:
+            for i in range(len(node.output)):
+                if node.output[i] == "":
+                    node.output[i] = "n%d-%d" % (inode, i)
+
+plot_onnxs(graph, title='Training graph')
 
 #######################################
 # The convergence speed is not the same but both gradient descents

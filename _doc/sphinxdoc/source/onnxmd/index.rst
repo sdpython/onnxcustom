@@ -1,10 +1,10 @@
 
-ONNX projects
-=============
+Markdown documentation for onnx and onnxruntime
+===============================================
 
 This section only renders markdown documentation
-from :epkg:`onnx` or :epkg:`onnxruntime` using Sphinx.
-The documentation can be searched.
+from :epkg:`onnx` or :epkg:`onnxruntime` using :epkg:`Sphinx`
+and :epkg:`myst-parser`.
 
 .. toctree::
     :maxdepth: 1

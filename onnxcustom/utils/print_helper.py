@@ -6,9 +6,9 @@
 
 def str_ortvalue(ov):
     """
-    Displays the content of an :epkg:`OrtValue`.
+    Displays the content of an :epkg:`C_OrtValue`.
 
-    :param ov: :epkg:`OrtValue`
+    :param ov: :epkg:`OrtValue` or :epkg:`C_OrtValue`
     :return: str
     """
     if hasattr(ov, '_ortvalue'):

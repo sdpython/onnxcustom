@@ -15,4 +15,5 @@ used functions or classes from this package.
     inference
     training
     training_partial
+    training_torch
     exceptions
