@@ -13,7 +13,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LinearRegression
 from mlprodict.onnx_conv import to_onnx
 from onnxcustom import __max_supported_opset__ as opset
-from onnxcustom.training.sgd_learning_rate import LearningRateSGDRegressor
+from onnxcustom.training.sgd_learning_rate import LearningRateSGD
 from onnxcustom.training import ConvergenceError
 try:
     from onnxruntime import TrainingSession
@@ -368,7 +368,7 @@ class TestOptimizers(ExtTestCase):
         inits = ['intercept', 'coef']
         train_session = OrtGradientOptimizer(
             onx_loss, inits, max_iter=10,
-            learning_rate=LearningRateSGDRegressor(learning_rate='optimal'))
+            learning_rate=LearningRateSGD(learning_rate='optimal'))
         self.assertRaise(lambda: train_session.get_state(), AttributeError)
         train_session.fit(X_train, y_train, use_numpy=True)
         state_tensors = train_session.get_state()
@@ -399,7 +399,7 @@ class TestOptimizers(ExtTestCase):
         inits = ['intercept', 'coef']
         train_session = OrtGradientOptimizer(
             onx_loss, inits, max_iter=10,
-            learning_rate=LearningRateSGDRegressor(learning_rate='optimal'))
+            learning_rate=LearningRateSGD(learning_rate='optimal'))
         self.assertRaise(lambda: train_session.get_state(), AttributeError)
         train_session.fit(X_train, y_train, w_train, use_numpy=True)
         state_tensors = train_session.get_state()
@@ -429,7 +429,7 @@ class TestOptimizers(ExtTestCase):
         inits = ['intercept', 'coef']
         train_session = OrtGradientOptimizer(
             onx_loss, inits, max_iter=10,
-            learning_rate=LearningRateSGDRegressor(learning_rate='optimal'))
+            learning_rate=LearningRateSGD(learning_rate='optimal'))
         self.assertRaise(lambda: train_session.get_state(), AttributeError)
         train_session.fit(X_train, y_train, use_numpy=False)
         state_tensors = train_session.get_state()
@@ -460,7 +460,7 @@ class TestOptimizers(ExtTestCase):
         inits = ['intercept', 'coef']
         train_session = OrtGradientOptimizer(
             onx_loss, inits, max_iter=10,
-            learning_rate=LearningRateSGDRegressor(learning_rate='optimal'))
+            learning_rate=LearningRateSGD(learning_rate='optimal'))
         self.assertRaise(lambda: train_session.get_state(), AttributeError)
         train_session.fit(X_train, y_train, w_train, use_numpy=False)
         state_tensors = train_session.get_state()

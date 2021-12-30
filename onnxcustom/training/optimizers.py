@@ -114,7 +114,7 @@ class OrtGradientOptimizer(BaseEstimator):
 
     def __init__(self, model_onnx, weights_to_train, loss_output_name='loss',
                  max_iter=100, training_optimizer_name='SGDOptimizer',
-                 batch_size=10, learning_rate='SGDRegressor',
+                 batch_size=10, learning_rate='SGD',
                  device='cpu', warm_start=False, verbose=0,
                  validation_every=0.1, saved_gradient=None,
                  sample_weight_name="weight"):

@@ -16,7 +16,7 @@ from sklearn.neural_network import MLPRegressor
 from sklearn.exceptions import ConvergenceWarning
 from mlprodict.onnx_conv import to_onnx
 from onnxcustom import __max_supported_opset__ as opset
-from onnxcustom.training.sgd_learning_rate import LearningRateSGDRegressor
+from onnxcustom.training.sgd_learning_rate import LearningRateSGD
 from onnxcustom.utils.onnx_helper import onnx_rename_weights
 from onnxcustom.training import ConvergenceError
 try:
@@ -461,7 +461,7 @@ class TestOptimizersForwardBackward(ExtTestCase):
         inits = ['coef', 'intercept']
         train_session = OrtGradientForwardBackwardOptimizer(
             onx, inits, max_iter=10,
-            learning_rate=LearningRateSGDRegressor(learning_rate='optimal'))
+            learning_rate=LearningRateSGD(learning_rate='optimal'))
         self.assertRaise(lambda: train_session.get_state(), AttributeError)
         train_session.fit(X_train, y_train, use_numpy=True)
         state_tensors = train_session.get_state()
@@ -491,7 +491,7 @@ class TestOptimizersForwardBackward(ExtTestCase):
         inits = ['coef', 'intercept']
         train_session = OrtGradientForwardBackwardOptimizer(
             onx, inits, max_iter=10, weight_name='weight',
-            learning_rate=LearningRateSGDRegressor(learning_rate='optimal'))
+            learning_rate=LearningRateSGD(learning_rate='optimal'))
         self.assertRaise(lambda: train_session.get_state(), AttributeError)
         train_session.fit(X_train, y_train, w_train, use_numpy=True)
         state_tensors = train_session.get_state()
@@ -519,7 +519,7 @@ class TestOptimizersForwardBackward(ExtTestCase):
         inits = ['coef', 'intercept']
         train_session = OrtGradientForwardBackwardOptimizer(
             onx, inits, max_iter=10,
-            learning_rate=LearningRateSGDRegressor(learning_rate='optimal'))
+            learning_rate=LearningRateSGD(learning_rate='optimal'))
         self.assertRaise(lambda: train_session.get_state(), AttributeError)
         train_session.fit(X_train, y_train, use_numpy=False)
         state_tensors = train_session.get_state()
@@ -549,7 +549,7 @@ class TestOptimizersForwardBackward(ExtTestCase):
         inits = ['coef', 'intercept']
         train_session = OrtGradientForwardBackwardOptimizer(
             onx, inits, max_iter=10, weight_name='weight',
-            learning_rate=LearningRateSGDRegressor(learning_rate='optimal'))
+            learning_rate=LearningRateSGD(learning_rate='optimal'))
         self.assertRaise(lambda: train_session.get_state(), AttributeError)
         train_session.fit(X_train, y_train, w_train, use_numpy=False)
         state_tensors = train_session.get_state()

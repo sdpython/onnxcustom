@@ -4,7 +4,7 @@
 
 import unittest
 from pyquickhelper.pycode import ExtTestCase
-from onnxcustom.training.sgd_learning_rate import LearningRateSGDRegressor
+from onnxcustom.training.sgd_learning_rate import LearningRateSGD
 
 
 class TestLearningRate(ExtTestCase):
@@ -17,7 +17,7 @@ class TestLearningRate(ExtTestCase):
                         i, series[i - 1: i + 1]))
 
     def test_learning_rate_sgd_regressor_default(self):
-        cllr = LearningRateSGDRegressor()
+        cllr = LearningRateSGD()
         val = list(cllr.loop())
         self.assertEqual(len(val), 1000)
         self.is_decreased(val)
@@ -26,11 +26,11 @@ class TestLearningRate(ExtTestCase):
 
     def test_learning_rate_sgd_regressor_exc(self):
         self.assertRaise(
-            lambda: LearningRateSGDRegressor(learning_rate='EXC'),
+            lambda: LearningRateSGD(learning_rate='EXC'),
             ValueError)
 
     def test_learning_rate_sgd_regressor_optimal(self):
-        cllr = LearningRateSGDRegressor(learning_rate='optimal')
+        cllr = LearningRateSGD(learning_rate='optimal')
         val = list(cllr.loop())
         self.assertEqual(len(val), 1000)
         self.is_decreased(val)
@@ -38,7 +38,7 @@ class TestLearningRate(ExtTestCase):
         self.assertGreater(val[-1], 0.009)
 
     def test_learning_rate_sgd_regressor_constant(self):
-        cllr = LearningRateSGDRegressor(learning_rate='constant')
+        cllr = LearningRateSGD(learning_rate='constant')
         val = list(cllr.loop())
         self.assertEqual(len(val), 1000)
         self.assertEqual(val[0], 0.01)
@@ -46,7 +46,7 @@ class TestLearningRate(ExtTestCase):
 
     def test_learning_rate_sgd_exc(self):
         self.assertRaise(
-            lambda: LearningRateSGDRegressor(learning_rate='CST'),
+            lambda: LearningRateSGD(learning_rate='CST'),
             ValueError)
 
 

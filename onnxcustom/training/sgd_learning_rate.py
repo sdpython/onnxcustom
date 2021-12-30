@@ -59,17 +59,17 @@ class BaseLearningRate:
         :param class_name: an instance of @see cl BaseLearningRate
             or a string among the following class names (see below),
             it can also be a float and in that case, class
-            @see cl LearningRateSGDRegressor is used
+            @see cl LearningRateSGD is used
         :return: instance of @see cl BaseLearningRate
 
         Possible values for *class_name*:
-        * `'LearningRateSGDRegressor'`: see @see cl LearningRateSGDRegressor
+        * `'SGD'` or `'LearningRateSGD'`: see @see cl LearningRateSGD
         """
         if isinstance(class_name, BaseLearningRate):
             return class_name
         if isinstance(class_name, float):
-            return LearningRateSGDRegressor(class_name)
-        cls = {LearningRateSGDRegressor: ['SGDRegressor']}
+            return LearningRateSGD(class_name)
+        cls = {LearningRateSGD: ['SGD', 'LearningRateSGD']}
         for cl, aliases in cls.items():
             if class_name == cl.__class__.__name__ or class_name in aliases:
                 return cl(**kwargs)
@@ -102,7 +102,7 @@ class BaseLearningRate:
         return "%s(%s)" % (self.__class__.__name__, ", ".join(ps))
 
 
-class LearningRateSGDRegressor(BaseLearningRate):
+class LearningRateSGD(BaseLearningRate):
     """
     Implements the learning the same way as
     :class:`sklearn.linear_model.SGDRegressor`.
