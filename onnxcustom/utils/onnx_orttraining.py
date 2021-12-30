@@ -33,7 +33,8 @@ def _unique_name(existing_names, name, add=True):
 
 
 def add_loss_output(onx, score_name='squared_error',
-                    loss_name='loss', label_name='label'):
+                    loss_name='loss', label_name='label',
+                    weight_name=None):
     """
     Modifies an ONNX graph to add operators to score and allow training.
 
@@ -41,11 +42,15 @@ def add_loss_output(onx, score_name='squared_error',
     :param score_name: name of the score
     :param loss_name: name of the output loss
     :param label_name: name of the label input
+    :param weight_name: None or any value to consider weight
+        while computing loss
     :return: modified graph
 
     Possible values for *score_name*:
 
-    * `'squared_error'`: :math:`\\sum_i{(f(x_i)-y_i)^2}`
+    * `'squared_error'`: :math:`\\sum_i{(f(x_i)-y_i)^2}` or
+        :math:`\\sum_i{w_i (f(x_i)-y_i)^2}` if *weight_name*
+        is not None
 
     See example :ref:`l-orttraining-nn-gpu`.
     """
@@ -71,10 +76,19 @@ def add_loss_output(onx, score_name='squared_error',
         diff_name = _unique_name(existing_names, "loss_diff")
         diff2_name = _unique_name(existing_names, "loss_diff")
         nodes = [make_node('Sub', [output_name, label_name], [diff_name]),
-                 make_node('Mul', [diff_name, diff_name], [diff2_name]),
-                 make_node('ReduceSum', [diff2_name], [loss_name])]
+                 make_node('Mul', [diff_name, diff_name], [diff2_name])]
+        if weight_name is not None:
+            res_name = _unique_name(existing_names, "loss_diff_weight")
+            nodes.append(
+                make_node('Mul', [diff2_name, weight_name], [res_name]))
+        else:
+            res_name = diff2_name
+        nodes.append(make_node('ReduceSum', [res_name], [loss_name]))
 
-        inputs = [make_tensor_value_info('label', elem, shape)]
+        inputs = [make_tensor_value_info(label_name, elem, shape)]
+        if weight_name is not None:
+            inputs.append(
+                make_tensor_value_info(weight_name, elem, [shape[0]]))
         outputs = [make_tensor_value_info('loss', elem, [1, 1])]
     else:
         raise NotImplementedError(  # pragma: no cover

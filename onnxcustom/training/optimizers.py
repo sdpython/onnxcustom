@@ -104,6 +104,7 @@ class OrtGradientOptimizer(BaseEstimator):
         *validation_every* iterations
     :param saved_gradient: if not None, a filename,
         the optimizer saves the gradient into it
+    :param sample_weight_name: name of the sample weight input
 
     Once initialized, the class creates the attribute
     `train_session_` which holds an instance of :ref:`l-ort-training-session`.
@@ -115,7 +116,8 @@ class OrtGradientOptimizer(BaseEstimator):
                  max_iter=100, training_optimizer_name='SGDOptimizer',
                  batch_size=10, learning_rate='SGDRegressor',
                  device='cpu', warm_start=False, verbose=0,
-                 validation_every=0.1, saved_gradient=None):
+                 validation_every=0.1, saved_gradient=None,
+                 sample_weight_name="weight"):
         BaseEstimator.__init__(self, learning_rate, device)
         self.model_onnx = model_onnx
         self.batch_size = batch_size
@@ -126,23 +128,31 @@ class OrtGradientOptimizer(BaseEstimator):
         self.max_iter = max_iter
         self.warm_start = warm_start
         self.saved_gradient = saved_gradient
+        self.sample_weight_name = sample_weight_name
         if validation_every < 1:
             self.validation_every = int(self.max_iter * validation_every)
         else:
             self.validation_every = validation_every  # pragma: no cover
 
-    def fit(self, X, y, X_val=None, y_val=None, use_numpy=False):
+    def fit(self, X, y, sample_weight=None, X_val=None, y_val=None, use_numpy=False):
         """
         Trains the model.
 
         :param X: features
         :param y: expected output
+        :param sample_weight: sample weight if any
         :param X_val: evaluation dataset
         :param y_val: evaluation dataset
         :param use_numpy: if True, slow iterator using numpy,
             otherwise, minimizes copy
         :return: self
         """
+        input_names = [i.name for i in self.model_onnx.graph.input]
+        if ((len(input_names) == 2 and sample_weight is not None) or
+                (len(input_names) == 3 and sample_weight is None)):
+            raise RuntimeError(
+                "Number of inputs should be 2 if sample_weight is None "
+                "or 3 if not None but it is %d." % len(input_names))
         self.train_session_ = self._create_training_session(
             self.model_onnx, self.weights_to_train,
             loss_output_name=self.loss_output_name,
@@ -162,7 +172,8 @@ class OrtGradientOptimizer(BaseEstimator):
             self.set_state(new_state)
 
         data_loader = OrtDataLoader(
-            X, y, batch_size=self.batch_size, device=self.device)
+            X, y, sample_weight=sample_weight,
+            batch_size=self.batch_size, device=self.device)
         if X_val is not None:
             data_loader_val = OrtDataLoader(
                 X_val, y_val, batch_size=X_val.shape[0], device=self.device,
@@ -191,7 +202,8 @@ class OrtGradientOptimizer(BaseEstimator):
             lr_alive = numpy.array([lr / self.batch_size], dtype=numpy.float32)
             ort_lr = numpy_to_ort_value(lr_alive, self.device)
             loss = self._iteration(data_loader, ort_lr,
-                                   bind, use_numpy=use_numpy)
+                                   bind, use_numpy=use_numpy,
+                                   sample_weight=sample_weight is not None)
             lr = self.learning_rate.update_learning_rate(it).value
             if self.verbose > 1:  # pragma: no cover
                 loop.set_description(
@@ -239,7 +251,7 @@ class OrtGradientOptimizer(BaseEstimator):
                 "Unable to bind type %r for name %r." % (
                     type(c_ortvalue), name))
 
-    def _iteration(self, data_loader, ort_lr, bind, use_numpy):
+    def _iteration(self, data_loader, ort_lr, bind, use_numpy, sample_weight):
         actual_losses = []
 
         bind.bind_output('loss', self.device)
@@ -248,16 +260,26 @@ class OrtGradientOptimizer(BaseEstimator):
             # onnxruntime does not copy the data, so the numpy
             # array must remain alive all along the iteration
             lr_alive = ort_lr.numpy()
+            idx = 3 if sample_weight else 2
             self._bind_input_ortvalue(
-                self.input_names_[2], bind, lr_alive)
+                self.input_names_[idx], bind, lr_alive)
 
             # Slow iterations.
-            for data, target in data_loader.iter_numpy():
-
-                self._bind_input_ortvalue(
-                    self.input_names_[0], bind, data)
-                self._bind_input_ortvalue(
-                    self.input_names_[1], bind, target)
+            for it in data_loader.iter_numpy():
+                if len(it) == 2:
+                    data, target = it
+                    self._bind_input_ortvalue(
+                        self.input_names_[0], bind, data)
+                    self._bind_input_ortvalue(
+                        self.input_names_[1], bind, target)
+                else:
+                    data, target, weight = it
+                    self._bind_input_ortvalue(
+                        self.input_names_[0], bind, data)
+                    self._bind_input_ortvalue(
+                        self.input_names_[1], bind, target)
+                    self._bind_input_ortvalue(
+                        self.input_names_[2], bind, weight)
 
                 self.train_session_._sess.run_with_iobinding(bind, None)
                 outputs = bind.copy_outputs_to_cpu()
@@ -272,7 +294,8 @@ class OrtGradientOptimizer(BaseEstimator):
                                 else actual_losses[-5:])]))
                 actual_losses.append(outputs[0] / data.shape[0])
         else:
-            self._bind_input_ortvalue(self.input_names_[2], bind, ort_lr)
+            idx = 3 if sample_weight else 2
+            self._bind_input_ortvalue(self.input_names_[idx], bind, ort_lr)
 
             # Fast iterations
             # Slow iterations.

@@ -4,7 +4,7 @@
 """
 import logging
 import numpy
-from onnxruntime import InferenceSession
+from onnxruntime import InferenceSession, SessionOptions
 from onnxruntime.capi._pybind_state import (  # pylint: disable=E0611
     OrtValue as C_OrtValue)
 from ..utils.onnx_helper import get_onnx_opset, proto_type_to_dtype
@@ -46,6 +46,8 @@ class OrtGradientForwardBackwardOptimizer(BaseEstimator):
         *validation_every* iterations
     :param enable_logging: enable logging (mostly for debugging puporse
         as it slows down the training)
+    :param weight_name: if not None, the class assumes it is trained
+        with training weight
 
     *loss_function* can be:
     * `square_error`: mean square error, used for regression
@@ -57,7 +59,7 @@ class OrtGradientForwardBackwardOptimizer(BaseEstimator):
                  batch_size=10, learning_rate='SGDRegressor',
                  device='cpu', warm_start=False, verbose=0,
                  validation_every=0.1, loss_function="square_error",
-                 enable_logging=False):
+                 enable_logging=False, weight_name=None):
         if weights_to_train is None:
             weights_to_train = list(get_train_initializer(model_onnx))
         BaseEstimator.__init__(self, learning_rate, device)
@@ -71,6 +73,7 @@ class OrtGradientForwardBackwardOptimizer(BaseEstimator):
         self.warm_start = warm_start
         self.loss_function = loss_function
         self.enable_logging = enable_logging
+        self.weight_name = weight_name
         if validation_every < 1:
             self.validation_every = int(self.max_iter * validation_every)
         else:
@@ -156,16 +159,19 @@ class OrtGradientForwardBackwardOptimizer(BaseEstimator):
     def _build_loss_function(self):
         opset = get_onnx_opset(self.model_onnx)
         self.loss_grad_onnx_ = function_onnx_graph(
-            "grad_loss_" + self.loss_function, target_opset=opset)
+            "grad_loss_" + self.loss_function, target_opset=opset,
+            weight_name=self.weight_name)
+        so = SessionOptions()
+        so.log_severity_level = 4
         self.loss_grad_sess_ = InferenceSession(
-            self.loss_grad_onnx_.SerializeToString(),
+            self.loss_grad_onnx_.SerializeToString(), so,
             providers=device_to_providers(self.device))
         self.loss_grad_sess_bind_ = (
             self.loss_grad_sess_.io_binding()._iobinding)
 
         self.axpy_onnx_ = function_onnx_graph("axpy")
         self.axpy_sess_ = InferenceSession(
-            self.axpy_onnx_.SerializeToString(),
+            self.axpy_onnx_.SerializeToString(), so,
             providers=device_to_providers(self.device))
         self.axpy_sess_bind_ = self.axpy_sess_.io_binding()._iobinding
 
@@ -174,12 +180,14 @@ class OrtGradientForwardBackwardOptimizer(BaseEstimator):
         else:
             self._logger = None
 
-    def fit(self, X, y, X_val=None, y_val=None, use_numpy=False):
+    def fit(self, X, y, sample_weight=None,
+            X_val=None, y_val=None, use_numpy=False):
         """
         Trains the model.
 
         :param X: features
         :param y: expected output
+        :param sample_weight: training weight or None
         :param X_val: evaluation dataset
         :param y_val: evaluation dataset
         :param use_numpy: if True, slow iterator using numpy,
@@ -252,7 +260,7 @@ class OrtGradientForwardBackwardOptimizer(BaseEstimator):
             self.set_state(new_state)
 
         data_loader = OrtDataLoader(
-            X, y, batch_size=self.batch_size, device=self.device)
+            X, y, sample_weight, batch_size=self.batch_size, device=self.device)
         if X_val is not None:
             data_loader_val = OrtDataLoader(
                 X_val, y_val, batch_size=X_val.shape[0], device=self.device,
@@ -352,12 +360,15 @@ class OrtGradientForwardBackwardOptimizer(BaseEstimator):
                 "Unable to bind type %r for name %r." % (
                     type(c_ortvalue), name))
 
-    def _loss_gradient(self, expected, predicted):
+    def _loss_gradient(self, expected, predicted, weight=None):
         """
         Returns the loss and the gradient as OrtValue.
         """
         self._bind_input_ortvalue("X1", self.loss_grad_sess_bind_, expected)
         self._bind_input_ortvalue("X2", self.loss_grad_sess_bind_, predicted)
+        if weight is not None:
+            self._bind_input_ortvalue(
+                "weight", self.loss_grad_sess_bind_, weight)
         self.loss_grad_sess_bind_.bind_output('Y', self.device)
         self.loss_grad_sess_bind_.bind_output('Z', self.device)
         self.loss_grad_sess_._sess.run_with_iobinding(
@@ -387,7 +398,12 @@ class OrtGradientForwardBackwardOptimizer(BaseEstimator):
                 "[OrtGradientForwardBackwardOptimizer._iteration] "
                 "iteration begin learning_rate=%f", learning_rate)
 
-        for ib, (ortx, orty) in enumerate(data_loader.iter_ortvalue()):
+        for ib, ito in enumerate(data_loader.iter_ortvalue()):
+            if len(ito) == 2:
+                (ortx, orty) = ito
+                ortw = None
+            else:
+                (ortx, orty, ortw) = ito
             state[0] = ortx
 
             if logger is not None:
@@ -396,7 +412,8 @@ class OrtGradientForwardBackwardOptimizer(BaseEstimator):
                     "batch %d", ib)
 
             prediction = self.train_function_.forward(state, training=True)
-            loss, loss_gradient = self._loss_gradient(orty, prediction[0])
+            loss, loss_gradient = self._loss_gradient(
+                orty, prediction[0], weight=ortw)
             cpu_loss = loss.numpy()
             if numpy.isinf(cpu_loss) or numpy.isnan(cpu_loss):
                 raise ConvergenceError(
