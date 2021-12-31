@@ -136,7 +136,8 @@ class BaseLearningRate:
             if v is not inspect._empty or ov != v:
                 ro = repr(ov)
                 ps.append("%s=%s" % (k, ro))
-        return "%s(%s)" % (self.__class__.__name__, ", ".join(ps))
+        return "%s(%s), value=%r" % (
+            self.__class__.__name__, ", ".join(ps), self.value)
 
     def build_onnx_function(self, opset, device):
         """
@@ -336,7 +337,7 @@ class LearningRateSGD(BaseLearningRate):
         self._bind_input_ortvalue(
             "X1", self.axpy_sess_bind_, gradienti, device)
         self._bind_input_ortvalue("X2", self.axpy_sess_bind_, statei, device)
-        alpha = self.value / batch_size
+        alpha = - self.value / batch_size  # pylint: disable=E1130
         alpha_alive = numpy.array([alpha], dtype=numpy.float32)
         ort_alpha_alive = C_OrtValue.ortvalue_from_numpy(
             alpha_alive, device)
@@ -344,7 +345,8 @@ class LearningRateSGD(BaseLearningRate):
             "alpha", self.axpy_sess_bind_, ort_alpha_alive, device)
         self._bind_output_ortvalue('Y', self.axpy_sess_bind_, statei)
         self.axpy_sess_._sess.run_with_iobinding(self.axpy_sess_bind_, None)
-        return self.axpy_sess_bind_.get_outputs()[0]
+        loss = self.axpy_sess_bind_.get_outputs()[0]
+        return loss
 
 
 class LearningRateSGDNesterov(LearningRateSGD):
@@ -443,7 +445,7 @@ class LearningRateSGDNesterov(LearningRateSGD):
             "X1", self.axpyw_sess_bind_, gradienti, device)
         self._bind_input_ortvalue("X2", self.axpyw_sess_bind_, statei, device)
         self._bind_input_ortvalue("G", self.axpyw_sess_bind_, velocity, device)
-        alpha = self.value / batch_size
+        alpha = - self.value / batch_size  # pylint: disable=E1130
         alpha_alive = numpy.array([alpha], dtype=numpy.float32)
         beta = self.momentum
         beta_alive = numpy.array([beta], dtype=numpy.float32)
@@ -458,7 +460,7 @@ class LearningRateSGDNesterov(LearningRateSGD):
         self._bind_output_ortvalue('Y', self.axpyw_sess_bind_, statei)
         self._bind_output_ortvalue('Z', self.axpyw_sess_bind_, velocity)
         self.axpyw_sess_._sess.run_with_iobinding(self.axpyw_sess_bind_, None)
-        return self.axpyw_sess_bind_.get_outputs()
+        return self.axpyw_sess_bind_.get_outputs()  # loss, velocity
 
 
 """

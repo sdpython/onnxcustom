@@ -429,8 +429,8 @@ class OrtGradientForwardBackwardOptimizer(BaseEstimator):
         if logger is not None:
             logger.debug(
                 "[OrtGradientForwardBackwardOptimizer._iteration] "
-                "iteration begin learning_rate=%f",
-                self.learning_rate.value)
+                "iteration begin learning_rate=%r",
+                self.learning_rate)
 
         for ib, ito in enumerate(data_loader.iter_ortvalue()):
             if len(ito) == 2:
@@ -454,7 +454,7 @@ class OrtGradientForwardBackwardOptimizer(BaseEstimator):
                     "Loss is nan, learning_rate=%r, "
                     "the gradient descent has failed "
                     "(past losses=%r)." % (
-                        self.learning_rate.value,
+                        self.learning_rate,
                         [float(v) for v in (
                             actual_losses if len(actual_losses) < 5
                             else actual_losses[-5:])]))
