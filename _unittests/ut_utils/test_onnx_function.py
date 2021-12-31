@@ -229,6 +229,39 @@ class TestOnnxFunction(ExtTestCase):
     def test_zero(self):
         self.common_unary("zero", lambda x: x * 0)
 
+    def common_check_alpha_beta(self, name, fct):
+        onx = function_onnx_graph(
+            name, target_opset=get_max_opset(),
+            dtype=numpy.float32)
+        x1 = numpy.random.randn(10, 1).astype(numpy.float32)
+        x2 = numpy.random.randn(10, 1).astype(numpy.float32)
+        g = numpy.random.randn(10, 1).astype(numpy.float32)
+        alpha = numpy.random.randn(1).astype(numpy.float32)
+        beta = numpy.random.randn(1).astype(numpy.float32)
+        y, z = fct(x1, x2, g, alpha, beta)
+
+        oinf = OnnxInference(onx)
+        got = oinf.run({'X1': x1, 'X2': x2, 'alpha': alpha,
+                        'beta': beta, 'G': g})
+        self.assertEqualArray(y, got['Y'], decimal=5)
+        self.assertEqualArray(z, got['Z'], decimal=5)
+
+        providers = device_to_providers('cpu')
+        so = SessionOptions()
+        so.log_severity_level = 4
+        sess = InferenceSession(
+            onx.SerializeToString(), so, providers=providers)
+        got = sess.run(None, {'X1': x1, 'X2': x2, 'alpha': alpha,
+                              'beta': beta, 'G': g})
+        self.assertEqualArray(y, got[0], decimal=5)
+        self.assertEqualArray(z, got[1], decimal=5)
+
+    def test_grad_onnx_axpyw(self):
+        self.common_check_alpha_beta(
+            "axpyw", lambda x1, x2, g, alpha, beta:
+                (x1 * alpha + x2 + beta * g,
+                 x1 * alpha + beta * g))
+
 
 if __name__ == "__main__":
     unittest.main()
