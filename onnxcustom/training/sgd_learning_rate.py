@@ -389,9 +389,9 @@ class LearningRateSGDNesterov(LearningRateSGD):
             updates_nesterov = [
                 self.momentum * velocity - self.learning_rate * grad
                 for velocity, grad in zip(self.velocities, grads)]
-            return updates    --> new gradient
+            return updates, updates_nesterov    --> new gradient and velocities
         else:
-            return updates    --> new gradient and velocities
+            return updates                      --> new gradient
     """
 
     def __init__(self, eta0=0.01, alpha=0.0001, power_t=0.25,
@@ -430,7 +430,10 @@ class LearningRateSGDNesterov(LearningRateSGD):
         so.log_severity_level = 4
 
         # axpyw
-        self.axpyw_onnx_ = function_onnx_graph("axpyw")
+        if self.nesterov:
+            self.axpyw_onnx_ = function_onnx_graph("axpyw2")
+        else:
+            self.axpyw_onnx_ = function_onnx_graph("axpyw")
         self.axpyw_sess_ = InferenceSession(
             self.axpyw_onnx_.SerializeToString(), so,
             providers=device_to_providers(device))

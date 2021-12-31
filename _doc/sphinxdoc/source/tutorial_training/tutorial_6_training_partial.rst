@@ -20,4 +20,5 @@ Next example introduced how this is done with ONNX.
 
     ../gyexamples/plot_orttraining_linear_regression_fwbw
     ../gyexamples/plot_orttraining_nn_gpu_fwbw
+    ../gyexamples/plot_orttraining_nn_gpu_fwbw_nesterov
     ../gyexamples/plot_orttraining_benchmark_fwbw

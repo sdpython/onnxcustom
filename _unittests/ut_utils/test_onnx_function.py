@@ -262,6 +262,12 @@ class TestOnnxFunction(ExtTestCase):
                 (x1 * alpha + x2 + beta * g,
                  x1 * alpha + beta * g))
 
+    def test_grad_onnx_axpyw2(self):
+        self.common_check_alpha_beta(
+            "axpyw2", lambda x1, x2, g, alpha, beta:
+                (x1 * alpha + x2 + beta * (x1 * alpha + beta * g),
+                 x1 * alpha + beta * g))
+
 
 if __name__ == "__main__":
     unittest.main()

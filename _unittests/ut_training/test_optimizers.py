@@ -71,8 +71,6 @@ class TestOptimizers(ExtTestCase):
                       black_op={'LinearRegressor'})
         set_model_props(onx, {'info': 'unit test'})
         onx_loss = add_loss_output(onx, weight_name='weight')
-        with open("rrrr.onnx", "wb") as f:
-            f.write(onx_loss.SerializeToString())
         inits = ['intercept', 'coef']
         train_session = OrtGradientOptimizer(
             onx_loss, inits, learning_rate=1e-3)
