@@ -14,7 +14,10 @@ BaseEstimator
 LearningRate
 ++++++++++++
 
-.. autosignature:: onnxcustom.training.sgd_learning_rate.LearningRateSGDRegressor
+.. autosignature:: onnxcustom.training.sgd_learning_rate.LearningRateSGD
+    :members:
+
+.. autosignature:: onnxcustom.training.sgd_learning_rate.LearningRateSGDNesterov
     :members:
 
 OrtGradientOptimizer

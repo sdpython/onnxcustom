@@ -13,7 +13,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LinearRegression
 from mlprodict.onnx_conv import to_onnx
 from onnxcustom import __max_supported_opset__ as opset
-from onnxcustom.training.sgd_learning_rate import LearningRateSGDRegressor
+from onnxcustom.training.sgd_learning_rate import LearningRateSGD
 from onnxcustom.training import ConvergenceError
 try:
     from onnxruntime import TrainingSession
@@ -71,8 +71,6 @@ class TestOptimizers(ExtTestCase):
                       black_op={'LinearRegressor'})
         set_model_props(onx, {'info': 'unit test'})
         onx_loss = add_loss_output(onx, weight_name='weight')
-        with open("rrrr.onnx", "wb") as f:
-            f.write(onx_loss.SerializeToString())
         inits = ['intercept', 'coef']
         train_session = OrtGradientOptimizer(
             onx_loss, inits, learning_rate=1e-3)
@@ -368,7 +366,7 @@ class TestOptimizers(ExtTestCase):
         inits = ['intercept', 'coef']
         train_session = OrtGradientOptimizer(
             onx_loss, inits, max_iter=10,
-            learning_rate=LearningRateSGDRegressor(learning_rate='optimal'))
+            learning_rate=LearningRateSGD(learning_rate='optimal'))
         self.assertRaise(lambda: train_session.get_state(), AttributeError)
         train_session.fit(X_train, y_train, use_numpy=True)
         state_tensors = train_session.get_state()
@@ -399,7 +397,7 @@ class TestOptimizers(ExtTestCase):
         inits = ['intercept', 'coef']
         train_session = OrtGradientOptimizer(
             onx_loss, inits, max_iter=10,
-            learning_rate=LearningRateSGDRegressor(learning_rate='optimal'))
+            learning_rate=LearningRateSGD(learning_rate='optimal'))
         self.assertRaise(lambda: train_session.get_state(), AttributeError)
         train_session.fit(X_train, y_train, w_train, use_numpy=True)
         state_tensors = train_session.get_state()
@@ -429,7 +427,7 @@ class TestOptimizers(ExtTestCase):
         inits = ['intercept', 'coef']
         train_session = OrtGradientOptimizer(
             onx_loss, inits, max_iter=10,
-            learning_rate=LearningRateSGDRegressor(learning_rate='optimal'))
+            learning_rate=LearningRateSGD(learning_rate='optimal'))
         self.assertRaise(lambda: train_session.get_state(), AttributeError)
         train_session.fit(X_train, y_train, use_numpy=False)
         state_tensors = train_session.get_state()
@@ -460,7 +458,7 @@ class TestOptimizers(ExtTestCase):
         inits = ['intercept', 'coef']
         train_session = OrtGradientOptimizer(
             onx_loss, inits, max_iter=10,
-            learning_rate=LearningRateSGDRegressor(learning_rate='optimal'))
+            learning_rate=LearningRateSGD(learning_rate='optimal'))
         self.assertRaise(lambda: train_session.get_state(), AttributeError)
         train_session.fit(X_train, y_train, w_train, use_numpy=False)
         state_tensors = train_session.get_state()
@@ -604,6 +602,28 @@ class TestOptimizers(ExtTestCase):
         vlosses = train_session.validation_losses_
         self.assertGreater(len(vlosses), 1)
         self.assertFalse(any(map(numpy.isnan, losses)))
+
+    @unittest.skipIf(TrainingSession is None, reason="not training")
+    def test_ort_gradient_optimizers_use_numpy_nesterov(self):
+        from onnxcustom.utils.onnx_orttraining import add_loss_output
+        from onnxcustom.training.optimizers import OrtGradientOptimizer
+        X, y = make_regression(  # pylint: disable=W0632
+            100, n_features=10, bias=2, random_state=0)
+        X = X.astype(numpy.float32)
+        y = y.astype(numpy.float32)
+        X_train, _, y_train, __ = train_test_split(X, y)
+        reg = LinearRegression()
+        reg.fit(X_train, y_train)
+        reg.coef_ = reg.coef_.reshape((1, -1))
+        onx = to_onnx(reg, X_train, target_opset=opset,
+                      black_op={'LinearRegressor'})
+        set_model_props(onx, {'info': 'unit test'})
+        onx_loss = add_loss_output(onx)
+        inits = ['intercept', 'coef']
+        self.assertRaise(
+            lambda: OrtGradientOptimizer(
+                onx_loss, inits, learning_rate="Nesterov"),
+            NotImplementedError)
 
 
 if __name__ == "__main__":

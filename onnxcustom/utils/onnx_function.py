@@ -81,6 +81,103 @@ def function_onnx_graph(name, target_opset=None, dtype=numpy.float32,
                 k for k in glo if k.startswith('_onnx_')))))
 
 
+def _onnx_axpy(target_opset=None, dtype=numpy.float32):
+    """
+    Returns the ONNX graph for function
+    :math:`Y = f(X1, X2, \\alpha) = \\alpha X1 + X2`.
+
+    .. gdot::
+        :script: DOT-SECTION
+
+        from mlprodict.onnxrt import OnnxInference
+        from onnxcustom.utils.onnx_function import function_onnx_graph
+
+        model_onnx = function_onnx_graph('axpy')
+        oinf = OnnxInference(model_onnx, inplace=False)
+
+        print("DOT-SECTION", oinf.to_dot())
+    """
+    from skl2onnx.algebra.onnx_ops import OnnxAdd, OnnxMul
+    res = OnnxAdd(OnnxMul('X1', 'alpha', op_version=target_opset),
+                  'X2', op_version=target_opset, output_names=['Y'])
+    var_type = dtype_to_var_type(dtype)
+    varsx = [('X1', var_type()), ('X2', var_type()),
+             ('alpha', var_type([1]))]
+    onx = res.to_onnx(varsx, outputs=[('Y', var_type())],
+                      target_opset=target_opset)
+    return onx
+
+
+def _onnx_axpyw(target_opset=None, dtype=numpy.float32):
+    """
+    Returns the ONNX graph for function
+    :math:`Y, Z = f(X1, X2, G, \\alpha, \\beta) = (Y, Z)`
+    where :math:`Z = \\beta * G + \\alpha X1` and
+    :math:`Y = Z + X2`.
+
+    .. gdot::
+        :script: DOT-SECTION
+
+        from mlprodict.onnxrt import OnnxInference
+        from onnxcustom.utils.onnx_function import function_onnx_graph
+
+        model_onnx = function_onnx_graph('axpy')
+        oinf = OnnxInference(model_onnx, inplace=False)
+
+        print("DOT-SECTION", oinf.to_dot())
+    """
+    from skl2onnx.algebra.onnx_ops import OnnxAdd, OnnxMul
+    s1 = OnnxMul('X1', 'alpha', op_version=target_opset)
+    s2 = OnnxMul('G', 'beta', op_version=target_opset)
+    Z = OnnxAdd(s1, s2, op_version=target_opset,
+                output_names=['Z'])
+    Y = OnnxAdd(Z, 'X2', op_version=target_opset, output_names=['Y'])
+    var_type = dtype_to_var_type(dtype)
+    varsx = [('X1', var_type()), ('X2', var_type()),
+             ('G', var_type()),
+             ('alpha', var_type([1])), ('beta', var_type([1]))]
+    onx = Y.to_onnx(
+        varsx, outputs=[('Y', var_type()), ('Z', var_type())],
+        target_opset=target_opset, other_outputs=[Z])
+    return onx
+
+
+def _onnx_axpyw2(target_opset=None, dtype=numpy.float32):
+    """
+    Returns the ONNX graph for function
+    :math:`Y, Z = f(X1, X2, G, \\alpha, \\beta) = (Y, Z)`
+    where :math:`Z = \\beta * G + \\alpha X1` and
+    :math:`Y = \\beta * Z + \\alpha X1 + X2`.
+
+    .. gdot::
+        :script: DOT-SECTION
+
+        from mlprodict.onnxrt import OnnxInference
+        from onnxcustom.utils.onnx_function import function_onnx_graph
+
+        model_onnx = function_onnx_graph('axpy')
+        oinf = OnnxInference(model_onnx, inplace=False)
+
+        print("DOT-SECTION", oinf.to_dot())
+    """
+    from skl2onnx.algebra.onnx_ops import OnnxAdd, OnnxMul
+    s1 = OnnxMul('X1', 'alpha', op_version=target_opset)
+    s2 = OnnxMul('G', 'beta', op_version=target_opset)
+    Z = OnnxAdd(s1, s2, op_version=target_opset,
+                output_names=['Z'])
+    s2_2 = OnnxMul(Z, 'beta', op_version=target_opset)
+    s2_3 = OnnxAdd(s1, s2_2, op_version=target_opset)
+    Y = OnnxAdd(s2_3, 'X2', op_version=target_opset, output_names=['Y'])
+    var_type = dtype_to_var_type(dtype)
+    varsx = [('X1', var_type()), ('X2', var_type()),
+             ('G', var_type()),
+             ('alpha', var_type([1])), ('beta', var_type([1]))]
+    onx = Y.to_onnx(
+        varsx, outputs=[('Y', var_type()), ('Z', var_type())],
+        target_opset=target_opset, other_outputs=[Z])
+    return onx
+
+
 def _onnx_square_error(target_opset=None, dtype=numpy.float32,
                        weight_name=None):
     """
@@ -173,10 +270,10 @@ def _onnx_grad_square_error(target_opset=None, dtype=numpy.float32,
     return onx
 
 
-def _onnx_axpy(target_opset=None, dtype=numpy.float32):
+def _onnx_copy(target_opset=None, dtype=numpy.float32):
     """
     Returns the ONNX graph for function
-    :math:`Y = f(X1, X2, \\alpha) = \\alpha X1 + X2`.
+    :math:`Y = X`.
 
     .. gdot::
         :script: DOT-SECTION
@@ -184,17 +281,43 @@ def _onnx_axpy(target_opset=None, dtype=numpy.float32):
         from mlprodict.onnxrt import OnnxInference
         from onnxcustom.utils.onnx_function import function_onnx_graph
 
-        model_onnx = function_onnx_graph('axpy')
+        model_onnx = function_onnx_graph('copy')
         oinf = OnnxInference(model_onnx, inplace=False)
 
         print("DOT-SECTION", oinf.to_dot())
     """
-    from skl2onnx.algebra.onnx_ops import OnnxAdd, OnnxMul
-    res = OnnxAdd(OnnxMul('X1', 'alpha', op_version=target_opset),
-                  'X2', op_version=target_opset, output_names=['Y'])
+    from skl2onnx.algebra.onnx_ops import OnnxIdentity
+    res = OnnxIdentity('X', op_version=target_opset,
+                       output_names=['Y'])
     var_type = dtype_to_var_type(dtype)
-    varsx = [('X1', var_type()), ('X2', var_type()),
-             ('alpha', var_type([1]))]
+    varsx = [('X', var_type())]
+    onx = res.to_onnx(varsx, outputs=[('Y', var_type())],
+                      target_opset=target_opset)
+    return onx
+
+
+def _onnx_zero(target_opset=None, dtype=numpy.float32):
+    """
+    Returns the ONNX graph for function
+    :math:`Y = X * 0`.
+
+    .. gdot::
+        :script: DOT-SECTION
+
+        from mlprodict.onnxrt import OnnxInference
+        from onnxcustom.utils.onnx_function import function_onnx_graph
+
+        model_onnx = function_onnx_graph('zero')
+        oinf = OnnxInference(model_onnx, inplace=False)
+
+        print("DOT-SECTION", oinf.to_dot())
+    """
+    from skl2onnx.algebra.onnx_ops import OnnxMul
+    res = OnnxMul('X', numpy.array([0], dtype=dtype),
+                  op_version=target_opset,
+                  output_names=['Y'])
+    var_type = dtype_to_var_type(dtype)
+    varsx = [('X', var_type())]
     onx = res.to_onnx(varsx, outputs=[('Y', var_type())],
                       target_opset=target_opset)
     return onx
