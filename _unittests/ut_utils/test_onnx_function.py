@@ -108,10 +108,11 @@ class TestOnnxFunction(ExtTestCase):
     def test_grad_onnx_axpy(self):
         self.common_check_alpha("axpy", lambda x1, x2, alpha: x1 * alpha + x2)
 
-    def common_check_2(self, name, fct, weight_name=None):
+    def common_check_2(self, name, fct, weight_name=None, **kwargs):
         onx = function_onnx_graph(
             name, target_opset=get_max_opset(),
-            dtype=numpy.float32, weight_name=weight_name)
+            dtype=numpy.float32, weight_name=weight_name,
+            **kwargs)
         x1 = numpy.random.randn(10, 1).astype(numpy.float32)
         x2 = numpy.random.randn(10, 1).astype(numpy.float32)
         w = numpy.random.rand(10).astype(numpy.float32)
@@ -171,6 +172,26 @@ class TestOnnxFunction(ExtTestCase):
             lambda x1, x2, w: ((numpy.abs(x1 - x2) * w.reshape((-1, 1))).sum(),
                                numpy.sign(x1 - x2) * w.reshape((-1, 1))),
             weight_name='weight')
+
+    def test_loss_grad_onnx_elastic_error(self):
+        self.common_check_2(
+            "grad_loss_elastic_error",
+            lambda x1, x2: (
+                numpy.abs(x1 - x2).sum() * 0.1 + ((x1 - x2) ** 2).sum() * 0.9,
+                numpy.sign(x1 - x2) * 0.1 - 2 * 0.9 * (x1 - x2)
+            ),
+            l1_weight=0.1, l2_weight=0.9)
+
+    def test_loss_grad_onnx_elastic_error_w(self):
+        self.common_check_2(
+            "grad_loss_elastic_error",
+            lambda x1, x2, w: (
+                (numpy.abs(x1 - x2) * w.reshape((-1, 1))).sum() * 0.1 +
+                ((x1 - x2) ** 2 * w.reshape((-1, 1))).sum() * 0.9,
+                numpy.sign(x1 - x2) * w.reshape((-1, 1)) * 0.1 +
+                (x1 - x2) * (-2) * w.reshape((-1, 1)) * 0.9
+            ),
+            weight_name='weight', l1_weight=0.1, l2_weight=0.9)
 
     def common_check_3(self, name, fct):
         onx = function_onnx_graph(

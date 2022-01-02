@@ -82,6 +82,15 @@ LearningRate
 .. autosignature:: onnxcustom.training.sgd_learning_rate.LearningRateSGDNesterov
     :members:
 
+LearningLoss
+++++++++++++
+
+.. autosignature:: onnxcustom.training.sgd_learning_loss.AbsoluteLearningLoss
+
+.. autosignature:: onnxcustom.training.sgd_learning_loss.ElasticLearningLoss
+
+.. autosignature:: onnxcustom.training.sgd_learning_loss.SquareLearningLoss
+
 Loss function
 +++++++++++++
 
