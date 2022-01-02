@@ -65,7 +65,8 @@ plot_onnxs(onx)
 # ++++++++++++++
 #
 # The loss function is the square function. We use function
-# :func:`add_loss_output <onnxcustom.training.orttraining.add_loss_output>`.
+# :func:`add_loss_output
+# <onnxcustom.utils.orttraining_helper.add_loss_output>`.
 # It does something what is implemented in example
 # :ref:`l-orttraining-linreg-cpu`.
 
