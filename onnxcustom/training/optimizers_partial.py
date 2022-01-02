@@ -12,7 +12,7 @@ from ..utils.onnxruntime_helper import (
     device_to_providers, numpy_to_ort_value, ort_device_to_string)
 from ..utils.onnx_function import function_onnx_graph
 from ..utils.print_helper import str_ortvalue
-from ..utils.onnx_orttraining import get_train_initializer
+from ..utils.orttraining_helper import get_train_initializer
 from .ortgradient import OrtGradientForwardBackward
 from .base_estimator import BaseEstimator
 from .data_loader import OrtDataLoader

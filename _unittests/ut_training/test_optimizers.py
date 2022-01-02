@@ -26,7 +26,7 @@ class TestOptimizers(ExtTestCase):
 
     @unittest.skipIf(TrainingSession is None, reason="not training")
     def test_ort_gradient_optimizers_use_numpy(self):
-        from onnxcustom.utils.onnx_orttraining import add_loss_output
+        from onnxcustom.utils.orttraining_helper import add_loss_output
         from onnxcustom.training.optimizers import OrtGradientOptimizer
         X, y = make_regression(  # pylint: disable=W0632
             100, n_features=10, bias=2, random_state=0)
@@ -56,7 +56,7 @@ class TestOptimizers(ExtTestCase):
 
     @unittest.skipIf(TrainingSession is None, reason="not training")
     def test_ort_gradient_optimizers_use_numpy_w(self):
-        from onnxcustom.utils.onnx_orttraining import add_loss_output
+        from onnxcustom.utils.orttraining_helper import add_loss_output
         from onnxcustom.training.optimizers import OrtGradientOptimizer
         X, y = make_regression(  # pylint: disable=W0632
             100, n_features=10, bias=2, random_state=0)
@@ -86,8 +86,202 @@ class TestOptimizers(ExtTestCase):
         self.assertFalse(any(map(numpy.isnan, losses)))
 
     @unittest.skipIf(TrainingSession is None, reason="not training")
+    def test_ort_gradient_optimizers_use_numpy_w_l1(self):
+        from onnxcustom.utils.orttraining_helper import add_loss_output
+        from onnxcustom.training.optimizers import OrtGradientOptimizer
+        X, y = make_regression(  # pylint: disable=W0632
+            100, n_features=10, bias=2, random_state=0)
+        X = X.astype(numpy.float32)
+        y = y.astype(numpy.float32)
+        w = (numpy.random.rand(y.shape[0]) + 1).astype(X.dtype)
+        X_train, _, y_train, __, w_train, ___ = train_test_split(X, y, w)
+        reg = LinearRegression()
+        reg.fit(X_train, y_train, sample_weight=w_train)
+        reg.coef_ = reg.coef_.reshape((1, -1))
+        onx = to_onnx(reg, X_train, target_opset=opset,
+                      black_op={'LinearRegressor'})
+        set_model_props(onx, {'info': 'unit test'})
+        onx_loss = add_loss_output(onx, weight_name='weight', score_name='l1')
+        inits = ['intercept', 'coef']
+        train_session = OrtGradientOptimizer(
+            onx_loss, inits, learning_rate=1e-3)
+        self.assertRaise(lambda: train_session.get_state(), AttributeError)
+        train_session.fit(X_train, y_train, w_train, use_numpy=True)
+        state_tensors = train_session.get_state()
+        self.assertEqual(len(state_tensors), 2)
+        r = repr(train_session)
+        self.assertIn("OrtGradientOptimizer(model_onnx=", r)
+        self.assertIn("learning_rate='invscaling'", r)
+        losses = train_session.train_losses_
+        self.assertGreater(len(losses), 1)
+        self.assertFalse(any(map(numpy.isnan, losses)))
+
+    @unittest.skipIf(TrainingSession is None, reason="not training")
+    def test_ort_gradient_optimizers_use_numpy_w_elastic(self):
+        from onnxcustom.utils.orttraining_helper import add_loss_output
+        from onnxcustom.training.optimizers import OrtGradientOptimizer
+        X, y = make_regression(  # pylint: disable=W0632
+            100, n_features=10, bias=2, random_state=0)
+        X = X.astype(numpy.float32)
+        y = y.astype(numpy.float32)
+        w = (numpy.random.rand(y.shape[0]) + 1).astype(X.dtype)
+        X_train, _, y_train, __, w_train, ___ = train_test_split(X, y, w)
+        reg = LinearRegression()
+        reg.fit(X_train, y_train, sample_weight=w_train)
+        reg.coef_ = reg.coef_.reshape((1, -1))
+        onx = to_onnx(reg, X_train, target_opset=opset,
+                      black_op={'LinearRegressor'})
+        set_model_props(onx, {'info': 'unit test'})
+        onx_loss = add_loss_output(
+            onx, weight_name='weight', score_name='elastic',
+            l1_weight=0.1, l2_weight=0.9)
+        inits = ['intercept', 'coef']
+        train_session = OrtGradientOptimizer(
+            onx_loss, inits, learning_rate=1e-3)
+        self.assertRaise(lambda: train_session.get_state(), AttributeError)
+        train_session.fit(X_train, y_train, w_train, use_numpy=True)
+        state_tensors = train_session.get_state()
+        self.assertEqual(len(state_tensors), 2)
+        r = repr(train_session)
+        self.assertIn("OrtGradientOptimizer(model_onnx=", r)
+        self.assertIn("learning_rate='invscaling'", r)
+        losses = train_session.train_losses_
+        self.assertGreater(len(losses), 1)
+        self.assertFalse(any(map(numpy.isnan, losses)))
+
+    @unittest.skipIf(TrainingSession is None, reason="not training")
+    def test_ort_gradient_optimizers_use_numpy_w_elastic_penalty(self):
+        from onnxcustom.utils.orttraining_helper import add_loss_output
+        from onnxcustom.training.optimizers import OrtGradientOptimizer
+        X, y = make_regression(  # pylint: disable=W0632
+            100, n_features=10, bias=2, random_state=0)
+        X = X.astype(numpy.float32)
+        y = y.astype(numpy.float32)
+        w = (numpy.random.rand(y.shape[0]) + 1).astype(X.dtype)
+        X_train, _, y_train, __, w_train, ___ = train_test_split(X, y, w)
+        reg = LinearRegression()
+        reg.fit(X_train, y_train, sample_weight=w_train)
+        reg.coef_ = reg.coef_.reshape((1, -1))
+        onx = to_onnx(reg, X_train, target_opset=opset,
+                      black_op={'LinearRegressor'})
+        set_model_props(onx, {'info': 'unit test'})
+
+        # no penalty
+        onx_loss = add_loss_output(
+            onx, weight_name='weight', score_name='elastic',
+            l1_weight=0.1, l2_weight=0.9)
+        inits = ['intercept', 'coef']
+        train_session = OrtGradientOptimizer(
+            onx_loss, inits, learning_rate=1e-3)
+        self.assertRaise(lambda: train_session.get_state(), AttributeError)
+        train_session.fit(X_train, y_train, w_train, use_numpy=True)
+        state_tensors = train_session.get_state()
+        self.assertEqual(len(state_tensors), 2)
+        r = repr(train_session)
+        self.assertIn("OrtGradientOptimizer(model_onnx=", r)
+        self.assertIn("learning_rate='invscaling'", r)
+        losses = train_session.train_losses_
+        self.assertGreater(len(losses), 1)
+        self.assertFalse(any(map(numpy.isnan, losses)))
+
+        # L2: coef
+        onx_loss = add_loss_output(
+            onx, weight_name='weight', score_name='elastic',
+            l1_weight=0.1, l2_weight=0.9,
+            penalty={'coef': {'l2': 0.5}})
+        inits = ['intercept', 'coef']
+        train_session = OrtGradientOptimizer(
+            onx_loss, inits, learning_rate=1e-3)
+        self.assertRaise(lambda: train_session.get_state(), AttributeError)
+        train_session.fit(X_train, y_train, w_train, use_numpy=True)
+        state_tensors = train_session.get_state()
+        self.assertEqual(len(state_tensors), 2)
+        r = repr(train_session)
+        self.assertIn("OrtGradientOptimizer(model_onnx=", r)
+        self.assertIn("learning_rate='invscaling'", r)
+        losses = train_session.train_losses_
+        self.assertGreater(len(losses), 1)
+        self.assertFalse(any(map(numpy.isnan, losses)))
+
+        # L2: intercept
+        onx_loss = add_loss_output(
+            onx, weight_name='weight', score_name='elastic',
+            l1_weight=0.1, l2_weight=0.9,
+            penalty={'intercept': {'l2': 0.5}})
+        inits = ['intercept', 'coef']
+        train_session = OrtGradientOptimizer(
+            onx_loss, inits, learning_rate=1e-3)
+        self.assertRaise(lambda: train_session.get_state(), AttributeError)
+        train_session.fit(X_train, y_train, w_train, use_numpy=True)
+        state_tensors = train_session.get_state()
+        self.assertEqual(len(state_tensors), 2)
+        r = repr(train_session)
+        self.assertIn("OrtGradientOptimizer(model_onnx=", r)
+        self.assertIn("learning_rate='invscaling'", r)
+        losses = train_session.train_losses_
+        self.assertGreater(len(losses), 1)
+        self.assertFalse(any(map(numpy.isnan, losses)))
+
+        # L1: coef
+        onx_loss = add_loss_output(
+            onx, weight_name='weight', score_name='elastic',
+            l1_weight=0.1, l2_weight=0.9,
+            penalty={'coef': {'l1': 0.5}})
+        inits = ['intercept', 'coef']
+        train_session = OrtGradientOptimizer(
+            onx_loss, inits, learning_rate=1e-3)
+        self.assertRaise(lambda: train_session.get_state(), AttributeError)
+        train_session.fit(X_train, y_train, w_train, use_numpy=True)
+        state_tensors = train_session.get_state()
+        self.assertEqual(len(state_tensors), 2)
+        r = repr(train_session)
+        self.assertIn("OrtGradientOptimizer(model_onnx=", r)
+        self.assertIn("learning_rate='invscaling'", r)
+        losses = train_session.train_losses_
+        self.assertGreater(len(losses), 1)
+        self.assertFalse(any(map(numpy.isnan, losses)))
+
+        # L1: intercept
+        onx_loss = add_loss_output(
+            onx, weight_name='weight', score_name='elastic',
+            l1_weight=0.1, l2_weight=0.9,
+            penalty={'intercept': {'l1': 0.5}})
+        inits = ['intercept', 'coef']
+        train_session = OrtGradientOptimizer(
+            onx_loss, inits, learning_rate=1e-3)
+        self.assertRaise(lambda: train_session.get_state(), AttributeError)
+        train_session.fit(X_train, y_train, w_train, use_numpy=True)
+        state_tensors = train_session.get_state()
+        self.assertEqual(len(state_tensors), 2)
+        r = repr(train_session)
+        self.assertIn("OrtGradientOptimizer(model_onnx=", r)
+        self.assertIn("learning_rate='invscaling'", r)
+        losses = train_session.train_losses_
+        self.assertGreater(len(losses), 1)
+        self.assertFalse(any(map(numpy.isnan, losses)))
+
+        # both
+        onx_loss = add_loss_output(
+            onx, weight_name='weight', score_name='elastic',
+            l1_weight=0.1, l2_weight=0.9,
+            penalty={'coef': {'l1': 0.5, 'l2': 0.45}, 'intercept': 1.})
+        inits = ['intercept', 'coef']
+        train_session = OrtGradientOptimizer(
+            onx_loss, inits, learning_rate=1e-3)
+        self.assertRaise(lambda: train_session.get_state(), AttributeError)
+        train_session.fit(X_train, y_train, w_train, use_numpy=True)
+        state_tensors = train_session.get_state()
+        self.assertEqual(len(state_tensors), 2)
+        r = repr(train_session)
+        self.assertIn("OrtGradientOptimizer(model_onnx=", r)
+        self.assertIn("learning_rate='invscaling'", r)
+        losses = train_session.train_losses_
+        self.assertGreater(len(losses), 1)
+        self.assertFalse(any(map(numpy.isnan, losses)))
+
+    @unittest.skipIf(TrainingSession is None, reason="not training")
     def test_ort_gradient_optimizers_use_numpy_saved(self):
-        from onnxcustom.utils.onnx_orttraining import add_loss_output
+        from onnxcustom.utils.orttraining_helper import add_loss_output
         from onnxcustom.training.optimizers import OrtGradientOptimizer
         X, y = make_regression(  # pylint: disable=W0632
             100, n_features=10, bias=2, random_state=0)
@@ -121,7 +315,7 @@ class TestOptimizers(ExtTestCase):
 
     @unittest.skipIf(TrainingSession is None, reason="not training")
     def test_ort_gradient_optimizers_use_numpy_saved_w(self):
-        from onnxcustom.utils.onnx_orttraining import add_loss_output
+        from onnxcustom.utils.orttraining_helper import add_loss_output
         from onnxcustom.training.optimizers import OrtGradientOptimizer
         X, y = make_regression(  # pylint: disable=W0632
             100, n_features=10, bias=2, random_state=0)
@@ -156,7 +350,7 @@ class TestOptimizers(ExtTestCase):
 
     @unittest.skipIf(TrainingSession is None, reason="not training")
     def test_ort_gradient_optimizers_use_numpy_nan(self):
-        from onnxcustom.utils.onnx_orttraining import add_loss_output
+        from onnxcustom.utils.orttraining_helper import add_loss_output
         from onnxcustom.training.optimizers import OrtGradientOptimizer
         X, y = make_regression(  # pylint: disable=W0632
             100, n_features=10, bias=2, random_state=0)
@@ -179,7 +373,7 @@ class TestOptimizers(ExtTestCase):
 
     @unittest.skipIf(TrainingSession is None, reason="not training")
     def test_ort_gradient_optimizers_use_numpy_nan_w(self):
-        from onnxcustom.utils.onnx_orttraining import add_loss_output
+        from onnxcustom.utils.orttraining_helper import add_loss_output
         from onnxcustom.training.optimizers import OrtGradientOptimizer
         X, y = make_regression(  # pylint: disable=W0632
             100, n_features=10, bias=2, random_state=0)
@@ -204,7 +398,7 @@ class TestOptimizers(ExtTestCase):
 
     @unittest.skipIf(TrainingSession is None, reason="not training")
     def test_ort_gradient_optimizers_use_numpy_pickle(self):
-        from onnxcustom.utils.onnx_orttraining import add_loss_output
+        from onnxcustom.utils.orttraining_helper import add_loss_output
         from onnxcustom.training.optimizers import OrtGradientOptimizer
         X, y = make_regression(  # pylint: disable=W0632
             100, n_features=10, bias=2, random_state=0)
@@ -247,7 +441,7 @@ class TestOptimizers(ExtTestCase):
 
     @unittest.skipIf(TrainingSession is None, reason="not training")
     def test_ort_gradient_optimizers_use_numpy_pickle_w(self):
-        from onnxcustom.utils.onnx_orttraining import add_loss_output
+        from onnxcustom.utils.orttraining_helper import add_loss_output
         from onnxcustom.training.optimizers import OrtGradientOptimizer
         X, y = make_regression(  # pylint: disable=W0632
             100, n_features=10, bias=2, random_state=0)
@@ -291,7 +485,7 @@ class TestOptimizers(ExtTestCase):
 
     @unittest.skipIf(TrainingSession is None, reason="not training")
     def test_ort_gradient_optimizers_use_ort(self):
-        from onnxcustom.utils.onnx_orttraining import add_loss_output
+        from onnxcustom.utils.orttraining_helper import add_loss_output
         from onnxcustom.training.optimizers import OrtGradientOptimizer
         X, y = make_regression(  # pylint: disable=W0632
             100, n_features=10, bias=2, random_state=0)
@@ -320,7 +514,7 @@ class TestOptimizers(ExtTestCase):
 
     @unittest.skipIf(TrainingSession is None, reason="not training")
     def test_ort_gradient_optimizers_use_ort_w(self):
-        from onnxcustom.utils.onnx_orttraining import add_loss_output
+        from onnxcustom.utils.orttraining_helper import add_loss_output
         from onnxcustom.training.optimizers import OrtGradientOptimizer
         X, y = make_regression(  # pylint: disable=W0632
             100, n_features=10, bias=2, random_state=0)
@@ -350,7 +544,7 @@ class TestOptimizers(ExtTestCase):
 
     @unittest.skipIf(TrainingSession is None, reason="not training")
     def test_ort_gradient_optimizers_optimal_use_numpy(self):
-        from onnxcustom.utils.onnx_orttraining import add_loss_output
+        from onnxcustom.utils.orttraining_helper import add_loss_output
         from onnxcustom.training.optimizers import OrtGradientOptimizer
         X, y = make_regression(  # pylint: disable=W0632
             100, n_features=10, bias=2, random_state=0)
@@ -380,7 +574,7 @@ class TestOptimizers(ExtTestCase):
 
     @unittest.skipIf(TrainingSession is None, reason="not training")
     def test_ort_gradient_optimizers_optimal_use_numpy_w(self):
-        from onnxcustom.utils.onnx_orttraining import add_loss_output
+        from onnxcustom.utils.orttraining_helper import add_loss_output
         from onnxcustom.training.optimizers import OrtGradientOptimizer
         X, y = make_regression(  # pylint: disable=W0632
             100, n_features=10, bias=2, random_state=0)
@@ -411,7 +605,7 @@ class TestOptimizers(ExtTestCase):
 
     @unittest.skipIf(TrainingSession is None, reason="not training")
     def test_ort_gradient_optimizers_optimal_use_ort(self):
-        from onnxcustom.utils.onnx_orttraining import add_loss_output
+        from onnxcustom.utils.orttraining_helper import add_loss_output
         from onnxcustom.training.optimizers import OrtGradientOptimizer
         X, y = make_regression(  # pylint: disable=W0632
             100, n_features=10, bias=2, random_state=0)
@@ -441,7 +635,7 @@ class TestOptimizers(ExtTestCase):
 
     @unittest.skipIf(TrainingSession is None, reason="not training")
     def test_ort_gradient_optimizers_optimal_use_ort_w(self):
-        from onnxcustom.utils.onnx_orttraining import add_loss_output
+        from onnxcustom.utils.orttraining_helper import add_loss_output
         from onnxcustom.training.optimizers import OrtGradientOptimizer
         X, y = make_regression(  # pylint: disable=W0632
             100, n_features=10, bias=2, random_state=0)
@@ -472,7 +666,7 @@ class TestOptimizers(ExtTestCase):
 
     @unittest.skipIf(TrainingSession is None, reason="not training")
     def test_ort_gradient_optimizers_evaluation_use_numpy(self):
-        from onnxcustom.utils.onnx_orttraining import add_loss_output
+        from onnxcustom.utils.orttraining_helper import add_loss_output
         from onnxcustom.training.optimizers import OrtGradientOptimizer
         X, y = make_regression(  # pylint: disable=W0632
             100, n_features=10, bias=2, random_state=0)
@@ -504,7 +698,7 @@ class TestOptimizers(ExtTestCase):
 
     @unittest.skipIf(TrainingSession is None, reason="not training")
     def test_ort_gradient_optimizers_evaluation_use_numpy_w(self):
-        from onnxcustom.utils.onnx_orttraining import add_loss_output
+        from onnxcustom.utils.orttraining_helper import add_loss_output
         from onnxcustom.training.optimizers import OrtGradientOptimizer
         X, y = make_regression(  # pylint: disable=W0632
             100, n_features=10, bias=2, random_state=0)
@@ -538,7 +732,7 @@ class TestOptimizers(ExtTestCase):
 
     @unittest.skipIf(TrainingSession is None, reason="not training")
     def test_ort_gradient_optimizers_evaluation_use_ort(self):
-        from onnxcustom.utils.onnx_orttraining import add_loss_output
+        from onnxcustom.utils.orttraining_helper import add_loss_output
         from onnxcustom.training.optimizers import OrtGradientOptimizer
         X, y = make_regression(  # pylint: disable=W0632
             100, n_features=10, bias=2, random_state=0)
@@ -570,7 +764,7 @@ class TestOptimizers(ExtTestCase):
 
     @unittest.skipIf(TrainingSession is None, reason="not training")
     def test_ort_gradient_optimizers_evaluation_use_ort_w(self):
-        from onnxcustom.utils.onnx_orttraining import add_loss_output
+        from onnxcustom.utils.orttraining_helper import add_loss_output
         from onnxcustom.training.optimizers import OrtGradientOptimizer
         X, y = make_regression(  # pylint: disable=W0632
             100, n_features=10, bias=2, random_state=0)
@@ -605,7 +799,7 @@ class TestOptimizers(ExtTestCase):
 
     @unittest.skipIf(TrainingSession is None, reason="not training")
     def test_ort_gradient_optimizers_use_numpy_nesterov(self):
-        from onnxcustom.utils.onnx_orttraining import add_loss_output
+        from onnxcustom.utils.orttraining_helper import add_loss_output
         from onnxcustom.training.optimizers import OrtGradientOptimizer
         X, y = make_regression(  # pylint: disable=W0632
             100, n_features=10, bias=2, random_state=0)

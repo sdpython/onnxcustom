@@ -323,6 +323,8 @@ class OrtGradientOptimizer(BaseEstimator):
             name: {} for name in weights_to_train}
 
         session_options = SessionOptions()
+        session_options.log_severity_level = 4
+        session_options.log_verbosity_level = 4
         # session_options.use_deterministic_compute = True
 
         providers = device_to_providers(self.device)

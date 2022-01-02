@@ -3,20 +3,16 @@
 @file
 @brief Helper for :epkg:`onnxruntime-training`.
 """
-import inspect
-from io import BytesIO
 import numpy
-import onnx
 from onnxruntime import SessionOptions, InferenceSession
 from onnxruntime.capi._pybind_state import (  # pylint: disable=E0611
     OrtValue as C_OrtValue)
 from ..utils.onnx_function import function_onnx_graph
-from ..utils.onnxruntime_helper import (
-    device_to_providers, ort_device_to_string)
-from .excs import ProviderError
+from ..utils.onnxruntime_helper import device_to_providers
+from .base_onnx_function import BaseLearningOnnx
 
 
-class BaseLearningRate:
+class BaseLearningRate(BaseLearningOnnx):
     """
     Class handling the learning rate update after every
     iteration of a gradient. Two methods need to be overwritten
@@ -25,7 +21,7 @@ class BaseLearningRate:
     """
 
     def __init__(self):
-        pass
+        BaseLearningOnnx.__init__(self)
 
     def init_learning_rate(self):
         """
@@ -50,6 +46,9 @@ class BaseLearningRate:
         raise NotImplementedError(
             "This method must be overwritten.")
 
+    def __repr_extended__(self):
+        return ', value=%r' % self.value
+
     @property
     def needs_grad(self):
         """
@@ -58,44 +57,6 @@ class BaseLearningRate:
         """
         raise NotImplementedError(
             "This method must be overwritten.")
-
-    def __getstate__(self):
-        """
-        Overwrites getstate to get rid of InferenceSession.
-        """
-        atts = [k for k in self.__dict__ if not k.endswith('_')]
-        state = {k: getattr(self, k) for k in atts}
-        onx = [k for k in self.__dict__
-               if k.endswith('_onnx_')]
-        for o in onx:
-            state[o] = getattr(self, o).SerializeToString()
-        onx = [k for k in self.__dict__
-               if k.endswith('_sess_')]
-        for o in onx:
-            state[o] = getattr(self, o).get_providers()
-        return state
-
-    def __setstate__(self, state):
-        """
-        Overwrites getstate to get rid of InferenceSession.
-        """
-        for k, v in state.items():
-            if not k.endswith('_onnx_') and not k.endswith('_sess_'):
-                setattr(self, k, v)
-
-        so = SessionOptions()
-        so.log_severity_level = 4
-        for k, v in state.items():
-            if k.endswith('_onnx_'):
-                setattr(self, k, onnx.load(BytesIO(v)))
-                k2 = k.replace("onnx", "sess")
-                prov = state[k2]
-                setattr(self, k2, InferenceSession(
-                    getattr(self, k).SerializeToString(), so,
-                    providers=prov))
-                bind = k2 + "bind_"
-                setattr(self, bind, getattr(self, k2).io_binding()._iobinding)
-        return self
 
     def update_weights(self, device, statei, gradienti, batch_size,
                        velocity=None):
@@ -122,89 +83,6 @@ class BaseLearningRate:
         for i in range(n):
             yield self.value
             self.update_learning_rate(i + 1)
-
-    def __repr__(self):
-        """
-        Usual
-        """
-        param = self._get_param_names()
-        ps = []
-        for k, v in param:
-            if k not in self.__dict__:
-                continue  # pragma: no cover
-            ov = getattr(self, k)
-            if v is not inspect._empty or ov != v:
-                ro = repr(ov)
-                ps.append("%s=%s" % (k, ro))
-        return "%s(%s), value=%r" % (
-            self.__class__.__name__, ", ".join(ps), self.value)
-
-    def build_onnx_function(self, opset, device):
-        """
-        This class updates the weights.
-        It assumes it can do operator on *OrtValue*.
-        This can be done through ONNX graph.
-        This function creates :epkg:`InferenceSession`
-        which do that.
-
-        :param opset: opset to use
-        :param device: :epkg:`C_OrtDevice`
-        """
-        raise NotImplementedError(
-            "This method must be overwritten.")
-
-    def _bind_input_ortvalue(self, name, bind, c_ortvalue, device):
-        """
-        Binds :epkg:`C_OrtValue` to the structure used by
-        :epkg:`InferenceSession` to run inference.
-
-        :param name: str
-        :param bind: python structure
-        :param c_ortvalue: C structure for OrtValue (:epkg:`C_OrtValue`),
-            it can be also a numpy array
-        :param device: device
-        """
-        if isinstance(c_ortvalue, C_OrtValue):
-            bind.bind_ortvalue_input(name, c_ortvalue)
-        elif isinstance(c_ortvalue, numpy.ndarray):
-            if self.device_type() != device.cpu():  # pylint: disable=E1101
-                raise ProviderError(
-                    "device=%s is not CPU." % ort_device_to_string(
-                        device))
-            bind.bind_input(
-                name, device, c_ortvalue.dtype, c_ortvalue.shape,
-                c_ortvalue.__array_interface__['data'][0])
-        else:
-            raise TypeError(  # pragma: no cover
-                "Unable to bind type %r for name %r." % (
-                    type(c_ortvalue), name))
-
-    def _bind_output_ortvalue(self, name, bind, c_ortvalue):
-        """
-        Binds :epkg:`C_OrtValue` to the structure used by
-        :epkg:`InferenceSession` to run inference.
-
-        :param name: str
-        :param bind: python structure
-        :param c_ortvalue: C structure for OrtValue (:epkg:`C_OrtValue`)
-
-        This method can be used for inplace computation.
-        """
-        if isinstance(c_ortvalue, C_OrtValue):
-            bind.bind_ortvalue_output(name, c_ortvalue)
-        else:
-            raise TypeError(  # pragma: no cover
-                "Unable to bind type %r for name %r." % (
-                    type(c_ortvalue), name))
-
-    @classmethod
-    def _get_param_names(cls):
-        init = getattr(cls.__init__, "deprecated_original", cls.__init__)
-        init_signature = inspect.signature(init)
-        parameters = [
-            p for p in init_signature.parameters.values()
-            if p.name != "self" and p.kind != p.VAR_KEYWORD]
-        return [(p.name, p.default) for p in parameters]
 
     @staticmethod
     def select(class_name, **kwargs):
@@ -464,93 +342,3 @@ class LearningRateSGDNesterov(LearningRateSGD):
         self._bind_output_ortvalue('Z', self.axpyw_sess_bind_, velocity)
         self.axpyw_sess_._sess.run_with_iobinding(self.axpyw_sess_bind_, None)
         return self.axpyw_sess_bind_.get_outputs()  # loss, velocity
-
-
-"""
-if self.solver == "adam":
-    self._optimizer = AdamOptimizer(
-        params,
-        self.learning_rate_init,
-        self.beta_1,
-        self.beta_2,
-        self.epsilon,
-    )
-
-class AdamOptimizer(BaseOptimizer):
-    '''
-    Stochastic gradient descent optimizer with Adam
-    Note: All default values are from the original Adam paper
-    Parameters
-    ----------
-    params : list, length = len(coefs_) + len(intercepts_)
-        The concatenated list containing coefs_ and intercepts_ in MLP model.
-        Used for initializing velocities and updating params
-    learning_rate_init : float, default=0.001
-        The initial learning rate used. It controls the step-size in updating
-        the weights
-    beta_1 : float, default=0.9
-        Exponential decay rate for estimates of first moment vector, should be
-        in [0, 1)
-    beta_2 : float, default=0.999
-        Exponential decay rate for estimates of second moment vector, should be
-        in [0, 1)
-    epsilon : float, default=1e-8
-        Value for numerical stability
-    Attributes
-    ----------
-    learning_rate : float
-        The current learning rate
-    t : int
-        Timestep
-    ms : list, length = len(params)
-        First moment vectors
-    vs : list, length = len(params)
-        Second moment vectors
-    References
-    ----------
-    Kingma, Diederik, and Jimmy Ba.
-    "Adam: A method for stochastic optimization."
-    arXiv preprint arXiv:1412.6980 (2014).
-    '''
-
-    def __init__(
-        self, params, learning_rate_init=0.001,
-        beta_1=0.9, beta_2=0.999, epsilon=1e-8
-    ):
-        super().__init__(learning_rate_init)
-
-        self.beta_1 = beta_1
-        self.beta_2 = beta_2
-        self.epsilon = epsilon
-        self.t = 0
-        self.ms = [np.zeros_like(param) for param in params]
-        self.vs = [np.zeros_like(param) for param in params]
-
-    def _get_updates(self, grads):
-        '''Get the values used to update params with given gradients
-        Parameters
-        ----------
-        grads : list, length = len(coefs_) + len(intercepts_)
-            Containing gradients with respect to coefs_ and intercepts_ in MLP
-            model. So length should be aligned with params
-        Returns
-        -------
-        updates : list, length = len(grads)
-            The values to add to params
-        '''
-        self.t += 1
-        self.ms = [
-            self.beta_1 * m + (1 - self.beta_1) * grad
-            for m, grad in zip(self.ms, grads)]
-        self.vs = [
-            self.beta_2 * v + (1 - self.beta_2) * (grad ** 2)
-            for v, grad in zip(self.vs, grads)]
-        self.learning_rate = (
-            self.learning_rate_init *
-            np.sqrt(1 - self.beta_2 ** self.t) /
-            (1 - self.beta_1 ** self.t))
-        updates = [
-            -self.learning_rate * m / (np.sqrt(v) + self.epsilon)
-            for m, v in zip(self.ms, self.vs)]
-        return updates
-"""
