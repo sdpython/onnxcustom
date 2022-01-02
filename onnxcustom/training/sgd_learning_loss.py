@@ -70,7 +70,8 @@ class BaseLearningLoss(BaseLearningOnnx):
         """
         if isinstance(class_name, BaseLearningLoss):
             return class_name
-        cls = {SquareLearningLoss: ['square_error']}
+        cls = {SquareLearningLoss: ['square_error'],
+               AbsoluteLearningLoss: ['absolute_error']}
         for cl, aliases in cls.items():
             if class_name == cl.__class__.__name__ or class_name in aliases:
                 return cl(**kwargs)
@@ -95,6 +96,30 @@ class SquareLearningLoss(BaseLearningLoss):
         # loss_grad
         self.loss_grad_onnx_ = function_onnx_graph(
             "grad_loss_square_error", target_opset=opset,
+            weight_name=weight_name)
+        self.loss_grad_sess_ = InferenceSession(
+            self.loss_grad_onnx_.SerializeToString(), so,
+            providers=device_to_providers(device))
+        self.loss_grad_sess_bind_ = (
+            self.loss_grad_sess_.io_binding()._iobinding)
+
+
+class AbsoluteLearningLoss(BaseLearningLoss):
+    """
+    Implements a square loss :math:`|Y - Z|`
+    where *Y* is the output and *Z* the expected output.
+    """
+
+    def __init__(self):
+        BaseLearningLoss.__init__(self)
+
+    def build_onnx_function(self, opset, device, weight_name):
+        so = SessionOptions()
+        so.log_severity_level = 4
+
+        # loss_grad
+        self.loss_grad_onnx_ = function_onnx_graph(
+            "grad_loss_absolute_error", target_opset=opset,
             weight_name=weight_name)
         self.loss_grad_sess_ = InferenceSession(
             self.loss_grad_onnx_.SerializeToString(), so,

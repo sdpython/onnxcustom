@@ -379,6 +379,60 @@ def _onnx_grad_loss_square_error(target_opset=None, dtype=numpy.float32,
     return onx
 
 
+def _onnx_grad_loss_absolute_error(target_opset=None, dtype=numpy.float32,
+                                   weight_name=None):
+    """
+    Returns the ONNX graph for function
+    :math:`Y = f(X1, X2) = \\lVert X1 - X2 \\rVert` or
+    :math:`Y = f(X1, X2) = \\lVert X1 - X2 \\rVert w` if
+    *weight_name* is not None and its gradient.
+
+    .. gdot::
+        :script: DOT-SECTION
+
+        from mlprodict.onnxrt import OnnxInference
+        from onnxcustom.utils.onnx_function import function_onnx_graph
+
+        model_onnx = function_onnx_graph('absolute_error')
+        oinf = OnnxInference(model_onnx, inplace=False)
+
+        print("DOT-SECTION", oinf.to_dot())
+    """
+    from skl2onnx.algebra.onnx_ops import (
+        OnnxSub, OnnxMul,
+        OnnxReduceSum, OnnxReshape, OnnxSign, OnnxAbs)
+    diff = OnnxSub('X1', 'X2', op_version=target_opset)
+    abs_diff = OnnxAbs(diff, op_version=target_opset)
+    if weight_name is None:
+        res = OnnxReduceSum(abs_diff, op_version=target_opset,
+                            keepdims=0, output_names=['Y'])
+        res2 = OnnxSign(diff, op_version=target_opset,
+                        output_names=['Z'])
+    else:
+        resh = OnnxReshape(weight_name,
+                           numpy.array([-1, 1], dtype=numpy.int64),
+                           op_version=target_opset)
+        mul = OnnxMul(abs_diff, resh, op_version=target_opset)
+        res = OnnxReduceSum(mul, op_version=target_opset,
+                            keepdims=0, output_names=['Y'])
+        res2 = OnnxMul(
+            OnnxSign(diff, op_version=target_opset),
+            resh, op_version=target_opset, output_names=['Z'])
+
+    var_type = dtype_to_var_type(dtype)
+    varsx = [('X1', var_type([None, None])),
+             ('X2', var_type([None, None]))]
+    if weight_name is not None:
+        varsx.append((weight_name, var_type([None])))
+    onx = res.to_onnx(
+        varsx, outputs=[('Y', var_type()), ('Z', var_type())],
+        target_opset=target_opset, other_outputs=[res2])
+    if weight_name is not None:
+        onx = add_initializer(
+            onx, weight_name, numpy.array([1], dtype=dtype))
+    return onx
+
+
 def _onnx_linear_regression(target_opset=None, dtype=numpy.float32):
     """
     Returns the ONNX graph for function

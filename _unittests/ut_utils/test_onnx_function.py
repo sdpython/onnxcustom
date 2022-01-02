@@ -159,6 +159,19 @@ class TestOnnxFunction(ExtTestCase):
                                (x1 - x2) * (-2) * w.reshape((-1, 1))),
             weight_name='weight')
 
+    def test_loss_grad_onnx_absolute_error(self):
+        self.common_check_2(
+            "grad_loss_absolute_error",
+            lambda x1, x2: (numpy.abs(x1 - x2).sum(),
+                            numpy.sign(x1 - x2)))
+
+    def test_loss_grad_onnx_absolute_error_w(self):
+        self.common_check_2(
+            "grad_loss_absolute_error",
+            lambda x1, x2, w: ((numpy.abs(x1 - x2) * w.reshape((-1, 1))).sum(),
+                               numpy.sign(x1 - x2) * w.reshape((-1, 1))),
+            weight_name='weight')
+
     def common_check_3(self, name, fct):
         onx = function_onnx_graph(
             name, target_opset=get_max_opset(),
