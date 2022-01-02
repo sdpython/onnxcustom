@@ -81,7 +81,7 @@ LearningRate
 
 .. autosignature:: onnxcustom.training.sgd_learning_rate.LearningRateSGDNesterov
     :members:
-    
+
 Loss function
 +++++++++++++
 
@@ -94,4 +94,3 @@ OrtGradientForwardBackward
 
 .. autosignature:: onnxcustom.training.optimizers_partial.OrtGradientForwardBackwardOptimizer
     :members:
-

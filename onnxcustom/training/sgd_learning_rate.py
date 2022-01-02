@@ -210,7 +210,7 @@ class LearningRateSGD(BaseLearningRate):
     def update_weights(self, device, statei, gradienti, batch_size,
                        velocity=None):
         if velocity is not None:
-            raise RuntimeError(
+            raise RuntimeError(  # pragma: no cover
                 "Velocity must be None for this way of updating weights.")
         self._bind_input_ortvalue(
             "X1", self.axpy_sess_bind_, gradienti, device)
@@ -320,7 +320,7 @@ class LearningRateSGDNesterov(LearningRateSGD):
     def update_weights(self, device, statei, gradienti, batch_size,
                        velocity=None):
         if velocity is None:
-            raise RuntimeError(
+            raise RuntimeError(  # pragma: no cover
                 "Velocity must not be None for this way of updating weights.")
         self._bind_input_ortvalue(
             "X1", self.axpyw_sess_bind_, gradienti, device)
