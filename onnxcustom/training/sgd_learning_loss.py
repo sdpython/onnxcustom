@@ -67,6 +67,8 @@ class BaseLearningLoss(BaseLearningOnnx):
 
         Possible values for *class_name*:
         * `'square_error'`: see @see cl SquareLearningLoss
+        * `'absolute_error'`: see @see cl AbsoluteLearningLoss
+        * `'elastic_error'`: see @see cl ElasticLearningLoss
         """
         if isinstance(class_name, BaseLearningLoss):
             return class_name

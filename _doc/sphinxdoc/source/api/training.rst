@@ -73,6 +73,15 @@ of them to fulfil that requirement.
 
 .. autosignature:: onnxcustom.utils.onnx_helper.onnx_rename_weights
 
+LearningPenalty
++++++++++++++++
+
+.. autosignature:: onnxcustom.training.sgd_learning_penalty.NoLearningPenalty
+    :members:
+
+.. autosignature:: onnxcustom.training.sgd_learning_penalty.ElasticLearningPenalty
+    :members:
+
 LearningRate
 ++++++++++++
 
@@ -86,10 +95,13 @@ LearningLoss
 ++++++++++++
 
 .. autosignature:: onnxcustom.training.sgd_learning_loss.AbsoluteLearningLoss
+    :members:
 
 .. autosignature:: onnxcustom.training.sgd_learning_loss.ElasticLearningLoss
+    :members:
 
 .. autosignature:: onnxcustom.training.sgd_learning_loss.SquareLearningLoss
+    :members:
 
 Loss function
 +++++++++++++

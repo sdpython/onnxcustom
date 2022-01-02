@@ -9,15 +9,16 @@ from onnxruntime.capi._pybind_state import (  # pylint: disable=E0611
     OrtValue as C_OrtValue)
 from ..utils.onnx_helper import get_onnx_opset, proto_type_to_dtype
 from ..utils.onnxruntime_helper import (
-    device_to_providers, numpy_to_ort_value, ort_device_to_string)
+    device_to_providers, numpy_to_ort_value)
 from ..utils.onnx_function import function_onnx_graph
 from ..utils.print_helper import str_ortvalue
 from ..utils.orttraining_helper import get_train_initializer
 from .ortgradient import OrtGradientForwardBackward
 from .base_estimator import BaseEstimator
 from .sgd_learning_loss import BaseLearningLoss
+from .sgd_learning_penalty import BaseLearningPenalty
 from .data_loader import OrtDataLoader
-from .excs import ConvergenceError, ProviderError
+from .excs import ConvergenceError
 
 
 class OrtGradientForwardBackwardOptimizer(BaseEstimator):
@@ -49,6 +50,8 @@ class OrtGradientForwardBackwardOptimizer(BaseEstimator):
         as it slows down the training)
     :param weight_name: if not None, the class assumes it is trained
         with training weight
+    :param learning_penalty: weight penalty, None, or instance of
+        @see cl BaseLearningPenalty
 
     *learning_rate* can be any instance of @see cl BaseLearningRate or
     a nick name in the following list as specified in
@@ -67,7 +70,8 @@ class OrtGradientForwardBackwardOptimizer(BaseEstimator):
                  batch_size=10, learning_rate='SGD',
                  device='cpu', warm_start=False, verbose=0,
                  validation_every=0.1, learning_loss="square_error",
-                 enable_logging=False, weight_name=None):
+                 enable_logging=False, weight_name=None,
+                 learning_penalty=None):
         if weights_to_train is None:
             weights_to_train = list(get_train_initializer(model_onnx))
         BaseEstimator.__init__(self, learning_rate, device)
@@ -80,6 +84,7 @@ class OrtGradientForwardBackwardOptimizer(BaseEstimator):
         self.max_iter = max_iter
         self.warm_start = warm_start
         self.learning_loss = BaseLearningLoss.select(learning_loss)
+        self.learning_penalty = BaseLearningPenalty.select(learning_penalty)
         self.enable_logging = enable_logging
         self.weight_name = weight_name
         if validation_every < 1:
@@ -214,6 +219,10 @@ class OrtGradientForwardBackwardOptimizer(BaseEstimator):
 
         # weight update
         self.learning_rate.build_onnx_function(opset, self.device)
+
+        # penalty
+        n = len(self.weights_to_train)
+        self.learning_penalty.build_onnx_function(opset, self.device, n)
 
         # zero
         self.zero_onnx_ = function_onnx_graph("zero")
@@ -358,49 +367,6 @@ class OrtGradientForwardBackwardOptimizer(BaseEstimator):
                 "end loss=%r", self.train_losses_[-1])
         return self
 
-    def _bind_input_ortvalue(self, name, bind, c_ortvalue):
-        """
-        Binds :epkg:`C_OrtValue` to the structure used by
-        :epkg:`InferenceSession` to run inference.
-
-        :param name: str
-        :param bind: python structure
-        :param c_ortvalue: C structure for OrtValue (:epkg:`C_OrtValue`),
-            it can be also a numpy array
-        """
-        if isinstance(c_ortvalue, C_OrtValue):
-            bind.bind_ortvalue_input(name, c_ortvalue)
-        elif isinstance(c_ortvalue, numpy.ndarray):
-            if self.device_type() != self.device.cpu():  # pylint: disable=E1101
-                raise ProviderError(  # pragma: no cover
-                    "device=%s is not CPU." % ort_device_to_string(
-                        self.device))
-            bind.bind_input(
-                name, self.device, c_ortvalue.dtype, c_ortvalue.shape,
-                c_ortvalue.__array_interface__['data'][0])
-        else:
-            raise TypeError(  # pragma: no cover
-                "Unable to bind type %r for name %r." % (
-                    type(c_ortvalue), name))
-
-    def _bind_output_ortvalue(self, name, bind, c_ortvalue):
-        """
-        Binds :epkg:`C_OrtValue` to the structure used by
-        :epkg:`InferenceSession` to run inference.
-
-        :param name: str
-        :param bind: python structure
-        :param c_ortvalue: C structure for OrtValue (:epkg:`C_OrtValue`)
-
-        This method can be used for inplace computation.
-        """
-        if isinstance(c_ortvalue, C_OrtValue):
-            bind.bind_ortvalue_output(name, c_ortvalue)
-        else:
-            raise TypeError(  # pragma: no cover
-                "Unable to bind type %r for name %r." % (
-                    type(c_ortvalue), name))
-
     def _iteration(self, data_loader, states, n_weights):
         actual_losses = []
         bs = data_loader.batch_size
@@ -433,6 +399,9 @@ class OrtGradientForwardBackwardOptimizer(BaseEstimator):
             prediction = self.train_function_.forward(states[0], training=True)
             loss, loss_gradient = self.learning_loss.loss_gradient(
                 self.device, orty, prediction[0], weight=ortw)
+            n = len(state) - n_weights
+            loss = self.learning_penalty.penalty_loss(
+                self.device, loss, *state[n:])
             cpu_loss = loss.numpy()
             if numpy.isinf(cpu_loss) or numpy.isnan(cpu_loss):
                 raise ConvergenceError(
@@ -453,6 +422,7 @@ class OrtGradientForwardBackwardOptimizer(BaseEstimator):
 
             n = len(state) - n_weights
             for i in range(n, len(state)):
+                self.learning_penalty.update_weights(self.device, state[i])
                 self.learning_rate.update_weights(
                     self.device, state[i], gradient[i], bs,
                     None if grad is None else grad[i])

@@ -302,6 +302,88 @@ class TestOnnxFunction(ExtTestCase):
                 (x1 * alpha + x2 + beta * (x1 * alpha + beta * g),
                  x1 * alpha + beta * g))
 
+    def common_check_1(self, name, fct, weight_name=None, **kwargs):
+        onx = function_onnx_graph(
+            name, target_opset=get_max_opset(),
+            dtype=numpy.float32, weight_name=weight_name,
+            **kwargs)
+        x = numpy.random.randn(10, 1).astype(numpy.float32)
+        exp_loss, exp_grad = fct(x)
+
+        oinf = OnnxInference(onx)
+        got = oinf.run({'X': x})
+        self.assertEqualArray(exp_loss, got['Y'], decimal=5)
+        self.assertEqualArray(exp_grad, got['Z'], decimal=5)
+
+        providers = device_to_providers('cpu')
+        so = SessionOptions()
+        so.log_severity_level = 4
+        sess = InferenceSession(
+            onx.SerializeToString(), so, providers=providers)
+        got = sess.run(None, {'X': x})
+        self.assertEqualArray(exp_loss, got[0], decimal=5)
+        self.assertEqualArray(exp_grad, got[1], decimal=5)
+
+    def test_penalty_grad_onnx_elastic_error(self):
+        self.common_check_1(
+            "grad_penalty_elastic_error",
+            lambda x: (
+                numpy.abs(x).sum() * 0.1 + ((x) ** 2).sum() * 0.9,
+                numpy.sign(x) * 0.1 + 2 * 0.9 * x
+            ),
+            l1_weight=0.1, l2_weight=0.9)
+
+    def test_penalty_3(self):
+        loss = numpy.random.randn(1, 1).astype(numpy.float32)
+        w1 = numpy.random.randn(10, 1).astype(numpy.float32)
+        w2 = numpy.random.randn(5, 1).astype(numpy.float32)
+
+        def fct(x):
+            return numpy.abs(x).sum() * 0.1 + ((x) ** 2).sum() * 0.9
+
+        exp_loss = loss + fct(w1) + fct(w2)
+
+        onx = function_onnx_graph(
+            'n_penalty_elastic_error', target_opset=get_max_opset(),
+            dtype=numpy.float32, n_tensors=2,
+            l1_weight=0.1, l2_weight=0.9)
+
+        oinf = OnnxInference(onx)
+        got = oinf.run({'loss': loss, 'W0': w1, 'W1': w2})
+        self.assertEqualArray(exp_loss, got['Y'], decimal=5)
+
+        providers = device_to_providers('cpu')
+        so = SessionOptions()
+        so.log_severity_level = 4
+        sess = InferenceSession(
+            onx.SerializeToString(), so, providers=providers)
+        got = sess.run(None, {'loss': loss, 'W0': w1, 'W1': w2})
+        self.assertEqualArray(exp_loss, got[0], decimal=5)
+
+    def test_penalty_update(self):
+        x = numpy.random.randn(10, 1).astype(numpy.float32)
+
+        def fct(x):
+            return numpy.sign(x) * 0.1 + (x * 0.9 * 2)
+
+        exp_loss = x - fct(x)
+
+        onx = function_onnx_graph(
+            'update_penalty_elastic_error', target_opset=get_max_opset(),
+            dtype=numpy.float32, l1=0.1, l2=0.9)
+
+        oinf = OnnxInference(onx)
+        got = oinf.run({'X': x})
+        self.assertEqualArray(exp_loss, got['Y'], decimal=5)
+
+        providers = device_to_providers('cpu')
+        so = SessionOptions()
+        so.log_severity_level = 4
+        sess = InferenceSession(
+            onx.SerializeToString(), so, providers=providers)
+        got = sess.run(None, {'X': x})
+        self.assertEqualArray(exp_loss, got[0], decimal=5)
+
 
 if __name__ == "__main__":
     unittest.main()
