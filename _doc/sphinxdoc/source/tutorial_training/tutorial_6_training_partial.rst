@@ -1,6 +1,6 @@
 
-Partial Training
-================
+Partial Training with OrtGradientForwardBackwardOptimizer
+=========================================================
 
 Section :ref:`l-full-training` introduces a class able a while
 ONNX graph. :epkg:`onnxruntime-training` handles the computation
@@ -13,7 +13,12 @@ ONNX, and be trained by a gradient descent implemented in python.
 Partial training is another way to train an ONNX model. It can be trained
 as a standalone ONNX graph or be integrated in a :epkg:`torch` model or any
 framework implementing *forward* and *backward* mechanism.
-Next example introduced how this is done with ONNX.
+It leverages class :epkg:`TrainingAgent` from :epkg:`onnxruntime-training`.
+This one assumes the loss function is not part of the graph to train
+but the gradient of the loss against the graph output is provided.
+It does not take care to the weight. This part must be separatly
+implemented as well. Next examples introduce how this is done
+with ONNX and :epkg:`onnxruntime-training`.
 
 .. toctree::
     :maxdepth: 1

@@ -1,8 +1,8 @@
 
 .. _l-full-training:
 
-Full Training
-=============
+Full Training with OrtGradientOptimizer
+=======================================
 
 :epkg:`onnxruntime` was initially designed to speed up inference
 and deployment but it can also be used to train a model.
@@ -18,6 +18,9 @@ The two next examples explains in details how the training
 with :epkg:`onnxruntime-training`. They dig into class
 :class:`OrtGradientOptimizer
 <onnxcustom.training.optimizers.OrtGradientOptimizer>`.
+It leverages class :epkg:`TrainingSession` from :epkg:`onnxruntime-training`.
+This one assumes the loss function is part of the graph to train.
+It takes care to the weight updating as well.
 
 The fourth example replicates what was done with the linear regression
 but with a neural network built by :epkg:`scikit-learn`.
