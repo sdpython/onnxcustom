@@ -15,7 +15,7 @@ from onnxruntime.capi._pybind_state import (  # pylint: disable=E0611
     OrtModuleGraphBuilderConfiguration, OrtDevice,
     TrainingGraphTransformerConfiguration, OrtValueVector,
     PartialGraphExecutionState)
-from ..utils.onnx_orttraining import get_train_initializer
+from ..utils.orttraining_helper import get_train_initializer
 
 
 class OrtGradientForwardBackward:

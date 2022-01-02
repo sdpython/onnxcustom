@@ -49,7 +49,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.neural_network import MLPRegressor
 from mlprodict.onnx_conv import to_onnx
 from onnxcustom.plotting.plotting_onnx import plot_onnxs
-from onnxcustom.utils.onnx_orttraining import get_train_initializer
+from onnxcustom.utils.orttraining_helper import get_train_initializer
 from onnxcustom.training.optimizers_partial import (
     OrtGradientForwardBackwardOptimizer)
 
@@ -96,7 +96,7 @@ plot_onnxs(onx, title="Linear Regression in ONNX")
 # However an initializer used to modify a shape or to
 # extract a subpart of a tensor does not need training.
 # :func:`get_train_initializer
-# <onnxcustom.tools.onnx_orttraining.get_train_initializer>`
+# <onnxcustom.tools.orttraining_helper.get_train_initializer>`
 # removes them.
 
 inits = get_train_initializer(onx)

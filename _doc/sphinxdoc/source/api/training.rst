@@ -8,7 +8,7 @@ Training
 BaseEstimator
 +++++++++++++
 
-.. autosignature:: onnxcustom.training.optimizers.BaseEstimator
+.. autosignature:: onnxcustom.training.base_estimator.BaseEstimator
     :members:
 
 LearningRate
@@ -35,9 +35,9 @@ OrtGradientForwardBackward
 Helpers
 +++++++
 
-.. autosignature:: onnxcustom.utils.onnx_orttraining.add_loss_output
+.. autosignature:: onnxcustom.utils.orttraining_helper.add_loss_output
 
-.. autosignature:: onnxcustom.utils.onnx_orttraining.get_train_initializer
+.. autosignature:: onnxcustom.utils.orttraining_helper.get_train_initializer
 
 Exceptions
 ++++++++++

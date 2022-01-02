@@ -1,4 +1,4 @@
-# pylint: disable=C0415
+# pylint: disable=C0415,E1101
 """
 @file
 @brief ONNX manipulations to help build ONNX gradient graphs.
@@ -134,9 +134,90 @@ def _loss_elastic(existing_names, elem, shape,
         [make_tensor_value_info(loss_name, elem, [1, 1])])
 
 
+def penalty_loss_onnx(name, dtype, l1=None, l2=None, existing_names=None):
+    """
+    Returns onnx nodes to compute
+    :math:`|w| \\alpha + w^2 \\beta`
+    where :math:`\\alpha=l1` and :math:`\\beta=l2`.
+
+    :param name: name of weights
+    :param dtype: numpy dtype
+    :param l1: coefficient for L1 norm
+    :param l2: coefficient for L2 norm
+    :param existing_names: names already taken in the ONNX graph
+    :return: initializer, nodes
+    """
+    suffix = name
+    cst_shape = _unique_name(existing_names, "shape_%s" % suffix)
+    new_name = _unique_name(existing_names, "reshaped_%s" % suffix)
+    inits = [from_array(
+             numpy.array([-1], dtype=numpy.int64), name=cst_shape)]
+    nodes = [make_node('Reshape', [name, cst_shape], [new_name])]
+    name = new_name
+
+    if l1 is None or l1 == 0:
+        if l2 is None or l2 == 0:
+            raise ValueError(
+                "l1 and l2 cannot be null or None at the same time, "
+                "name=%r." % name)
+        l2_name = _unique_name(existing_names, "l2_weight_%s" % suffix)
+        inits.extend([from_array(
+            numpy.array([l2], dtype=dtype), name=l2_name)])
+        mul_name = _unique_name(existing_names, "reduced0_%s" % suffix)
+        red_name = _unique_name(existing_names, "reduced_%s" % suffix)
+        pen_name = _unique_name(existing_names, "penalty_%s" % suffix)
+        nodes.extend([
+            make_node('Mul', [name, name], [mul_name]),
+            make_node('ReduceSum', [mul_name], [red_name]),
+            make_node('Mul', [red_name, l2_name], [pen_name])])
+        return inits, nodes
+
+    if l2 is None or l2 == 0:
+        if l1 is None or l1 == 0:
+            raise ValueError(
+                "l1 and l2 cannot be null or None at the same time, "
+                "name=%r." % name)
+        l1_name = _unique_name(existing_names, "l1_weight_%s" % suffix)
+        inits.extend([from_array(
+            numpy.array([l1], dtype=dtype), name=l1_name)])
+        red_name = _unique_name(existing_names, "reduced_%s" % suffix)
+        abs_name = _unique_name(existing_names, "absolute_%s" % suffix)
+        pen_name = _unique_name(existing_names, "penalty_%s" % suffix)
+        nodes.extend([
+            make_node('Abs', [name], [abs_name]),
+            make_node('ReduceSum', [abs_name], [red_name]),
+            make_node('Mul', [red_name, l1_name], [pen_name])])
+        return inits, nodes
+
+    l1_name = _unique_name(existing_names, "l1_weight_%s" % suffix)
+    l2_name = _unique_name(existing_names, "l2_weight_%s" % suffix)
+    inits.extend([
+        from_array(numpy.array([l1], dtype=dtype), name=l1_name),
+        from_array(numpy.array([l2], dtype=dtype), name=l2_name)])
+
+    red_name1 = _unique_name(existing_names, "reduced1_%s" % suffix)
+    mul_name = _unique_name(existing_names, "reducedm_%s" % suffix)
+    red_name2 = _unique_name(existing_names, "reduced2_%s" % suffix)
+    abs_name = _unique_name(existing_names, "absolute_%s" % suffix)
+    pen_name1 = _unique_name(existing_names, "penalty1_%s" % suffix)
+    pen_name2 = _unique_name(existing_names, "penalty2_%s" % suffix)
+    pen_name = _unique_name(existing_names, "penalty_%s" % suffix)
+    nodes.extend([
+        make_node('Mul', [name, name], [mul_name]),
+        make_node('ReduceSum', [mul_name], [red_name2]),
+        make_node('Mul', [red_name2, l2_name], [pen_name2]),
+        make_node('Abs', [name], [abs_name]),
+        make_node('ReduceSum', [abs_name], [red_name1]),
+        make_node('Mul', [red_name1, l1_name], [pen_name1]),
+        make_node('Add', [pen_name1, pen_name2], [pen_name])])
+
+    return inits, nodes
+
+
 def add_loss_output(onx, score_name='squared_error',
                     loss_name='loss', label_name='label',
-                    weight_name=None, **kwargs):
+                    weight_name=None,
+                    penalty=None, **kwargs):
     """
     Modifies an ONNX graph to add operators to score and allow training.
 
@@ -146,6 +227,12 @@ def add_loss_output(onx, score_name='squared_error',
     :param label_name: name of the label input
     :param weight_name: None or any value to consider weight
         while computing loss
+    :param penalty: dictionary similar to the
+        following one `{ weight_name: {'l1': alpha, 'l2': beta} }`
+        or `{ weight_name: beta}`,
+        it adds a L1 and/or L2 penalty to one input or initializer,
+        penalty = :math:`|w| \\alpha + w^2 \\beta`
+    :param kwargs: additional arguments for losses (see below)
     :return: modified graph
 
     Possible values for *score_name*:
@@ -160,6 +247,73 @@ def add_loss_output(onx, score_name='squared_error',
       *l1_weight* and *l2_weight*, undefined, default value are 0.5
 
     See example :ref:`l-orttraining-nn-gpu`.
+    Next example shows the loss with L1 and L2 loss.
+
+    .. gdot::
+        :script: DOT-SECTION
+
+        import numpy
+        from sklearn.datasets import make_regression
+        from sklearn.model_selection import train_test_split
+        from sklearn.linear_model import LinearRegression
+        from mlprodict.onnx_conv import to_onnx
+        from mlprodict.onnxrt import OnnxInference
+        from onnxcustom import __max_supported_opset__ as opset
+        from onnxcustom.utils.orttraining_helper import add_loss_output
+        from onnxcustom.training.optimizers import OrtGradientOptimizer
+
+        X, y = make_regression(  # pylint: disable=W0632
+            100, n_features=10, bias=2, random_state=0)
+        X = X.astype(numpy.float32)
+        y = y.astype(numpy.float32)
+        w = (numpy.random.rand(y.shape[0]) + 1).astype(X.dtype)
+        X_train, _, y_train, __, w_train, ___ = train_test_split(X, y, w)
+        reg = LinearRegression()
+        reg.fit(X_train, y_train, sample_weight=w_train)
+        reg.coef_ = reg.coef_.reshape((1, -1))
+        onx = to_onnx(reg, X_train, target_opset=opset,
+                      black_op={'LinearRegressor'})
+
+        onx_loss = add_loss_output(
+            onx, weight_name='weight', score_name='elastic',
+            l1_weight=0.1, l2_weight=0.9)
+
+        print("DOT-SECTION", OnnxInference(onx_loss).to_dot())
+
+    Next example shows how to add a L2 loss with L1 and L2 penalties
+    on the coefficients.
+
+    .. gdot::
+        :script: DOT-SECTION
+
+        import numpy
+        from sklearn.datasets import make_regression
+        from sklearn.model_selection import train_test_split
+        from sklearn.linear_model import LinearRegression
+        from mlprodict.onnx_conv import to_onnx
+        from mlprodict.onnxrt import OnnxInference
+        from onnxcustom import __max_supported_opset__ as opset
+        from onnxcustom.utils.orttraining_helper import add_loss_output
+        from onnxcustom.training.optimizers import OrtGradientOptimizer
+
+        X, y = make_regression(  # pylint: disable=W0632
+            100, n_features=10, bias=2, random_state=0)
+        X = X.astype(numpy.float32)
+        y = y.astype(numpy.float32)
+        w = (numpy.random.rand(y.shape[0]) + 1).astype(X.dtype)
+        X_train, _, y_train, __, w_train, ___ = train_test_split(X, y, w)
+        reg = LinearRegression()
+        reg.fit(X_train, y_train, sample_weight=w_train)
+        reg.coef_ = reg.coef_.reshape((1, -1))
+        onx = to_onnx(reg, X_train, target_opset=opset,
+                      black_op={'LinearRegressor'})
+
+        onx_loss = add_loss_output(
+            onx, weight_name='weight', score_name='elastic',
+            penalty={'coef': {'l1': 0.5, 'l2':0.5},
+                     'intercept': {'l1': 0.5, 'l2':0.5}})
+
+        print("DOT-SECTION", OnnxInference(onx_loss).to_dot())
     """
     outputs = onx.graph.output
     if len(outputs) != 1:
@@ -194,6 +348,45 @@ def add_loss_output(onx, score_name='squared_error',
     else:
         raise NotImplementedError(  # pragma: no cover
             "Unexpected %r value for score_name." % score_name)
+
+    if penalty is not None:
+        final_name = nodes[-1].output[0]
+        loss_name = _unique_name(existing_names, "loss_diff")
+        nodes[-1].output[0] = loss_name
+        names = []
+        for k, v in penalty.items():
+            if isinstance(v, float):
+                v = {'l2': v}
+            inits_to_add, nodes_to_add = penalty_loss_onnx(
+                k, dtype=TENSOR_TYPE_TO_NP_TYPE[elem],
+                existing_names=existing_names, **v)
+            names.append(nodes_to_add[-1].output[0])
+            nodes.extend(nodes_to_add)
+            inits.extend(inits_to_add)
+        # Operator Sum does not have a gradient.
+        if len(names) == 1:
+            pen_name = names[0]
+        else:
+            current = names[0]
+            for i in range(1, len(names)):
+                new_name = _unique_name(existing_names, "sumop")
+                nodes.append(
+                    make_node('Add', [current, names[i]], [new_name]))
+                current = new_name
+            pen_name = current
+
+        cst_shape = _unique_name(existing_names, "shapevect")
+        inits.append(from_array(
+            numpy.array([-1, 1], dtype=numpy.int64), name=cst_shape))
+        loss_reshape = _unique_name(existing_names, "loss_reshape")
+        pen_reshape = _unique_name(existing_names, "penalty_reshape")
+        nodes.extend([
+            make_node("Reshape", [pen_name, cst_shape], [pen_reshape]),
+            make_node("Reshape", [loss_name, cst_shape], [loss_reshape])])
+
+        nodes.append(
+            make_node('Add', [pen_reshape, loss_reshape], [final_name]))
+
     inits = list(onx.graph.initializer) + inits
     graph = make_graph(
         list(onx.graph.node) + nodes,
