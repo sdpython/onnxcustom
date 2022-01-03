@@ -231,10 +231,7 @@ class LearningRateSGD(BaseLearningRate):
         ort_alpha = C_OrtValue.ortvalue_from_numpy(self.alpha_, device)
         self._bind_input_ortvalue("alpha", bind, ort_alpha, device, cache=True)
         self._bind_output_ortvalue('Y', bind, statei, cache=True)
-
-        def upio():
-            self.axpy_sess_._sess.run_with_iobinding(bind, None)
-        upio()
+        self.axpy_sess_._sess.run_with_iobinding(bind, None)
         loss = bind.get_outputs()[0]
         return loss
 

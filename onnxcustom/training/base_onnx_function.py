@@ -115,11 +115,15 @@ class BaseLearningOnnx:
         """
         Clears binding and empty cache.
         """
-        if cache:
+        def _cache_in(name, bind):
             key = name, id(bind)
             if key in self.cache_in_ and self.cache_in_[key] == 0:
-                return
+                return True
             self.cache_in_[key] = 0
+            return False
+
+        if cache and _cache_in(name, bind):
+            return
         bind.clear_binding_inputs()
 
     def _bind_input_ortvalue(self, name, bind, c_ortvalue, device, cache=False):
@@ -135,14 +139,22 @@ class BaseLearningOnnx:
         :param cache: avoids binding again the data pointer did not change,
             only works when c_ortvalue is of :epkg:`C_OrtValue`
         """
-        if isinstance(c_ortvalue, C_OrtValue):
-            if cache:
-                key = name, id(bind)
-                ptr = self.cache_in_.get(key, 0)
-                if ptr == c_ortvalue.data_ptr():
-                    return
-                self.cache_in_[key] = c_ortvalue.data_ptr()
+        def _cache_in(name, bind, c_ortvalue):
+            key = name, id(bind)
+            ptr = self.cache_in_.get(key, 0)
+            ptr2 = c_ortvalue.data_ptr()
+            if ptr == ptr2:
+                return True
+            self.cache_in_[key] = ptr2
+            return False
+
+        def do_bind(name, bind, c_ortvalue):
             bind.bind_ortvalue_input(name, c_ortvalue)
+
+        if isinstance(c_ortvalue, C_OrtValue):
+            if cache and _cache_in(name, bind, c_ortvalue):
+                return
+            do_bind(name, bind, c_ortvalue)
         elif isinstance(c_ortvalue, numpy.ndarray):
             if self.device_type() != device.cpu():  # pylint: disable=E1101
                 raise ProviderError(
@@ -169,14 +181,22 @@ class BaseLearningOnnx:
 
         This method can be used for inplace computation.
         """
-        if isinstance(c_ortvalue, C_OrtValue):
-            if cache:
-                key = name, id(bind)
-                ptr = self.cache_out_.get(key, 0)
-                if ptr == c_ortvalue.data_ptr():
-                    return
-                self.cache_out_[key] = ptr
+        def _cache_out(name, bind, c_ortvalue):
+            key = name, id(bind)
+            ptr = self.cache_in_.get(key, 0)
+            ptr2 = c_ortvalue.data_ptr()
+            if ptr == ptr2:
+                return True
+            self.cache_in_[key] = ptr2
+            return False
+
+        def do_bind(name, bind, c_ortvalue):
             bind.bind_ortvalue_output(name, c_ortvalue)
+
+        if isinstance(c_ortvalue, C_OrtValue):
+            if cache and _cache_out(name, bind, c_ortvalue):
+                return
+            do_bind(name, bind, c_ortvalue)
         else:
             raise TypeError(  # pragma: no cover
                 "Unable to bind type %r for name %r." % (

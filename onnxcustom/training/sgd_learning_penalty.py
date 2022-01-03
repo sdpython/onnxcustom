@@ -168,7 +168,7 @@ class ElasticLearningPenalty(BaseLearningPenalty):
                 "Attributes 'penalty_grad_sess_binds_' or "
                 "'penalty_grad_onnx_' is missing. Method "
                 "'build_onnx_function' has not been called.")
-        bind = self.penalty_grad_sess_bind_[n_bind]
+        bind = self.penalty_grad_sess_binds_[n_bind]
         self._bind_input_ortvalue("X", bind, statei, device, cache=True)
         self._bind_output_ortvalue('Y', bind, statei, cache=True)
         self.penalty_grad_sess_._sess.run_with_iobinding(bind, None)
