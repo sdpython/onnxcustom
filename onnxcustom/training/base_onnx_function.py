@@ -69,7 +69,7 @@ class BaseLearningOnnx:
                 setattr(self, k, getattr(self, k2).io_binding()._iobinding)
             elif k.endswith('_binds_'):
                 k2 = k[:-6]
-                n = len(v)
+                n = v
                 setattr(self, k, [
                     getattr(self, k2).io_binding()._iobinding
                     for i in range(n)])

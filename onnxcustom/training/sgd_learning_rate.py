@@ -218,6 +218,12 @@ class LearningRateSGD(BaseLearningRate):
         if velocity is not None:
             raise RuntimeError(  # pragma: no cover
                 "Velocity must be None for this way of updating weights.")
+        if (not hasattr(self, "axpy_onnx_") or
+                not hasattr(self, "axpy_sess_binds_")):
+            raise RuntimeError(  # pragma: no cover
+                "Attributes 'axpy_sess_binds_' or "
+                "'axpy_onnx_' is missing. Method "
+                "'build_onnx_function' has not been called.")
         bind = self.axpy_sess_binds_[n_bind]
         self._bind_input_ortvalue("X1", bind, gradienti, device, cache=True)
         self._bind_input_ortvalue("X2", bind, statei, device, cache=True)
@@ -334,6 +340,12 @@ class LearningRateSGDNesterov(LearningRateSGD):
 
     def update_weights(self, n_bind, device, statei, gradienti, batch_size,
                        velocity=None):
+        if (not hasattr(self, "axpyw_onnx_") or
+                not hasattr(self, "axpyw_sess_binds_")):
+            raise RuntimeError(  # pragma: no cover
+                "Attributes 'axpyw_sess_binds_' or "
+                "'axpyw_onnx_' is missing. Method "
+                "'build_onnx_function' has not been called.")
         if velocity is None:
             raise RuntimeError(  # pragma: no cover
                 "Velocity must not be None for this way of updating weights.")
@@ -350,4 +362,4 @@ class LearningRateSGDNesterov(LearningRateSGD):
         self._bind_output_ortvalue('Y', bind, statei, cache=True)
         self._bind_output_ortvalue('Z', bind, velocity, cache=True)
         self.axpyw_sess_._sess.run_with_iobinding(bind, None)
-        return self.axpyw_sess_bind_.get_outputs()  # loss, velocity
+        return bind.get_outputs()  # loss, velocity

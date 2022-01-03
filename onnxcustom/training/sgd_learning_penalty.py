@@ -163,9 +163,9 @@ class ElasticLearningPenalty(BaseLearningPenalty):
 
     def update_weights(self, n_bind, device, statei):
         if (not hasattr(self, "penalty_grad_onnx_") or
-                not hasattr(self, "penalty_grad_sess_bind_")):
+                not hasattr(self, "penalty_grad_sess_binds_")):
             raise RuntimeError(  # pragma: no cover
-                "Attributes 'penalty_grad_sess_bind_' or "
+                "Attributes 'penalty_grad_sess_binds_' or "
                 "'penalty_grad_onnx_' is missing. Method "
                 "'build_onnx_function' has not been called.")
         bind = self.penalty_grad_sess_bind_[n_bind]
