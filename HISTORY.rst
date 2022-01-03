@@ -5,18 +5,29 @@
 History
 =======
 
-current - 2021-12-06 - 0.00Mb
+current - 2022-01-03 - 0.00Mb
 =============================
 
-* #21: Implements a mechanism that update training weights with SGDRegressor or MLPRegressor (2021-12-04)
+* #34: Implements L1, L2 losses for partial training (2022-01-03)
+* #31: Implements penalty when running the gradient (2022-01-03)
+* #33: Implements more loss functions (2022-01-02)
+* #26: Implements learning rate from neural network (2022-01-01)
+* #30: Implements different learning rate strategies (2022-01-01)
+* #16: Support weights when training a model (2021-12-30)
+* #29: Fixes #16, support weights while training (2021-12-30)
+* #24: Be more consistent with OrtValue, OrtDevice, C and python versions (2021-12-19)
+* #28: Replaces OrtValue by C_OrtValue everywhere (2021-12-19)
+* #27: Uses C_OrtDevice everywhere (2021-12-16)
+* #15: Add example with TrainingAgent (error gradient outside) (2021-12-14)
 * #25: Implements optimizers with forward, backward functionalities (2021-12-04)
+* #21: Implements a mechanism that update training weights with SGDRegressor or MLPRegressor (2021-12-04)
 * #23: Extend documentation (2021-12-01)
 * #22: Move learning_rate logic in a separate class (2021-12-01)
-* #19: Implements training with forward, backward (2021-12-01)
 * #20: Experiment markdown rendering (2021-12-01)
+* #19: Implements training with forward, backward (2021-12-01)
 * #18: Adds classes to train an ONNX gradient with TrainingAgent (2021-11-27)
-* #14: Optimize DataLoader to use iobinding (avoir copy) (2021-11-26)
 * #17: Minimize the number of data copy while training a model (2021-11-26)
+* #14: Optimize DataLoader to use iobinding (avoir copy) (2021-11-26)
 * #13: Adds function plot_onnxs (2021-11-25)
 * #12: Add more examples (2021-11-19)
 
