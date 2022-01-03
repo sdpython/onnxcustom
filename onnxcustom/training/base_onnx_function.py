@@ -22,7 +22,8 @@ class BaseLearningOnnx:
     """
 
     def __init__(self):
-        pass
+        self.cache_in_ = {}
+        self.cache_out_ = {}
 
     def __getstate__(self):
         """
@@ -30,12 +31,16 @@ class BaseLearningOnnx:
         """
         atts = [k for k in self.__dict__ if not k.endswith('_')]
         state = {k: getattr(self, k) for k in atts}
-        onx = [k for k in self.__dict__
-               if k.endswith('_onnx_')]
+        onx = [k for k in self.__dict__ if k.endswith('_onnx_')]
         for o in onx:
             state[o] = getattr(self, o).SerializeToString()
-        onx = [k for k in self.__dict__
-               if k.endswith('_sess_')]
+        onx = [k for k in self.__dict__ if k.endswith('_sess_')]
+        bind = [k for k in self.__dict__ if k.endswith('_bind_')]
+        for k in bind:
+            state[k] = True
+        binds = [k for k in self.__dict__ if k.endswith('_binds_')]
+        for k in binds:
+            state[k] = len(getattr(self, k))
         for o in onx:
             state[o] = getattr(self, o).get_providers()
         return state
@@ -58,8 +63,18 @@ class BaseLearningOnnx:
                 setattr(self, k2, InferenceSession(
                     getattr(self, k).SerializeToString(), so,
                     providers=prov))
-                bind = k2 + "bind_"
-                setattr(self, bind, getattr(self, k2).io_binding()._iobinding)
+        for k, v in state.items():
+            if k.endswith('_bind_'):
+                k2 = k[:-5]
+                setattr(self, k, getattr(self, k2).io_binding()._iobinding)
+            elif k.endswith('_binds_'):
+                k2 = k[:-6]
+                n = len(v)
+                setattr(self, k, [
+                    getattr(self, k2).io_binding()._iobinding
+                    for i in range(n)])
+        self.cache_in_ = {}
+        self.cache_out_ = {}
         return self
 
     def __repr_extended__(self):
@@ -96,7 +111,18 @@ class BaseLearningOnnx:
         raise NotImplementedError(
             "This method must be overwritten.")
 
-    def _bind_input_ortvalue(self, name, bind, c_ortvalue, device):
+    def clear_binding_inputs(self, name, bind, cache=False):
+        """
+        Clears binding and empty cache.
+        """
+        if cache:
+            key = name, id(bind)
+            if key in self.cache_in_ and self.cache_in_[key] == 0:
+                return
+            self.cache_in_[key] = 0
+        bind.clear_binding_inputs()
+
+    def _bind_input_ortvalue(self, name, bind, c_ortvalue, device, cache=False):
         """
         Binds :epkg:`C_OrtValue` to the structure used by
         :epkg:`InferenceSession` to run inference.
@@ -106,8 +132,16 @@ class BaseLearningOnnx:
         :param c_ortvalue: C structure for OrtValue (:epkg:`C_OrtValue`),
             it can be also a numpy array
         :param device: device
+        :param cache: avoids binding again the data pointer did not change,
+            only works when c_ortvalue is of :epkg:`C_OrtValue`
         """
         if isinstance(c_ortvalue, C_OrtValue):
+            if cache:
+                key = name, id(bind)
+                ptr = self.cache_in_.get(key, 0)
+                if ptr == c_ortvalue.data_ptr():
+                    return
+                self.cache_in_[key] = c_ortvalue.data_ptr()
             bind.bind_ortvalue_input(name, c_ortvalue)
         elif isinstance(c_ortvalue, numpy.ndarray):
             if self.device_type() != device.cpu():  # pylint: disable=E1101
@@ -122,7 +156,7 @@ class BaseLearningOnnx:
                 "Unable to bind type %r for name %r." % (
                     type(c_ortvalue), name))
 
-    def _bind_output_ortvalue(self, name, bind, c_ortvalue):
+    def _bind_output_ortvalue(self, name, bind, c_ortvalue, cache=False):
         """
         Binds :epkg:`C_OrtValue` to the structure used by
         :epkg:`InferenceSession` to run inference.
@@ -130,10 +164,18 @@ class BaseLearningOnnx:
         :param name: str
         :param bind: python structure
         :param c_ortvalue: C structure for OrtValue (:epkg:`C_OrtValue`)
+        :param cache: avoids binding again the data pointer did not change,
+            only works when c_ortvalue is of :epkg:`C_OrtValue`
 
         This method can be used for inplace computation.
         """
         if isinstance(c_ortvalue, C_OrtValue):
+            if cache:
+                key = name, id(bind)
+                ptr = self.cache_out_.get(key, 0)
+                if ptr == c_ortvalue.data_ptr():
+                    return
+                self.cache_out_[key] = ptr
             bind.bind_ortvalue_output(name, c_ortvalue)
         else:
             raise TypeError(  # pragma: no cover

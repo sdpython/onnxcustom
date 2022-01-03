@@ -39,7 +39,7 @@ the penalty, its gradient, a learning rate possibly with momentum.
 * an object inheriting from :class:`BaseLearningLoss
   <onnxcustom.training.sgd_learning_loss.BaseLearningLoss>`
 * an object inheriting from :class:`BaseLearningPenalty
-  <onnxcustom.training.sgd_learning_loss.BaseLearningPenalty>`
+  <onnxcustom.training.sgd_learning_penalty.BaseLearningPenalty>`
 * an object inheriting from :class:`BaseLearningRate
   <onnxcustom.training.sgd_learning_rate.BaseLearningRate>`
 

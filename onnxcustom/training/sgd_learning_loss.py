@@ -38,13 +38,14 @@ class BaseLearningLoss(BaseLearningOnnx):
         if (not hasattr(self, "loss_grad_sess_") or
                 not hasattr(self, "loss_grad_sess_bind_")):
             raise RuntimeError(  # pragma: no cover
-                "Attributes 'loss_grad_sess_bind_' or 'loss_grad_sess_' "
-                "is missing. Method 'build_onnx_function' has not been called.")
+                "Attributes 'loss_grad_sess_bind_' or 'loss_grad_sess_' is "
+                "missing. Method 'build_onnx_function' has not been called.")
         if weight is not None:
             self._bind_input_ortvalue(
                 "weight", self.loss_grad_sess_bind_, weight, device)
         else:
-            self.loss_grad_sess_bind_.clear_binding_inputs()
+            self.clear_binding_inputs(
+                "weight", self.loss_grad_sess_bind_, cache=True)
         self._bind_input_ortvalue(
             "X1", self.loss_grad_sess_bind_, expected, device)
         self._bind_input_ortvalue(
