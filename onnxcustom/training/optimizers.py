@@ -90,7 +90,7 @@ class OrtGradientOptimizer(BaseEstimator):
         input_names = [i.name for i in self.model_onnx.graph.input]
         if ((len(input_names) == 2 and sample_weight is not None) or
                 (len(input_names) == 3 and sample_weight is None)):
-            raise RuntimeError(
+            raise RuntimeError(  # pragma: no cover
                 "Number of inputs should be 2 if sample_weight is None "
                 "or 3 if not None but it is %d." % len(input_names))
         self.train_session_ = self._create_training_session(
@@ -171,7 +171,7 @@ class OrtGradientOptimizer(BaseEstimator):
             it can be also a numpy array
         """
         if not isinstance(bind, C_IOBinding):
-            raise TypeError(
+            raise TypeError(  # pragma: no cover
                 "Unexpected type %r." % type(bind))
         if isinstance(c_ortvalue, C_OrtValue):
             # does not work

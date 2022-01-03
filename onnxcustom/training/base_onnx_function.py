@@ -81,7 +81,7 @@ class BaseLearningOnnx:
         return "%s(%s)%s" % (
             self.__class__.__name__, ", ".join(ps), self.__repr_extended__())
 
-    def build_onnx_function(self, opset, device):
+    def build_onnx_function(self, opset, device, *args):
         """
         This class updates the weights.
         It assumes it can do operator on *OrtValue*.
@@ -91,6 +91,7 @@ class BaseLearningOnnx:
 
         :param opset: opset to use
         :param device: :epkg:`C_OrtDevice`
+        :param args: additional arguments
         """
         raise NotImplementedError(
             "This method must be overwritten.")

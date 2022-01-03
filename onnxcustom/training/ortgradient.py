@@ -513,7 +513,7 @@ class OrtGradientForwardBackwardFunction:
             return 'Cpu'
         if device.device_type() == OrtDevice.cuda():
             return 'Gpu'
-        raise RuntimeError(
+        raise RuntimeError(  # pragma: no cover
             "Unexpected value for device type %r." % device.device_type())
 
     @staticmethod

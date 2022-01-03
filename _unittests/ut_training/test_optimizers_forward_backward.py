@@ -1,5 +1,5 @@
 """
-@brief      test log(time=9s)
+@brief      test log(time=10s)
 """
 
 import unittest
@@ -18,6 +18,11 @@ from mlprodict.onnx_conv import to_onnx
 from onnxcustom import __max_supported_opset__ as opset
 from onnxcustom.training.sgd_learning_rate import (
     LearningRateSGD, LearningRateSGDNesterov)
+from onnxcustom.training.sgd_learning_loss import (
+    BaseLearningLoss, SquareLearningLoss, AbsoluteLearningLoss,
+    ElasticLearningLoss)
+from onnxcustom.training.sgd_learning_penalty import (
+    BaseLearningPenalty, NoLearningPenalty, ElasticLearningPenalty)
 from onnxcustom.utils.onnx_helper import onnx_rename_weights
 from onnxcustom.training import ConvergenceError
 try:
@@ -47,6 +52,7 @@ class TestOptimizersForwardBackward(ExtTestCase):
         set_model_props(onx, {'info': 'unit test'})
         inits = ['coef', 'intercept']
         train_session = OrtGradientForwardBackwardOptimizer(onx, inits)
+        self.assertIsInstance(train_session.learning_loss, SquareLearningLoss)
         self.assertRaise(lambda: train_session.get_state(), AttributeError)
         train_session.fit(X_train, y_train, use_numpy=True)
         state_tensors = train_session.get_state()
@@ -563,6 +569,113 @@ class TestOptimizersForwardBackward(ExtTestCase):
         self.assertFalse(any(map(numpy.isnan, losses)))
 
     @unittest.skipIf(TrainingSession is None, reason="not training")
+    def test_ort_gradient_optimizers_optimal_use_ort_w_absolute(self):
+        from onnxcustom.training.optimizers_partial import OrtGradientForwardBackwardOptimizer
+        X, y = make_regression(  # pylint: disable=W0632
+            100, n_features=10, bias=2, random_state=0)
+        X = X.astype(numpy.float32)
+        y = y.astype(numpy.float32)
+        w = (numpy.random.rand(y.shape[0]) + 1).astype(X.dtype)
+        X_train, _, y_train, __, w_train, ___ = train_test_split(
+            X, y, w)
+        reg = LinearRegression()
+        reg.fit(X_train, y_train, w_train)
+        reg.coef_ = reg.coef_.reshape((1, -1))
+        onx = to_onnx(reg, X_train, target_opset=opset,
+                      black_op={'LinearRegressor'})
+        inits = ['coef', 'intercept']
+        train_session = OrtGradientForwardBackwardOptimizer(
+            onx, inits, max_iter=10, weight_name='weight',
+            learning_rate=LearningRateSGD(learning_rate='optimal'),
+            learning_loss='absolute_error')
+        self.assertIsInstance(
+            train_session.learning_loss, AbsoluteLearningLoss)
+        self.assertRaise(lambda: train_session.get_state(), AttributeError)
+        train_session.fit(X_train, y_train, w_train, use_numpy=False)
+        state_tensors = train_session.get_state()
+        self.assertEqual(len(state_tensors), 2)
+        r = repr(train_session)
+        self.assertIn("OrtGradientForwardBackwardOptimizer(model_onnx=", r)
+        self.assertIn("learning_rate='optimal'", r)
+        losses = train_session.train_losses_
+        self.assertGreater(len(losses), 1)
+        self.assertFalse(any(map(numpy.isnan, losses)))
+
+    @unittest.skipIf(TrainingSession is None, reason="not training")
+    def test_ort_gradient_optimizers_optimal_use_ort_w_elastic(self):
+        from onnxcustom.training.optimizers_partial import OrtGradientForwardBackwardOptimizer
+        X, y = make_regression(  # pylint: disable=W0632
+            100, n_features=10, bias=2, random_state=0)
+        X = X.astype(numpy.float32)
+        y = y.astype(numpy.float32)
+        w = (numpy.random.rand(y.shape[0]) + 1).astype(X.dtype)
+        X_train, _, y_train, __, w_train, ___ = train_test_split(
+            X, y, w)
+        reg = LinearRegression()
+        reg.fit(X_train, y_train, w_train)
+        reg.coef_ = reg.coef_.reshape((1, -1))
+        onx = to_onnx(reg, X_train, target_opset=opset,
+                      black_op={'LinearRegressor'})
+        inits = ['coef', 'intercept']
+        train_session = OrtGradientForwardBackwardOptimizer(
+            onx, inits, max_iter=10, weight_name='weight',
+            learning_rate=LearningRateSGD(learning_rate='optimal'),
+            learning_loss=BaseLearningLoss.select(
+                'elastic', l1_weight=0.1, l2_weight=0.9))
+        self.assertIsInstance(
+            train_session.learning_loss, ElasticLearningLoss)
+        self.assertIsInstance(
+            train_session.learning_penalty, NoLearningPenalty)
+        self.assertRaise(lambda: train_session.get_state(), AttributeError)
+        train_session.fit(X_train, y_train, w_train, use_numpy=False)
+        state_tensors = train_session.get_state()
+        self.assertEqual(len(state_tensors), 2)
+        r = repr(train_session)
+        self.assertIn("OrtGradientForwardBackwardOptimizer(model_onnx=", r)
+        self.assertIn("learning_rate='optimal'", r)
+        losses = train_session.train_losses_
+        self.assertGreater(len(losses), 1)
+        self.assertFalse(any(map(numpy.isnan, losses)))
+
+    @unittest.skipIf(TrainingSession is None, reason="not training")
+    def test_ort_gradient_optimizers_optimal_use_ort_w_elastic_penalty(self):
+        from onnxcustom.training.optimizers_partial import OrtGradientForwardBackwardOptimizer
+        X, y = make_regression(  # pylint: disable=W0632
+            100, n_features=10, bias=2, random_state=0)
+        X = X.astype(numpy.float32)
+        y = y.astype(numpy.float32)
+        w = (numpy.random.rand(y.shape[0]) + 1).astype(X.dtype)
+        X_train, _, y_train, __, w_train, ___ = train_test_split(
+            X, y, w)
+        reg = LinearRegression()
+        reg.fit(X_train, y_train, w_train)
+        reg.coef_ = reg.coef_.reshape((1, -1))
+        onx = to_onnx(reg, X_train, target_opset=opset,
+                      black_op={'LinearRegressor'})
+        inits = ['coef', 'intercept']
+        train_session = OrtGradientForwardBackwardOptimizer(
+            onx, inits, max_iter=10, weight_name='weight',
+            learning_rate=LearningRateSGD(learning_rate='optimal'),
+            learning_loss=BaseLearningLoss.select(
+                'elastic', l1_weight=0.1, l2_weight=0.9),
+            learning_penalty=BaseLearningPenalty.select(
+                'elastic', l1=0.1, l2=0.9))
+        self.assertIsInstance(
+            train_session.learning_loss, ElasticLearningLoss)
+        self.assertIsInstance(
+            train_session.learning_penalty, ElasticLearningPenalty)
+        self.assertRaise(lambda: train_session.get_state(), AttributeError)
+        train_session.fit(X_train, y_train, w_train, use_numpy=False)
+        state_tensors = train_session.get_state()
+        self.assertEqual(len(state_tensors), 2)
+        r = repr(train_session)
+        self.assertIn("OrtGradientForwardBackwardOptimizer(model_onnx=", r)
+        self.assertIn("learning_rate='optimal'", r)
+        losses = train_session.train_losses_
+        self.assertGreater(len(losses), 1)
+        self.assertFalse(any(map(numpy.isnan, losses)))
+
+    @unittest.skipIf(TrainingSession is None, reason="not training")
     def test_ort_gradient_optimizers_evaluation_use_numpy(self):
         from onnxcustom.training.optimizers_partial import OrtGradientForwardBackwardOptimizer
         X, y = make_regression(  # pylint: disable=W0632
@@ -933,12 +1046,71 @@ class TestOptimizersForwardBackward(ExtTestCase):
         self.assertGreater(len(losses), 1)
         self.assertFalse(any(map(numpy.isnan, losses)))
 
+    @unittest.skipIf(TrainingSession is None, reason="not training")
+    def test_ort_gradient_optimizers_use_numpy_pickle_w_nesterov_rate(self):
+        from onnxcustom.training.optimizers_partial import OrtGradientForwardBackwardOptimizer
+        X, y = make_regression(  # pylint: disable=W0632
+            100, n_features=10, bias=2, random_state=0)
+        X = X.astype(numpy.float32)
+        y = y.astype(numpy.float32)
+        w = (numpy.random.rand(y.shape[0]) + 1).astype(X.dtype)
+        X_train, _, y_train, __, w_train, ___ = train_test_split(
+            X, y, w)
+        reg = LinearRegression()
+        reg.fit(X_train, y_train, w_train)
+        reg.coef_ = reg.coef_.reshape((1, -1))
+        onx = to_onnx(reg, X_train, target_opset=opset,
+                      black_op={'LinearRegressor'})
+        set_model_props(onx, {'info': 'unit test'})
+        inits = ['coef', 'intercept']
+        train_session0 = OrtGradientForwardBackwardOptimizer(
+            onx, inits, learning_rate="Nesterov", weight_name='weight',
+            learning_loss=BaseLearningLoss.select(
+                'elastic', l1_weight=0.1, l2_weight=0.9),
+            learning_penalty=BaseLearningPenalty.select(
+                'elastic', l1=0.1, l2=0.9))
+        self.assertIsInstance(train_session0.learning_rate,
+                              LearningRateSGDNesterov)
+        self.assertIsInstance(train_session0.learning_loss,
+                              ElasticLearningLoss)
+        self.assertIsInstance(train_session0.learning_penalty,
+                              ElasticLearningPenalty)
+        st = io.BytesIO()
+        pickle.dump(train_session0, st)
+        st2 = io.BytesIO(st.getvalue())
+        train_session1 = pickle.load(st2)
+
+        train_session1.fit(X_train, y_train, w_train, use_numpy=True)
+        self.assertIsInstance(train_session1.learning_rate,
+                              LearningRateSGDNesterov)
+        self.assertIsInstance(train_session1.learning_loss,
+                              ElasticLearningLoss)
+        self.assertIsInstance(train_session1.learning_penalty,
+                              ElasticLearningPenalty)
+
+        st = io.BytesIO()
+        pickle.dump(train_session1, st)
+        st2 = io.BytesIO(st.getvalue())
+        train_session = pickle.load(st2)
+        state_tensors = train_session.get_state()
+        self.assertEqual(len(state_tensors), 2)
+
+        train_session.fit(X_train, y_train, w_train, use_numpy=True)
+        state_tensors = train_session.get_state()
+        self.assertEqual(len(state_tensors), 2)
+        r = repr(train_session)
+        self.assertIn("OrtGradientForwardBackwardOptimizer(model_onnx=", r)
+        self.assertIn("learning_rate='invscaling'", r)
+        losses = train_session.train_losses_
+        self.assertGreater(len(losses), 1)
+        self.assertFalse(any(map(numpy.isnan, losses)))
+
 
 if __name__ == "__main__":
     # import logging
     # logger = logging.getLogger('onnxcustom')
     # logger.setLevel(logging.DEBUG)
     # logging.basicConfig(level=logging.DEBUG)
-    # TestOptimizersForwardBackward().test_ort_gradient_optimizers_use_numpy_nesterov()
+    # TestOptimizersForwardBackward().test_ort_gradient_optimizers_optimal_use_ort_w_elastic_penalty()
     # stop
     unittest.main()

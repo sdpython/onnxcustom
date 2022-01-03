@@ -81,7 +81,8 @@ onx = to_onnx(lr, X_train[:1].astype(numpy.float32), target_opset=15,
 # The training requires a loss function. By default, it
 # is the square function but it could be the absolute error or
 # include penalties. Function
-# :func:`add_loss_output <onnxcustom.training.orttraining.add_loss_output>`
+# :func:`add_loss_output
+# <onnxcustom.utils.orttraining_helper.add_loss_output>`
 # appends the loss function to the ONNX graph.
 
 onx_train = add_loss_output(onx)

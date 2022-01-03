@@ -170,7 +170,7 @@ plot_onnxs(onx_loss, onx_gradient, title=['loss', 'gradient + loss'])
 # and returns the updated weights. This graph works on tensors of any shape
 # but with the same element type.
 
-plot_onnxs(train_session.loss_grad_onnx_,
+plot_onnxs(train_session.learning_loss.loss_grad_onnx_,
            train_session.learning_rate.axpy_onnx_,
            title=['error gradient + loss', 'gradient update'])
 
