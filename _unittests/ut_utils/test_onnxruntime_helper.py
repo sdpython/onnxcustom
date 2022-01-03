@@ -30,6 +30,14 @@ class TestOnnxRuntimeHelper(ExtTestCase):
         self.assertRaise(lambda: get_ort_device_type('none'), ValueError)
 
     def test_get_ort_device_type_exc(self):
+        dev = get_ort_device('cpu')
+        self.assertEqual(get_ort_device_type(dev), 0)
+        dev = get_ort_device('cuda')
+        self.assertEqual(get_ort_device_type(dev), 1)
+        self.assertRaise(lambda: get_ort_device_type(''), ValueError)
+        self.assertRaise(lambda: get_ort_device_type(0), TypeError)
+
+    def test_get_ort_device_type_exc(self):
         self.assertRaise(
             lambda: get_ort_device_type(['cpu']),
             TypeError)

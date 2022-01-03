@@ -148,7 +148,7 @@ class ElasticLearningPenalty(BaseLearningPenalty):
                 "Attributes 'penalty_sess_bind_' or 'penalty_onnx_' is "
                 "missing. Method 'build_onnx_function' has not been called.")
         if len(self.names_) != len(inputs):
-            raise RuntimeError(
+            raise RuntimeError(  # pragma: no cover
                 "Mismatched number of inputs: %d != %d." % (
                     len(self.names_), len(inputs)))
 
@@ -172,4 +172,4 @@ class ElasticLearningPenalty(BaseLearningPenalty):
         self._bind_input_ortvalue("X", bind, statei, device, cache=True)
         self._bind_output_ortvalue('Y', bind, statei, cache=True)
         self.penalty_grad_sess_._sess.run_with_iobinding(bind, None)
-        return self.penalty_grad_sess_bind_.get_outputs()[0]  # X
+        return bind.get_outputs()[0]  # X

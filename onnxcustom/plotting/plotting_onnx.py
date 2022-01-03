@@ -63,5 +63,7 @@ def plot_onnxs(*onx, ax=None, dpi=300, temp_dot=None, temp_img=None,
                 "len(onx)=%d)" % (title, len(onx)))
         fig.suptitle(title)
     elif len(onx) == 1:
+        if isinstance(title, list):
+            title = title[0]
         ax.set_title(title)
     return ax

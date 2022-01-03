@@ -18,7 +18,7 @@ def fix_link_operator_md(markdown):
         with open(markdown, 'r', encoding='utf-8') as f:
             content = f.read()
     else:
-        content = markdown
+        content = markdown  # pragma: no cover
 
     reg = re.compile(
         "([|]<a href=\\\"#(?P<name>[.A-Za-z]+)\\\">(?P=name)</a>[|])")

@@ -41,12 +41,12 @@ def get_ort_device_type(device):
             return C_OrtDevice.cpu()
         raise ValueError(  # pragma: no cover
             'Unsupported device type: %r.' % device)
-    if not hasattr(device, 'type'):
+    if not hasattr(device, 'device_type'):
         raise TypeError('Unsupported device type: %r.' % type(device))
-    device_type = device.type
-    if device_type == 'cuda':
+    device_type = device.device_type()
+    if device_type in ('cuda', 1):
         return C_OrtDevice.cuda()
-    if device_type == 'cpu':
+    if device_type in ('cpu', 0):
         return C_OrtDevice.cpu()
     raise ValueError(  # pragma: no cover
         'Unsupported device type: %r.' % device_type)
