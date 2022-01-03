@@ -148,6 +148,15 @@ class BaseLearningOnnx:
             self.cache_in_[key] = ptr2
             return False
 
+        def _cache_np(name, bind, c_ortvalue):
+            key = name, id(bind)
+            ptr = self.cache_in_.get(key, 0)
+            ptr2 = c_ortvalue.__array_interface__['data'][0]
+            if ptr == ptr2:
+                return True
+            self.cache_in_[key] = ptr2
+            return False
+
         def do_bind(name, bind, c_ortvalue):
             bind.bind_ortvalue_input(name, c_ortvalue)
 
@@ -160,6 +169,8 @@ class BaseLearningOnnx:
                 raise ProviderError(
                     "device=%s is not CPU." % ort_device_to_string(
                         device))
+            if cache and _cache_np(name, bind, c_ortvalue):
+                return
             bind.bind_input(
                 name, device, c_ortvalue.dtype, c_ortvalue.shape,
                 c_ortvalue.__array_interface__['data'][0])
