@@ -11,7 +11,6 @@ class TestDocumentationExampleShow(ExtTestCase):
     def test_documentation_examples_show(self):
 
         this = os.path.abspath(os.path.dirname(__file__))
-        onxc = os.path.normpath(os.path.join(this, '..', '..'))
         fold = os.path.normpath(
             os.path.join(this, '..', '..', '_doc', 'examples'))
         found = os.listdir(fold)
