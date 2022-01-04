@@ -88,7 +88,7 @@ class NoLearningPenalty(BaseLearningPenalty):
         """
         return loss
 
-    def update_weights(self, device, statei):
+    def update_weights(self, n_bind, device, statei):
         """
         Returns the received loss. Updates the weight inplace.
 
@@ -129,8 +129,9 @@ class ElasticLearningPenalty(BaseLearningPenalty):
         self.penalty_grad_sess_ = InferenceSession(
             self.penalty_grad_onnx_.SerializeToString(), so,
             providers=device_to_providers(device))
-        self.penalty_grad_sess_bind_ = (
-            self.penalty_grad_sess_.io_binding()._iobinding)
+        self.penalty_grad_sess_binds_ = [
+            self.penalty_grad_sess_.io_binding()._iobinding
+            for n in range(n_tensors)]
 
     def penalty_loss(self, device, *inputs):
         """
@@ -144,31 +145,31 @@ class ElasticLearningPenalty(BaseLearningPenalty):
         if (not hasattr(self, "penalty_onnx_") or
                 not hasattr(self, "penalty_sess_bind_")):
             raise RuntimeError(  # pragma: no cover
-                "Attributes 'penalty_sess_bind_' or 'penalty_onnx_' "
-                "is missing. Method 'build_onnx_function' has not been called.")
+                "Attributes 'penalty_sess_bind_' or 'penalty_onnx_' is "
+                "missing. Method 'build_onnx_function' has not been called.")
         if len(self.names_) != len(inputs):
-            raise RuntimeError(
+            raise RuntimeError(  # pragma: no cover
                 "Mismatched number of inputs: %d != %d." % (
                     len(self.names_), len(inputs)))
 
         for name, inp in zip(self.names_, inputs):
             self._bind_input_ortvalue(
-                name, self.penalty_sess_bind_, inp, device)
-        self._bind_output_ortvalue('Y', self.penalty_sess_bind_, inputs[0])
+                name, self.penalty_sess_bind_, inp, device, cache=True)
+        self._bind_output_ortvalue(
+            'Y', self.penalty_sess_bind_, inputs[0], cache=True)
         self.penalty_sess_._sess.run_with_iobinding(
             self.penalty_sess_bind_, None)
         return self.penalty_sess_bind_.get_outputs()[0]
 
-    def update_weights(self, device, statei):
+    def update_weights(self, n_bind, device, statei):
         if (not hasattr(self, "penalty_grad_onnx_") or
-                not hasattr(self, "penalty_grad_sess_bind_")):
+                not hasattr(self, "penalty_grad_sess_binds_")):
             raise RuntimeError(  # pragma: no cover
-                "Attributes 'penalty_grad_sess_bind_' or "
+                "Attributes 'penalty_grad_sess_binds_' or "
                 "'penalty_grad_onnx_' is missing. Method "
                 "'build_onnx_function' has not been called.")
-        self._bind_input_ortvalue(
-            "X", self.penalty_grad_sess_bind_, statei, device)
-        self._bind_output_ortvalue('Y', self.penalty_grad_sess_bind_, statei)
-        self.penalty_grad_sess_._sess.run_with_iobinding(
-            self.penalty_grad_sess_bind_, None)
-        return self.penalty_grad_sess_bind_.get_outputs()[0]  # X
+        bind = self.penalty_grad_sess_binds_[n_bind]
+        self._bind_input_ortvalue("X", bind, statei, device, cache=True)
+        self._bind_output_ortvalue('Y', bind, statei, cache=True)
+        self.penalty_grad_sess_._sess.run_with_iobinding(bind, None)
+        return bind.get_outputs()[0]  # X

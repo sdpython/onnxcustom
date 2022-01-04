@@ -213,15 +213,16 @@ class OrtGradientForwardBackwardOptimizer(BaseEstimator):
         so = SessionOptions()
         so.log_severity_level = 4
 
+        n = len(self.weights_to_train)
+
         # loss_grad
         self.learning_loss.build_onnx_function(
             opset, self.device, self.weight_name)
 
         # weight update
-        self.learning_rate.build_onnx_function(opset, self.device)
+        self.learning_rate.build_onnx_function(opset, self.device, n)
 
         # penalty
-        n = len(self.weights_to_train)
         self.learning_penalty.build_onnx_function(opset, self.device, n)
 
         # zero
@@ -422,9 +423,11 @@ class OrtGradientForwardBackwardOptimizer(BaseEstimator):
 
             n = len(state) - n_weights
             for i in range(n, len(state)):
-                self.learning_penalty.update_weights(self.device, state[i])
+                self.learning_penalty.update_weights(
+                    i - n, self.device, state[i])
                 self.learning_rate.update_weights(
-                    self.device, state[i], gradient[i], bs,
+                    i - n, self.device, state[i],
+                    gradient[i], bs,
                     None if grad is None else grad[i])
 
             if logger is not None:

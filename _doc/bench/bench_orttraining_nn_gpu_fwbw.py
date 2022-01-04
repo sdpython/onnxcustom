@@ -86,7 +86,9 @@ def benchmark(N=1000, n_features=100, hidden_layer_sizes="50,50", max_iter=500,
     nn = MLPRegressor(hidden_layer_sizes=hidden_layer_sizes,
                       max_iter=max_iter if run_skl else 1,
                       solver='sgd', learning_rate_init=learning_rate_init,
-                      n_iter_no_change=max_iter, batch_size=batch_size)
+                      n_iter_no_change=max_iter, batch_size=batch_size,
+                      alpha=0, nesterovs_momentum=False, momentum=0,
+                      learning_rate="invscaling")
 
     begin = time.perf_counter()
     with warnings.catch_warnings():

@@ -93,7 +93,7 @@ def add_initializer(model, name, value):
     """
     inits = set(i.name for i in model.graph.initializer)
     if name in inits:
-        raise ValueError(
+        raise ValueError(  # pragma: no cover
             "Name %r is already taken among %r." % (
                 name, inits))
     list_inits = list(model.graph.initializer)

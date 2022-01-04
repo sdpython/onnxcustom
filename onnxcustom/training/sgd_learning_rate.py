@@ -4,6 +4,7 @@
 @brief Helper for :epkg:`onnxruntime-training`.
 """
 import numpy
+from onnx.mapping import TENSOR_TYPE_TO_NP_TYPE
 from onnxruntime import SessionOptions, InferenceSession
 from onnxruntime.capi._pybind_state import (  # pylint: disable=E0611
     OrtValue as C_OrtValue)
@@ -197,7 +198,7 @@ class LearningRateSGD(BaseLearningRate):
         self.value_ = eta
         return self
 
-    def build_onnx_function(self, opset, device):
+    def build_onnx_function(self, opset, device, n_tensors):
         so = SessionOptions()
         so.log_severity_level = 4
 
@@ -205,25 +206,33 @@ class LearningRateSGD(BaseLearningRate):
         self.axpy_sess_ = InferenceSession(
             self.axpy_onnx_.SerializeToString(), so,
             providers=device_to_providers(device))
-        self.axpy_sess_bind_ = self.axpy_sess_.io_binding()._iobinding
+        self.axpy_sess_binds_ = [
+            self.axpy_sess_.io_binding()._iobinding
+            for i in range(n_tensors)]
+        self.alpha_ = numpy.array(
+            [0], dtype=TENSOR_TYPE_TO_NP_TYPE[
+                self.axpy_onnx_.graph.input[0].type.tensor_type.elem_type])
 
-    def update_weights(self, device, statei, gradienti, batch_size,
+    def update_weights(self, n_bind, device, statei, gradienti, batch_size,
                        velocity=None):
         if velocity is not None:
             raise RuntimeError(  # pragma: no cover
                 "Velocity must be None for this way of updating weights.")
-        self._bind_input_ortvalue(
-            "X1", self.axpy_sess_bind_, gradienti, device)
-        self._bind_input_ortvalue("X2", self.axpy_sess_bind_, statei, device)
-        alpha = - self.value / batch_size  # pylint: disable=E1130
-        alpha_alive = numpy.array([alpha], dtype=numpy.float32)
-        ort_alpha_alive = C_OrtValue.ortvalue_from_numpy(
-            alpha_alive, device)
-        self._bind_input_ortvalue(
-            "alpha", self.axpy_sess_bind_, ort_alpha_alive, device)
-        self._bind_output_ortvalue('Y', self.axpy_sess_bind_, statei)
-        self.axpy_sess_._sess.run_with_iobinding(self.axpy_sess_bind_, None)
-        loss = self.axpy_sess_bind_.get_outputs()[0]
+        if (not hasattr(self, "axpy_onnx_") or
+                not hasattr(self, "axpy_sess_binds_")):
+            raise RuntimeError(  # pragma: no cover
+                "Attributes 'axpy_sess_binds_' or "
+                "'axpy_onnx_' is missing. Method "
+                "'build_onnx_function' has not been called.")
+        bind = self.axpy_sess_binds_[n_bind]
+        self._bind_input_ortvalue("X1", bind, gradienti, device, cache=True)
+        self._bind_input_ortvalue("X2", bind, statei, device, cache=True)
+        self.alpha_[0] = - self.value / batch_size  # pylint: disable=E1130
+        ort_alpha = C_OrtValue.ortvalue_from_numpy(self.alpha_, device)
+        self._bind_input_ortvalue("alpha", bind, ort_alpha, device, cache=True)
+        self._bind_output_ortvalue('Y', bind, statei, cache=True)
+        self.axpy_sess_._sess.run_with_iobinding(bind, None)
+        loss = bind.get_outputs()[0]
         return loss
 
 
@@ -303,7 +312,7 @@ class LearningRateSGDNesterov(LearningRateSGD):
         """
         return LearningRateSGD.update_learning_rate(self, t)
 
-    def build_onnx_function(self, opset, device):
+    def build_onnx_function(self, opset, device, n_tensors):
         so = SessionOptions()
         so.log_severity_level = 4
 
@@ -315,30 +324,39 @@ class LearningRateSGDNesterov(LearningRateSGD):
         self.axpyw_sess_ = InferenceSession(
             self.axpyw_onnx_.SerializeToString(), so,
             providers=device_to_providers(device))
-        self.axpyw_sess_bind_ = self.axpyw_sess_.io_binding()._iobinding
+        self.axpyw_sess_binds_ = [
+            self.axpyw_sess_.io_binding()._iobinding
+            for n in range(n_tensors)]
 
-    def update_weights(self, device, statei, gradienti, batch_size,
+        self.alpha_ = numpy.array(
+            [0], dtype=TENSOR_TYPE_TO_NP_TYPE[
+                self.axpyw_onnx_.graph.input[0].type.tensor_type.elem_type])
+        self.beta_ = numpy.array(
+            [0], dtype=TENSOR_TYPE_TO_NP_TYPE[
+                self.axpyw_onnx_.graph.input[0].type.tensor_type.elem_type])
+
+    def update_weights(self, n_bind, device, statei, gradienti, batch_size,
                        velocity=None):
+        if (not hasattr(self, "axpyw_onnx_") or
+                not hasattr(self, "axpyw_sess_binds_")):
+            raise RuntimeError(  # pragma: no cover
+                "Attributes 'axpyw_sess_binds_' or "
+                "'axpyw_onnx_' is missing. Method "
+                "'build_onnx_function' has not been called.")
         if velocity is None:
             raise RuntimeError(  # pragma: no cover
                 "Velocity must not be None for this way of updating weights.")
-        self._bind_input_ortvalue(
-            "X1", self.axpyw_sess_bind_, gradienti, device)
-        self._bind_input_ortvalue("X2", self.axpyw_sess_bind_, statei, device)
-        self._bind_input_ortvalue("G", self.axpyw_sess_bind_, velocity, device)
-        alpha = - self.value / batch_size  # pylint: disable=E1130
-        alpha_alive = numpy.array([alpha], dtype=numpy.float32)
-        beta = self.momentum
-        beta_alive = numpy.array([beta], dtype=numpy.float32)
-        ort_alpha_alive = C_OrtValue.ortvalue_from_numpy(
-            alpha_alive, device)
-        ort_beta_alive = C_OrtValue.ortvalue_from_numpy(
-            beta_alive, device)
-        self._bind_input_ortvalue(
-            "alpha", self.axpyw_sess_bind_, ort_alpha_alive, device)
-        self._bind_input_ortvalue(
-            "beta", self.axpyw_sess_bind_, ort_beta_alive, device)
-        self._bind_output_ortvalue('Y', self.axpyw_sess_bind_, statei)
-        self._bind_output_ortvalue('Z', self.axpyw_sess_bind_, velocity)
-        self.axpyw_sess_._sess.run_with_iobinding(self.axpyw_sess_bind_, None)
-        return self.axpyw_sess_bind_.get_outputs()  # loss, velocity
+        bind = self.axpyw_sess_binds_[n_bind]
+        self._bind_input_ortvalue("X1", bind, gradienti, device, cache=True)
+        self._bind_input_ortvalue("X2", bind, statei, device, cache=True)
+        self._bind_input_ortvalue("G", bind, velocity, device, cache=True)
+        self.alpha_[0] = - self.value / batch_size  # pylint: disable=E1130
+        self.beta_[0] = self.momentum
+        ort_alpha = C_OrtValue.ortvalue_from_numpy(self.alpha_, device)
+        ort_beta = C_OrtValue.ortvalue_from_numpy(self.beta_, device)
+        self._bind_input_ortvalue("alpha", bind, ort_alpha, device, cache=True)
+        self._bind_input_ortvalue("beta", bind, ort_beta, device, cache=True)
+        self._bind_output_ortvalue('Y', bind, statei, cache=True)
+        self._bind_output_ortvalue('Z', bind, velocity, cache=True)
+        self.axpyw_sess_._sess.run_with_iobinding(bind, None)
+        return bind.get_outputs()  # loss, velocity

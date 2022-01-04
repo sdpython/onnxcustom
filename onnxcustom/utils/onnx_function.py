@@ -630,7 +630,7 @@ def _onnx_n_penalty_elastic_error(target_opset=None, dtype=numpy.float32,
         OnnxReduceSum, OnnxAbs, OnnxSum)
 
     if n_tensors <= 0:
-        raise ValueError(
+        raise ValueError(  # pragma: no cover
             "This function is useless if the number of tensors is null.")
 
     var_type = dtype_to_var_type(dtype)
