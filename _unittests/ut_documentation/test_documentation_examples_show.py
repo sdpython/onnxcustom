@@ -3,11 +3,7 @@
 """
 import unittest
 import os
-import sys
-import importlib
-import subprocess
-from datetime import datetime
-from pyquickhelper.pycode import skipif_circleci, ExtTestCase
+from pyquickhelper.pycode import ExtTestCase
 
 
 class TestDocumentationExampleShow(ExtTestCase):
@@ -16,11 +12,6 @@ class TestDocumentationExampleShow(ExtTestCase):
 
         this = os.path.abspath(os.path.dirname(__file__))
         onxc = os.path.normpath(os.path.join(this, '..', '..'))
-        pypath = os.environ.get('PYTHONPATH', None)
-        sep = ";" if sys.platform == 'win32' else ':'
-        pypath = "" if pypath in (None, "") else (pypath + sep)
-        pypath += onxc
-        os.environ['PYTHONPATH'] = pypath
         fold = os.path.normpath(
             os.path.join(this, '..', '..', '_doc', 'examples'))
         found = os.listdir(fold)
