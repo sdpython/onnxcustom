@@ -17,6 +17,8 @@ tools
 make function
 +++++++++++++
 
+All functions uses to create an ONNX graph.
+
 .. autofunction:: onnx.helper.make_node
 
 .. autofunction:: onnx.helper.make_graph

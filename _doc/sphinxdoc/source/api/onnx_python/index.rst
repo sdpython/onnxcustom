@@ -1,12 +1,14 @@
 
 .. _l-python-onnx-api:
 
-Selected onnx API
-=================
+Summary of onnx API
+===================
 
-This section gathers documentations from the most frequent
-used functions or classes from :epkg:`onnx`. Next function returns
-the opset of the installed version of package :epkg:`onnx`.
+This section gathers many functions or
+classes from :epkg:`onnx` used when generated ONNX files
+from machine learned models. Most of the examples
+are executed during the generation of the documenation
+with this version of :epkg:`onnx`.
 
 .. autofunction:: onnx.defs.onnx_opset_version
 

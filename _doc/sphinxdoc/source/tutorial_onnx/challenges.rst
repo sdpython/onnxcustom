@@ -23,14 +23,16 @@ What is a converting library?
 :epkg:`sklearn-onnx` converts :epkg:`scikit-learn` models
 into ONNX. It rewrites the prediction function of a model,
 whatever it is, with ONNX operators using the API introduced
-above. It ensures that the predictions are very close to
-the expected predictions computed with the original model.
+above. It ensures that the predictions are equal or at least
+very close to the expected predictions computed with the
+original model.
 
-Machine learning libraries usually has their own design.
+Machine learning libraries usually have their own design.
 That's why there exists a specific converting library for
-each of them. Many of them are listed
+each of them. Many of them are listed there:
 `Converting to ONNX format
-<https://github.com/onnx/tutorials#converting-to-onnx-format>`_
+<https://github.com/onnx/tutorials#converting-to-onnx-format>`_.
+Here is a short list:
 
 * :epkg:`sklearn-onnx`: converts models from :epkg:`scikit-learn`
 * `tensorflow-onnx <https://github.com/onnx/tensorflow-onnx>`_:
@@ -52,12 +54,13 @@ Converting libraries are not compatible among each others.
 specialized into :epkg:`scikit-learn`.
 
 One challenge is customization. It is difficult to support
-custom models from users. They have to write the specific
-converter for the model is implemented. It is like implementing
+custom pieces in a machine learned model.
+They have to write the specific converter for this piece.
+Somehow, it is like implementing
 twice the prediction function. There is one easy case:
 deep learning frameworks have their own primitives to ensure
 the same code can be executed on different environment.
-As long as a custom layer or subpart is using pieces of
+As long as a custom layer or a subpart is using pieces of
 :epkg:`pytorch` or :epkg:`tensorflow`, there is not much to do.
 It is a different story for :epkg:`scikit-learn`. This package
 does not have its own addition or multiplication, it relies
@@ -75,26 +78,28 @@ is different or the signature has changed. It is also associated to
 an opset, version `1.10` is opset 15, `1.11` will be opset 16.
 Every ONNX graph should define the opset it follows. Changing this
 version without updating the operators could make the graph invalid.
-If the opset is left unspecified, ONN will consider that the graph
+If the opset is left unspecified, ONNX will consider that the graph
 is valid for the latest opset.
 
-New opsets usually introduce new operators and the same function
-could be implemented differenty with these new operators and
-more efficient. However, the runtime the model is running on may not
-support newest opsets. That's why every converting library offers the
-possibility to create an ONNX graph for a specific opset.
-ONNX language describes heavy operators. Changing the opset is similar
-to upgrade a library but :epkg:`onnx` and onnx runtimes must support
-backward compatibility.
+New opsets usually introduce new operators. A same inference function
+could be implemented differently, usually in a more efficient way.
+However, the runtime the model is running on may not
+support newest opsets or at least not in the installed version.
+That's why every converting library offers the
+possibility to create an ONNX graph for a specific opset usually called
+``target_opset``. ONNX language describes simple and complex operators.
+Changing the opset is similar to upgrade a library. :epkg:`onnx`
+and onnx runtimes must support backward compatibility.
 
 Other API
 =========
 
-Examples in previous sections shows that :epkg:`onnx` API is
+Examples in previous sections show that :epkg:`onnx` API is
 very verbose. It is also difficult to get a whole picture of
 a graph by reading the code unless it is a small one. Almost
 every converting library has implemented a different API
-to create a graph, usually more simple.
+to create a graph, usually more simple, less verbose
+than the API of :epkg:`onnx` package.
 All API automate the addition of initializers, hide the creation
 of a name of every intermediate result, deal with different
 version for different opset.
@@ -153,8 +158,9 @@ Operator as function
 The second API shown in :ref:`l-plot-custom-converter`
 is more compact and defines
 every ONNX operator as composable functions.
-The syntax looks like this for KMeans, less verbose
-and easier to read.
+The syntax looks like this for `KMeans
+<https://scikit-learn.org/stable/modules/generated/sklearn.cluster.KMeans.html>`_,
+less verbose and easier to read.
 
 ::
 
@@ -186,6 +192,9 @@ It looks like :epkg:`numpy` syntax but every function is
 converted into ONNX primitives.
 
 ::
+
+    import mlprodict.npy.numpy_onnx_impl as nxnp
+    import mlprodict.npy.numpy_onnx_impl_skl as nxnpskl
 
     @onnxsklearn_class("onnx_graph")
     class CustomTransformerOnnx(TransformerMixin, BaseEstimator):

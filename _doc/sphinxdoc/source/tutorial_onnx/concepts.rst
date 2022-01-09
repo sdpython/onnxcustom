@@ -2,7 +2,7 @@
 ONNX Concepts
 =============
 
-ONNX can be compared to a programming language specified
+ONNX can be compared to a programming language specialized
 in mathematical functions. It defines all the necessary operations
 a machine learning model needs to implement its inference function
 with this langage. A linear regression could be represented
@@ -40,8 +40,9 @@ Input, Output, Node, Initializer, Attributes
 
 Building an ONNX graph means implementing a function
 with the ONNX language or more precisely the :ref:`l-onnx-operators`.
-It is easier to read when there is one operator per line.
 A linear regression would be written this way.
+The following lines do not follow python syntax.
+It is just a kind of pseudo code to illustrate the model.
 
 ::
 
@@ -55,7 +56,7 @@ A linear regression would be written this way.
     onnx.output(0) = axc
 
 This code implements a function with the signature `f(x, a, c) -> axc`.
-*a*, *a*, *c* are the **inputs**, *axc* is the **output**.
+And *x*, *a*, *c* are the **inputs**, *axc* is the **output**.
 *ax* is an intermediate result.
 Inputs and outputs are changing at each inference.
 *MatMul* and *Add* are the **nodes**. They also have inputs and outputs.
@@ -65,7 +66,7 @@ in Section :ref:`l-onnx-linear-regression-onnx-api`.
 
 The graph could also have an **initializer**. When an input
 never changes such as the coefficients of the linear regression,
-it be turned into a constant and stored into the graph.
+it is most efficient to turn it into a constant stored in the graph.
 
 ::
 
@@ -78,16 +79,17 @@ it be turned into a constant and stored into the graph.
 
     onnx.output(0) = axc
 
-Visually, this graph would look like this
-(initializers are hidden). This graph was obtained with this
+Visually, this graph would look like the following image.
+The right side describes operator *Add* where the second input
+is defined as an initializer. This graph was obtained with this
 code :ref:`l-onnx-linear-regression-onnx-api-init`.
+
+.. image:: images/linreg2.png
 
 An **attribute** is a fixed parameter of an operator. Operator :epkg:`Gemm`
 has four attributes, *alpha*, *beta*, *transA*, *transB*. Unless the runtime
 allows it through its API, once it has loaded the ONNX graph, these values
 cannot be changed and remain frozen for all the predictions.
-
-.. image:: images/linreg2.png
 
 Serialization with protobuf
 +++++++++++++++++++++++++++
@@ -99,21 +101,22 @@ Once a model is converted into ONNX, the production environment
 only needs a runtime to execute the graph defined with ONNX
 operators. This runtime can be developped in any language
 suitable for the production application, C, java, python, javascript,
-C#, Webassembly, arm...
+C#, Webassembly, ARM...
 
-But to make that happen, the ONNX graph needs to be saved and it should
-take as less space as possible. That's why ONNX uses :epkg:`protobuf` to
-serizalize the graph into one single block
+But to make that happen, the ONNX graph needs to be saved.
+ONNX uses :epkg:`protobuf` to serialize the graph into
+one single block
 (see `Parsing and Serialization
 <https://developers.google.com/protocol-buffers/docs/pythontutorial#
-parsing-and-serialization>`_).
+parsing-and-serialization>`_). It aims at optimizing the model size
+as much as possible.
 
 Metadata
 ++++++++
 
 Machine learned models are continuously refreshed. It is important
 to keep track of the model version, the author of the model,
-how it was train. ONNX offers the possibility to store additional data
+how it was trained. ONNX offers the possibility to store additional data
 into the model itself.
 
 * **doc_string**: Human-readable documentation for this model.
@@ -144,14 +147,15 @@ deep neural networks layer (RNN, DropOut, ...),
 activations functions (Relu, Softmax, ...).
 It covers most of the operations needed to implement
 inference functions from standard and deep machine learning.
-A few operators are dedicated to text but they hardly cover
-the needs. The main list also missing tree based models very
-popular in standard machine learning.
+ONNX does not implement every existing machine learning operator,
+the list of operator would be infinite.
 
-The main list is identified with a domain **ai.onnx**.
-A **domain** can be defined a set of operators.
-Additional operators such
-are part of another domain **ai.onnx.ml** :ref:`l-onnx-operators-ml`,
+The main list of operators is identified with a domain **ai.onnx**.
+A **domain** can be defined as a set of operators.
+A few operators in this list are dedicated to text but they hardly cover
+the needs. The main list is also missing tree based models very
+popular in standard machine learning.
+These are part of another domain **ai.onnx.ml** :ref:`l-onnx-operators-ml`,
 it includes tree bases models (TreeEnsmble Regressor, ...),
 preprocessing (OneHotEncoder, LabelEncoder, ...), SVM models
 (SVMRegressor, ...), imputer (Imputer).
@@ -172,9 +176,9 @@ by:
   a dimension can be null
 * a contiguous array: it represents all the values
 
-This definition do not includes *strides* or the possibility to define
-a part of a tensor based on an existing tensor. An ONNX tensor is a dense
-full array.
+This definition do not include *strides* or the possibility to define
+a view of a tensor based on an existing tensor. An ONNX tensor is a dense
+full array with no strides.
 
 Element Type
 ~~~~~~~~~~~~
@@ -207,7 +211,7 @@ and :epkg:`numpy`.
 
 ONNX is strongly typed and its definition does not support
 implicit cast. It is impossible to add two tensors or matrices
-with different types even if other languages do. That's why explicit
+with different types even if other languages does. That's why explicit
 cast must be inserted in a graph.
 
 Sparse Tensor
@@ -237,15 +241,15 @@ The current version is the following.
     :showcode:
 
     import onnx
-    print(onnx.__version__, onnx.defs.onnx_opset_version())
+    print(onnx.__version__, " opset=", onnx.defs.onnx_opset_version())
 
 An opset is also attached to every ONNX graphs. It is a global
-information and defines the version of all operators inside the graph.
+information. It defines the version of all operators inside the graph.
 Operator *Add* was updated in version 6, 7, 13 and 14. If the
 graph opset is 15, it means operator *Add* follows specifications
 version 14. If the graph opset is 12, then operator *Add* follows
 specifications version 7. An operator in a graph follows its most
-recent update below the global graph opset.
+recent definition below (or equal) the global graph opset.
 
 A graph may include operators from several domains, `ai.onnx` and
 `ai.onnx.ml` for example. In that case, the graph must defines a
@@ -397,7 +401,7 @@ One example is the operator CDist. Notebook `Pairwise distances with ONNX (pdist
 goes into the details of it. Pairwise distances, as shown in section
 :ref:`l-operator-scan-onnx-tutorial`, can be implemented with operator
 Scan. However, a dedicated operator called CDist is proved significantly
-faster, significantly to make the effort to implement a dedicated runtime
+faster, significantly enough to make the effort to implement a dedicated runtime
 for it.
 
 Shape (and Type) Inference
@@ -414,7 +418,7 @@ graph:
 
 If *x* and *y* have the same shape, then *z* and *w* also have the same
 shape. Knowing that, it is possible to reuse the buffer allocated for *z*,
-to compute the absolute value of *w* inplace. Shape inference helps the
+to compute the absolute value *w* inplace. Shape inference helps the
 runtime to manage the memory and therefore to be more efficient.
 
 ONNX package can compute in most of the cases the output shape

@@ -4,7 +4,7 @@ Training with onnxruntime
 =========================
 
 :epkg:`onnxruntime` offers the possibility to compute
-a gradient. Then we some extra lines, it is possible
+a gradient. Then with some extra lines, it is possible
 to implement a gradient descent.
 
 Training capabilities were released in another package

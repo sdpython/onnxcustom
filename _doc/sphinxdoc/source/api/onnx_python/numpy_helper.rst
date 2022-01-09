@@ -14,16 +14,22 @@ array
 
 .. autofunction:: onnx.numpy_helper.from_array
 
-sequence, dictionary, optional
-++++++++++++++++++++++++++++++
+sequence
+++++++++
 
 .. autofunction:: onnx.numpy_helper.to_list
 
 .. autofunction:: onnx.numpy_helper.from_list
 
+dictionary
+++++++++++
+
 .. autofunction:: onnx.numpy_helper.to_dict
 
 .. autofunction:: onnx.numpy_helper.from_dict
+
+optional
+++++++++
 
 .. autofunction:: onnx.numpy_helper.to_optional
 

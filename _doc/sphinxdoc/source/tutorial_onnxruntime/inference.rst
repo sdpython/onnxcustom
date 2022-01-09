@@ -94,8 +94,8 @@ Session Options
 ===============
 
 Many options can change the behaviour of the class during predictions.
-First class is :epkg:`SessionOptions`. It may change the default
-behaviour. Next sections describe some of the members.
+First class is :epkg:`SessionOptions`.
+Next sections describe some of the members.
 This class can also be used to profile the execution or
 adjust graph optimization. This will be seen in further sections.
 Next sections just give an overview, you should go to classes
@@ -181,9 +181,9 @@ settings. The list of available providers is a subset which depends on the machi
     print("available providers")
     pprint.pprint(onnxruntime.get_available_providers())
 
-:epkg:`onnxruntime` selects `CPUExecutionProvider` if its the only one available.
+:epkg:`onnxruntime` selects `CPUExecutionProvider` if it is the only one available.
 It raises an exception if there are more.
-It is possible to select which providers must be used for the execution
+It is possible to select which provider must be used for the execution
 by filling argument `providers`:
 
 ::
@@ -203,9 +203,10 @@ Inference on a device different from CPU
 ========================================
 
 By default, everything happens on CPU.
-Next lines shows how to do computation on GPU
+Next lines show how to do computation on GPU
 with :epkg:`onnxruntime`. Method `run` was using numpy arrays,
 another method is needed to use another device.
+The choice is not unique.
 Example :ref:`benchmark-ort-api` shows which API is the fastest.
 
 C_OrtValue
@@ -433,10 +434,9 @@ Graph Optimisations
 ===================
 
 By default, :epkg:`onnxruntime` optimizes an ONNX graph as much
-as it can. It removes every node it can, merges duplicates initializer,
-fuses node into more complex node but more efficient such
-*FusedMatMul* which deals with transposition as well.
-
+as it can. It removes every node it can, merges duplicated initializers,
+fuses nodes into more complex node but more efficient such
+as *FusedMatMul* which deals with transposition as well.
 There are four level of optimization and the final can be saved
 on a disk to look at it.
 
@@ -449,9 +449,9 @@ on a disk to look at it.
     # or GraphOptimizationLevel.ORT_ENABLE_ALL
     so.optimized_model_filepath = "to_save_the_optimized_onnx_file.onnx"
 
-Example shows how to enable or disable optimizations on a simple
-graph. The bigger the graph is, the more efficient they are.
-See :ref:`benchmark-ort-onnx-graph-opt`.
+The bigger the graph is, the more efficient optimizations are.
+One example shows how to enable or disable optimizations on a simple
+graph: :ref:`benchmark-ort-onnx-graph-opt`.
 
 Class :epkg:`InferenceSession` as any other class from
 :epkg:`onnxruntime` cannot be pickled. Everything can

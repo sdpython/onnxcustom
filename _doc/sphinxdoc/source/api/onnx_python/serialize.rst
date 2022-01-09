@@ -28,6 +28,10 @@ Or:
 Save a model
 ++++++++++++
 
+This ONNX graph needs to be serialized into one contiguous
+memory buffer. Method `SerializeToString` is available
+in every ONNX objects.
+
 ::
 
     with open("model.onnx", "wb") as f:

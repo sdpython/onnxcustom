@@ -20,7 +20,7 @@ in machine learning described by the following expression
 :math:`Y = XA + B`. We can see it as a function of three
 variables :math:`Y = f(X, A, B)` decomposed into
 `y = Add(MatMul(X, A), B))`. That what's we need to represent
-with ONNX operators. The first is to implement a function
+with ONNX operators. The first thing is to implement a function
 with :ref:`ONNX operators <l-onnx-operators>`.
 ONNX is strongly typed. Shape and type must be defined for both
 input and output of the function. That said, we need four functions
@@ -110,7 +110,7 @@ intermediate results. This is how it looks like.
     onnx_model = make_model(graph)
     print("DOT-SECTION", OnnxInference(onnx_model).to_dot())
 
-An empty shape (`None`) means any shape, a shapes defines as `[None, None]`
+An empty shape (`None`) means any shape, a shape defined as `[None, None]`
 tells this object is a tensor with two dimensions without any further precision.
 The ONNX graph can also be inspected by looking into the fields
 of each object of the graph.
@@ -138,32 +138,38 @@ of each object of the graph.
     onnx_model = make_model(graph)
 
     # the list of inputs
+    print('** inputs **')
     print(onnx_model.graph.input)
 
-    # in a more nicely format
+    # in a more nicely format    
+    print('** inputs **')
     for obj in onnx_model.graph.input:
         print("name=%r dtype=%r shape=%r" % (
             obj.name, obj.type.tensor_type.elem_type,
             shape2tuple(obj.type.tensor_type.shape)))
 
     # the list of outputs
+    print('** outputs **')
     print(onnx_model.graph.output)
 
     # in a more nicely format
+    print('** outputs **')
     for obj in onnx_model.graph.output:
         print("name=%r dtype=%r shape=%r" % (
             obj.name, obj.type.tensor_type.elem_type,
             shape2tuple(obj.type.tensor_type.shape)))
 
     # the list of nodes
-    print(onnx_model.graph.output)
+    print('** nodes **')
+    print(onnx_model.graph.node)
 
     # in a more nicely format
+    print('** nodes **')
     for node in onnx_model.graph.node:
         print("name=%r type=%r input=%r output=%r" % (
             node.name, node.op_type, node.input, node.output))
 
-The tensor type is an integer. The following array gives the
+The tensor type is an integer (= 1). The following array gives the
 equivalent type with :epkg:`numpy`.
 
 .. runpython::
@@ -177,6 +183,7 @@ equivalent type with :epkg:`numpy`.
 Serialization
 =============
 
+The model needs to be saved to be deployed.
 ONNX is based on :epkg:`protobuf`. It minimizes the space needed
 to save the graph on disk. Every object (see :ref:`l-onnx-classes`)
 in :epkg:`onnx` can be serialized with method `SerializeToString`. That's
@@ -227,7 +234,8 @@ The graph can be restored with function `load`:
 
 It looks exactly the same. Any model can be serialized this way
 unless they are bigger than 2 Gb. :epkg:`protobuf` is limited to size
-smaller than this threshold. Next section show how to overcome that limit.
+smaller than this threshold. Next sections will show how to
+overcome that limit.
 
 .. _l-onnx-linear-regression-onnx-api-init:
 
@@ -238,12 +246,12 @@ The previous model assumed the coefficients of the linear regression
 were also input of the model. That's not very convenient. They should be
 part of the model itself as constant or **initializer** to follow
 onnx semantic. Next example modifies the previous one to change inputs
-`A` and `B` into initializer. The package implements two functions to
+`A` and `B` into initializers. The package implements two functions to
 convert from :epkg:`numpy` into :epkg:`onnx` and the other way around
 (see :ref:`l-numpy-helper-onnx-array`).
 
-* `onnx.numpy_helper.to_array`: converts from onnx to numpy
-* `onnx.numpy_helper.from_array`: converts from numpy to onnx
+* ``onnx.numpy_helper.to_array``: converts from onnx to numpy
+* ``onnx.numpy_helper.from_array``: converts from numpy to onnx
 
 .. runpython::
     :showcode:
@@ -298,7 +306,7 @@ convert from :epkg:`numpy` into :epkg:`onnx` and the other way around
     print("DOT-SECTION", OnnxInference(onnx_model).to_dot())
 
 Again, it is possible to go through the onnx structure to check
-how the initializer look like.
+how the initializers look like.
 
 .. runpython::
     :showcode:
@@ -326,19 +334,21 @@ how the initializer look like.
     graph = make_graph([node1, node2], 'lr', [X], [Y], [A, C])
     onnx_model = make_model(graph)
 
+    print('** intializer **')
     for init in onnx_model.graph.initializer:
         print(init)
 
 The type is defined as integer as well with the same meaning.
 In this second example, there is only one input left.
 Input `A` and `B` were removed. They could be kept. In that case,
-they are optional. The user can compute the predictions. Every undefined
-input is replaced by the corresponding initializer. It is a default value.
+they are optional: every initiliazer sharing the same name as input
+is considered as a default value. It replaces the input if this one
+is not given.
 
 Attributes
 ==========
 
-Some operators needs attributes such as :epkg:`Transpose` operator.
+Some operators need attributes such as :epkg:`Transpose` operator.
 Let's build the graph for expression :math:`y = XA' + B` or
 `y = Add(MatMul(X, Transpose(A)) + B)`. Tranpose needs an attribute
 defining the permutation of axes: `perm=[1, 0]`. It is added
@@ -434,7 +444,7 @@ graph was created. Two of them have a value:
     for opset in onnx_model.opset_import:
         print("opset domain=%r version=%r" % (opset.domain, opset.version))
 
-:epkg:`IR` defined the version of ONNX language version.
+:epkg:`IR` defined the version of ONNX language.
 Opset defines the version of operators being used.
 Without any precision, ONNX uses the latest version available
 coming from the installed package.
@@ -495,7 +505,7 @@ Subgraph: test and loops
 ========================
 
 They are usually grouped in a category called *control flow*.
-It is usually better to avoid them as they are not as afficient
+It is usually better to avoid them as they are not as efficient
 as the matrix operation are much faster and optimized.
 
 If
@@ -616,7 +626,7 @@ Scan
 
 :epkg:`Scan` seems quite complex when reading the specifications.
 It is useful to loop over one dimension of a tensor and store
-the results in preallocated tensor.
+the results in a preallocated tensor.
 
 The following example implements a classic nearest neighbors for
 a regression problem. The first step consists in computing the
@@ -879,6 +889,9 @@ pipeline.
 
     print(onnx_simple_text_plot(onnx_model))
 
+This way is used to create small models but it is rarely used
+in converting libraries.
+
 Checker and Shape Inference
 ===========================
 
@@ -939,9 +952,10 @@ operators, it can do the computation inplace...
     print(inferred_model)
 
 There is a new attribute `value_info` which stores the inferred shapes.
-Letter `I` can be seen as a variable. It depends on the inputs
+Letter `I` in ``dim_param: "I"`` can be seen as a variable. It depends on the inputs
 but the function is able to tell which intermediate result will share
 the same dimension.
-
 Shape inference does not work all the time. For example,
 a Reshape operator. Shape inference only works if the shape is constant.
+If not constant, the shape cannot be easily inferred unless
+the following nodes expect specific shape.

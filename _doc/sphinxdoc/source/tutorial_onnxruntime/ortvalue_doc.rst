@@ -3,13 +3,13 @@
 OrtValue
 ========
 
-:epkg:`numpy` has its :class:`numpy.array`, :epkg:`pytorch` has
+:epkg:`numpy` has its :class:`numpy.ndarray`, :epkg:`pytorch` has
 its :class:`torch.Tensor`. :epkg:`onnxruntime` has its
 `OrtValue`. As opposed to the other two framework,
 `OrtValue` does not support simple operations such as
 addition, subtraction, multiplication or division. It can only be
 used to be consumed by :epkg:`onnxruntime` or converted into another
-object such as :class:`numpy.array`. An `OrtValue` can hold more than
+object such as :class:`numpy.ndarray`. An `OrtValue` can hold more than
 a dense tensor, it can also be a sparse tensor, a sequence of tensors
 or a map of tensors. Like :class:`torch.Tensor`, the data can be located
 on CPU, CUDA, ...
@@ -78,7 +78,7 @@ The class has three methods:
 
 * *device_type()*: returns the device type
 * *device_id()*: returns the device index
-* *device_mem_type()*: not available yet*
+* *device_mem_type()*: *not available yet*
 
 Memory Allocator
 ================
@@ -103,7 +103,7 @@ Creation from numpy
 +++++++++++++++++++
 
 The most easier way is to create an :epkg:`C_OrtValue` from
-a :class:`numpy.array`. Next example does that on CPU.
+a :class:`numpy.ndarray`. Next example does that on CPU.
 However even that simple example hides some important detail.
 
 .. runpython::
@@ -129,7 +129,7 @@ However even that simple example hides some important detail.
 
 The last two lines show that both objects points to the same location.
 To avoid copying the data, :epkg:`onnxruntime` only creates a structure
-warpping the same memory buffer. As a result, the numpy array must
+wrapping the same memory buffer. As a result, the numpy array must
 **remain alive** as long as the instance of `C_OrtValue` is.
 If it does not, the program usually crashes with no exception but a
 segmentation fault.
@@ -201,7 +201,7 @@ DLPack
 :epkg:`DLPack` is protocol imagined to avoid copying memory when data
 is created by one framework and used by another one. The safest way is
 to copy entirely the data in its own containers. But that costs a lot
-is the data is big or may be even difficult if the data is big compared
+if the data is big or may be even difficult if the data is big compared
 to the memory size. The DLpack structure describes a tensor, or a multidimensional
 vector with a specific element type and a specific shape. It also
 keeps the location or device where the data is (CPU, CUDA, ...).
@@ -232,7 +232,7 @@ Method `to_dlpack` exports a :epkg:`C_OrtValue` into a DLPack stucture.
 Static method `from_dlpack` creates :epkg:`C_OrtValue` from a DLPack stucture.
 Everytime one of these methods is used, the previous container loses
 ownership to the next one. Only this one must be used. It becomes
-responsibles for the data deletion.
+responsible for the data deletion.
 
 .. runpython::
     :showcode:
@@ -282,14 +282,14 @@ Boolean ambiguity
 
 Boolean type is usually represented as a vector of unsigned bytes.
 This information is not actually stored in the DLPack structure
-and there is no way to distringuish between the two. That's why
+and there is no way to distinguish between the two. That's why
 method `from_dlpack` has an additional parameter. You can read
 more about this in `issue 75 <https://github.com/dmlc/dlpack/issues/75>`_.
 
 Sparse Tensors
 ==============
 
-Sparse tensors only represents 2D matrices and are much more efficient
+Sparse tensors only represent 2D matrices and are much more efficient
 in standard machine learning to represent categories or text features.
 This structure is usually created by an operator such as
 :epkg:`OneHotEncoder` or :epkg:`TfIdfVectorizer`.
