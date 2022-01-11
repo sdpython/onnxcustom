@@ -173,10 +173,6 @@ def penalty_loss_onnx(name, dtype, l1=None, l2=None, existing_names=None):
         return inits, nodes
 
     if l2 is None or l2 == 0:
-        if l1 is None or l1 == 0:
-            raise ValueError(
-                "l1 and l2 cannot be null or None at the same time, "
-                "name=%r." % name)
         l1_name = _unique_name(existing_names, "l1_weight_%s" % suffix)
         inits.extend([from_array(
             numpy.array([l1], dtype=dtype), name=l1_name)])

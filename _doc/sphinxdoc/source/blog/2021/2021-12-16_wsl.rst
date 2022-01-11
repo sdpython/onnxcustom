@@ -122,7 +122,7 @@
         export CUDA_VERSION=11.3
         export CUDACXX=/usr/local/cuda-${CUDA_VERSION}/bin/nvcc
         export MPI_HOME=~/install/openmpi-4.1.2
-        python3 ./tools/ci_build/build.py --config RelWithDebInfo --use_mpi false --enable_training --use_cuda --cuda_home /usr/local/cuda-${CUDA_VERSION}/ --cudnn_home /usr/local/cuda-${CUDA_VERSION}/ --build_wheel --parallel --cuda_version=${CUDA_VERSION} --skip_tests --enable_training_torch_interop --build_dir ./build/linux_gpu
+        python3 ./tools/ci_build/build.py --skip_tests --build_dir ./build/linux_gpu --config Release --use_mpi false --enable_training --enable_training_torch_interop --use_cuda --cuda_version=${CUDA_VERSION} --cuda_home /usr/local/cuda-${CUDA_VERSION}/ --cudnn_home /usr/local/cuda-${CUDA_VERSION}/ --build_wheel --parallel
 
     Option ``--parallel 1`` can be used to fix the parallelism while building onnxruntime.
     Option `--use_mpi false` can be replaced by `--mpi_home /usr/local/lib/openmpi`.
