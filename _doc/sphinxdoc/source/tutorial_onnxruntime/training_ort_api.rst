@@ -7,14 +7,15 @@ Training with onnxruntime
 a gradient. Then with some extra lines, it is possible
 to implement a gradient descent.
 
-Training capabilities were released in another package
-:epkg:`onnxruntime-training`. It is not an extension,
-it replaces :epkg:`onnxruntime` and has the same import
-name. It can be built with different compilation settings
-or downloaded from pypi. There are two versions to keep
-a low size for the version which only does inference.
+Training capabilities are part of the same repository
+but released under a different package :epkg:`onnxruntime-training`.
+It is not an extension, it replaces :epkg:`onnxruntime`
+and has the same import name. It can be built with
+different compilation settings or downloaded from pypi.
+There are two versions to keep a low size for the version
+which only does inference.
 
-Two API are available. The first one assumes the loss
+Two training API are available. The first one assumes the loss
 is part of the graph to train. It can be trained as a whole.
 The second API assumes the graph is only a piece or
 a layer in a model trained by another framework or at
@@ -43,10 +44,18 @@ steps:
 That's what method :meth:`OrtGradientOptimizer._create_training_session
 <onnxcustom.training.optimizers.OrtGradientOptimizer._create_training_session>`
 does. It does not implement a training algorithm, only an iteration
-forward, backward with the expected label, the learning rate and the features
+- forward + backward - with the expected label, the learning rate and the features
 as inputs. The class updates its weights. When the training ends, the user
 must collect the updated weights and create a new ONNX file with the
 optimized weights.
+
+:epkg:`onnxruntime-training` does not implement loss functions.
+That must be done independently. That's what function
+:func:`onnxcustom.utils.orttraining_helper.add_loss_output>` does.
+It implements a couple of usual losses in ONNX.
+Another function :func:`onnxcustom.utils.orttraining_helper.get_train_initializer`
+guesses all the coefficients of an ONNX graph if the user does not specify any.
+Another common use not implemented in :epkg:`onnxruntime-training`.
 
 GPU is no different. It changes the syntax because data has to
 be moved on this device first. Example :ref:`l-orttraining-linreg-gpu`
@@ -60,11 +69,13 @@ Second API: TrainingAgent
 :epkg:`TrainingAgent` is used by class
 :class:`OrtGradientForwardBackwardOptimizer
 <onnxcustom.training.optimizers_partial.OrtGradientForwardBackwardOptimizer>`
-to train the same model. It splits the training into the
-forward step, the backward (gradient computation) and the weight
-updates. All must be explicitely implemented outside of this class
-or be taken care of by an existing framework. It goes through
-the following steps:
+to train the same model. The training is split into the
+forward step, the backward step (gradient computation), the weight
+updating step. :epkg:`TrainingAgent` implement forward and backward.
+Everything else must be explicitely implemented outside of this class
+or be taken care of by an existing framework such as this one
+or :epkg:`pytorch`. First, forward, backward with :epkg:`TrainingAgent`.
+To build it, the following steps are needed:
 
 * fill an instance of :epkg:`OrtModuleGraphBuilderConfiguration`
 * create the training graph with :epkg:`OrtModuleGraphBuilder`
@@ -78,7 +89,7 @@ does. Forward and backward steps must be called separately.
 It is not trivial to guess how to call them (a forward step can be
 called to predict or to train if followed by a backward step).
 Class :class:`OrtGradientForwardBackwardFunction
-<onnxcustom.training.optimizers_partial.OrtGradientForwardBackwardFunction>`
+<onnxcustom.training.ortgradient.OrtGradientForwardBackwardFunction>`
 implements those two steps with the proper API. Next lines gives an
 idea on how it can be done. First the forward step.
 
@@ -139,8 +150,32 @@ is the goal. Then the same
 example is changed to use GPU: :ref:`l-orttraining-nn-gpu-fwbw`.
 And finally a benchmark to compare this approach with
 :epkg:`scikit-learn`: :ref:`l-orttraining-benchmark-fwbw`.
+Beside forward and backard, the training needs three elements
+to be complete.
 
-That approach is also to interact with :epkg:`pytorch`. The logic
-explained above and much more than that is implemented in
-class :epkg:`ORTModule`. That's what shows example
-:ref:`l-orttraining-benchmark-torch`.
+* **a loss**: a square loss for example :class:`SquareLearningLoss
+  <onnxcustom.training.sgd_learning_loss.SquareLearningLoss>`
+  but it could be :class:`ElasticLearningPenalty
+  <onnxcustom.training.sgd_learning_penalty.ElasticLearningPenalty>`.
+* **a way to update the weight**: a simple learning rate for a stockastic
+  gradient descent :class:`LearningRateSGD
+  <onnxcustom.training.sgd_learning_rate.LearningRateSGD>` or
+  something more complex such as :class:`LearningRateSGDNesterov
+  <onnxcustom.training.sgd_learning_rate.LearningRateSGDNesterov>`.
+* **a penalty applied to the weight**, it could be seen as an extension
+  of the loss but this design seemed more simple as it does not mix
+  the gradient applied to the output and the gradient due to the
+  penalty, the most simple penalty is no penalty with
+  :class:`NoLearningPenalty
+  <onnxcustom.training.sgd_learning_penalty.NoLearningPenalty>`,
+  but it could be L1 or L2 penalty as well with :class:`ElasticLearningPenalty
+  <onnxcustom.training.sgd_learning_penalty.ElasticLearningPenalty>`.
+
+These part can easily be replaced by the same pieces
+implemented in :epkg:`pytorch`. That's what wrapper
+class :epkg:`ORTModule` offers except it starts from a :epkg:`pytorch`
+model then converted into ONNX. That's what shows example
+:ref:`l-orttraining-benchmark-torch`. Class :class:`OrtGradientForwardBackwardOptimizer
+<onnxcustom.training.optimizers_partial.OrtGradientForwardBackwardOptimizer>`
+directly starts with the ONNX graph and adds the pieces not implemented
+in :epkg:`onnxruntime-training`.

@@ -141,7 +141,7 @@ of each object of the graph.
     print('** inputs **')
     print(onnx_model.graph.input)
 
-    # in a more nicely format    
+    # in a more nicely format
     print('** inputs **')
     for obj in onnx_model.graph.input:
         print("name=%r dtype=%r shape=%r" % (

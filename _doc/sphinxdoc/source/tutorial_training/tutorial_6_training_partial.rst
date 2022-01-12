@@ -35,21 +35,47 @@ It is initialized with an ONNX graph defining
 
 The class holds three attributes defining the loss, its gradient,
 the penalty, its gradient, a learning rate possibly with momentum.
+They are not implemented in :epkg:`onnxruntime-training`.
+That's why they are part of this package.
 
-* an object inheriting from :class:`BaseLearningLoss
+* ``train_session.learning_loss``: an object inheriting from
+  :class:`BaseLearningLoss
   <onnxcustom.training.sgd_learning_loss.BaseLearningLoss>`
-* an object inheriting from :class:`BaseLearningPenalty
-  <onnxcustom.training.sgd_learning_penalty.BaseLearningPenalty>`
-* an object inheriting from :class:`BaseLearningRate
+  to compute the loss and its gradient,
+  for example :class:`SquareLearningLoss
+  <onnxcustom.training.sgd_learning_loss.SquareLearningLoss>`
+  but it could be :class:`ElasticLearningPenalty
+  <onnxcustom.training.sgd_learning_penalty.ElasticLearningPenalty>`).
+* ``train_session.learning_rate``: an object inheriting from
+  :class:`BaseLearningRate
   <onnxcustom.training.sgd_learning_rate.BaseLearningRate>`
+  to update the weights. That's where the learning rate takes place.
+  It can be a simple learning rate for a stockastic
+  gradient descent :class:`LearningRateSGD
+  <onnxcustom.training.sgd_learning_rate.LearningRateSGD>` or
+  something more complex such as :class:`LearningRateSGDNesterov
+  <onnxcustom.training.sgd_learning_rate.LearningRateSGDNesterov>`.
+* ``train_session.learning_penalty``: an object inheriting from
+  :class:`BaseLearningPenalty
+  <onnxcustom.training.sgd_learning_penalty.BaseLearningPenalty>`
+  to penalize the weights, it could be seen as an extension
+  of the loss but this design seemed more simple as it does not mix
+  the gradient applied to the output and the gradient due to the
+  penalty, the most simple penalty is no penalty with
+  :class:`NoLearningPenalty
+  <onnxcustom.training.sgd_learning_penalty.NoLearningPenalty>`,
+  but it could be L1 or L2 penalty as well with :class:`ElasticLearningPenalty
+  <onnxcustom.training.sgd_learning_penalty.ElasticLearningPenalty>`.
 
-Because :epkg:`onnxruntime-training` does not implement any standard
-operations on :epkg:`OrtValue`, the only remaining is to create
-simple ONNX graph execute by :epkg:`InferenceSession` to compute
+The design seems over complicated
+compare to what :epkg:`pytorch` does. The main reason is :class:`torch.Tensor`
+supports matrix operations and class :epkg:`OrtValue` does not the same way.
+They can only be manipulated through ONNX graph.
+These three attrbiutes hide ONNX graph and :epkg:`InferenceSession` to compute
 loss, penalty and their gradient, and to update the weights accordingly.
 These three classes all implement meth `build_onnx_function` which
 creates create the ONNX graph based on the argument the classes were
-initialized with. Traning happens this way:
+initialized with. Training can then happen this way:
 
 ::
 
