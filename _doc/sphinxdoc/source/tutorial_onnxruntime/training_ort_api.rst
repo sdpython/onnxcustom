@@ -25,6 +25,8 @@ is convenient when a model is trained with :epkg:`pytorch`.
 .. contents::
     :local:
 
+.. _l-orttraining-first-api:
+
 First API: TrainingSession
 ==========================
 
@@ -62,6 +64,8 @@ be moved on this device first. Example :ref:`l-orttraining-linreg-gpu`
 adapts previous example to this configuration.
 Finally, a last example compares this approach against
 :epkg:`scikit-learn` in the same conditions.
+
+.. _l-orttraining-s-api:
 
 Second API: TrainingAgent
 =========================
@@ -171,7 +175,7 @@ to be complete.
   but it could be L1 or L2 penalty as well with :class:`ElasticLearningPenalty
   <onnxcustom.training.sgd_learning_penalty.ElasticLearningPenalty>`.
 
-These part can easily be replaced by the same pieces
+These parts can easily be replaced by the same pieces
 implemented in :epkg:`pytorch`. That's what wrapper
 class :epkg:`ORTModule` offers except it starts from a :epkg:`pytorch`
 model then converted into ONNX. That's what shows example

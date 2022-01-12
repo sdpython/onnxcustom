@@ -139,8 +139,9 @@ class BaseLearningOnnx:
         :param c_ortvalue: C structure for OrtValue (:epkg:`C_OrtValue`),
             it can be also a numpy array
         :param device: device
-        :param cache: avoids binding again the data pointer did not change,
-            only works when c_ortvalue is of :epkg:`C_OrtValue`
+        :param cache: avoids binding again if the data pointer did not change,
+            only works when c_ortvalue is of :epkg:`C_OrtValue`, the cache is
+            equivalent to a dictionary `{ id(bind), name: c_ort_value.data_ptr() }`.
         """
         def _cache_in(name, bind, c_ortvalue, ptr2):
             key = id(bind)
@@ -187,8 +188,9 @@ class BaseLearningOnnx:
         :param name: str
         :param bind: python structure
         :param c_ortvalue: C structure for OrtValue (:epkg:`C_OrtValue`)
-        :param cache: avoids binding again the data pointer did not change,
-            only works when c_ortvalue is of :epkg:`C_OrtValue`
+        :param cache: avoids binding again if the data pointer did not change,
+            only works when c_ortvalue is of :epkg:`C_OrtValue`, the cache is
+            equivalent to a dictionary `{ id(bind), name: c_ort_value.data_ptr() }`.
 
         This method can be used for inplace computation.
         """

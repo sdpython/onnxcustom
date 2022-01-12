@@ -8,22 +8,23 @@ Partial Training with OrtGradientForwardBackwardOptimizer
 Design
 ++++++
 
-Section :ref:`l-full-training` introduces a class able a while
+Section :ref:`l-full-training` introduces a class able to train an
 ONNX graph. :epkg:`onnxruntime-training` handles the computation
-of the loss, the gradient, it updates the weights as well.
+of the loss, the gradient. It updates the weights as well.
 This design does not work when ONNX graph only plays a part
 in the model and is not the whole model. A deep neural network could
-be composed with a first layer from :epkg:`torch`, a second one from
+be composed with a first layer from :epkg:`torch`, a second layer from
 ONNX, and be trained by a gradient descent implemented in python.
 
 Partial training is another way to train an ONNX model. It can be trained
 as a standalone ONNX graph or be integrated in a :epkg:`torch` model or any
 framework implementing *forward* and *backward* mechanism.
 It leverages class :epkg:`TrainingAgent` from :epkg:`onnxruntime-training`.
-
-Main class is :class:`OrtGradientForwardBackwardOptimizer
+However a couple of lines of code are not enough to use this class.
+This package defines a class implementing the missing pieces:
+:class:`OrtGradientForwardBackwardOptimizer
 <onnxcustom.training.optimizers_partial.OrtGradientForwardBackwardOptimizer>`.
-It is initialized with an ONNX graph defining
+It is initialized with an ONNX graph defining a prediction function.
 
 ::
 
@@ -33,7 +34,12 @@ It is initialized with an ONNX graph defining
         learning_loss=ElasticLearningLoss(l1_weight=0.1, l2_weight=0.9),
         learning_penalty=ElasticLearningPenalty(l1=0.1, l2=0.9))
 
-The class holds three attributes defining the loss, its gradient,
+The class uses :epkg:`onnxruntime-training` to build two others,
+one to predict with custom weights (and not initializers),
+another to compute the gradient. It implements *forward* and *backward*
+as explained in section :ref:`l-orttraining-second-api`.
+
+In addition the class holds three attributes defining the loss, its gradient,
 the penalty, its gradient, a learning rate possibly with momentum.
 They are not implemented in :epkg:`onnxruntime-training`.
 That's why they are part of this package.
@@ -67,15 +73,23 @@ That's why they are part of this package.
   but it could be L1 or L2 penalty as well with :class:`ElasticLearningPenalty
   <onnxcustom.training.sgd_learning_penalty.ElasticLearningPenalty>`.
 
+Following graph summarizes how these pieces are gathered altogether.
+Blue piece is implemented by :epkg:`onnxruntime-training`. Green pieces
+represents the three ONNX graphs needed to compute the loss and its gradient,
+the penalty, the weight update.
+
+.. image:: images/onnxfwbwloss.png
+
 The design seems over complicated
 compare to what :epkg:`pytorch` does. The main reason is :class:`torch.Tensor`
-supports matrix operations and class :epkg:`OrtValue` does not the same way.
-They can only be manipulated through ONNX graph.
-These three attrbiutes hide ONNX graph and :epkg:`InferenceSession` to compute
+supports matrix operations and class :epkg:`OrtValue` does not.
+They can only be manipulated through ONNX graph and :epkg:`InferenceSession`.
+These three attributes hide ONNX graph and :epkg:`InferenceSession` to compute
 loss, penalty and their gradient, and to update the weights accordingly.
-These three classes all implement meth `build_onnx_function` which
-creates create the ONNX graph based on the argument the classes were
-initialized with. Training can then happen this way:
+These three classes all implement method `build_onnx_function` which
+creates the ONNX graph based on the argument the classes were
+initialized with.
+Training can then happen this way:
 
 ::
 
@@ -94,6 +108,20 @@ And train losses:
     losses = train_session.train_losses_
 
 Next examples show that in practice.
+
+Cache
++++++
+
+Base class :class:`BaseLearningOnnx
+<onnxcustom.training.base_onnx_function.BaseLearningOnnx>` implements
+methods :meth:`_bind_input_ortvalue
+<onnxcustom.training.base_onnx_function.BaseLearningOnnx._bind_input_ortvalue>`
+and :meth:`_bind_output_ortvalue
+<onnxcustom.training.base_onnx_function.BaseLearningOnnx._bind_output_ortvalue>`
+used by the three components mentioned above. They cache the binded pointers
+(the value returns by `c_ortvalue.data_ptr()` and do not bind again
+if the method is called again with a different `OrtValue` but a same pointer
+returned by `data_ptr()`.
 
 Examples
 ++++++++
