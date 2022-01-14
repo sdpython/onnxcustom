@@ -666,7 +666,7 @@ class OrtGradientForwardBackwardFunction:
                 _log("end")
             return ortvalues
 
-    def backward(self, grad_outputs):
+    def backward(self, grad_outputs, backward_outputs_cache=None):
         """
         Implements backward function. The function returns
         an :epkg:`OrtValueVector`.
@@ -705,7 +705,7 @@ class OrtGradientForwardBackwardFunction:
                 _log("backward_inputs[%d].shape=%r",
                      i, backward_inputs[i].shape())
             _log("run_backward")
-        backward_outputs = OrtValueVector()
+        backward_outputs = backward_outputs_cache or OrtValueVector()
         cls._training_agent.run_backward(
             backward_inputs, backward_outputs, state)
         if logger is not None:  # pragma: no cover
