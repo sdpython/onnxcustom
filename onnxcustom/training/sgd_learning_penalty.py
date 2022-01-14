@@ -174,5 +174,5 @@ class ElasticLearningPenalty(BaseLearningPenalty):
         bind = self.penalty_grad_sess_binds_[n_bind]
         self._bind_input_ortvalue("X", bind, statei, device, cache=True)
         self._bind_output_ortvalue('Y', bind, statei, cache=True)
-        self._call_iobinding(self.penalty_sess_._sess, bind)
+        self._call_iobinding(self.penalty_grad_sess_._sess, bind)
         return bind.get_outputs()[0]  # X
