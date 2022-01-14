@@ -5,7 +5,7 @@
 """
 import numpy
 from onnx.mapping import TENSOR_TYPE_TO_NP_TYPE
-from onnxruntime import SessionOptions, InferenceSession
+from onnxruntime import SessionOptions, InferenceSession, RunOptions
 from onnxruntime.capi._pybind_state import (  # pylint: disable=E0611
     OrtValue as C_OrtValue)
 from ..utils.onnx_function import function_onnx_graph
@@ -23,6 +23,10 @@ class BaseLearningRate(BaseLearningOnnx):
 
     def __init__(self):
         BaseLearningOnnx.__init__(self)
+        self.ro_ = RunOptions()
+
+    def _call_iobinding(self, sess, bind):
+        sess.run_with_iobinding(bind, self.ro_)
 
     def init_learning_rate(self):
         """
@@ -231,7 +235,7 @@ class LearningRateSGD(BaseLearningRate):
         ort_alpha = C_OrtValue.ortvalue_from_numpy(self.alpha_, device)
         self._bind_input_ortvalue("alpha", bind, ort_alpha, device, cache=True)
         self._bind_output_ortvalue('Y', bind, statei, cache=True)
-        self.axpy_sess_._sess.run_with_iobinding(bind, None)
+        self._call_iobinding(self.axpy_sess_._sess, bind)
         loss = bind.get_outputs()[0]
         return loss
 
@@ -358,5 +362,5 @@ class LearningRateSGDNesterov(LearningRateSGD):
         self._bind_input_ortvalue("beta", bind, ort_beta, device, cache=True)
         self._bind_output_ortvalue('Y', bind, statei, cache=True)
         self._bind_output_ortvalue('Z', bind, velocity, cache=True)
-        self.axpyw_sess_._sess.run_with_iobinding(bind, None)
+        self._call_iobinding(self.axpyw_sess_._sess, bind)
         return bind.get_outputs()  # loss, velocity

@@ -3,7 +3,7 @@
 @file
 @brief Helper for :epkg:`onnxruntime-training`.
 """
-from onnxruntime import SessionOptions, InferenceSession
+from onnxruntime import SessionOptions, InferenceSession, RunOptions
 from ..utils.onnx_function import function_onnx_graph
 from ..utils.onnxruntime_helper import device_to_providers
 from .base_onnx_function import BaseLearningOnnx
@@ -17,6 +17,10 @@ class BaseLearningPenalty(BaseLearningOnnx):
 
     def __init__(self):
         BaseLearningOnnx.__init__(self)
+        self.ro_ = RunOptions()
+
+    def _call_iobinding(self, sess, bind):
+        sess.run_with_iobinding(bind, self.ro_)
 
     @staticmethod
     def select(class_name, **kwargs):
@@ -157,8 +161,7 @@ class ElasticLearningPenalty(BaseLearningPenalty):
                 name, self.penalty_sess_bind_, inp, device, cache=True)
         self._bind_output_ortvalue(
             'Y', self.penalty_sess_bind_, inputs[0], cache=True)
-        self.penalty_sess_._sess.run_with_iobinding(
-            self.penalty_sess_bind_, None)
+        self._call_iobinding(self.penalty_sess_._sess, self.penalty_sess_bind_)
         return self.penalty_sess_bind_.get_outputs()[0]
 
     def update_weights(self, n_bind, device, statei):
@@ -171,5 +174,5 @@ class ElasticLearningPenalty(BaseLearningPenalty):
         bind = self.penalty_grad_sess_binds_[n_bind]
         self._bind_input_ortvalue("X", bind, statei, device, cache=True)
         self._bind_output_ortvalue('Y', bind, statei, cache=True)
-        self.penalty_grad_sess_._sess.run_with_iobinding(bind, None)
+        self._call_iobinding(self.penalty_sess_._sess, bind)
         return bind.get_outputs()[0]  # X

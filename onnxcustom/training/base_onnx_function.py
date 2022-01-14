@@ -7,7 +7,7 @@ import inspect
 from io import BytesIO
 import numpy
 import onnx
-from onnxruntime import SessionOptions, InferenceSession
+from onnxruntime import SessionOptions, InferenceSession, RunOptions
 from onnxruntime.capi._pybind_state import (  # pylint: disable=E0611
     OrtValue as C_OrtValue)
 from ..utils.onnxruntime_helper import ort_device_to_string
@@ -31,6 +31,8 @@ class BaseLearningOnnx:
         """
         atts = [k for k in self.__dict__ if not k.endswith('_')]
         state = {k: getattr(self, k) for k in atts}
+        if hasattr(self, 'ro_'):
+            state['ro_'] = True
         onx = [k for k in self.__dict__ if k.endswith('_onnx_')]
         for o in onx:
             state[o] = getattr(self, o).SerializeToString()
@@ -50,7 +52,9 @@ class BaseLearningOnnx:
         Overwrites getstate to get rid of InferenceSession.
         """
         for k, v in state.items():
-            if not k.endswith('_onnx_') and not k.endswith('_sess_'):
+            if k == 'ro_':
+                self.ro_ = RunOptions()
+            elif not k.endswith('_onnx_') and not k.endswith('_sess_'):
                 setattr(self, k, v)
 
         so = SessionOptions()
