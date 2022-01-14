@@ -384,6 +384,8 @@ class OrtGradientForwardBackwardOptimizer(BaseEstimator):
                 "iteration begin learning_rate=%r",
                 self.learning_rate)
 
+        prediction_cache = None
+        prediction_cache_shape = None
         for ib, ito in enumerate(data_loader.iter_ortvalue()):
             if len(ito) == 2:
                 (ortx, orty) = ito
@@ -397,7 +399,17 @@ class OrtGradientForwardBackwardOptimizer(BaseEstimator):
                     "[OrtGradientForwardBackwardOptimizer._iteration] "
                     "batch %d", ib)
 
-            prediction = self.train_function_.forward(states[0], training=True)
+            # forward
+            if (prediction_cache_shape is None or
+                    tuple(ortx.shape()) != prediction_cache_shape):
+                prediction_cache = None
+                prediction_cache_shape = None
+            prediction = self.train_function_.forward(
+                states[0], training=True, forward_outputs_cache=prediction_cache_shape)
+            prediction_cache = prediction
+            prediction_cache_shape = tuple(ortx.shape())
+
+            # loss
             loss, loss_gradient = self.learning_loss.loss_gradient(
                 self.device, orty, prediction[0], weight=ortw)
             n = len(state) - n_weights
@@ -414,6 +426,7 @@ class OrtGradientForwardBackwardOptimizer(BaseEstimator):
                             actual_losses if len(actual_losses) < 5
                             else actual_losses[-5:])]))
 
+            # backward
             gradient = self.train_function_.backward([loss_gradient])
 
             if len(gradient) != len(state):

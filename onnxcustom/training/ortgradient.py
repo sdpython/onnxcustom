@@ -587,7 +587,7 @@ class OrtGradientForwardBackwardFunction:
                 "No tensors was saved with save_for_backward.")
         return self.saved_tensors_
 
-    def forward(self, inputs, training=False):
+    def forward(self, inputs, training=False, forward_outputs_cache=None):
         """
         Implements forward function.
 
