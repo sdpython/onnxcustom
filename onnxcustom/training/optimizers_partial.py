@@ -405,7 +405,7 @@ class OrtGradientForwardBackwardOptimizer(BaseEstimator):
                 prediction_cache = None
                 prediction_cache_shape = None
             prediction = self.train_function_.forward(
-                states[0], training=True, forward_outputs_cache=prediction_cache_shape)
+                states[0], training=True, forward_outputs_cache=prediction_cache)
             prediction_cache = prediction
             prediction_cache_shape = tuple(ortx.shape())
 

@@ -615,7 +615,7 @@ class OrtGradientForwardBackwardFunction:
             inputs, cls._devices, cls._debug)
 
         if training:
-            forward_outputs = OrtValueVector()
+            forward_outputs = forward_outputs_cache or OrtValueVector()
             state = PartialGraphExecutionState()
             self.states_.append(state)
             if logger is not None:
