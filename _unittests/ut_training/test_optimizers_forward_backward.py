@@ -1105,6 +1105,40 @@ class TestOptimizersForwardBackward(ExtTestCase):
         self.assertGreater(len(losses), 1)
         self.assertFalse(any(map(numpy.isnan, losses)))
 
+    @unittest.skipIf(TrainingSession is None, reason="not training")
+    def test_ort_gradient_optimizers_nesterov_penalty(self):
+        from onnxcustom.training.optimizers_partial import OrtGradientForwardBackwardOptimizer
+        X, y = make_regression(  # pylint: disable=W0632
+            100, n_features=10, bias=2, random_state=0)
+        X = X.astype(numpy.float32)
+        y = y.astype(numpy.float32)
+        w = (numpy.random.rand(y.shape[0]) + 1).astype(X.dtype)
+        X_train, _, y_train, __, w_train, ___ = train_test_split(
+            X, y, w)
+        reg = LinearRegression()
+        reg.fit(X_train, y_train, w_train)
+        reg.coef_ = reg.coef_.reshape((1, -1))
+        onx = to_onnx(reg, X_train, target_opset=opset,
+                      black_op={'LinearRegressor'})
+        set_model_props(onx, {'info': 'unit test'})
+        inits = ['coef', 'intercept']
+
+        train_session = OrtGradientForwardBackwardOptimizer(
+            onx, inits,
+            learning_rate=LearningRateSGDNesterov(
+                1e-4, nesterov=True, momentum=0.9),
+            learning_penalty=ElasticLearningPenalty(l1=0, l2=1e-4),
+            warm_start=False, max_iter=100, batch_size=10)
+        train_session.fit(X, y)
+
+        train_session = OrtGradientForwardBackwardOptimizer(
+            onx, inits, weight_name='weight',
+            learning_rate=LearningRateSGDNesterov(
+                1e-4, nesterov=True, momentum=0.9),
+            learning_penalty=ElasticLearningPenalty(l1=0, l2=1e-4),
+            warm_start=False, max_iter=100, batch_size=10)
+        train_session.fit(X, y, w)
+
 
 if __name__ == "__main__":
     # import logging
