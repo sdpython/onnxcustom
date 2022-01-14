@@ -603,7 +603,8 @@ def _onnx_grad_penalty_elastic_error(target_opset=None, dtype=numpy.float32,
 
 def _onnx_n_penalty_elastic_error(target_opset=None, dtype=numpy.float32,
                                   weight_name=None,
-                                  l1_weight=0.01, l2_weight=0.01, n_tensors=1):
+                                  l1_weight=0.01, l2_weight=0.01, n_tensors=1,
+                                  loss_shape=(1, 1)):
     """
     Returns the ONNX graph for function
     :math:`Y = f(W) = \\beta \\lVert W \\rVert +
@@ -634,7 +635,7 @@ def _onnx_n_penalty_elastic_error(target_opset=None, dtype=numpy.float32,
             "This function is useless if the number of tensors is null.")
 
     var_type = dtype_to_var_type(dtype)
-    varsx = [('loss', var_type([1, 1]))]
+    varsx = [('loss', var_type(loss_shape))]
     names = ['loss']
     for n in range(n_tensors):
         name = 'W%d' % n
