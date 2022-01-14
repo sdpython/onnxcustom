@@ -384,6 +384,9 @@ class OrtGradientForwardBackwardOptimizer(BaseEstimator):
                 "iteration begin learning_rate=%r",
                 self.learning_rate)
 
+        prediction_cache = None
+        prediction_cache_shape = None
+        backward_outputs_cache = None
         for ib, ito in enumerate(data_loader.iter_ortvalue()):
             if len(ito) == 2:
                 (ortx, orty) = ito
@@ -397,7 +400,22 @@ class OrtGradientForwardBackwardOptimizer(BaseEstimator):
                     "[OrtGradientForwardBackwardOptimizer._iteration] "
                     "batch %d", ib)
 
-            prediction = self.train_function_.forward(states[0], training=True)
+            ortx_shape = tuple(ortx.shape())
+            same_shape = (
+                prediction_cache_shape is not None and
+                ortx_shape == prediction_cache_shape)
+
+            # forward
+            if prediction_cache_shape is None or same_shape:
+                prediction_cache = None
+                prediction_cache_shape = None
+            prediction = self.train_function_.forward(
+                states[0], training=True,
+                forward_outputs_cache=prediction_cache)
+            prediction_cache = prediction
+            prediction_cache_shape = ortx_shape
+
+            # loss
             loss, loss_gradient = self.learning_loss.loss_gradient(
                 self.device, orty, prediction[0], weight=ortw)
             n = len(state) - n_weights
@@ -414,7 +432,12 @@ class OrtGradientForwardBackwardOptimizer(BaseEstimator):
                             actual_losses if len(actual_losses) < 5
                             else actual_losses[-5:])]))
 
-            gradient = self.train_function_.backward([loss_gradient])
+            # backward
+            if not same_shape:
+                backward_outputs_cache = None
+            gradient = self.train_function_.backward(
+                [loss_gradient], backward_outputs_cache=backward_outputs_cache)
+            backward_outputs_cache = gradient
 
             if len(gradient) != len(state):
                 raise RuntimeError(  # pragma: no cover

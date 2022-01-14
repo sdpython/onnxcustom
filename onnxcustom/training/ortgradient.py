@@ -587,7 +587,7 @@ class OrtGradientForwardBackwardFunction:
                 "No tensors was saved with save_for_backward.")
         return self.saved_tensors_
 
-    def forward(self, inputs, training=False):
+    def forward(self, inputs, training=False, forward_outputs_cache=None):
         """
         Implements forward function.
 
@@ -615,7 +615,7 @@ class OrtGradientForwardBackwardFunction:
             inputs, cls._devices, cls._debug)
 
         if training:
-            forward_outputs = OrtValueVector()
+            forward_outputs = forward_outputs_cache or OrtValueVector()
             state = PartialGraphExecutionState()
             self.states_.append(state)
             if logger is not None:
@@ -666,7 +666,7 @@ class OrtGradientForwardBackwardFunction:
                 _log("end")
             return ortvalues
 
-    def backward(self, grad_outputs):
+    def backward(self, grad_outputs, backward_outputs_cache=None):
         """
         Implements backward function. The function returns
         an :epkg:`OrtValueVector`.
@@ -705,7 +705,7 @@ class OrtGradientForwardBackwardFunction:
                 _log("backward_inputs[%d].shape=%r",
                      i, backward_inputs[i].shape())
             _log("run_backward")
-        backward_outputs = OrtValueVector()
+        backward_outputs = backward_outputs_cache or OrtValueVector()
         cls._training_agent.run_backward(
             backward_inputs, backward_outputs, state)
         if logger is not None:  # pragma: no cover

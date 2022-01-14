@@ -111,25 +111,48 @@ class BaseLearningOnnx:
         raise NotImplementedError(
             "This method must be overwritten.")
 
+    @staticmethod
+    def _cache_in_clear(cache, name, bind):
+        key = id(bind)
+        if key in cache:
+            if name in cache[key]:
+                if cache[key][name] == 0:
+                    return True
+                cache[key][name] = 0
+                return False
+        return True
+
     def clear_binding_inputs(self, name, bind, cache=False):
         """
         Clears binding and empty cache.
         """
-        def _cache_in(name, bind):
-            key = id(bind)
-            if key in self.cache_in_:
-                if name in self.cache_in_[key]:
-                    if self.cache_in_[key][name] == 0:
-                        return True
-                    self.cache_in_[key][name] = 0
-                    return False
-            return True
-
-        if cache and _cache_in(name, bind):
+        if cache and self._cache_in_clear(self.cache_in_, name, bind):
             return
         bind.clear_binding_inputs()
 
-    def _bind_input_ortvalue(self, name, bind, c_ortvalue, device, cache=False):
+    @staticmethod
+    def _bio_cache(cache, name, bind, c_ortvalue, ptr2):
+        key = id(bind)
+        if key in cache:
+            if name in cache[key]:
+                ptr = cache[key][name]
+                if ptr == ptr2:
+                    return True
+            cache[key][name] = ptr2
+        else:
+            cache[key] = {name: ptr2}
+        return False
+
+    @staticmethod
+    def _bio_do_bind_in(name, bind, c_ortvalue):
+        bind.bind_ortvalue_input(name, c_ortvalue)
+
+    @staticmethod
+    def _bio_ptr(c):
+        return c.data_ptr()
+
+    def _bind_input_ortvalue(self, name, bind, c_ortvalue, device,
+                             cache=False):
         """
         Binds :epkg:`C_OrtValue` to the structure used by
         :epkg:`InferenceSession` to run inference.
@@ -141,35 +164,22 @@ class BaseLearningOnnx:
         :param device: device
         :param cache: avoids binding again if the data pointer did not change,
             only works when c_ortvalue is of :epkg:`C_OrtValue`, the cache is
-            equivalent to a dictionary `{ id(bind), name: c_ort_value.data_ptr() }`.
+            equivalent to a dictionary
+            `{ id(bind), name: c_ort_value.data_ptr() }`.
         """
-        def _cache_in(name, bind, c_ortvalue, ptr2):
-            key = id(bind)
-            if key in self.cache_in_:
-                if name in self.cache_in_[key]:
-                    ptr = self.cache_in_[key][name]
-                    if ptr == ptr2:
-                        return True
-                self.cache_in_[key][name] = ptr2
-            else:
-                self.cache_in_[key] = {name: ptr2}
-            return False
-
-        def do_bind(name, bind, c_ortvalue):
-            bind.bind_ortvalue_input(name, c_ortvalue)
-
         if isinstance(c_ortvalue, C_OrtValue):
-            if cache and _cache_in(
-                    name, bind, c_ortvalue, c_ortvalue.data_ptr()):
+            if cache and self._bio_cache(
+                    self.cache_in_, name, bind, c_ortvalue,
+                    self._bio_ptr(c_ortvalue)):
                 return
-            do_bind(name, bind, c_ortvalue)
+            self._bio_do_bind_in(name, bind, c_ortvalue)
         elif isinstance(c_ortvalue, numpy.ndarray):
             if self.device_type() != device.cpu():  # pylint: disable=E1101
                 raise ProviderError(
                     "device=%s is not CPU." % ort_device_to_string(
                         device))
-            if cache and _cache_in(
-                    name, bind, c_ortvalue,
+            if cache and self._bio_cache(
+                    self.cache_in_, name, bind, c_ortvalue,
                     c_ortvalue.__array_interface__['data'][0]):
                 return
             bind.bind_input(
@@ -179,6 +189,10 @@ class BaseLearningOnnx:
             raise TypeError(  # pragma: no cover
                 "Unable to bind type %r for name %r." % (
                     type(c_ortvalue), name))
+
+    @staticmethod
+    def _bio_do_bind_out(name, bind, c_ortvalue):
+        bind.bind_ortvalue_output(name, c_ortvalue)
 
     def _bind_output_ortvalue(self, name, bind, c_ortvalue, cache=False):
         """
@@ -190,31 +204,17 @@ class BaseLearningOnnx:
         :param c_ortvalue: C structure for OrtValue (:epkg:`C_OrtValue`)
         :param cache: avoids binding again if the data pointer did not change,
             only works when c_ortvalue is of :epkg:`C_OrtValue`, the cache is
-            equivalent to a dictionary `{ id(bind), name: c_ort_value.data_ptr() }`.
+            equivalent to a dictionary
+            `{ id(bind), name: c_ort_value.data_ptr() }`.
 
         This method can be used for inplace computation.
         """
-        def _cache_out(name, bind, c_ortvalue, ptr2):
-            key = id(bind)
-            if key in self.cache_out_:
-                if name in self.cache_out_[key]:
-                    ptr = self.cache_out_[key][name]
-                    if ptr == ptr2:
-                        return True
-                self.cache_out_[key][name] = ptr2
-            else:
-                self.cache_out_[key] = {name: ptr2}
-            return False
-
-        def do_bind(name, bind, c_ortvalue):
-            bind.bind_ortvalue_output(name, c_ortvalue)
-
         if isinstance(c_ortvalue, C_OrtValue):
-            if cache and _cache_out(
-                    name, bind, c_ortvalue,
-                    c_ortvalue.data_ptr()):
+            if cache and self._bio_cache(
+                    self.cache_out_, name, bind, c_ortvalue,
+                    self._bio_ptr(c_ortvalue)):
                 return
-            do_bind(name, bind, c_ortvalue)
+            self._bio_do_bind_out(name, bind, c_ortvalue)
         else:
             raise TypeError(  # pragma: no cover
                 "Unable to bind type %r for name %r." % (
