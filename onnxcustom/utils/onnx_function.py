@@ -204,8 +204,7 @@ def _onnx_square_error(target_opset=None, dtype=numpy.float32,
         OnnxReduceSum, OnnxMul)
     diff = OnnxSub('X1', 'X2', op_version=target_opset)
     if weight_name is None:
-        res = OnnxReduceSumSquare(diff, op_version=target_opset,
-                                  keepdims=0, output_names=['Y'])
+        res = OnnxReduceSumSquare(diff, op_version=target_opset)
     else:
         mul = OnnxMul(
             OnnxMul(diff, diff, op_version=target_opset),
@@ -213,8 +212,10 @@ def _onnx_square_error(target_opset=None, dtype=numpy.float32,
                         numpy.array([-1, 1], dtype=numpy.int64),
                         op_version=target_opset),
             op_version=target_opset)
-        res = OnnxReduceSum(mul, op_version=target_opset,
-                            keepdims=0, output_names=['Y'])
+        res = OnnxReduceSum(mul, op_version=target_opset)
+    res = OnnxReshape(res, numpy.array([-1], numpy.int64),
+                      op_version=target_opset,
+                      output_names=['Y'])
     var_type = dtype_to_var_type(dtype)
     varsx = [('X1', var_type([None, None])),
              ('X2', var_type([None, None]))]
@@ -381,8 +382,7 @@ def _onnx_grad_loss_square_error(target_opset=None, dtype=numpy.float32,
         OnnxReduceSum, OnnxReshape)
     diff = OnnxSub('X1', 'X2', op_version=target_opset)
     if weight_name is None:
-        res = OnnxReduceSumSquare(diff, op_version=target_opset,
-                                  keepdims=0, output_names=['Y'])
+        res = OnnxReduceSumSquare(diff, op_version=target_opset)
         res2 = OnnxMul(diff, numpy.array([-2], dtype=dtype),
                        op_version=target_opset, output_names=['Z'])
     else:
@@ -392,12 +392,15 @@ def _onnx_grad_loss_square_error(target_opset=None, dtype=numpy.float32,
         mul = OnnxMul(
             OnnxMul(diff, diff, op_version=target_opset),
             resh, op_version=target_opset)
-        res = OnnxReduceSum(mul, op_version=target_opset,
-                            keepdims=0, output_names=['Y'])
+        res = OnnxReduceSum(mul, op_version=target_opset)
         res2 = OnnxMul(
             OnnxMul(diff, numpy.array([-2], dtype=dtype),
                     op_version=target_opset),
             resh, op_version=target_opset, output_names=['Z'])
+
+    res = OnnxReshape(res, numpy.array([-1], numpy.int64),
+                      op_version=target_opset,
+                      output_names=['Y'])
 
     var_type = dtype_to_var_type(dtype)
     varsx = [('X1', var_type([None, None])),
@@ -433,13 +436,12 @@ def _onnx_grad_loss_absolute_error(target_opset=None, dtype=numpy.float32,
         print("DOT-SECTION", oinf.to_dot())
     """
     from skl2onnx.algebra.onnx_ops import (
-        OnnxSub, OnnxMul,
-        OnnxReduceSum, OnnxReshape, OnnxSign, OnnxAbs)
+        OnnxSub, OnnxMul, OnnxReduceSum, OnnxReshape,
+        OnnxSign, OnnxAbs)
     diff = OnnxSub('X1', 'X2', op_version=target_opset)
     abs_diff = OnnxAbs(diff, op_version=target_opset)
     if weight_name is None:
-        res = OnnxReduceSum(abs_diff, op_version=target_opset,
-                            keepdims=0, output_names=['Y'])
+        res = OnnxReduceSum(abs_diff, op_version=target_opset)
         res2 = OnnxSign(diff, op_version=target_opset,
                         output_names=['Z'])
     else:
@@ -447,12 +449,14 @@ def _onnx_grad_loss_absolute_error(target_opset=None, dtype=numpy.float32,
                            numpy.array([-1, 1], dtype=numpy.int64),
                            op_version=target_opset)
         mul = OnnxMul(abs_diff, resh, op_version=target_opset)
-        res = OnnxReduceSum(mul, op_version=target_opset,
-                            keepdims=0, output_names=['Y'])
+        res = OnnxReduceSum(mul, op_version=target_opset)
         res2 = OnnxMul(
             OnnxSign(diff, op_version=target_opset),
             resh, op_version=target_opset, output_names=['Z'])
 
+    res = OnnxReshape(res, numpy.array([-1], numpy.int64),
+                      op_version=target_opset,
+                      output_names=['Y'])
     var_type = dtype_to_var_type(dtype)
     varsx = [('X1', var_type([None, None])),
              ('X2', var_type([None, None]))]
@@ -497,18 +501,16 @@ def _onnx_grad_loss_elastic_error(target_opset=None, dtype=numpy.float32,
     diff = OnnxSub('X1', 'X2', op_version=target_opset)
     abs_diff = OnnxAbs(diff, op_version=target_opset)
     if weight_name is None:
-        res_l1 = OnnxReduceSum(abs_diff, op_version=target_opset,
-                               keepdims=0)
+        res_l1 = OnnxReduceSum(abs_diff, op_version=target_opset)
         res2_l1 = OnnxSign(diff, op_version=target_opset)
-        res_l2 = OnnxReduceSumSquare(diff, op_version=target_opset,
-                                     keepdims=0)
+        res_l2 = OnnxReduceSumSquare(diff, op_version=target_opset)
         res2_l2 = diff
     else:
         resh = OnnxReshape(weight_name,
                            numpy.array([-1, 1], dtype=numpy.int64),
                            op_version=target_opset)
         mul = OnnxMul(abs_diff, resh, op_version=target_opset)
-        res_l1 = OnnxReduceSum(mul, op_version=target_opset, keepdims=0)
+        res_l1 = OnnxReduceSum(mul, op_version=target_opset)
         res2_l1 = OnnxMul(
             OnnxSign(diff, op_version=target_opset),
             resh, op_version=target_opset)
@@ -524,7 +526,10 @@ def _onnx_grad_loss_elastic_error(target_opset=None, dtype=numpy.float32,
                 op_version=target_opset),
         OnnxMul(res_l2, numpy.array([l2_weight], dtype=dtype),
                 op_version=target_opset),
-        op_version=target_opset, output_names=['Y'])
+        op_version=target_opset)
+    res = OnnxReshape(res, numpy.array([-1], numpy.int64),
+                      op_version=target_opset,
+                      output_names=['Y'])
 
     res2 = OnnxAdd(
         OnnxMul(res2_l1, numpy.array([l1_weight], dtype=dtype),
@@ -569,14 +574,12 @@ def _onnx_grad_penalty_elastic_error(target_opset=None, dtype=numpy.float32,
     """
     from skl2onnx.algebra.onnx_ops import (
         OnnxMul, OnnxAdd, OnnxReduceSumSquare,
-        OnnxReduceSum, OnnxSign, OnnxAbs)
+        OnnxReduceSum, OnnxSign, OnnxAbs, OnnxReshape)
     diff = 'X'
     abs_diff = OnnxAbs(diff, op_version=target_opset)
-    res_l1 = OnnxReduceSum(abs_diff, op_version=target_opset,
-                           keepdims=0)
+    res_l1 = OnnxReduceSum(abs_diff, op_version=target_opset)
     res2_l1 = OnnxSign(diff, op_version=target_opset)
-    res_l2 = OnnxReduceSumSquare(diff, op_version=target_opset,
-                                 keepdims=0)
+    res_l2 = OnnxReduceSumSquare(diff, op_version=target_opset)
     res2_l2 = diff
 
     res = OnnxAdd(
@@ -584,7 +587,10 @@ def _onnx_grad_penalty_elastic_error(target_opset=None, dtype=numpy.float32,
                 op_version=target_opset),
         OnnxMul(res_l2, numpy.array([l2_weight], dtype=dtype),
                 op_version=target_opset),
-        op_version=target_opset, output_names=['Y'])
+        op_version=target_opset)
+    res = OnnxReshape(res, numpy.array([-1], numpy.int64),
+                      op_version=target_opset,
+                      output_names=['Y'])
 
     res2 = OnnxAdd(
         OnnxMul(res2_l1, numpy.array([l1_weight], dtype=dtype),
@@ -596,7 +602,7 @@ def _onnx_grad_penalty_elastic_error(target_opset=None, dtype=numpy.float32,
     var_type = dtype_to_var_type(dtype)
     varsx = [('X', var_type([None, None]))]
     onx = res.to_onnx(
-        varsx, outputs=[('Y', var_type()), ('Z', var_type())],
+        varsx, outputs=[('Y', var_type([None])), ('Z', var_type())],
         target_opset=target_opset, other_outputs=[res2])
     return onx
 
@@ -628,7 +634,7 @@ def _onnx_n_penalty_elastic_error(target_opset=None, dtype=numpy.float32,
     """
     from skl2onnx.algebra.onnx_ops import (
         OnnxMul, OnnxAdd, OnnxReduceSumSquare,
-        OnnxReduceSum, OnnxAbs, OnnxSum)
+        OnnxReduceSum, OnnxAbs, OnnxReshape)
 
     if n_tensors <= 0:
         raise ValueError(  # pragma: no cover
@@ -640,11 +646,9 @@ def _onnx_n_penalty_elastic_error(target_opset=None, dtype=numpy.float32,
     for n in range(n_tensors):
         name = 'W%d' % n
         abs_diff = OnnxAbs(name, op_version=target_opset)
-        res_l1 = OnnxReduceSum(abs_diff, op_version=target_opset,
-                               keepdims=0)
+        res_l1 = OnnxReduceSum(abs_diff, op_version=target_opset)
         # res2_l1 = OnnxSign(diff, op_version=target_opset)
-        res_l2 = OnnxReduceSumSquare(name, op_version=target_opset,
-                                     keepdims=0)
+        res_l2 = OnnxReduceSumSquare(name, op_version=target_opset)
         # res2_l2 = diff
         res = OnnxAdd(
             OnnxMul(res_l1, numpy.array([l1_weight], dtype=dtype),
@@ -655,9 +659,19 @@ def _onnx_n_penalty_elastic_error(target_opset=None, dtype=numpy.float32,
         names.append(res)
         varsx.append(('W%d' % n, var_type()))
 
-    res = OnnxSum(*names, op_version=target_opset, output_names=['Y'])
+    if len(names) == 2:
+        res = OnnxAdd(*names, op_version=target_opset)
+    else:
+        res = OnnxAdd(names[1], names[2], op_version=target_opset)
+        for i in range(3, len(names)):
+            res = OnnxAdd(res, names[i], op_version=target_opset)
+        res = OnnxAdd(names[0], res, op_version=target_opset)
+
+    res = OnnxReshape(res, numpy.array([-1], numpy.int64),
+                      op_version=target_opset,
+                      output_names=['Y'])
     onx = res.to_onnx(
-        varsx, outputs=[('Y', var_type())],
+        varsx, outputs=[('Y', var_type([None]))],
         target_opset=target_opset)
     return onx
 

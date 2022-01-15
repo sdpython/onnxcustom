@@ -1213,6 +1213,7 @@ if __name__ == "__main__":
     # logger = logging.getLogger('onnxcustom')
     # logger.setLevel(logging.DEBUG)
     # logging.basicConfig(level=logging.DEBUG)
-    # TestOptimizersForwardBackward().test_ort_gradient_optimizers_nesterov_penalty()
+    # cl = TestOptimizersForwardBackward()
+    # cl.test_ort_gradient_optimizers_nesterov_penalty_l2()
     # stop
     unittest.main()

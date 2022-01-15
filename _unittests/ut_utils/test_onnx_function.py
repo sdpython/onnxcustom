@@ -350,7 +350,7 @@ class TestOnnxFunction(ExtTestCase):
 
         oinf = OnnxInference(onx)
         got = oinf.run({'loss': loss, 'W0': w1, 'W1': w2})
-        self.assertEqualArray(exp_loss, got['Y'], decimal=5)
+        self.assertEqualArray(exp_loss.reshape((-1, )), got['Y'], decimal=5)
 
         providers = device_to_providers('cpu')
         so = SessionOptions()
@@ -358,7 +358,7 @@ class TestOnnxFunction(ExtTestCase):
         sess = InferenceSession(
             onx.SerializeToString(), so, providers=providers)
         got = sess.run(None, {'loss': loss, 'W0': w1, 'W1': w2})
-        self.assertEqualArray(exp_loss, got[0], decimal=5)
+        self.assertEqualArray(exp_loss.reshape((-1, )), got[0], decimal=5)
 
     def test_penalty_update(self):
         x = numpy.random.randn(10, 1).astype(numpy.float32)
