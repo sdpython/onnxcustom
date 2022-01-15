@@ -12,9 +12,10 @@ from onnxruntime.capi._pybind_state import (  # pylint: disable=E0611
     OrtValue as C_OrtValue)
 from ..utils.onnxruntime_helper import ort_device_to_string
 from .excs import ProviderError
+from ._base import BaseOnnxClass
 
 
-class BaseLearningOnnx:
+class BaseLearningOnnx(BaseOnnxClass):
     """
     Class handling ONNX function to manipulate OrtValue.
     Base class for @see cl BaseLearningRate and
@@ -223,12 +224,3 @@ class BaseLearningOnnx:
             raise TypeError(  # pragma: no cover
                 "Unable to bind type %r for name %r." % (
                     type(c_ortvalue), name))
-
-    @classmethod
-    def _get_param_names(cls):
-        init = getattr(cls.__init__, "deprecated_original", cls.__init__)
-        init_signature = inspect.signature(init)
-        parameters = [
-            p for p in init_signature.parameters.values()
-            if p.name != "self" and p.kind != p.VAR_KEYWORD]
-        return [(p.name, p.default) for p in parameters]

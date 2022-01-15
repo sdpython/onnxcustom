@@ -18,6 +18,7 @@ A neural network with scikit-learn
 """
 import warnings
 import numpy
+import onnx
 from pandas import DataFrame
 from onnxruntime import get_device
 from sklearn.datasets import make_regression
@@ -26,6 +27,7 @@ from sklearn.neural_network import MLPRegressor
 from sklearn.metrics import mean_squared_error
 from onnxcustom.plotting.plotting_onnx import plot_onnxs
 from mlprodict.onnx_conv import to_onnx
+from mlprodict.plotting.text_plot import onnx_simple_text_plot
 from onnxcustom.utils.orttraining_helper import get_train_initializer
 from onnxcustom.utils.onnx_helper import onnx_rename_weights
 from onnxcustom.training.optimizers_partial import (
@@ -142,7 +144,27 @@ df = DataFrame({'ort losses': train_session.train_losses_,
 df.plot(title="Train loss against iterations (Nesterov + penalty)", logy=True)
 
 ###########################################
-# end.
+# All ONNX graphs
+# +++++++++++++++
+#
+# Method Method :meth:`save_onnx_graph
+# <onnxcustom.training._base.BaseOnnxClass.save_onnx_graph>`
+# can export all the ONNX graph used by the model on disk.
+
+
+def print_graph(d):
+    for k, v in sorted(d.items()):
+        if isinstance(v, dict):
+            print_graph(v)
+        else:
+            print("\n++++++", v.replace("\\", "/"), "\n")
+            with open(v, "rb") as f:
+                print(onnx_simple_text_plot(onnx.load(f)))
+
+
+all_files = train_session.save_onnx_graph('.')
+print_graph(all_files)
+
 
 # import matplotlib.pyplot as plt
 # plt.show()

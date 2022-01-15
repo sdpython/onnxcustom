@@ -677,10 +677,10 @@ def _onnx_n_penalty_elastic_error(target_opset=None, dtype=numpy.float32,
 
 
 def _onnx_update_penalty_elastic_error(target_opset=None, dtype=numpy.float32,
-                                       l1=0.01, l2=0.01):
+                                       l1=1e-4, l2=1e-4):
     """
     Returns the ONNX graph for function
-    :math:`Y = f(W) = W - 2 \\beta W + - \\alpha sign(W)`
+    :math:`Y = f(W) = W - 2 \\beta W - \\alpha sign(W)`
     *l1* is :math:`\\beta` and
     *l2* is :math:`\\alpha`.
 

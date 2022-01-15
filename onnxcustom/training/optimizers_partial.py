@@ -418,10 +418,19 @@ class OrtGradientForwardBackwardOptimizer(BaseEstimator):
             # loss
             loss, loss_gradient = self.learning_loss.loss_gradient(
                 self.device, orty, prediction[0], weight=ortw)
+
+            if logger is not None:
+                logger.debug(
+                    "[OrtGradientForwardBackwardOptimizer._iteration] "
+                    "loss=%g has_weight=%r",
+                    loss.numpy(), ortw is not None)
+
             n = len(state) - n_weights
             loss = self.learning_penalty.penalty_loss(
                 self.device, loss, *state[n:])
+
             cpu_loss = loss.numpy()
+
             if numpy.isinf(cpu_loss) or numpy.isnan(cpu_loss):
                 raise ConvergenceError(
                     "Loss is nan, learning_rate=%r, "
@@ -445,6 +454,7 @@ class OrtGradientForwardBackwardOptimizer(BaseEstimator):
                     "%r != %r." % (len(gradient), len(state)))
 
             n = len(state) - n_weights
+
             for i in range(n, len(state)):
                 self.learning_penalty.update_weights(
                     i - n, self.device, state[i])
@@ -456,7 +466,7 @@ class OrtGradientForwardBackwardOptimizer(BaseEstimator):
             if logger is not None:
                 logger.debug(
                     "[OrtGradientForwardBackwardOptimizer._iteration] "
-                    "loss=%g", cpu_loss)
+                    "loss=%g n_weights=%d", cpu_loss, n)
                 for i in range(n, len(state)):
                     logger.debug(
                         "[OrtGradientForwardBackwardOptimizer._iteration] "

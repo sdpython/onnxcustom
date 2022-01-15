@@ -120,7 +120,7 @@ class ElasticLearningPenalty(BaseLearningPenalty):
         # loss_grad
         self.penalty_onnx_ = function_onnx_graph(
             "n_penalty_elastic_error", target_opset=opset, n_tensors=n_tensors,
-            loss_shape=None)
+            loss_shape=None, l1_weight=self.l1, l2_weight=self.l2)
         self.penalty_sess_ = InferenceSession(
             self.penalty_onnx_.SerializeToString(), so,
             providers=device_to_providers(device))
@@ -130,7 +130,8 @@ class ElasticLearningPenalty(BaseLearningPenalty):
 
         # weight updates
         self.penalty_grad_onnx_ = function_onnx_graph(
-            "update_penalty_elastic_error", target_opset=opset)
+            "update_penalty_elastic_error", target_opset=opset,
+            l1=self.l1, l2=self.l2)
         self.penalty_grad_sess_ = InferenceSession(
             self.penalty_grad_onnx_.SerializeToString(), so,
             providers=device_to_providers(device))

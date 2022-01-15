@@ -107,6 +107,10 @@ And train losses:
 
     losses = train_session.train_losses_
 
+Method :meth:`save_onnx_graph
+<onnxcustom.training._base.BaseOnnxClass.save_onnx_graph>`
+exports all graphs used by a model. It can be saved on disk
+or just serialized in memory.
 Next examples show that in practice.
 
 Cache
