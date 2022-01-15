@@ -122,6 +122,9 @@ class OrtGradientForwardBackward:
                 "You shoud use function onnx_rename_weights to do that "
                 "before calling this class." % self.weights_to_train)
         set_weights = set(self.weights_to_train)
+        if len(set_weights) != len(self.weights_to_train):
+            raise ValueError(  # pragma: no cover
+                "One weight is not unique in %r." % self.weights_to_train)
         found = []
         for i in self.onnx_model.graph.initializer:
             if i.name not in set_weights:
@@ -130,7 +133,9 @@ class OrtGradientForwardBackward:
         if len(found) != len(self.weights_to_train):
             raise ValueError(
                 "One weight name in self.weights_to_train was not found in "
-                "the initializers %r." % (self.weights_to_train, ))
+                "the initializers %r found=%r init names=%r." % (
+                    self.weights_to_train, found,
+                    [i.name for i in self.onnx_model.graph.initializer]))
         if found != self.weights_to_train:
             raise ValueError(
                 "List of weights to train must be sorted and follow the "

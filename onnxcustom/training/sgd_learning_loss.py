@@ -3,7 +3,7 @@
 @file
 @brief Helper for :epkg:`onnxruntime-training`.
 """
-from onnxruntime import SessionOptions, InferenceSession
+from onnxruntime import SessionOptions, InferenceSession, RunOptions
 from ..utils.onnx_function import function_onnx_graph
 from ..utils.onnxruntime_helper import device_to_providers
 from .base_onnx_function import BaseLearningOnnx
@@ -22,6 +22,10 @@ class BaseLearningLoss(BaseLearningOnnx):
 
     def __init__(self):
         BaseLearningOnnx.__init__(self)
+        self.ro_ = RunOptions()
+
+    def _call_iobinding(self, sess, bind):
+        sess.run_with_iobinding(bind, self.ro_)
 
     def loss_gradient(  # pylint: disable=E1101
             self, device, expected, predicted, weight=None):
@@ -50,7 +54,7 @@ class BaseLearningLoss(BaseLearningOnnx):
         self._bind_input_ortvalue("X2", bind, predicted, device, cache=True)
         self.loss_grad_sess_bind_.bind_output('Y', device)
         self.loss_grad_sess_bind_.bind_output('Z', device)
-        self.loss_grad_sess_._sess.run_with_iobinding(bind, None)
+        self._call_iobinding(self.loss_grad_sess_._sess, bind)
         loss, grad = bind.get_outputs()
         return loss, grad
 
