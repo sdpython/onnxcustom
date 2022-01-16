@@ -134,6 +134,80 @@ def _loss_elastic(existing_names, elem, shape,
         [make_tensor_value_info(loss_name, elem, [1, 1])])
 
 
+def _loss_log(existing_names, elem, shape,
+              output_name, label_name,
+              weight_name, loss_name):
+    """
+    This only works for a binary classification.
+    The log loss is :math:`(1-y)\\log(1-y) - y\\log(y)`.
+    """
+    if output_name == 'output_label':
+        raise RuntimeError(
+            "output_name=%r, log loss does not work on labels."
+            "" % output_name)
+    one_name = _unique_name(existing_names, "one_name")
+    dtype = TENSOR_TYPE_TO_NP_TYPE[elem]
+    onx_one = from_array(
+        numpy.array([1], dtype=dtype), name=one_name)
+
+    new_output = _unique_name(existing_names, "new_output")
+    cast_name = _unique_name(existing_names, "cast_name")
+    log_name = _unique_name(existing_names, "log_name")
+    log2_name = _unique_name(existing_names, "log2_name")
+    subo_name = _unique_name(existing_names, "subo_name")
+    subl_name = _unique_name(existing_names, "subl_name")
+    mul1_name = _unique_name(existing_names, "mul1_name")
+    mul2_name = _unique_name(existing_names, "mul2_name")
+    like_name = _unique_name(existing_names, "loss_name")
+
+    starts_name = _unique_name(existing_names, "starts_name")
+    ends_name = _unique_name(existing_names, "ends_name")
+    axes_name = _unique_name(existing_names, "axes_name")
+    onx_starts = from_array(
+        numpy.array([1], dtype=numpy.int64), name=starts_name)
+    onx_ends = from_array(
+        numpy.array([2], dtype=numpy.int64), name=ends_name)
+    onx_axes = from_array(
+        numpy.array([1], dtype=numpy.int64), name=axes_name)
+
+    nodes = [
+        make_node(
+            'Slice',
+            [output_name, starts_name, ends_name, axes_name],
+            [new_output]),
+        make_node('Cast', [label_name], [cast_name], to=elem),
+        make_node('Sub', [one_name, cast_name], [subl_name]),
+        make_node('Sub', [one_name, new_output], [subo_name]),
+        make_node('Log', [subo_name], [log2_name]),
+        make_node('Mul', [subl_name, log2_name], [mul1_name]),
+        make_node('Log', [new_output], [log_name]),
+        make_node('Mul', [cast_name, log_name], [mul2_name]),
+        make_node('Add', [mul1_name, mul2_name], [like_name])]
+    inputs = [make_tensor_value_info(label_name, TensorProto.INT64, shape)]
+
+    if weight_name is not None:
+        likew_name = _unique_name(existing_names, "likew_name")
+        inputs.append(
+            make_tensor_value_info(weight_name, elem, [shape[0]]))
+        nodes.append(
+            make_node('Mul', [like_name, weight_name], [likew_name]))
+        like_name = likew_name
+
+    shape_name = _unique_name(existing_names, "shape_name")
+    onx_shape = from_array(
+        numpy.array([1, 1], dtype=numpy.int64), name=shape_name)
+    reduced_loss = _unique_name(existing_names, "reduced_loss")
+    neg_reduced_loss = _unique_name(existing_names, "neg_reduced_loss")
+    nodes.extend([
+        make_node('ReduceMean', [like_name], [reduced_loss]),
+        make_node('Neg', [reduced_loss], [neg_reduced_loss]),
+        make_node('Reshape', [neg_reduced_loss, shape_name], [loss_name])])
+
+    return (
+        [onx_one, onx_shape, onx_starts, onx_ends, onx_axes],
+        inputs, nodes, [make_tensor_value_info(loss_name, elem, [1, 1])])
+
+
 def penalty_loss_onnx(name, dtype, l1=None, l2=None, existing_names=None):
     """
     Returns onnx nodes to compute
@@ -212,8 +286,8 @@ def penalty_loss_onnx(name, dtype, l1=None, l2=None, existing_names=None):
 
 def add_loss_output(onx, score_name='squared_error',
                     loss_name='loss', label_name='label',
-                    weight_name=None,
-                    penalty=None, **kwargs):
+                    weight_name=None, penalty=None,
+                    output_index=None, **kwargs):
     """
     Modifies an ONNX graph to add operators to score and allow training.
 
@@ -228,6 +302,10 @@ def add_loss_output(onx, score_name='squared_error',
         or `{ weight_name: beta}`,
         it adds a L1 and/or L2 penalty to one input or initializer,
         penalty = :math:`|w| \\alpha + w^2 \\beta`
+    :param output_index: the output used to compute the loss,
+        if None, the function assumes there is only one output,
+        it must be specified if there are more than 1,
+        it can be an integer or a string (output name)
     :param kwargs: additional arguments for losses (see below)
     :return: modified graph
 
@@ -241,6 +319,8 @@ def add_loss_output(onx, score_name='squared_error',
       is not None
     * `'elastic'`: mixture of losses, kwargs must define
       *l1_weight* and *l2_weight*, undefined, default value are 0.5
+    * `'log'`: log loss :math:`(1-y)\\log(1-y) - y\\log(y)`,
+        this only works for a binary classification.
 
     See example :ref:`l-orttraining-nn-gpu`.
     Next example shows the loss with L1 and L2 loss.
@@ -311,11 +391,43 @@ def add_loss_output(onx, score_name='squared_error',
 
         print("DOT-SECTION", OnnxInference(onx_loss).to_dot())
     """
-    outputs = onx.graph.output
-    if len(outputs) != 1:
-        raise ValueError(  # pragma: no cover
-            "Unable to guess the output to compare to the "
-            "expacted labels among %r." % (o.name for o in outputs))
+    # rename every intermediate output call label
+    def _replace(ens):
+        for i in range(len(ens)):  # pylint: disable=C0200
+            if ens[i] == 'label':
+                ens[i] = '_label_'
+
+    for node in onx.graph.node:
+        if "_label_" in node.input or "_label_" in node.output:
+            raise RuntimeError(  # pragma: no cover
+                "One intermediate result contains '_label_'. "
+                "It should be removed manually.\n%r" % node)
+        _replace(node.input)
+        _replace(node.output)
+
+    if output_index is None:
+        if len(onx.graph.output) != 1:
+            raise ValueError(  # pragma: no cover
+                "Unable to guess the output to compare to the "
+                "expacted labels among %r." % (
+                    [o.name for o in onx.graph.output]))
+        outputs = onx.graph.output
+        output_index = 0
+    elif isinstance(output_index, int):
+        outputs = [onx.graph.output[output_index]]
+    elif isinstance(output_index, str):
+        outputs = [(i, o) for i, o in enumerate(onx.graph.output)
+                   if o.name == output_index]
+        if len(outputs) != 1:
+            raise ValueError(  # pragma: no cover
+                "Unable to find output %r in %r." % (
+                    output_index, [o.name for o in onx.graph.output]))
+        output_index = outputs[0][0]
+        outputs = [outputs[0][1]]
+    else:
+        raise TypeError(
+            "output_index must be an integer or a str not %r."
+            "" % type(output_index))
 
     existing_names = []
     for node in onx.graph.node:
@@ -323,10 +435,11 @@ def add_loss_output(onx, score_name='squared_error',
         existing_names.extend(node.input)
     existing_names = set(existing_names)
 
-    output_name = onx.graph.output[0].name
-    elem = onx.graph.output[0].type.tensor_type.elem_type
+    output_onx = onx.graph.output[output_index]
+    output_name = output_onx.name
+    elem = output_onx.type.tensor_type.elem_type
     shape = []
-    for d in onx.graph.output[0].type.tensor_type.shape.dim:
+    for d in output_onx.type.tensor_type.shape.dim:
         shape.append(d.dim_value if d.dim_value > 0 else None)
 
     if score_name in ('squared_error', 'l2'):
@@ -339,6 +452,10 @@ def add_loss_output(onx, score_name='squared_error',
             weight_name, loss_name)
     elif score_name == 'elastic':
         inits, inputs, nodes, outputs = _loss_elastic(
+            existing_names, elem, shape, output_name, label_name,
+            weight_name, loss_name, **kwargs)
+    elif score_name == 'log':
+        inits, inputs, nodes, outputs = _loss_log(
             existing_names, elem, shape, output_name, label_name,
             weight_name, loss_name, **kwargs)
     else:
@@ -388,7 +505,7 @@ def add_loss_output(onx, score_name='squared_error',
         list(onx.graph.node) + nodes,
         onx.graph.name,
         list(onx.graph.input) + inputs,
-        outputs + list(onx.graph.output),
+        outputs + [onx.graph.output[output_index]],
         inits)
     onnx_model = make_model(graph)
     onnx_model.ir_version = onx.ir_version

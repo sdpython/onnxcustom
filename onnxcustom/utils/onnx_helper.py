@@ -10,7 +10,7 @@ from onnx import TensorProto, numpy_helper, helper
 
 def onnx_rename_weights(onx):
     """
-    Renames ONNX initialiers to make sure their name
+    Renames ONNX initializers to make sure their name
     follows the alphabetical order. The model is
     modified inplace. This function calls
     :func:`onnx_rename_names
