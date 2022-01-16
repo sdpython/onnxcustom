@@ -11,7 +11,7 @@ The `.proto` and `.proto3` files found under the [onnx folder](/onnx/) form the 
 
 __Notes on model validation__
 
-A [tool](../onnx/checker.py) is available to perform general validation of models against this specification. It is implemented in C++ with Python command-line wrapper.
+A [tool](../onnx/checker.py) is available to perform general validation of models against this specification. It is implemented in C++ with a Python command-line wrapper.
 
 __Notes on language in this and all related documents__:
 
@@ -101,7 +101,7 @@ Alternatively, you can use a tool like [Netron](https://github.com/lutzroeder/ne
 
 ### Model Semantics
 
-The semantics of an inference-model is a _stateless function_ (except possibly for the state used for random-number generation). Thus, whenever an inference-model (without random-generator operations) is used to perform inference on the same input, it is expeced to produce the same output.
+The semantics of an inference-model is a _stateless function_ (except possibly for the state used for random-number generation). Thus, whenever an inference-model (without random-generator operations) is used to perform inference on the same input, it is expected to produce the same output.
 
 The semantics of a training model is that of a _stateful object_, with the state consisting of the current values of trained-weights (and any other auxiliary state required, such as momentum, for example, used by the learning algorithm). Specifically, its semantics is captured via three methods: an initialization method (which is used to initialize or reset the values of state variables), a training step method (to train using a batch of input-output pairs), and an inference method to perform inference using the current values of the learned weights. The first two methods update the state of the object, while the third method is side-effect-free.
 
@@ -113,6 +113,7 @@ Name|Type|Format|Description
 |---|---|---|---|
 model_author|string|A comma-separated list of names.|The personal name of the author(s) of the model, and/or their organizations.
 model_license|string|Name or URL.|The well-known name or URL of the license under which the model is made available.
+
 
 ### Operator Sets
 
@@ -213,6 +214,7 @@ Graph|The names of graphs within a domain, unique within the model domain.
 Operator|The names of operators within a domain.
 Shape|The names of tensor shape variables – scoped to the value information records of a graph, which is where shape variables occur.
 
+
 ### Nodes
 
 Computation nodes are comprised of a name, the name of an operator that it invokes, a list of named inputs, a list of named outputs, and a list of attributes.
@@ -280,6 +282,7 @@ tensors|Tensor[]|A list of tensor values.
 graphs|Graph[]|A list of graphs.
 
 The properties ‘name’ and ‘type’ are required on all attributes, and ‘doc_string’ SHOULD be used on all attributes. An attribute MUST have only one of the value-carrying properties.
+
 
 #### Variadic Inputs and Outputs
 
@@ -352,7 +355,7 @@ The following types are used to define the types of graph and node inputs and ou
 
 |Variant | Type | Description |
 |---|---|---|
-ONNX|dense tensors|Represents a Tensor. See definition above.
+ONNX|dense tensors|Represents a Tensor. See definition above. 
 ONNX|sequence|Sequences are dense, ordered, collections of elements that are of homogeneous types.
 ONNX|map|Maps are associative tables, defined by a key type and a value type.
 ONNX|optional|Optionals are wrappers that may contain an element of tensor, sequence, or map type, or may be empty (containing none). [Details](ONNXTypes.md)

@@ -21,6 +21,7 @@ Overwiew
     onnx_docs/Hub.md
     onnx_metadata
     onnx_docs/ShapeInference.md
+    onnx_docs/CIPipelines.md
 
 Syntax
 ++++++
