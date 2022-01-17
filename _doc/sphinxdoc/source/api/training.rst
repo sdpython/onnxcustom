@@ -52,6 +52,8 @@ be combination of L1, L2 losses and L1, L2 penalties.
 
 .. autosignature:: onnxcustom.utils.orttraining_helper.get_train_initializer
 
+.. autosignature:: onnxcustom.utils.onnx_rewriter.onnx_rewrite_operator
+
 .. _l-api-prt-gradient-optimizer:
 
 OrtGradientOptimizer

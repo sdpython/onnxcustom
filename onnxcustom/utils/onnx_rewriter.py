@@ -92,6 +92,39 @@ def onnx_rewrite_operator(onx, op_type, sub_onx, recursive=True, debug_info=None
     :param recursive: looks into subgraphs
     :param debug_info: unused
     :return: modified onnx graph
+
+    .. runpython::
+        :showcode:
+
+        import numpy
+        from skl2onnx.common.data_types import FloatTensorType
+        from skl2onnx.algebra.onnx_ops import (  # pylint: disable=E0611
+            OnnxReciprocal, OnnxDiv)
+        from mlprodict.plotting.text_plot import onnx_simple_text_plot
+        from onnxcustom import get_max_opset
+        from onnxcustom.utils.onnx_rewriter import onnx_rewrite_operator
+
+        # first graph: it contains the node to replace
+        opset = get_max_opset()
+        node1 = OnnxReciprocal('X', output_names=['Y'],
+                               op_version=opset)
+        onx1 = node1.to_onnx(
+            inputs={'X': FloatTensorType()},
+            outputs={'Y': FloatTensorType()},
+            target_opset=opset)
+
+        # second graph: it contains the replacement graph
+        node2 = OnnxDiv(numpy.array([1], dtype=numpy.float32),
+                        'X', output_names=['Y'],
+                        op_version=opset)
+        onx2 = node2.to_onnx(
+            inputs={'X': FloatTensorType()},
+            outputs={'Y': FloatTensorType()},
+            target_opset=opset)
+
+        # third graph: the modified graph
+        onx3 = onnx_rewrite_operator(onx1, 'Reciprocal', onx2)
+        print(onnx_simple_text_plot(onx3))
     """
     if hasattr(onx, 'graph'):
         fct = (lambda graph, recursive=False, debug_info=None:
