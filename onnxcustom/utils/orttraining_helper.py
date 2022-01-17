@@ -11,15 +11,15 @@ from onnx.helper import (
     make_node, make_graph, make_model, make_tensor_value_info,
     set_model_props)
 from onnx import TensorProto
+from mlprodict.onnx_tools.optim import onnx_remove_node_unused
 
 
-def _unique_name(existing_names, name, add=True):
+def _unique_name(existing_names, name):
     """
     Returns a name different from any name in *existing_names*.
 
     :param existing_names: set of names
     :param name: current
-    :param add: add the name of the list of existing names
     :return: unique name
     """
     if name not in existing_names:
@@ -289,6 +289,55 @@ def penalty_loss_onnx(name, dtype, l1=None, l2=None, existing_names=None):
     return inits, nodes
 
 
+def get_train_initializer(onx):
+    """
+    Returns the list of initializers to train.
+
+    :return: dictionary `{name: (value, tensor)}`
+
+    The function walk through the list of initializers and
+    returns all tensors with elements from types float or double.
+    """
+    res = OrderedDict()
+    for init in onx.graph.initializer:
+        if init.data_type in (
+                TensorProto.FLOAT16,  # pylint: disable=E1101
+                TensorProto.FLOAT,  # pylint: disable=E1101
+                TensorProto.DOUBLE):  # pylint: disable=E1101
+            res[init.name] = (to_array(init), init)
+    return res
+
+
+def _rewrite_op_no_grad(onx):
+    """
+    Rewrites operators with no gradient.
+    """
+    set_types = set(n.name for n in onx.graph.node)
+    if "Reciprocal" in set_types:
+        from skl2onnx.algebra.onnx_ops import OnnxDiv  # pylint: disable=E0611
+        from skl2onnx.common.data_types import FloatTensorType
+        from .onnx_rewriter import onnx_rewrite_operator
+
+        opset = None
+        for op in onx.opset_import:
+            if op.domain in ('', 'ai.onnx'):
+                opset = op.version
+        if opset is None:
+            from .. import get_max_opset
+            opset = get_max_opset()
+
+        node = OnnxDiv(numpy.array([1], dtype=numpy.float32),
+                       'X', output_names=['Y'],
+                       op_version=opset)
+        rewrite_onx = node.to_onnx(
+            inputs={'X': FloatTensorType()},
+            outputs={'Y': FloatTensorType()},
+            target_opset=opset)
+        onx = onnx_rewrite_operator(onx, 'Reciprocal', rewrite_onx)
+
+    return onx
+
+
 def add_loss_output(onx, score_name='squared_error',
                     loss_name='loss', label_name='label',
                     weight_name=None, penalty=None,
@@ -537,23 +586,4 @@ def add_loss_output(onx, score_name='squared_error',
         op_set = onnx_model.opset_import.add()  # pylint: disable=E1101
         op_set.domain = oimp.domain
         op_set.version = oimp.version
-    return onnx_model
-
-
-def get_train_initializer(onx):
-    """
-    Returns the list of initializers to train.
-
-    :return: dictionary `{name: (value, tensor)}`
-
-    The function walk through the list of initializers and
-    returns all tensors with elements from types float or double.
-    """
-    res = OrderedDict()
-    for init in onx.graph.initializer:
-        if init.data_type in (
-                TensorProto.FLOAT16,  # pylint: disable=E1101
-                TensorProto.FLOAT,  # pylint: disable=E1101
-                TensorProto.DOUBLE):  # pylint: disable=E1101
-            res[init.name] = (to_array(init), init)
-    return res
+    return _rewrite_op_no_grad(onnx_remove_node_unused(onnx_model))
