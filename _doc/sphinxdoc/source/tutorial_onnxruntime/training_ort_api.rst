@@ -53,7 +53,7 @@ optimized weights.
 
 :epkg:`onnxruntime-training` does not implement loss functions.
 That must be done independently. That's what function
-:func:`onnxcustom.utils.orttraining_helper.add_loss_output>` does.
+:func:`onnxcustom.utils.orttraining_helper.add_loss_output` does.
 It implements a couple of usual losses in ONNX.
 Another function :func:`onnxcustom.utils.orttraining_helper.get_train_initializer`
 guesses all the coefficients of an ONNX graph if the user does not specify any.

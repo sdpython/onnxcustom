@@ -9,6 +9,7 @@ from sklearn.datasets import make_classification
 from sklearn.model_selection import train_test_split
 from sklearn.linear_model import SGDClassifier
 from mlprodict.onnx_conv import to_onnx
+# from mlprodict.onnxrt import OnnxInference
 from onnxcustom import __max_supported_opset__ as opset
 try:
     from onnxruntime import TrainingSession
@@ -32,14 +33,15 @@ class TestOptimizersClassification(ExtTestCase):
         reg.fit(X_train, y_train)
         reg.coef_ = reg.coef_.reshape((1, -1))
         onx = to_onnx(reg, X_train, target_opset=opset,
-                      black_op={'LinearRegressor'})
+                      black_op={'LinearRegressor'},
+                      options={'zipmap': False})
         set_model_props(onx, {'info': 'unit test'})
-        onx_loss = add_loss_output(onx, 'log')
+        onx_loss = add_loss_output(onx, 'log', output_index=1)
         inits = ['intercept', 'coef']
         train_session = OrtGradientOptimizer(
             onx_loss, inits, learning_rate=1e-3)
         self.assertRaise(lambda: train_session.get_state(), AttributeError)
-        train_session.fit(X_train, y_train, use_numpy=True)
+        train_session.fit(X_train, y_train.reshape((1, -1)), use_numpy=True)
         state_tensors = train_session.get_state()
         self.assertEqual(len(state_tensors), 2)
         r = repr(train_session)

@@ -136,61 +136,66 @@ def _loss_elastic(existing_names, elem, shape,
 
 def _loss_log(existing_names, elem, shape,
               output_name, label_name,
-              weight_name, loss_name):
+              weight_name, loss_name,
+              eps=1e-6):
     """
     This only works for a binary classification.
-    The log loss is :math:`(1-y)\\log(1-y) - y\\log(y)`.
+    The log loss is `'log(yt, yp) = (1-yt)\\log(1-yp) - yt\\log(yp)`,
+    this only works for a binary classification where *yp* is the
+    predicted probability, *yt* is the expected probability.
+    *yt* is expected to be binary, *yp* is a matrix with two
+    columns, the sum on every line is 1.
+    Parameter *eps* is used to avoid computing *log(0)*.
     """
     if output_name == 'output_label':
         raise RuntimeError(
             "output_name=%r, log loss does not work on labels."
             "" % output_name)
-    one_name = _unique_name(existing_names, "one_name")
     dtype = TENSOR_TYPE_TO_NP_TYPE[elem]
-    onx_one = from_array(
-        numpy.array([1], dtype=dtype), name=one_name)
+    one_name = _unique_name(existing_names, "one_name")
+    eps_name = _unique_name(existing_names, "eps_name")
+    eps1_name = _unique_name(existing_names, "eps1_name")
+    axes_name = _unique_name(existing_names, "axes_name")
 
-    new_output = _unique_name(existing_names, "new_output")
+    eps_init = from_array(numpy.array([eps], dtype=dtype), name=eps_name)
+    one_init = from_array(numpy.array([1], dtype=dtype), name=one_name)
+    eps1_init = from_array(
+        numpy.array([1 - eps], dtype=dtype), name=eps1_name)
+    axes_init = from_array(
+        numpy.array([1], dtype=numpy.int64), name=axes_name)
+
+    clip_name = _unique_name(existing_names, "clip_name")
+    clip_red_name = _unique_name(existing_names, "clip_red_name")
+    new_output_name = _unique_name(existing_names, "new_output_name")
     cast_name = _unique_name(existing_names, "cast_name")
     log_name = _unique_name(existing_names, "log_name")
-    log2_name = _unique_name(existing_names, "log2_name")
-    subo_name = _unique_name(existing_names, "subo_name")
     subl_name = _unique_name(existing_names, "subl_name")
-    mul1_name = _unique_name(existing_names, "mul1_name")
-    mul2_name = _unique_name(existing_names, "mul2_name")
-    like_name = _unique_name(existing_names, "loss_name")
-
-    starts_name = _unique_name(existing_names, "starts_name")
-    ends_name = _unique_name(existing_names, "ends_name")
-    axes_name = _unique_name(existing_names, "axes_name")
-    onx_starts = from_array(
-        numpy.array([1], dtype=numpy.int64), name=starts_name)
-    onx_ends = from_array(
-        numpy.array([2], dtype=numpy.int64), name=ends_name)
-    onx_axes = from_array(
-        numpy.array([1], dtype=numpy.int64), name=axes_name)
+    conc_name = _unique_name(existing_names, "conc_name")
+    mul_name = _unique_name(existing_names, "mul_name")
+    like_name = _unique_name(existing_names, "like_name")
 
     nodes = [
         make_node(
-            'Slice',
-            [output_name, starts_name, ends_name, axes_name],
-            [new_output]),
+            'Clip', [output_name, eps_name, eps1_name], [clip_name]),
+        make_node(
+            'ReduceSum', [clip_name, axes_name], [clip_red_name], keepdims=1),
+        make_node('Div', [clip_name, clip_red_name], [new_output_name]),
+        make_node('Log', [new_output_name], [log_name]),
         make_node('Cast', [label_name], [cast_name], to=elem),
         make_node('Sub', [one_name, cast_name], [subl_name]),
-        make_node('Sub', [one_name, new_output], [subo_name]),
-        make_node('Log', [subo_name], [log2_name]),
-        make_node('Mul', [subl_name, log2_name], [mul1_name]),
-        make_node('Log', [new_output], [log_name]),
-        make_node('Mul', [cast_name, log_name], [mul2_name]),
-        make_node('Add', [mul1_name, mul2_name], [like_name])]
+        make_node('Concat', [subl_name, cast_name], [conc_name], axis=1),
+        make_node('Mul', [log_name, conc_name], [mul_name], name="LoMul1"),
+        make_node(
+            'ReduceSum', [mul_name, axes_name], [like_name], keepdims=1)]
+
     inputs = [make_tensor_value_info(label_name, TensorProto.INT64, shape)]
 
     if weight_name is not None:
-        likew_name = _unique_name(existing_names, "likew_name")
         inputs.append(
             make_tensor_value_info(weight_name, elem, [shape[0]]))
+        likew_name = _unique_name(existing_names, "likew_name")
         nodes.append(
-            make_node('Mul', [like_name, weight_name], [likew_name]))
+            make_node('Mul', [like_name, weight_name], [likew_name], name="LoMul1"))
         like_name = likew_name
 
     shape_name = _unique_name(existing_names, "shape_name")
@@ -204,7 +209,7 @@ def _loss_log(existing_names, elem, shape,
         make_node('Reshape', [neg_reduced_loss, shape_name], [loss_name])])
 
     return (
-        [onx_one, onx_shape, onx_starts, onx_ends, onx_axes],
+        [eps_init, eps1_init, one_init, axes_init, onx_shape],
         inputs, nodes, [make_tensor_value_info(loss_name, elem, [1, 1])])
 
 
@@ -319,8 +324,11 @@ def add_loss_output(onx, score_name='squared_error',
       is not None
     * `'elastic'`: mixture of losses, kwargs must define
       *l1_weight* and *l2_weight*, undefined, default value are 0.5
-    * `'log'`: log loss :math:`(1-y)\\log(1-y) - y\\log(y)`,
-        this only works for a binary classification.
+    * `'log(yt, yp)'`: log loss :math:`(1-yt)\\log(1-yp) - yt\\log(yp)`,
+        this only works for a binary classification where *yp* is the
+        predicted probability, *yt* is the expected probability.
+        *yt* is expected to be binary, *yp* is a matrix with two
+        columns, the sum on every line is 1.
 
     See example :ref:`l-orttraining-nn-gpu`.
     Next example shows the loss with L1 and L2 loss.
@@ -438,6 +446,10 @@ def add_loss_output(onx, score_name='squared_error',
     output_onx = onx.graph.output[output_index]
     output_name = output_onx.name
     elem = output_onx.type.tensor_type.elem_type
+    if elem == 0:
+        raise TypeError(  # pragma: no cover
+            "Unable to guess inut tensor type from %r."
+            "" % output_onx)
     shape = []
     for d in output_onx.type.tensor_type.shape.dim:
         shape.append(d.dim_value if d.dim_value > 0 else None)
@@ -455,6 +467,7 @@ def add_loss_output(onx, score_name='squared_error',
             existing_names, elem, shape, output_name, label_name,
             weight_name, loss_name, **kwargs)
     elif score_name == 'log':
+        shape = (None, 1)
         inits, inputs, nodes, outputs = _loss_log(
             existing_names, elem, shape, output_name, label_name,
             weight_name, loss_name, **kwargs)
