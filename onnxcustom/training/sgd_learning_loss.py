@@ -171,3 +171,34 @@ class ElasticLearningLoss(BaseLearningLoss):
             providers=device_to_providers(device))
         self.loss_grad_sess_bind_ = (
             self.loss_grad_sess_.io_binding()._iobinding)
+
+
+class LogLearningLoss(BaseLearningLoss):
+    """
+    Implements a log loss `'log(yt, yp) = (1-yt)\\log(1-yp) - yt\\log(yp)`,
+    this only works for a binary classification where *yp* is the
+    predicted probability, *yt* is the expected probability.
+    *yt* is expected to be binary, *yp* is a matrix with two
+    columns, the sum on every line is 1.
+
+    :param eps: first step is to run `Clip(probability, eps, 1 - eps)`
+        in order to avoid log(0) and nan values
+    """
+
+    def __init__(self, eps=1e-5):
+        BaseLearningLoss.__init__(self)
+        self.eps = eps
+
+    def build_onnx_function(self, opset, device, weight_name):
+        so = SessionOptions()
+        so.log_severity_level = 4
+
+        # loss_grad
+        self.loss_grad_onnx_ = function_onnx_graph(
+            "grad_log_loss_error", target_opset=opset,
+            weight_name=weight_name, eps=self.eps)
+        self.loss_grad_sess_ = InferenceSession(
+            self.loss_grad_onnx_.SerializeToString(), so,
+            providers=device_to_providers(device))
+        self.loss_grad_sess_bind_ = (
+            self.loss_grad_sess_.io_binding()._iobinding)
