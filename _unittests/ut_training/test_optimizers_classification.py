@@ -10,21 +10,17 @@ from sklearn.model_selection import train_test_split
 from sklearn.linear_model import SGDClassifier
 from mlprodict.onnx_conv import to_onnx
 # from mlprodict.onnxrt import OnnxInference
-print("0")
 from onnxcustom import __max_supported_opset__ as opset
-print("0")
 from onnxcustom.training.sgd_learning_rate import (
     LearningRateSGDNesterov)
-print("0")
 from onnxcustom.training.sgd_learning_loss import (
-    BaseLearningLoss, LogLearningLoss)
-print("0")
+    BaseLearningLoss, NegLogLearningLoss)
 try:
     from onnxruntime import TrainingSession
 except ImportError:
     # onnxruntime not training
     TrainingSession = None
-print("G")
+
 
 class TestOptimizersClassification(ExtTestCase):
 
@@ -40,7 +36,7 @@ class TestOptimizersClassification(ExtTestCase):
         reg = SGDClassifier(loss='log')
         reg.fit(X_train, y_train)
         onx = to_onnx(reg, X_train, target_opset=opset,
-                      black_op={'LinearRegressor'},
+                      black_op={'LinearClassifier'},
                       options={'zipmap': False})
         set_model_props(onx, {'info': 'unit test'})
         onx_loss = add_loss_output(onx, 'log', output_index=1)
@@ -78,10 +74,10 @@ class TestOptimizersClassification(ExtTestCase):
             onx, inits,
             learning_rate=LearningRateSGDNesterov(
                 1e-4, nesterov=False, momentum=0.9),
-            learning_loss=LogLearningLoss(),
+            learning_loss=NegLogLearningLoss(),
             warm_start=False, max_iter=100, batch_size=10)
         self.assertIsInstance(train_session.learning_loss, BaseLearningLoss)
-        self.assertIsInstance(train_session.learning_loss, LogLearningLoss)
+        self.assertIsInstance(train_session.learning_loss, NegLogLearningLoss)
         self.assertEqual(train_session.learning_loss.eps, 1e-5)
         train_session.fit(X, y)
 

@@ -1,7 +1,6 @@
 """
 @brief      test log(time=5s)
 """
-print('T')
 import unittest
 from pyquickhelper.pycode import ExtTestCase
 import numpy
@@ -20,7 +19,6 @@ try:
 except ImportError:
     # onnxruntime not training
     TrainingSession = None
-print('U')
 
 
 class TestOrtTraining(ExtTestCase):

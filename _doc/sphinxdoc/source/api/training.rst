@@ -102,7 +102,7 @@ LearningLoss
 .. autosignature:: onnxcustom.training.sgd_learning_loss.ElasticLearningLoss
     :members:
 
-.. autosignature:: onnxcustom.training.sgd_learning_loss.LogLearningLoss
+.. autosignature:: onnxcustom.training.sgd_learning_loss.NegLogLearningLoss
     :members:
 
 .. autosignature:: onnxcustom.training.sgd_learning_loss.SquareLearningLoss

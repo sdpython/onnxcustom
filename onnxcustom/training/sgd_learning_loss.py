@@ -173,21 +173,28 @@ class ElasticLearningLoss(BaseLearningLoss):
             self.loss_grad_sess_.io_binding()._iobinding)
 
 
-class LogLearningLoss(BaseLearningLoss):
+class NegLogLearningLoss(BaseLearningLoss):
     """
-    Implements a log loss `'log(yt, yp) = (1-yt)\\log(1-yp) - yt\\log(yp)`,
+    Implements a negative log loss
+    `'log(yt, yp) = -(1-yt)\\log(1-yp) - yt\\log(yp)`,
     this only works for a binary classification where *yp* is the
     predicted probability, *yt* is the expected probability.
     *yt* is expected to be binary, *yp* is a matrix with two
     columns, the sum on every line is 1.
+    However, this loss is usually applied after a function softmax
+    and the gradient is directly computed from the loss to the
+    raw score before they are processed through the softmax function
+    (see class `Log
+    <https://github.com/scikit-learn/scikit-learn/blob/main/sklearn/
+    linear_model/_sgd_fast.pyx#L236>`_).
 
-    :param eps: first step is to run `Clip(probability, eps, 1 - eps)`
-        in order to avoid log(0) and nan values
+    :param eps_max: avoids computing high values with
+        exponential function
     """
 
-    def __init__(self, eps=1e-5):
+    def __init__(self, eps_max=18):
         BaseLearningLoss.__init__(self)
-        self.eps = eps
+        self.eps_max = eps_max
 
     def build_onnx_function(self, opset, device, weight_name):
         so = SessionOptions()
@@ -196,7 +203,7 @@ class LogLearningLoss(BaseLearningLoss):
         # loss_grad
         self.loss_grad_onnx_ = function_onnx_graph(
             "grad_log_loss_error", target_opset=opset,
-            weight_name=weight_name, eps=self.eps)
+            weight_name=weight_name, eps_max=self.eps_max)
         self.loss_grad_sess_ = InferenceSession(
             self.loss_grad_onnx_.SerializeToString(), so,
             providers=device_to_providers(device))

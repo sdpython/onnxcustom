@@ -2,13 +2,9 @@
 @file
 @brief Rewrites operator in ONNX graph.
 """
-print('C')
 from onnx.helper import make_graph
 from onnx import NodeProto
 from onnx.numpy_helper import to_array, from_array
-from mlprodict.onnx_tools.optim._onnx_optimisation_common import (
-    _apply_remove_node_fct_node, _apply_optimisation_on_graph)
-print('D')
 
 
 def _unique_name(existing_names, name):
@@ -128,6 +124,9 @@ def onnx_rewrite_operator(onx, op_type, sub_onx, recursive=True, debug_info=None
         onx3 = onnx_rewrite_operator(onx1, 'Reciprocal', onx2)
         print(onnx_simple_text_plot(onx3))
     """
+    from mlprodict.onnx_tools.optim._onnx_optimisation_common import (  # pylint: disable=C0415
+        _apply_remove_node_fct_node, _apply_optimisation_on_graph)
+
     if hasattr(onx, 'graph'):
         fct = (lambda graph, recursive=False, debug_info=None:
                onnx_rewrite_operator(
@@ -159,7 +158,8 @@ def onnx_rewrite_operator(onx, op_type, sub_onx, recursive=True, debug_info=None
             if node is None or not (node.attribute):  # pylint: disable=C0325
                 continue
             nodes[i] = _apply_remove_node_fct_node(
-                onnx_rewrite_operator, node, recursive=True)
+                onnx_rewrite_operator, node, recursive=True,
+                debug_info=None)
 
     graph = make_graph(
         new_nodes, onx.name, onx.input, onx.output, new_inits)

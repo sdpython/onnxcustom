@@ -3,7 +3,6 @@
 @file
 @brief ONNX manipulations to help build ONNX gradient graphs.
 """
-print("A")
 from collections import OrderedDict
 import numpy
 from onnx.mapping import TENSOR_TYPE_TO_NP_TYPE
@@ -12,8 +11,6 @@ from onnx.helper import (
     make_node, make_graph, make_model, make_tensor_value_info,
     set_model_props)
 from onnx import TensorProto
-from mlprodict.onnx_tools.optim import onnx_remove_node_unused
-print("B")
 
 
 def _unique_name(existing_names, name):
@@ -450,6 +447,8 @@ def add_loss_output(onx, score_name='squared_error',
 
         print("DOT-SECTION", OnnxInference(onx_loss).to_dot())
     """
+    from mlprodict.onnx_tools.optim import onnx_remove_node_unused
+
     # rename every intermediate output call label
     def _replace(ens):
         for i in range(len(ens)):  # pylint: disable=C0200
