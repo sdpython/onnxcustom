@@ -3,6 +3,7 @@
 @file
 @brief ONNX manipulations to help build ONNX gradient graphs.
 """
+print("A")
 from collections import OrderedDict
 import numpy
 from onnx.mapping import TENSOR_TYPE_TO_NP_TYPE
@@ -12,6 +13,7 @@ from onnx.helper import (
     set_model_props)
 from onnx import TensorProto
 from mlprodict.onnx_tools.optim import onnx_remove_node_unused
+print("B")
 
 
 def _unique_name(existing_names, name):

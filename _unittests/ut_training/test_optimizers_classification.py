@@ -10,17 +10,21 @@ from sklearn.model_selection import train_test_split
 from sklearn.linear_model import SGDClassifier
 from mlprodict.onnx_conv import to_onnx
 # from mlprodict.onnxrt import OnnxInference
+print("0")
 from onnxcustom import __max_supported_opset__ as opset
+print("0")
 from onnxcustom.training.sgd_learning_rate import (
     LearningRateSGDNesterov)
+print("0")
 from onnxcustom.training.sgd_learning_loss import (
     BaseLearningLoss, LogLearningLoss)
+print("0")
 try:
     from onnxruntime import TrainingSession
 except ImportError:
     # onnxruntime not training
     TrainingSession = None
-
+print("G")
 
 class TestOptimizersClassification(ExtTestCase):
 

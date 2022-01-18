@@ -2,11 +2,13 @@
 @file
 @brief Rewrites operator in ONNX graph.
 """
+print('C')
 from onnx.helper import make_graph
 from onnx import NodeProto
 from onnx.numpy_helper import to_array, from_array
 from mlprodict.onnx_tools.optim._onnx_optimisation_common import (
     _apply_remove_node_fct_node, _apply_optimisation_on_graph)
+print('D')
 
 
 def _unique_name(existing_names, name):
