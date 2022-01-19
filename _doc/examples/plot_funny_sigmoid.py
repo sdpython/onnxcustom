@@ -151,6 +151,10 @@ piv.plot(ax=ax, logy=True)
 # is far from every classification border. In that case,
 # :epkg:`onnxruntime` implementation of the sigmoid function
 # returns 0 when :func:`numpy.sigmoid` returns a smoother value.
+# Probabilites of logistic regression are obtained after the raw
+# scores are transformed with the sigmoid function and
+# normalized. If the raw scores are very negative,
+# the sum of probabilities becomes null with :epkg:`onnxruntime`.
+# The normalization fails.
 
-
-plt.show()
+# plt.show()
