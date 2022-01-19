@@ -183,7 +183,7 @@ def _loss_log(existing_names, elem, shape,
         make_node('Cast', [label_name], [cast_name], to=elem),
         make_node('Sub', [one_name, cast_name], [subl_name]),
         make_node('Concat', [subl_name, cast_name], [conc_name], axis=1),
-        make_node('Mul', [log_name, conc_name], [mul_name], name="LoMul1"),
+        make_node('Mul', [log_name, conc_name], [mul_name]),
         make_node(
             'ReduceSum', [mul_name, axes_name], [like_name], keepdims=1)]
 
@@ -194,7 +194,7 @@ def _loss_log(existing_names, elem, shape,
             make_tensor_value_info(weight_name, elem, [shape[0]]))
         likew_name = _unique_name(existing_names, "likew_name")
         nodes.append(
-            make_node('Mul', [like_name, weight_name], [likew_name], name="LoMul1"))
+            make_node('Mul', [like_name, weight_name], [likew_name]))
         like_name = likew_name
 
     shape_name = _unique_name(existing_names, "shape_name")
