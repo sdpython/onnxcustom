@@ -9,6 +9,7 @@ from sklearn.datasets import make_classification
 from sklearn.model_selection import train_test_split
 from sklearn.linear_model import SGDClassifier
 from mlprodict.onnx_conv import to_onnx
+from mlprodict.plotting.text_plot import onnx_simple_text_plot
 # from mlprodict.onnxrt import OnnxInference
 from onnxcustom import __max_supported_opset__ as opset
 from onnxcustom.training.sgd_learning_rate import (
@@ -66,7 +67,9 @@ class TestOptimizersClassification(ExtTestCase):
         reg.fit(X_train, y_train)
         onx = to_onnx(reg, X_train, target_opset=opset,
                       black_op={'LinearRegressor'},
-                      options={'zipmap': False})
+                      options={'zipmap': False,
+                               'raw_scores': True})
+        print(onnx_simple_text_plot(onx))
         set_model_props(onx, {'info': 'unit test'})
         inits = ['coef', 'intercept']
 

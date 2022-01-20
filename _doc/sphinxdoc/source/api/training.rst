@@ -108,8 +108,8 @@ LearningLoss
 .. autosignature:: onnxcustom.training.sgd_learning_loss.SquareLearningLoss
     :members:
 
-Loss function
-+++++++++++++
+Loss functions
+++++++++++++++
 
 .. autosignature:: onnxcustom.utils.onnx_function.function_onnx_graph
 

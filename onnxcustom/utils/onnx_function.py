@@ -714,3 +714,87 @@ def _onnx_update_penalty_elastic_error(target_opset=None, dtype=numpy.float32,
         varsx, outputs=[('Y', var_type())],
         target_opset=target_opset)
     return onx
+
+
+def _onnx_grad_sigmoid_neg_log_loss_error(target_opset=None,
+                                          dtype=numpy.float32,
+                                          eps=1e-6,
+                                          weight_name=None):
+    """
+    The function the raw scores from a classifier, uses the
+    sigmoid function to compute probabilities, then the log function
+    to compute the loss. It creates the ONNX graph for this function
+    and the associated gradient of the loss against the raw scores.
+
+    Probabilites (class 1): :math:`p(s) = \\frac{1}{1 + \\exp(-s)}`.
+    Loss (for two classes): :math:`L(s, y) = (1 - y)\\log(1 - p(s)) +
+    y \\log(p(s))`.
+    Gradient :math:`\\frac{dL(s,y)}{ds} = y - p(s)`.
+
+    :param eps: to clip probabilities and avoid computing `log(0)`
+
+    .. gdot::
+        :script: DOT-SECTION
+
+        from mlprodict.onnxrt import OnnxInference
+        from onnxcustom.utils.onnx_function import function_onnx_graph
+
+        model_onnx = function_onnx_graph('grad_sigmoid_log_loss_error')
+        oinf = OnnxInference(model_onnx, inplace=False)
+
+        print("DOT-SECTION", oinf.to_dot())
+    """
+    from onnx.mapping import NP_TYPE_TO_TENSOR_TYPE
+    from skl2onnx.algebra.onnx_ops import (
+        OnnxSub, OnnxSlice, OnnxMul, OnnxSigmoid, OnnxLog,
+        OnnxReduceMean, OnnxReshape, OnnxAdd, OnnxCast, OnnxClip)
+
+    cl1 = OnnxSlice('X1', numpy.array([1], dtype=numpy.int64),
+                    numpy.array([2], dtype=numpy.int64),
+                    numpy.array([1], dtype=numpy.int64),
+                    op_version=target_opset)
+    p1c = OnnxSigmoid(cl1, op_version=target_opset)
+    p1 = OnnxClip(p1c, numpy.array([eps], dtype=dtype),
+                  numpy.array([1 - eps], dtype=dtype),
+                  op_version=target_opset)
+    p0 = OnnxSub(numpy.array([1], dtype=dtype), p1,
+                 op_version=target_opset)
+    y1 = OnnxCast('X2', to=NP_TYPE_TO_TENSOR_TYPE[numpy.dtype(dtype)],
+                  op_version=target_opset)
+    y0 = OnnxSub(numpy.array([1], dtype=dtype), y1,
+                 op_version=target_opset)
+    loss_obs = OnnxAdd(
+        OnnxMul(y0, OnnxLog(p0, op_version=target_opset),
+                op_version=target_opset),
+        OnnxMul(y1, OnnxLog(p1, op_version=target_opset),
+                op_version=target_opset),
+        op_version=target_opset)
+
+    if weight_name is None:
+        loss = OnnxReduceMean(loss_obs, op_version=target_opset)
+        grad = OnnxSub(y1, p1, op_version=target_opset,
+                       output_names=['Z'])
+    else:
+        loss = OnnxReduceMean(
+            OnnxMul(loss_obs, weight_name, op_version=target_opset),
+            op_version=target_opset)
+        grad = OnnxMul(
+            OnnxSub(y1, p1, op_version=target_opset),
+            weight_name, output_names=['Z'])
+
+    res = OnnxReshape(loss, numpy.array([-1], numpy.int64),
+                      op_version=target_opset,
+                      output_names=['Y'])
+
+    var_type = dtype_to_var_type(dtype)
+    varsx = [('X1', var_type([None, None])),
+             ('X2', var_type([None, None]))]
+    if weight_name is not None:
+        varsx.append((weight_name, var_type([None])))
+    onx = res.to_onnx(
+        varsx, outputs=[('Y', var_type()), ('Z', var_type())],
+        target_opset=target_opset, other_outputs=[grad])
+    if weight_name is not None:
+        onx = add_initializer(
+            onx, weight_name, numpy.array([1], dtype=dtype))
+    return onx

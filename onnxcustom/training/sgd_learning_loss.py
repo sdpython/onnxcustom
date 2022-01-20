@@ -188,13 +188,16 @@ class NegLogLearningLoss(BaseLearningLoss):
     <https://github.com/scikit-learn/scikit-learn/blob/main/sklearn/
     linear_model/_sgd_fast.pyx#L236>`_).
 
-    :param eps_max: avoids computing high values with
-        exponential function
+    :param eps: clipping value for probabilities,
+        avoids computing `log(0)`
+    :param probability_function: function to convert
+        raw scores into probabilities, default value is `sigmoid`
+        for a logistic regression
     """
 
-    def __init__(self, eps_max=18):
+    def __init__(self, eps=1e-6, probability_function='sigmoid'):
         BaseLearningLoss.__init__(self)
-        self.eps_max = eps_max
+        self.eps = eps
 
     def build_onnx_function(self, opset, device, weight_name):
         so = SessionOptions()
@@ -202,8 +205,8 @@ class NegLogLearningLoss(BaseLearningLoss):
 
         # loss_grad
         self.loss_grad_onnx_ = function_onnx_graph(
-            "grad_log_loss_error", target_opset=opset,
-            weight_name=weight_name, eps_max=self.eps_max)
+            "grad_sigmoid_neg_log_loss_error", target_opset=opset,
+            weight_name=weight_name, eps=self.eps)
         self.loss_grad_sess_ = InferenceSession(
             self.loss_grad_onnx_.SerializeToString(), so,
             providers=device_to_providers(device))
