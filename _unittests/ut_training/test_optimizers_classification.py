@@ -70,8 +70,8 @@ class TestOptimizersClassification(ExtTestCase):
                       black_op={'LinearRegressor'},
                       options={'zipmap': False,
                                'raw_scores': True})
-        onx = select_model_inputs_outputs(onx, outputs=['probabilities'])
-        self.assertIn("output: name='probabilities'",
+        onx = select_model_inputs_outputs(onx, outputs=['score'])
+        self.assertIn("output: name='score'",
                       onnx_simple_text_plot(onx))
         set_model_props(onx, {'info': 'unit test'})
         inits = ['coef', 'intercept']
@@ -91,4 +91,5 @@ class TestOptimizersClassification(ExtTestCase):
 
 
 if __name__ == "__main__":
+    TestOptimizersClassification().test_ort_gradient_optimizers_fw_nesterov_binary()
     unittest.main()

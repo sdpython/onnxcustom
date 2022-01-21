@@ -6,7 +6,7 @@
 from onnxruntime import SessionOptions, InferenceSession, RunOptions
 from ..utils.onnx_function import function_onnx_graph
 from ..utils.onnxruntime_helper import device_to_providers
-from .base_onnx_function import BaseLearningOnnx
+from ._base_onnx_function import BaseLearningOnnx
 
 
 class BaseLearningLoss(BaseLearningOnnx):

@@ -120,15 +120,16 @@ class TestOnnxFunction(ExtTestCase):
                 f.write(onx.SerializeToString())
         if classification:
             N = 10
-            x1 = numpy.random.randn(N, 2).astype(numpy.float32)
-            x1[0, :] = 0
-            x1[1, :] = 100
-            x1[2, :] = -100
-            x1[3, :] = 1
-            x1[4, :] = -1
-            x1[:, 0] = - x1[:, 1]
-            x2 = (numpy.random.randn(N, 1).astype(numpy.float32) > 0).astype(
-                numpy.float32)
+            p = numpy.random.randn(N, 1).astype(numpy.float32)
+            p[0, :] = 0
+            p[1, :] = 100
+            p[2, :] = -100
+            p[3, :] = 1
+            p[4, :] = -1
+            y = (numpy.random.randn(N, 1).astype(numpy.float32) > 0).astype(
+                numpy.int64)
+            x2 = p
+            x1 = y
         else:
             x1 = numpy.random.randn(10, 1).astype(numpy.float32)
             x2 = numpy.random.randn(10, 1).astype(numpy.float32)
@@ -144,8 +145,8 @@ class TestOnnxFunction(ExtTestCase):
             got = oinf.run({'X1': x1, 'X2': x2}, **run_params)
         else:
             got = oinf.run({'X1': x1, 'X2': x2, 'weight': w}, **run_params)
-        self.assertEqualArray(exp_loss, got['Y'], decimal=5)
         self.assertEqualArray(exp_grad, got['Z'], decimal=5)
+        self.assertEqualArray(exp_loss, got['Y'], decimal=5)
 
         providers = device_to_providers('cpu')
         so = SessionOptions()
@@ -405,14 +406,14 @@ class TestOnnxFunction(ExtTestCase):
     def test_grad_sigmoid_neg_log_loss_error(self):
 
         def loss(x1, x2, eps=1e-5):
-            pr = expit(x1[:, 1:2])
+            pr = expit(x2)
             cl = numpy.clip(pr, eps, 1 - eps)
-            lo = - (1 - x2) * numpy.log(1 - cl) - x2 * numpy.log(cl)
+            lo = - (1 - x1) * numpy.log(1 - cl) - x1 * numpy.log(cl)
             return lo
 
         self.common_check_2(
             "grad_sigmoid_neg_log_loss_error",
-            lambda x1, x2: (loss(x1, x2).mean(), x2 - expit(x1[:, 1:2])),
+            lambda x1, x2: (loss(x1, x2).mean(), x1 - expit(x2)),
             classification=True)
 
 

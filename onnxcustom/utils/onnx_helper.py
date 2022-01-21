@@ -73,11 +73,17 @@ def dtype_to_var_type(dtype):
     """
     Converts a numpy dtype into a var type.
     """
-    from skl2onnx.common.data_types import FloatTensorType, DoubleTensorType
+    from skl2onnx.common.data_types import (
+        FloatTensorType, DoubleTensorType,
+        Int32TensorType, Int64TensorType)
     if dtype == numpy.float32:
         return FloatTensorType
     if dtype == numpy.float64:
         return DoubleTensorType
+    if dtype == numpy.int64:
+        return Int64TensorType
+    if dtype == numpy.int32:
+        return Int32TensorType
     raise ValueError(
         "Unexpected value dtype=%r." % dtype)
 

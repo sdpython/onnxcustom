@@ -8,8 +8,8 @@ from onnxruntime.capi._pybind_state import (  # pylint: disable=E0611
 from ..utils.onnxruntime_helper import (
     get_ort_device, ort_device_to_string)
 from ._base import BaseOnnxClass
+from ._base_onnx_function import BaseLearningOnnx
 from .sgd_learning_rate import BaseLearningRate
-from .base_onnx_function import BaseLearningOnnx
 
 
 class BaseEstimator(BaseOnnxClass):

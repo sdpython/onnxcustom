@@ -26,7 +26,7 @@ BaseEstimator
 
 Ancestor to both classes wrapping :epkg:`onnxruntime` API.
 
-.. autosignature:: onnxcustom.training.base_estimator.BaseEstimator
+.. autosignature:: onnxcustom.training._base_estimator.BaseEstimator
     :members:
 
 Exceptions

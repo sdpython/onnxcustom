@@ -727,11 +727,12 @@ def _onnx_grad_sigmoid_neg_log_loss_error(target_opset=None,
     and the associated gradient of the loss against the raw scores.
 
     Probabilites (class 1): :math:`p(s) = \\frac{1}{1 + \\exp(-s)}`.
-    Loss (for two classes): :math:`L(s, y) = (1 - y)\\log(1 - p(s)) +
+    Loss (for two classes): :math:`L(y, s) = (1 - y)\\log(1 - p(s)) +
     y \\log(p(s))`.
-    Gradient :math:`\\frac{dL(s,y)}{ds} = y - p(s)`.
+    Gradient :math:`\\frac{dL(y, s)}{ds} = y - p(s)`.
     To avoid nan values, probabilies are clipped:
     :math:`p(s) = \\max(\\min(p(s), 1 - \\epsilon), \\epsilon)`.
+    :math:`y \\in \\{0, 1\\}` (integer). *s* is a float.
 
     :param eps: to clip probabilities and avoid computing `log(0)`
 
@@ -748,20 +749,16 @@ def _onnx_grad_sigmoid_neg_log_loss_error(target_opset=None,
     """
     from onnx.mapping import NP_TYPE_TO_TENSOR_TYPE
     from skl2onnx.algebra.onnx_ops import (
-        OnnxSub, OnnxSlice, OnnxMul, OnnxSigmoid, OnnxLog, OnnxNeg,
+        OnnxSub, OnnxMul, OnnxSigmoid, OnnxLog, OnnxNeg,
         OnnxReduceMean, OnnxReshape, OnnxAdd, OnnxCast, OnnxClip)
 
-    cl1 = OnnxSlice('X1', numpy.array([1], dtype=numpy.int64),
-                    numpy.array([2], dtype=numpy.int64),
-                    numpy.array([1], dtype=numpy.int64),
-                    op_version=target_opset)
-    p1c = OnnxSigmoid(cl1, op_version=target_opset)
+    p1c = OnnxSigmoid('X2', op_version=target_opset)
     p1 = OnnxClip(p1c, numpy.array([eps], dtype=dtype),
                   numpy.array([1 - eps], dtype=dtype),
                   op_version=target_opset)
     p0 = OnnxSub(numpy.array([1], dtype=dtype), p1,
                  op_version=target_opset)
-    y1 = OnnxCast('X2', to=NP_TYPE_TO_TENSOR_TYPE[numpy.dtype(dtype)],
+    y1 = OnnxCast('X1', to=NP_TYPE_TO_TENSOR_TYPE[numpy.dtype(dtype)],
                   op_version=target_opset)
     y0 = OnnxSub(numpy.array([1], dtype=dtype), y1,
                  op_version=target_opset)
@@ -789,8 +786,9 @@ def _onnx_grad_sigmoid_neg_log_loss_error(target_opset=None,
                       op_version=target_opset,
                       output_names=['Y'])
 
+    var_type_int64 = dtype_to_var_type(numpy.int64)
     var_type = dtype_to_var_type(dtype)
-    varsx = [('X1', var_type([None, None])),
+    varsx = [('X1', var_type_int64([None, None])),
              ('X2', var_type([None, None]))]
     if weight_name is not None:
         varsx.append((weight_name, var_type([None])))
