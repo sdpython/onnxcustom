@@ -13,7 +13,7 @@ The ONNX project, going forward, will plan to release roughly on a four month ca
 * Before creating the release branch, increase `VERSION_NUMBER` in the main branch. The following files will be updated: [VERSION_NUMBER file](/VERSION_NUMBER) and
 [version.h](/onnx/common/version.h)
 
-* Please use a VERSION_NUMBER smaller than the target (release VERSION_NUMBER) and larger than the previous one to test TestPyPI before using the target VERSION_NUMBER. 
+* Please use a VERSION_NUMBER smaller than the target (release VERSION_NUMBER) and larger than the previous one to test TestPyPI before using the target VERSION_NUMBER.
 
 * Make sure that the IR version number and opset version numbers are up-to-date in
 [ONNX proto files](/onnx/onnx.in.proto),
@@ -37,7 +37,6 @@ The ONNX project, going forward, will plan to release roughly on a four month ca
   * Use GitHub Action (`.github/workflows/release_mac.yml`) under onnx repo to produce wheels for Mac.
 
 * After success, upload the produced wheels manually to TestPyPI: `twine upload --verbose *.whl --repository-url https://test.pypi.org/legacy/ -u PYPI_USERNAME -p PYPI_PASSWORD`.
-
 
 **Source Distribution**
 * Make sure all the git submodules are updated
@@ -65,7 +64,6 @@ The ONNX project, going forward, will plan to release roughly on a four month ca
     Windows |   |   |   |   |
     Mac |   |   |   |   |
 
-
 * After installing the PyPI package, run `pytest` in the release branch.
 
 **Partner Validation**
@@ -81,7 +79,6 @@ The ONNX project, going forward, will plan to release roughly on a four month ca
    * https://github.com/onnx/keras-onnx
    * https://github.com/onnx/onnx-tensorrt
    * https://github.com/onnx/onnx-coreml
-
 
 **Source distribution verification**
 * Test the source distribution by doing ``pip install --index-url https://test.pypi.org/simple --no-binary onnx onnx`` in a new environment.

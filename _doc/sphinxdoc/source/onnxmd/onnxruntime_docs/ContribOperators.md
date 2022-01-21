@@ -333,7 +333,6 @@ This version of the operator has been available since version 1 of the 'com.micr
 <dd>Constrain seq_lens to integral tensors.</dd>
 </dl>
 
-
 ### <a name="com.microsoft.BeamSearch"></a><a name="com.microsoft.beamsearch">**com.microsoft.BeamSearch**</a>
 
   Beam Search for text generation. Supports GPT-2 decoder.
@@ -401,7 +400,6 @@ This version of the operator has been available since version 1 of the 'com.micr
 <dt><tt>M</tt> : tensor(int32)</dt>
 <dd>Constrain mask to integer types</dd>
 </dl>
-
 
 ### <a name="com.microsoft.BiasDropout"></a><a name="com.microsoft.biasdropout">**com.microsoft.BiasDropout**</a>
 
