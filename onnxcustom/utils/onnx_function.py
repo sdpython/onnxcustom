@@ -746,7 +746,7 @@ def _onnx_grad_sigmoid_neg_log_loss_error(target_opset=None,
     """
     from onnx.mapping import NP_TYPE_TO_TENSOR_TYPE
     from skl2onnx.algebra.onnx_ops import (
-        OnnxSub, OnnxSlice, OnnxMul, OnnxSigmoid, OnnxLog,
+        OnnxSub, OnnxSlice, OnnxMul, OnnxSigmoid, OnnxLog, OnnxNeg,
         OnnxReduceMean, OnnxReshape, OnnxAdd, OnnxCast, OnnxClip)
 
     cl1 = OnnxSlice('X1', numpy.array([1], dtype=numpy.int64),
@@ -782,7 +782,8 @@ def _onnx_grad_sigmoid_neg_log_loss_error(target_opset=None,
             OnnxSub(y1, p1, op_version=target_opset),
             weight_name, output_names=['Z'])
 
-    res = OnnxReshape(loss, numpy.array([-1], numpy.int64),
+    loss_neg = OnnxNeg(loss, op_version=target_opset)
+    res = OnnxReshape(loss_neg, numpy.array([-1], numpy.int64),
                       op_version=target_opset,
                       output_names=['Y'])
 
