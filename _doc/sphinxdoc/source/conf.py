@@ -32,7 +32,7 @@ def callback_begin():
 
 
 set_sphinx_variables(__file__, "onnxcustom", "Xavier Dupré", 2022,
-                     "pydata_sphinx_theme", pydata_sphinx_theme.get_html_theme_path(),
+                     "pydata_sphinx_theme", ['_static'],
                      locals(), extlinks=dict(
                          issue=('https://github.com/sdpython/onnxcustom/issues/%s', 'issue')),
                      title="onnxcustom", book=True,
