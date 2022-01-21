@@ -404,7 +404,7 @@ class TestOnnxFunction(ExtTestCase):
 
     def test_grad_sigmoid_neg_log_loss_error(self):
 
-        def loss(x1, x2, eps=1e-6):
+        def loss(x1, x2, eps=1e-5):
             pr = expit(x1[:, 1:2])
             cl = numpy.clip(pr, eps, 1 - eps)
             lo = - (1 - x2) * numpy.log(1 - cl) - x2 * numpy.log(cl)

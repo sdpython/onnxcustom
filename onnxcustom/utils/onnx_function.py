@@ -718,7 +718,7 @@ def _onnx_update_penalty_elastic_error(target_opset=None, dtype=numpy.float32,
 
 def _onnx_grad_sigmoid_neg_log_loss_error(target_opset=None,
                                           dtype=numpy.float32,
-                                          eps=1e-6,
+                                          eps=1e-5,
                                           weight_name=None):
     """
     The function the raw scores from a classifier, uses the
@@ -730,6 +730,8 @@ def _onnx_grad_sigmoid_neg_log_loss_error(target_opset=None,
     Loss (for two classes): :math:`L(s, y) = (1 - y)\\log(1 - p(s)) +
     y \\log(p(s))`.
     Gradient :math:`\\frac{dL(s,y)}{ds} = y - p(s)`.
+    To avoid nan values, probabilies are clipped:
+    :math:`p(s) = \\max(\\min(p(s), 1 - \\epsilon), \\epsilon)`.
 
     :param eps: to clip probabilities and avoid computing `log(0)`
 

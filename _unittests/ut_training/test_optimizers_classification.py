@@ -2,7 +2,7 @@
 @brief      test log(time=8s)
 """
 import unittest
-from pyquickhelper.pycode import ExtTestCase
+from pyquickhelper.pycode import ExtTestCase, get_temp_folder
 import numpy
 from onnx.helper import set_model_props
 from sklearn.datasets import make_classification
@@ -10,6 +10,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.linear_model import SGDClassifier
 from mlprodict.onnx_conv import to_onnx
 from mlprodict.plotting.text_plot import onnx_simple_text_plot
+from mlprodict.onnx_tools.onnx_manipulations import select_model_inputs_outputs
 # from mlprodict.onnxrt import OnnxInference
 from onnxcustom import __max_supported_opset__ as opset
 from onnxcustom.training.sgd_learning_rate import (
@@ -69,7 +70,9 @@ class TestOptimizersClassification(ExtTestCase):
                       black_op={'LinearRegressor'},
                       options={'zipmap': False,
                                'raw_scores': True})
-        print(onnx_simple_text_plot(onx))
+        onx = select_model_inputs_outputs(onx, outputs=['probabilities'])
+        self.assertIn("output: name='probabilities'",
+                      onnx_simple_text_plot(onx))
         set_model_props(onx, {'info': 'unit test'})
         inits = ['coef', 'intercept']
 
@@ -83,6 +86,9 @@ class TestOptimizersClassification(ExtTestCase):
         self.assertIsInstance(train_session.learning_loss, NegLogLearningLoss)
         self.assertEqual(train_session.learning_loss.eps, 1e-5)
         train_session.fit(X, y)
+        temp = get_temp_folder(
+            __file__, "temp_ort_gradient_optimizers_fw_nesterov_binary")
+        train_session.save_onnx_graph(temp)
 
 
 if __name__ == "__main__":

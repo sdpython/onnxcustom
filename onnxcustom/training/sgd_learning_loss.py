@@ -76,7 +76,8 @@ class BaseLearningLoss(BaseLearningOnnx):
             return class_name
         cls = {SquareLearningLoss: ['square_error', 'square'],
                AbsoluteLearningLoss: ['absolute_error', 'absolute'],
-               ElasticLearningLoss: ['elastic_error', 'elastic']}
+               ElasticLearningLoss: ['elastic_error', 'elastic'],
+               NegLogLearningLoss: ['log', 'neglog', 'logloss']}
         for cl, aliases in cls.items():
             if class_name == cl.__class__.__name__ or class_name in aliases:
                 return cl(**kwargs)
@@ -195,17 +196,19 @@ class NegLogLearningLoss(BaseLearningLoss):
         for a logistic regression
     """
 
-    def __init__(self, eps=1e-6, probability_function='sigmoid'):
+    def __init__(self, eps=1e-5, probability_function='sigmoid'):
         BaseLearningLoss.__init__(self)
         self.eps = eps
+        self.probability_function = probability_function
 
     def build_onnx_function(self, opset, device, weight_name):
         so = SessionOptions()
         so.log_severity_level = 4
 
         # loss_grad
+        fct_name = "grad_%s_neg_log_loss_error" % self.probability_function
         self.loss_grad_onnx_ = function_onnx_graph(
-            "grad_sigmoid_neg_log_loss_error", target_opset=opset,
+            fct_name, target_opset=opset,
             weight_name=weight_name, eps=self.eps)
         self.loss_grad_sess_ = InferenceSession(
             self.loss_grad_onnx_.SerializeToString(), so,
