@@ -14,7 +14,6 @@ Runnable IPython notebooks:
 
 ## Loading an ONNX Model with External Data
 
-
 * [Default] If the external data is under the same directory of the model, simply use `onnx.load()`
 ```python
 import onnx
@@ -57,7 +56,6 @@ onnx.save(onnx_model, 'path/to/the/model.onnx')
 Runnable IPython notebooks:
 - [save_model.ipynb](/onnx/examples/save_model.ipynb)
 
-
 ## Converting and Saving an ONNX Model to External Data
 ```python
 import onnx
@@ -67,7 +65,6 @@ onnx_model = ...
 onnx.save_model(onnx_model, 'path/to/save/the/model.onnx', save_as_external_data=True, all_tensors_to_one_file=True, location='filename', size_threshold=1024, convert_attribute=False)
 # Then the onnx_model has converted raw data as external data and saved to specific directory
 ```
-
 
 ## Manipulating TensorProto and Numpy Array
 ```python
@@ -106,17 +103,14 @@ import onnx
 from onnx import helper
 from onnx import AttributeProto, TensorProto, GraphProto
 
-
 # The protobuf definition can be found here:
 # https://github.com/onnx/onnx/blob/main/onnx/onnx.proto
-
 
 # Create one input (ValueInfoProto)
 X = helper.make_tensor_value_info('X', TensorProto.FLOAT, [3, 2])
 pads = helper.make_tensor_value_info('pads', TensorProto.FLOAT, [1, 4])
 
 value = helper.make_tensor_value_info('value', AttributeProto.FLOAT, [1])
-
 
 # Create one output (ValueInfoProto)
 Y = helper.make_tensor_value_info('Y', TensorProto.FLOAT, [3, 4])
@@ -184,7 +178,6 @@ onnx.checker.check_model('path/to/the/model.onnx')
 import onnx
 from onnx import helper, shape_inference
 from onnx import TensorProto
-
 
 # Preprocessing: create a model with two nodes, Y's shape is unknown
 node1 = helper.make_node('Transpose', ['X'], ['Y'], perm=[1, 0, 2])
