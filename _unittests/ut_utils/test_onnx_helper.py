@@ -4,7 +4,8 @@
 import unittest
 import numpy
 from pyquickhelper.pycode import ExtTestCase
-from skl2onnx.common.data_types import FloatTensorType, DoubleTensorType
+from skl2onnx.common.data_types import (
+    FloatTensorType, DoubleTensorType, Int64TensorType)
 from skl2onnx.algebra.onnx_ops import (  # pylint: disable=E0611
     OnnxRelu, OnnxMatMul)
 from onnxcustom.utils.onnx_helper import (
@@ -36,8 +37,9 @@ class TestOnnxHelper(ExtTestCase):
     def test_dtype_to_var_type(self):
         self.assertEqual(dtype_to_var_type(numpy.float32), FloatTensorType)
         self.assertEqual(dtype_to_var_type(numpy.float64), DoubleTensorType)
-        self.assertRaise(lambda: dtype_to_var_type(numpy.int64), ValueError)
+        self.assertEqual(dtype_to_var_type(numpy.int64), Int64TensorType)
         self.assertEqual(proto_type_to_dtype('tensor(double)'), numpy.float64)
+        self.assertRaise(lambda: dtype_to_var_type(numpy.int8), ValueError)
 
     def test_proto_type_to_dtype(self):
         self.assertEqual(proto_type_to_dtype(1), numpy.float32)
