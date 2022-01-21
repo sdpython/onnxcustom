@@ -401,4 +401,4 @@ class TestOrtTrainingForwardBackward(ExtTestCase):
 
 if __name__ == "__main__":
     # TestOrtTrainingForwardBackward().forward_no_training(verbose=True)
-    unittest.main(verbosity=2)
+    unittest.main(verbosity=2, failfast=True)

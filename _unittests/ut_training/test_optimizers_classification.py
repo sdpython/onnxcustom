@@ -13,10 +13,6 @@ from mlprodict.plotting.text_plot import onnx_simple_text_plot
 from mlprodict.onnx_tools.onnx_manipulations import select_model_inputs_outputs
 # from mlprodict.onnxrt import OnnxInference
 from onnxcustom import __max_supported_opset__ as opset
-from onnxcustom.training.sgd_learning_rate import (
-    LearningRateSGDNesterov)
-from onnxcustom.training.sgd_learning_loss import (
-    BaseLearningLoss, NegLogLearningLoss)
 try:
     from onnxruntime import TrainingSession
 except ImportError:
@@ -58,7 +54,11 @@ class TestOptimizersClassification(ExtTestCase):
 
     @unittest.skipIf(TrainingSession is None, reason="not training")
     def test_ort_gradient_optimizers_fw_nesterov_binary(self):
-        from onnxcustom.training.optimizers_partial import OrtGradientForwardBackwardOptimizer
+        from onnxcustom.training.optimizers_partial import (
+            OrtGradientForwardBackwardOptimizer)
+        from onnxcustom.training.sgd_learning_rate import (
+            LearningRateSGDNesterov)
+        from onnxcustom.training.sgd_learning_loss import NegLogLearningLoss
         X, y = make_classification(  # pylint: disable=W0632
             100, n_features=10, random_state=0)
         X = X.astype(numpy.float32)
@@ -82,7 +82,6 @@ class TestOptimizersClassification(ExtTestCase):
                 1e-4, nesterov=False, momentum=0.9),
             learning_loss=NegLogLearningLoss(),
             warm_start=False, max_iter=100, batch_size=10)
-        self.assertIsInstance(train_session.learning_loss, BaseLearningLoss)
         self.assertIsInstance(train_session.learning_loss, NegLogLearningLoss)
         self.assertEqual(train_session.learning_loss.eps, 1e-5)
         train_session.fit(X, y)
