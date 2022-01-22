@@ -174,15 +174,9 @@ class OrtGradientOptimizer(BaseEstimator):
             raise TypeError(  # pragma: no cover
                 "Unexpected type %r." % type(bind))
         if isinstance(c_ortvalue, C_OrtValue):
-            # does not work
-            # bind._iobinding.bind_ortvalue_input(name, c_ortvalue)
-            dtype = proto_type_to_dtype(
-                c_ortvalue.proto_type() if hasattr(c_ortvalue, 'proto_type')
-                else c_ortvalue.data_type())
-            bind.bind_input(
-                name, self.device, dtype, c_ortvalue.shape(),
-                c_ortvalue.data_ptr())
+            bind.bind_ortvalue_input(name, c_ortvalue)
         elif isinstance(c_ortvalue, numpy.ndarray):
+            # This fails on linux with int64.
             bind.bind_input(
                 name, self.device, c_ortvalue.dtype, c_ortvalue.shape,
                 c_ortvalue.__array_interface__['data'][0])
@@ -222,8 +216,8 @@ class OrtGradientOptimizer(BaseEstimator):
                         self.input_names_[2], bind, weight)
 
                 self.train_session_._sess.run_with_iobinding(bind, None)
-                outputs = bind.copy_outputs_to_cpu()
-                if numpy.isinf(outputs[0]) or numpy.isnan(outputs[0]):
+                loss = bind.get_outputs()[0].numpy()
+                if numpy.isinf(loss) or numpy.isnan(loss):
                     raise ConvergenceError(
                         "Loss is nan, learning_rate=%r, "
                         "the gradient descent has failed "
@@ -232,7 +226,7 @@ class OrtGradientOptimizer(BaseEstimator):
                             [float(v[0]) for v in (
                                 actual_losses if len(actual_losses) < 5
                                 else actual_losses[-5:])]))
-                actual_losses.append(outputs[0] / data.shape[0])
+                actual_losses.append(loss / data.shape[0])
         else:
             idx = 3 if sample_weight else 2
             self._bind_input_ortvalue(self.input_names_[idx], bind, ort_lr)
@@ -242,8 +236,8 @@ class OrtGradientOptimizer(BaseEstimator):
             for batch_size in data_loader.iter_bind(bind, self.input_names_):
                 self.train_session_._sess.run_with_iobinding(bind, None)
                 # We copy the predicted output as well which is not needed.
-                outputs = bind.copy_outputs_to_cpu()
-                if numpy.isinf(outputs[0]) or numpy.isnan(outputs[0]):
+                loss = bind.get_outputs()[0].numpy()
+                if numpy.isinf(loss) or numpy.isnan(loss):
                     raise ConvergenceError(
                         "Loss is nan or infinite, learning_rate=%r, "
                         "the gradient descent has failed "
@@ -252,7 +246,7 @@ class OrtGradientOptimizer(BaseEstimator):
                             [float(v[0]) for v in (
                                 actual_losses if len(actual_losses) < 5
                                 else actual_losses[-5:])]))
-                actual_losses.append(outputs[0] / batch_size)
+                actual_losses.append(loss / batch_size)
 
         return numpy.array(actual_losses).mean()
 

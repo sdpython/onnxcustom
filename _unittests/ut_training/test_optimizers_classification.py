@@ -51,7 +51,7 @@ class TestOptimizersClassification(ExtTestCase):
         train_session = OrtGradientOptimizer(
             onx_loss, inits, learning_rate=1e-3)
         self.assertRaise(lambda: train_session.get_state(), AttributeError)
-        train_session.fit(X_train, y_train.reshape((-1, 1)), use_numpy=True)
+        train_session.fit(X_train, y_train.reshape((-1, 1)), use_numpy=False)
         state_tensors = train_session.get_state()
         self.assertEqual(len(state_tensors), 2)
         r = repr(train_session)
