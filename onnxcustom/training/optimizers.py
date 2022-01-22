@@ -7,7 +7,6 @@ from onnxruntime import (  # pylint: disable=E0611
     TrainingParameters, SessionOptions, TrainingSession)
 from onnxruntime.capi._pybind_state import (  # pylint: disable=E0611
     OrtValue as C_OrtValue, SessionIOBinding as C_IOBinding)
-from ..utils.onnx_helper import proto_type_to_dtype
 from ..utils.onnxruntime_helper import (
     numpy_to_ort_value, device_to_providers)
 from .data_loader import OrtDataLoader
