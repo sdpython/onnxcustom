@@ -2,6 +2,7 @@
 @brief      test log(time=8s)
 """
 import unittest
+from onnx import TensorProto
 from pyquickhelper.pycode import (
     ExtTestCase, get_temp_folder, ignore_warnings)
 import numpy
@@ -43,6 +44,10 @@ class TestOptimizersClassification(ExtTestCase):
         set_model_props(onx, {'info': 'unit test'})
         onx_loss = add_loss_output(onx, 'log', output_index=1)
         inits = ['intercept', 'coef']
+        inputs = onx_loss.graph.input
+        self.assertEqual(len(inputs), 2)
+        dt = inputs[1].type.tensor_type.elem_type
+        self.assertEqual(TensorProto.INT64, dt)
         train_session = OrtGradientOptimizer(
             onx_loss, inits, learning_rate=1e-3)
         self.assertRaise(lambda: train_session.get_state(), AttributeError)
