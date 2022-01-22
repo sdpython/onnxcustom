@@ -10,7 +10,7 @@ from onnxruntime.capi._pybind_state import (  # pylint: disable=E0611
     OrtValue as C_OrtValue)
 from ..utils.onnx_function import function_onnx_graph
 from ..utils.onnxruntime_helper import device_to_providers
-from .base_onnx_function import BaseLearningOnnx
+from ._base_onnx_function import BaseLearningOnnx
 
 
 class BaseLearningRate(BaseLearningOnnx):

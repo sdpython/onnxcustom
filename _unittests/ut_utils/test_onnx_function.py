@@ -3,6 +3,7 @@
 """
 import unittest
 import numpy
+from scipy.special import expit  # pylint: disable=E0611
 from onnxruntime import InferenceSession, SessionOptions
 from pyquickhelper.pycode import ExtTestCase
 from mlprodict.onnxrt import OnnxInference
@@ -108,13 +109,30 @@ class TestOnnxFunction(ExtTestCase):
     def test_grad_onnx_axpy(self):
         self.common_check_alpha("axpy", lambda x1, x2, alpha: x1 * alpha + x2)
 
-    def common_check_2(self, name, fct, weight_name=None, **kwargs):
+    def common_check_2(self, name, fct, weight_name=None,
+                       verbose=0, classification=False, **kwargs):
         onx = function_onnx_graph(
             name, target_opset=get_max_opset(),
             dtype=numpy.float32, weight_name=weight_name,
             **kwargs)
-        x1 = numpy.random.randn(10, 1).astype(numpy.float32)
-        x2 = numpy.random.randn(10, 1).astype(numpy.float32)
+        if verbose > 0:
+            with open(name + ".onnx", "wb") as f:
+                f.write(onx.SerializeToString())
+        if classification:
+            N = 10
+            p = numpy.random.randn(N, 1).astype(numpy.float32)
+            p[0, :] = 0
+            p[1, :] = 100
+            p[2, :] = -100
+            p[3, :] = 1
+            p[4, :] = -1
+            y = (numpy.random.randn(N, 1).astype(numpy.float32) > 0).astype(
+                numpy.int64)
+            x2 = p
+            x1 = y
+        else:
+            x1 = numpy.random.randn(10, 1).astype(numpy.float32)
+            x2 = numpy.random.randn(10, 1).astype(numpy.float32)
         w = numpy.random.rand(10).astype(numpy.float32)
         if weight_name is None:
             exp_loss, exp_grad = fct(x1, x2)
@@ -122,12 +140,13 @@ class TestOnnxFunction(ExtTestCase):
             exp_loss, exp_grad = fct(x1, x2, w)
 
         oinf = OnnxInference(onx)
+        run_params = dict(verbose=verbose, fLOG=print) if verbose > 0 else {}
         if weight_name is None:
-            got = oinf.run({'X1': x1, 'X2': x2})
+            got = oinf.run({'X1': x1, 'X2': x2}, **run_params)
         else:
-            got = oinf.run({'X1': x1, 'X2': x2, 'weight': w})
-        self.assertEqualArray(exp_loss, got['Y'], decimal=5)
+            got = oinf.run({'X1': x1, 'X2': x2, 'weight': w}, **run_params)
         self.assertEqualArray(exp_grad, got['Z'], decimal=5)
+        self.assertEqualArray(exp_loss, got['Y'], decimal=5)
 
         providers = device_to_providers('cpu')
         so = SessionOptions()
@@ -383,6 +402,19 @@ class TestOnnxFunction(ExtTestCase):
             onx.SerializeToString(), so, providers=providers)
         got = sess.run(None, {'X': x})
         self.assertEqualArray(exp_loss, got[0], decimal=5)
+
+    def test_grad_sigmoid_neg_log_loss_error(self):
+
+        def loss(x1, x2, eps=1e-5):
+            pr = expit(x2)
+            cl = numpy.clip(pr, eps, 1 - eps)
+            lo = - (1 - x1) * numpy.log(1 - cl) - x1 * numpy.log(cl)
+            return lo
+
+        self.common_check_2(
+            "grad_sigmoid_neg_log_loss_error",
+            lambda x1, x2: (loss(x1, x2).mean(), x1 - expit(x2)),
+            classification=True)
 
 
 if __name__ == "__main__":

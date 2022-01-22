@@ -12,7 +12,7 @@ from ..utils.onnxruntime_helper import (
     numpy_to_ort_value, device_to_providers)
 from .data_loader import OrtDataLoader
 from .excs import ConvergenceError, EvaluationError
-from .base_estimator import BaseEstimator
+from ._base_estimator import BaseEstimator
 
 
 class OrtGradientOptimizer(BaseEstimator):

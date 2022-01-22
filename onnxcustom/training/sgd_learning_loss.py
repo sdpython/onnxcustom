@@ -6,7 +6,7 @@
 from onnxruntime import SessionOptions, InferenceSession, RunOptions
 from ..utils.onnx_function import function_onnx_graph
 from ..utils.onnxruntime_helper import device_to_providers
-from .base_onnx_function import BaseLearningOnnx
+from ._base_onnx_function import BaseLearningOnnx
 
 
 class BaseLearningLoss(BaseLearningOnnx):
@@ -76,7 +76,8 @@ class BaseLearningLoss(BaseLearningOnnx):
             return class_name
         cls = {SquareLearningLoss: ['square_error', 'square'],
                AbsoluteLearningLoss: ['absolute_error', 'absolute'],
-               ElasticLearningLoss: ['elastic_error', 'elastic']}
+               ElasticLearningLoss: ['elastic_error', 'elastic'],
+               NegLogLearningLoss: ['log', 'neglog', 'logloss']}
         for cl, aliases in cls.items():
             if class_name == cl.__class__.__name__ or class_name in aliases:
                 return cl(**kwargs)
@@ -166,6 +167,49 @@ class ElasticLearningLoss(BaseLearningLoss):
             "grad_loss_elastic_error", target_opset=opset,
             weight_name=weight_name, l1_weight=self.l1_weight,
             l2_weight=self.l2_weight)
+        self.loss_grad_sess_ = InferenceSession(
+            self.loss_grad_onnx_.SerializeToString(), so,
+            providers=device_to_providers(device))
+        self.loss_grad_sess_bind_ = (
+            self.loss_grad_sess_.io_binding()._iobinding)
+
+
+class NegLogLearningLoss(BaseLearningLoss):
+    """
+    Implements a negative log loss
+    `'log(yt, yp) = -(1-yt)\\log(1-yp) - yt\\log(yp)`,
+    this only works for a binary classification where *yp* is the
+    predicted probability, *yt* is the expected probability.
+    *yt* is expected to be binary, *yp* is a matrix with two
+    columns, the sum on every line is 1.
+    However, this loss is usually applied after a function softmax
+    and the gradient is directly computed from the loss to the
+    raw score before they are processed through the softmax function
+    (see class `Log
+    <https://github.com/scikit-learn/scikit-learn/blob/main/sklearn/
+    linear_model/_sgd_fast.pyx#L236>`_).
+
+    :param eps: clipping value for probabilities,
+        avoids computing `log(0)`
+    :param probability_function: function to convert
+        raw scores into probabilities, default value is `sigmoid`
+        for a logistic regression
+    """
+
+    def __init__(self, eps=1e-5, probability_function='sigmoid'):
+        BaseLearningLoss.__init__(self)
+        self.eps = eps
+        self.probability_function = probability_function
+
+    def build_onnx_function(self, opset, device, weight_name):
+        so = SessionOptions()
+        so.log_severity_level = 4
+
+        # loss_grad
+        fct_name = "grad_%s_neg_log_loss_error" % self.probability_function
+        self.loss_grad_onnx_ = function_onnx_graph(
+            fct_name, target_opset=opset,
+            weight_name=weight_name, eps=self.eps)
         self.loss_grad_sess_ = InferenceSession(
             self.loss_grad_onnx_.SerializeToString(), so,
             providers=device_to_providers(device))

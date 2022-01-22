@@ -117,11 +117,11 @@ Cache
 +++++
 
 Base class :class:`BaseLearningOnnx
-<onnxcustom.training.base_onnx_function.BaseLearningOnnx>` implements
+<onnxcustom.training._base_onnx_function.BaseLearningOnnx>` implements
 methods :meth:`_bind_input_ortvalue
-<onnxcustom.training.base_onnx_function.BaseLearningOnnx._bind_input_ortvalue>`
+<onnxcustom.training._base_onnx_function.BaseLearningOnnx._bind_input_ortvalue>`
 and :meth:`_bind_output_ortvalue
-<onnxcustom.training.base_onnx_function.BaseLearningOnnx._bind_output_ortvalue>`
+<onnxcustom.training._base_onnx_function.BaseLearningOnnx._bind_output_ortvalue>`
 used by the three components mentioned above. They cache the binded pointers
 (the value returns by `c_ortvalue.data_ptr()` and do not bind again
 if the method is called again with a different `OrtValue` but a same pointer

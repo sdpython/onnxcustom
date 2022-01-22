@@ -14,7 +14,7 @@ from ..utils.onnx_function import function_onnx_graph
 from ..utils.print_helper import str_ortvalue
 from ..utils.orttraining_helper import get_train_initializer
 from .ortgradient import OrtGradientForwardBackward
-from .base_estimator import BaseEstimator
+from ._base_estimator import BaseEstimator
 from .sgd_learning_loss import BaseLearningLoss
 from .sgd_learning_penalty import BaseLearningPenalty
 from .data_loader import OrtDataLoader

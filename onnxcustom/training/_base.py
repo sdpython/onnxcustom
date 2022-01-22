@@ -72,7 +72,7 @@ class BaseOnnxClass:
                         print('+', name)
                     else:
                         name = "%s.%s" % (prefix, k) if prefix else k
-                        print('\n++++++', name)
+                        print('\\n++++++', name)
                         print()
                         bf = io.BytesIO(v)
                         onx = onnx.load(bf)

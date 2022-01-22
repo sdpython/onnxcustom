@@ -3,7 +3,9 @@
 @file
 @brief Gradient with :epkg:`onnxruntime-training` forward backward.
 """
+import os
 import logging
+import warnings
 from io import BytesIO
 import onnx
 from onnx.numpy_helper import to_array
@@ -505,6 +507,40 @@ class OrtGradientForwardBackwardFunction:
     def __init__(self):
         self.states_ = []
         self.saved_tensors_ = None
+
+    @classmethod
+    def save_onnx_graph(cls, folder, prefix=None, suffix=None):
+        """
+        Saves onnx graph stored in this class.
+        """
+        if folder is None:
+            return None  # pragma: no cover
+        if prefix is None:
+            prefix = ''
+        if suffix is None:
+            suffix = ''
+        if isinstance(folder, str) and not os.path.exists(folder):
+            raise FileNotFoundError(  # pragma: no cover
+                "Folder %r does not exist." % folder)
+        saved = {}
+        for k, v in cls.__dict__.items():
+            if hasattr(v, "SerializeToString"):
+                if isinstance(folder, str):
+                    name = "%s%s%s.%s.onnx" % (
+                        prefix, cls.__name__, suffix, k)
+                    filename = os.path.join(folder, name)
+                    if os.path.exists(filename):
+                        warnings.warn(  # pragma: no cover
+                            "Filename %r already exists." % filename)
+                    with open(filename, "wb") as f:
+                        f.write(v.SerializeToString())
+                    saved[k] = filename
+                else:
+                    saved[k] = v.SerializeToString()
+            elif hasattr(v, "save_onnx_graph"):
+                saved[k] = v.save_onnx_graph(
+                    folder, prefix=prefix, suffix="%s.%s" % (suffix, k))
+        return saved
 
     @staticmethod
     def device_name(device):
