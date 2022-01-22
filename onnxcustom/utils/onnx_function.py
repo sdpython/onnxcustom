@@ -779,7 +779,9 @@ def _onnx_grad_sigmoid_neg_log_loss_error(target_opset=None,
             op_version=target_opset)
         grad = OnnxMul(
             OnnxSub(y1, p1, op_version=target_opset),
-            weight_name, output_names=['Z'], op_version=target_opset)
+            OnnxReshape(weight_name, numpy.array([-1, 1], dtype=numpy.int64),
+                        op_version=target_opset),
+            output_names=['Z'], op_version=target_opset)
 
     loss_neg = OnnxNeg(loss, op_version=target_opset)
     res = OnnxReshape(loss_neg, numpy.array([-1], numpy.int64),
