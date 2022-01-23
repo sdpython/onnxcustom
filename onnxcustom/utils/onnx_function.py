@@ -359,7 +359,7 @@ def _onnx_linear_regression(target_opset=None, dtype=numpy.float32):
 
 
 def _onnx_grad_loss_square_error(target_opset=None, dtype=numpy.float32,
-                                 weight_name=None):
+                                 weight_name=None, multiply=2):
     """
     Returns the ONNX graph for function
     :math:`Y = f(X1, X2) = \\lVert (X1 - X2) \\rVert ^2` or
@@ -382,8 +382,10 @@ def _onnx_grad_loss_square_error(target_opset=None, dtype=numpy.float32,
         OnnxReduceSum, OnnxReshape)
     diff = OnnxSub('X1', 'X2', op_version=target_opset)
     if weight_name is None:
-        res = OnnxReduceSumSquare(diff, op_version=target_opset)
-        res2 = OnnxMul(diff, numpy.array([-2], dtype=dtype),
+        res = OnnxMul(OnnxReduceSumSquare(diff, op_version=target_opset),
+                      numpy.array([multiply * 0.5], dtype=numpy.float32),
+                      op_version=target_opset)
+        res2 = OnnxMul(diff, numpy.array([-multiply], dtype=dtype),
                        op_version=target_opset, output_names=['Z'])
     else:
         resh = OnnxReshape(weight_name,
@@ -392,9 +394,12 @@ def _onnx_grad_loss_square_error(target_opset=None, dtype=numpy.float32,
         mul = OnnxMul(
             OnnxMul(diff, diff, op_version=target_opset),
             resh, op_version=target_opset)
-        res = OnnxReduceSum(mul, op_version=target_opset)
+        res = OnnxMul(OnnxReduceSum(mul, op_version=target_opset),
+                      numpy.array([multiply * 0.5], dtype=numpy.float32),
+                      op_version=target_opset)
+
         res2 = OnnxMul(
-            OnnxMul(diff, numpy.array([-2], dtype=dtype),
+            OnnxMul(diff, numpy.array([-multiply], dtype=dtype),
                     op_version=target_opset),
             resh, op_version=target_opset, output_names=['Z'])
 
