@@ -82,7 +82,7 @@ batch_size = 15
 max_iter = 100
 
 nn = MLPClassifier(hidden_layer_sizes=(50, 10), max_iter=max_iter,
-                   solver='sgd', learning_rate_init=5e-3, alpha=1e-4,
+                   solver='sgd', learning_rate_init=1e-1, alpha=1e-4,
                    n_iter_no_change=max_iter * 3, batch_size=batch_size,
                    nesterovs_momentum=True, momentum=0.9,
                    learning_rate="invscaling")
@@ -133,7 +133,7 @@ train_session = OrtGradientForwardBackwardOptimizer(
     max_iter=max_iter, batch_size=batch_size,
     learning_loss=NegLogLearningLoss(),
     learning_rate=LearningRateSGDNesterov(
-        1e-5, nesterov=True, momentum=0.9),
+        1e-7, nesterov=True, momentum=0.9),
     learning_penalty=ElasticLearningPenalty(l1=0, l2=1e-4))
 
 
@@ -177,11 +177,61 @@ if get_device().upper() == 'GPU':
         max_iter=max_iter, batch_size=batch_size,
         learning_loss=NegLogLearningLoss(),
         learning_rate=LearningRateSGDNesterov(
-            1e-5, nesterov=False, momentum=0.9),
+            1e-7, nesterov=False, momentum=0.9),
         learning_penalty=ElasticLearningPenalty(l1=0, l2=1e-4))
 
     benches.append(benchmark(X_train, y_train, nn,
                    train_session, name='NN-GPU'))
+
+#######################################
+# A simple linear layer
+# +++++++++++++++++++++
+
+nn = MLPClassifier(hidden_layer_sizes=tuple(), max_iter=max_iter,
+                   solver='sgd', learning_rate_init=1e-1, alpha=1e-4,
+                   n_iter_no_change=max_iter * 3, batch_size=batch_size,
+                   nesterovs_momentum=True, momentum=0.9,
+                   learning_rate="invscaling", activation='identity')
+
+
+with warnings.catch_warnings():
+    warnings.simplefilter('ignore')
+    nn.fit(X_train, y_train)
+
+onx = to_onnx(nn, X_train[:1].astype(numpy.float32), target_opset=15,
+              options={'zipmap': False, 'nocl': True})
+print(onnx_simple_text_plot(onx))
+
+onx = select_model_inputs_outputs(
+    onx, outputs=["add_result"], infer_shapes=True)
+print(onnx_simple_text_plot(onx))
+
+onx = onnx_rename_weights(onx)
+print(onnx_simple_text_plot(onx))
+
+train_session = OrtGradientForwardBackwardOptimizer(
+    onx, device='cpu', warm_start=False,
+    max_iter=max_iter, batch_size=batch_size,
+    learning_loss=NegLogLearningLoss(),
+    learning_rate=LearningRateSGDNesterov(
+        1e-5, nesterov=True, momentum=0.9),
+    learning_penalty=ElasticLearningPenalty(l1=0, l2=1e-4))
+
+
+benches.append(benchmark(X_train, y_train, nn, train_session, name='LR-CPU'))
+
+if get_device().upper() == 'GPU':
+
+    train_session = OrtGradientForwardBackwardOptimizer(
+        onx, device='cuda', warm_start=False,
+        max_iter=max_iter, batch_size=batch_size,
+        learning_loss=NegLogLearningLoss(),
+        learning_rate=LearningRateSGDNesterov(
+            1e-5, nesterov=False, momentum=0.9),
+        learning_penalty=ElasticLearningPenalty(l1=0, l2=1e-4))
+
+    benches.append(benchmark(X_train, y_train, nn,
+                   train_session, name='LR-GPU'))
 
 
 ######################################
@@ -215,4 +265,4 @@ ax[1].legend()
 # The gradient update are not exactly the same.
 # It should be improved for a fair comprison.
 
-plt.show()
+# plt.show()
