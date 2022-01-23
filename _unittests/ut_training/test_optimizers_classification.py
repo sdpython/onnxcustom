@@ -2,11 +2,11 @@
 @brief      test log(time=8s)
 """
 import unittest
+import numpy
 from onnx import TensorProto
+from onnx.helper import set_model_props
 from pyquickhelper.pycode import (
     ExtTestCase, get_temp_folder, ignore_warnings)
-import numpy
-from onnx.helper import set_model_props
 from sklearn.exceptions import ConvergenceWarning
 from sklearn.datasets import make_classification
 from sklearn.model_selection import train_test_split
@@ -47,7 +47,7 @@ class TestOptimizersClassification(ExtTestCase):
         inputs = onx_loss.graph.input
         self.assertEqual(len(inputs), 2)
         dt = inputs[1].type.tensor_type.elem_type
-        self.assertEqual(TensorProto.INT64, dt)
+        self.assertEqual(TensorProto.INT64, dt)  # pylint: disable=E1101
         train_session = OrtGradientOptimizer(
             onx_loss, inits, learning_rate=1e-3)
         self.assertRaise(lambda: train_session.get_state(), AttributeError)
