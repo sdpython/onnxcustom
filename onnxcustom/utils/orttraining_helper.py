@@ -498,7 +498,7 @@ def add_loss_output(onx, score_name='squared_error',
     elem = output_onx.type.tensor_type.elem_type
     if elem == 0:
         raise TypeError(  # pragma: no cover
-            "Unable to guess inut tensor type from %r."
+            "Unable to guess input tensor type from %r."
             "" % output_onx)
     shape = []
     for d in output_onx.type.tensor_type.shape.dim:
