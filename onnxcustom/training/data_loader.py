@@ -197,12 +197,30 @@ class OrtDataLoader:
             shape_X = (n, n_col_x)
             shape_y = (n, n_col_y)
 
-            bind.bind_input(
-                names[0], self.device, self.desc[0][1], shape_X,
-                self.X_ort.data_ptr() + offset * n_col_x * size_x)
-            bind.bind_input(
-                names[1], self.device, self.desc[1][1], shape_y,
-                self.y_ort.data_ptr() + offset * n_col_y * size_y)
+            try:
+                bind.bind_input(
+                    names[0], self.device, self.desc[0][1], shape_X,
+                    self.X_ort.data_ptr() + offset * n_col_x * size_x)
+            except RuntimeError as e:
+                raise RuntimeError(
+                    "Unable to bind data input (X) %r, device=%r desc=%r "
+                    "data_ptr=%r offset=%r n_col_x=%r size_x=%r "
+                    "type(bind)=%r" % (
+                        names[0], self.device, self.desc[0][1],
+                        self.X_ort.data_ptr(), offset, n_col_x, size_x,
+                        type(bind))) from e
+            try:
+                bind.bind_input(
+                    names[1], self.device, self.desc[1][1], shape_y,
+                    self.y_ort.data_ptr() + offset * n_col_y * size_y)
+            except RuntimeError as e:
+                raise RuntimeError(
+                    "Unable to bind data input (y) %r, device=%r desc=%r "
+                    "data_ptr=%r offset=%r n_col_y=%r size_y=%r "
+                    "type(bind)=%r" % (
+                        names[1], self.device, self.desc[1][1],
+                        self.y_ort.data_ptr(), offset, n_col_y, size_y,
+                        type(bind))) from e
 
         def local_bindw(bind, offset, n):
             # This function assumes the data is contiguous.

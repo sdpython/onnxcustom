@@ -127,6 +127,23 @@ used by the three components mentioned above. They cache the binded pointers
 if the method is called again with a different `OrtValue` but a same pointer
 returned by `data_ptr()`.
 
+Binary classification
++++++++++++++++++++++
+
+Probabilities are computed from raw scores with a function such as the
+`sigmoid function <https://en.wikipedia.org/wiki/Sigmoid_function>`_.
+A binary function produces two probilities: :math:`sigmoid(s)`
+:math:`(1 - sigmoid(s))` where *s* is the raw score. The associated loss
+function is usually the log loss: :math:`loss(y, X) =
+(1-y) \log(1-p(s)) + y \log p(s)` where *y* is the expected class (0 or 1),
+*s=s(X)* is the raw score, *p(s)* is the probability.
+We could compute the gradient of the loss
+against the probability and let :epkg:`onnxruntime-training` handle the
+computation of the gradient from the probability to the input.
+However, the gradient of the loss against the raw score can easily be
+expressed as :math:`grad(loss(y, s)) = y - p(s)`. The second
+option is implemented in example :ref:`l-orttraining-benchmark-fwbw-cls`.
+
 Examples
 ++++++++
 
@@ -143,3 +160,4 @@ with ONNX and :epkg:`onnxruntime-training`.
     ../gyexamples/plot_orttraining_nn_gpu_fwbw
     ../gyexamples/plot_orttraining_nn_gpu_fwbw_nesterov
     ../gyexamples/plot_orttraining_benchmark_fwbw
+    ../gyexamples/plot_orttraining_benchmark_fwbw_cls
