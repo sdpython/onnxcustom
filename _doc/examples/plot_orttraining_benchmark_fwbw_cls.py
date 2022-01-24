@@ -101,8 +101,13 @@ with warnings.catch_warnings():
 # do it.
 
 onx = to_onnx(nn, X_train[:1].astype(numpy.float32), target_opset=15,
-              options={'zipmap': False, 'nocl': True})
-print(onnx_simple_text_plot(onx))
+              options={'zipmap': False})
+
+try:
+    print(onnx_simple_text_plot(onx))
+except RuntimeError as e:
+    print("You should upgrade mlprodict.")
+    print(e)
 
 ##########################################
 # Raw scores are the input of operator *Sigmoid*.
