@@ -9,7 +9,7 @@ import importlib
 import subprocess
 from datetime import datetime
 import onnxruntime
-from pyquickhelper.pycode import ExtTestCase
+from pyquickhelper.pycode import ExtTestCase, skipif_appveyor
 
 
 def import_source(module_file_path, module_name):
@@ -28,6 +28,7 @@ def import_source(module_file_path, module_name):
 
 class TestDocumentationExampleLightgbm(ExtTestCase):
 
+    @skipif_appveyor("too long")
     def test_documentation_examples_lightgbm(self):
 
         this = os.path.abspath(os.path.dirname(__file__))
