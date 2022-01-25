@@ -270,4 +270,4 @@ ax[1].legend()
 # The gradient update are not exactly the same.
 # It should be improved for a fair comprison.
 
-# plt.show()
+plt.show()

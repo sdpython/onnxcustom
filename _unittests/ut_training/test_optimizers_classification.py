@@ -2,6 +2,7 @@
 @brief      test log(time=8s)
 """
 import unittest
+import logging
 import numpy
 from onnx import TensorProto
 from onnx.helper import set_model_props
@@ -26,6 +27,12 @@ except ImportError:
 
 
 class TestOptimizersClassification(ExtTestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        logger = logging.getLogger('skl2onnx')
+        logger.setLevel(logging.WARNING)
+        logging.basicConfig(level=logging.WARNING)
 
     @unittest.skipIf(TrainingSession is None, reason="not training")
     def test_ort_gradient_optimizers_binary(self):

@@ -2,6 +2,7 @@
 @brief      test log(time=5s)
 """
 import unittest
+import logging
 from pyquickhelper.pycode import ExtTestCase
 import numpy
 from sklearn.datasets import make_regression, make_classification
@@ -22,6 +23,12 @@ except ImportError:
 
 
 class TestOrtTraining(ExtTestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        logger = logging.getLogger('skl2onnx')
+        logger.setLevel(logging.WARNING)
+        logging.basicConfig(level=logging.WARNING)
 
     @unittest.skipIf(TrainingSession is None, reason="not training")
     def test_add_loss_output_reg(self):

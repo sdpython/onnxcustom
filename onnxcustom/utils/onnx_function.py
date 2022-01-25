@@ -776,14 +776,14 @@ def _onnx_grad_sigmoid_neg_log_loss_error(target_opset=None,
 
     if weight_name is None:
         loss = OnnxReduceMean(loss_obs, op_version=target_opset)
-        grad = OnnxSub(y1, p1, op_version=target_opset,
+        grad = OnnxSub(p1, y1, op_version=target_opset,
                        output_names=['Z'])
     else:
         loss = OnnxReduceMean(
             OnnxMul(loss_obs, weight_name, op_version=target_opset),
             op_version=target_opset)
         grad = OnnxMul(
-            OnnxSub(y1, p1, op_version=target_opset),
+            OnnxSub(p1, y1, op_version=target_opset),
             OnnxReshape(weight_name, numpy.array([-1, 1], dtype=numpy.int64),
                         op_version=target_opset),
             output_names=['Z'], op_version=target_opset)

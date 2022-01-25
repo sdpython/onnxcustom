@@ -3,6 +3,7 @@
 """
 import unittest
 import numpy
+from scipy.special import expit  # pylint: disable=E0611
 from pyquickhelper.pycode import ExtTestCase, ignore_warnings
 from sklearn.exceptions import ConvergenceWarning
 from sklearn.neural_network import MLPRegressor, MLPClassifier
@@ -103,6 +104,7 @@ class TestGradientMlp(ExtTestCase):
     def test_gradient_mlpclassifier(self):
         from onnxcustom.training.optimizers_partial import (
             OrtGradientForwardBackwardOptimizer)
+        from onnxcustom.training.sgd_learning_loss import NegLogLearningLoss
         X = numpy.arange(30).reshape((-1, 3)).astype(numpy.float32) / 100
         y = numpy.arange(X.shape[0]).astype(numpy.float32)
         y = (y.reshape((-1, 1)) >= 15).astype(numpy.int64)
@@ -123,12 +125,15 @@ class TestGradientMlp(ExtTestCase):
                  'I3_intercepts1']
 
         xp = numpy.arange(2 * X.shape[1]).reshape((2, -1)).astype(
-            numpy.float32) / 10
+            numpy.float32) / 100
+        xp[0, 0] -= 4
+        xp[1, :] += 4
         yp = numpy.array([0, 1], dtype=numpy.int64).reshape((-1, 1))
 
         train_session = OrtGradientForwardBackwardOptimizer(
             onx, inits, learning_rate=1e-5,
-            warm_start=True, max_iter=2, batch_size=10)
+            warm_start=True, max_iter=2, batch_size=10,
+            learning_loss=NegLogLearningLoss())
         train_session.fit(X, y)
         state = train_session.get_state()
         state_np = [st.numpy() for st in state]
@@ -141,7 +146,7 @@ class TestGradientMlp(ExtTestCase):
         activations = [xp] + [None] * (len(layer_units) - 1)
         deltas = [None] * (len(activations) - 1)
 
-        skl_pred = reg.predict(xp)
+        skl_pred = reg.predict_proba(xp)
 
         batch_loss, coef_grads, intercept_grads = reg._backprop(  # pylint: disable=W0212
             xp, yp, activations, deltas,
@@ -157,7 +162,7 @@ class TestGradientMlp(ExtTestCase):
             ort_state, training=True)
 
         ort_pred = prediction[0].numpy()
-        self.assertEqualArray(skl_pred.ravel(), ort_pred.ravel(), decimal=2)
+        self.assertEqualArray(skl_pred[:, 1:2], expit(ort_pred), decimal=2)
 
         loss, loss_gradient = train_session.learning_loss.loss_gradient(
             train_session.device, ort_yp, prediction[0])
@@ -167,7 +172,7 @@ class TestGradientMlp(ExtTestCase):
         # comparison
 
         self.assertEqualArray(
-            batch_loss, loss.numpy() / xp.shape[0], decimal=3)
+            batch_loss, loss.numpy(), decimal=3)
         self.assertEqualArray(deltas, loss_gradient.numpy(), decimal=3)
 
         ort_grad = [g.numpy() / xp.shape[0] for g in gradient][1:]
@@ -180,4 +185,8 @@ class TestGradientMlp(ExtTestCase):
 
 
 if __name__ == "__main__":
+    # import logging
+    # logger = logging.getLogger('onnxcustom')
+    # logger.setLevel(logging.DEBUG)
+    # logging.basicConfig(level=logging.DEBUG)
     unittest.main()

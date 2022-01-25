@@ -37,6 +37,12 @@ except ImportError:
 
 class TestOptimizersForwardBackward(ExtTestCase):
 
+    @classmethod
+    def setUpClass(cls):
+        logger = logging.getLogger('skl2onnx')
+        logger.setLevel(logging.WARNING)
+        logging.basicConfig(level=logging.WARNING)
+
     @unittest.skipIf(TrainingSession is None, reason="not training")
     def test_ort_gradient_optimizers_use_numpy_zero(self):
         from onnxcustom.training.optimizers_partial import OrtGradientForwardBackwardOptimizer
