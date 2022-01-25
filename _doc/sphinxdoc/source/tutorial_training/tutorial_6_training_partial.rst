@@ -141,7 +141,7 @@ We could compute the gradient of the loss
 against the probability and let :epkg:`onnxruntime-training` handle the
 computation of the gradient from the probability to the input.
 However, the gradient of the loss against the raw score can easily be
-expressed as :math:`grad(loss(y, s)) = y - p(s)`. The second
+expressed as :math:`grad(loss(y, s)) = p(s) - y`. The second
 option is implemented in example :ref:`l-orttraining-benchmark-fwbw-cls`.
 
 Examples

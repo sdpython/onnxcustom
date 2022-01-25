@@ -747,7 +747,7 @@ def _onnx_grad_sigmoid_neg_log_loss_error(target_opset=None,
         from mlprodict.onnxrt import OnnxInference
         from onnxcustom.utils.onnx_function import function_onnx_graph
 
-        model_onnx = function_onnx_graph('grad_sigmoid_log_loss_error')
+        model_onnx = function_onnx_graph('grad_sigmoid_neg_log_loss_error')
         oinf = OnnxInference(model_onnx, inplace=False)
 
         print("DOT-SECTION", oinf.to_dot())
