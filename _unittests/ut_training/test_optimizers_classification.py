@@ -32,6 +32,8 @@ class TestOptimizersClassification(ExtTestCase):
     def setUpClass(cls):
         logger = logging.getLogger('skl2onnx')
         logger.setLevel(logging.WARNING)
+        logger = logging.getLogger('onnxcustom')
+        logger.setLevel(logging.WARNING)
         logging.basicConfig(level=logging.WARNING)
 
     @unittest.skipIf(TrainingSession is None, reason="not training")
