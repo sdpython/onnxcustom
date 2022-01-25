@@ -4,11 +4,12 @@
 """
 import os
 import unittest
-from pyquickhelper.pycode import ExtTestCase
+from pyquickhelper.pycode import ExtTestCase, skipif_appveyor
 
 
 class TestDocumentationCheckCoverage(ExtTestCase):
 
+    @skipif_appveyor("not relevant")
     def test_examples_coverage(self):
         with open(
                 os.path.join(os.path.dirname(__file__),

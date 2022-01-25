@@ -2,6 +2,7 @@
 @brief      test log(time=9s)
 """
 import unittest
+import logging
 import numpy
 from pyquickhelper.pycode import ExtTestCase
 from skl2onnx.common.data_types import FloatTensorType
@@ -13,6 +14,12 @@ from onnxcustom.utils.onnx_rewriter import onnx_rewrite_operator
 
 
 class TestOnnxWriter(ExtTestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        logger = logging.getLogger('skl2onnx')
+        logger.setLevel(logging.WARNING)
+        logging.basicConfig(level=logging.WARNING)
 
     def test_onnx_rewrite_operator(self):
         opset = get_max_opset()

@@ -2,6 +2,7 @@
 @brief      test log(time=9s)
 """
 import unittest
+import logging
 import numpy
 from pyquickhelper.pycode import ExtTestCase
 from skl2onnx.common.data_types import (
@@ -14,6 +15,12 @@ from onnxcustom.utils.onnx_helper import (
 
 
 class TestOnnxHelper(ExtTestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        logger = logging.getLogger('skl2onnx')
+        logger.setLevel(logging.WARNING)
+        logging.basicConfig(level=logging.WARNING)
 
     def test_onnx_rename_weights(self):
         N, D_in, D_out, H = 3, 3, 3, 3

@@ -104,7 +104,7 @@ class SquareLearningLoss(BaseLearningLoss):
         # loss_grad
         self.loss_grad_onnx_ = function_onnx_graph(
             "grad_loss_square_error", target_opset=opset,
-            weight_name=weight_name)
+            weight_name=weight_name, multiply=1)
         self.loss_grad_sess_ = InferenceSession(
             self.loss_grad_onnx_.SerializeToString(), so,
             providers=device_to_providers(device))

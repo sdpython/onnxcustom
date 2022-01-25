@@ -405,6 +405,10 @@ class OrtGradientForwardBackwardOptimizer(BaseEstimator):
                 prediction_cache_shape is not None and
                 ortx_shape == prediction_cache_shape)
 
+            if logger is not None:
+                logger.debug(
+                    "[OrtGradientForwardBackwardOptimizer._iteration] forward")
+
             # forward
             if prediction_cache_shape is None or same_shape:
                 prediction_cache = None
@@ -414,6 +418,12 @@ class OrtGradientForwardBackwardOptimizer(BaseEstimator):
                 forward_outputs_cache=prediction_cache)
             prediction_cache = prediction
             prediction_cache_shape = ortx_shape
+
+            if logger is not None:
+                logger.debug(
+                    "[OrtGradientForwardBackwardOptimizer._iteration] "
+                    "loss types=%r,%r",
+                    orty.data_type(), prediction[0].data_type())
 
             # loss
             loss, loss_gradient = self.learning_loss.loss_gradient(
@@ -430,6 +440,11 @@ class OrtGradientForwardBackwardOptimizer(BaseEstimator):
                 self.device, loss, *state[n:])
 
             cpu_loss = loss.numpy()
+
+            if logger is not None:
+                logger.debug(
+                    "[OrtGradientForwardBackwardOptimizer._iteration] "
+                    "cpu_loss=%r", cpu_loss)
 
             if numpy.isinf(cpu_loss) or numpy.isnan(cpu_loss):
                 raise ConvergenceError(

@@ -2,6 +2,7 @@
 @brief      test log(time=0s)
 """
 import unittest
+import logging
 import numpy
 from scipy.special import expit  # pylint: disable=E0611
 from pyquickhelper.pycode import ExtTestCase
@@ -13,6 +14,12 @@ from onnxcustom import get_max_opset
 
 class TestOnnxRuntimes(ExtTestCase):
     """Test style."""
+
+    @classmethod
+    def setUpClass(cls):
+        logger = logging.getLogger('skl2onnx')
+        logger.setLevel(logging.WARNING)
+        logging.basicConfig(level=logging.WARNING)
 
     def test_check(self):
         opset = get_max_opset()

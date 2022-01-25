@@ -101,8 +101,13 @@ with warnings.catch_warnings():
 # do it.
 
 onx = to_onnx(nn, X_train[:1].astype(numpy.float32), target_opset=15,
-              options={'zipmap': False, 'nocl': True})
-print(onnx_simple_text_plot(onx))
+              options={'zipmap': False})
+
+try:
+    print(onnx_simple_text_plot(onx))
+except RuntimeError as e:
+    print("You should upgrade mlprodict.")
+    print(e)
 
 ##########################################
 # Raw scores are the input of operator *Sigmoid*.
@@ -200,14 +205,15 @@ with warnings.catch_warnings():
 
 onx = to_onnx(nn, X_train[:1].astype(numpy.float32), target_opset=15,
               options={'zipmap': False, 'nocl': True})
-print(onnx_simple_text_plot(onx))
-
 onx = select_model_inputs_outputs(
     onx, outputs=["add_result"], infer_shapes=True)
-print(onnx_simple_text_plot(onx))
-
 onx = onnx_rename_weights(onx)
-print(onnx_simple_text_plot(onx))
+
+try:
+    print(onnx_simple_text_plot(onx))
+except RuntimeError as e:
+    print("You should upgrade mlprodict.")
+    print(e)
 
 train_session = OrtGradientForwardBackwardOptimizer(
     onx, device='cpu', warm_start=False,

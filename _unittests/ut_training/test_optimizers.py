@@ -5,6 +5,7 @@ import os
 import unittest
 import io
 import pickle
+import logging
 from pyquickhelper.pycode import ExtTestCase, get_temp_folder
 import numpy
 from onnx.helper import set_model_props
@@ -23,6 +24,12 @@ except ImportError:
 
 
 class TestOptimizers(ExtTestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        logger = logging.getLogger('skl2onnx')
+        logger.setLevel(logging.WARNING)
+        logging.basicConfig(level=logging.WARNING)
 
     @unittest.skipIf(TrainingSession is None, reason="not training")
     def test_ort_gradient_optimizers_use_numpy(self):

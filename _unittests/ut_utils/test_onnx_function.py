@@ -2,6 +2,7 @@
 @brief      test log(time=9s)
 """
 import unittest
+import logging
 import numpy
 from scipy.special import expit  # pylint: disable=E0611
 from onnxruntime import InferenceSession, SessionOptions
@@ -15,6 +16,12 @@ from onnxcustom.utils.onnxruntime_helper import device_to_providers
 
 
 class TestOnnxFunction(ExtTestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        logger = logging.getLogger('skl2onnx')
+        logger.setLevel(logging.WARNING)
+        logging.basicConfig(level=logging.WARNING)
 
     def common_check(self, name, fct, weight_name=None):
         onx = function_onnx_graph(
@@ -415,7 +422,7 @@ class TestOnnxFunction(ExtTestCase):
 
         self.common_check_2(
             "grad_sigmoid_neg_log_loss_error",
-            lambda x1, x2: (loss(x1, x2).mean(), x1 - expit(x2)),
+            lambda x1, x2: (loss(x1, x2).mean(), expit(x2) - x1),
             classification=True)
 
     def test_grad_sigmoid_neg_log_loss_error_weight(self):
@@ -427,7 +434,7 @@ class TestOnnxFunction(ExtTestCase):
             return lo * w
 
         def grad(x1, x2, w):
-            r = (x1 - expit(x2)) * w.reshape((-1, 1))
+            r = - (x1 - expit(x2)) * w.reshape((-1, 1))
             return r
 
         self.common_check_2(
