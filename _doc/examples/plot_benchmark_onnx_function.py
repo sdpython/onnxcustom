@@ -16,13 +16,13 @@ The following benchmarks compares a couple of implementations:
 
 * `numpy`: an implementation based on numpy, not optimized
 * `sess`: inference through an ONNX graph executed with
-    method `onnxruntime.InferenceSession.run`
+  method `onnxruntime.InferenceSession.run`
 * `bind`: inference through an ONNX graph executed with
-    method `onnxruntime.InferenceSession.run_with_iobinding`
+  method `onnxruntime.InferenceSession.run_with_iobinding`
 * `run`: inference through an ONNX graph executed with
-    method `onnxruntime.InferenceSession.run_with_iobinding`
-    but without counting the binding assuming input buffers
-    are reused and do not need binding again
+  method `onnxruntime.InferenceSession.run_with_iobinding`
+  but without counting the binding assuming input buffers
+  are reused and do not need binding again
 
 .. contents::
     :local:
@@ -131,8 +131,16 @@ rows = benchmark(
 
 all_rows = []
 all_rows.extend(rows)
-piv = pandas.DataFrame(rows).pivot('impl', 'dim', 'average')
+piv = pandas.DataFrame(rows).pivot('dim', 'impl', 'average')
 piv
+
+#####################################
+# Graph.
+
+name = rows[0]['name']
+ax = piv.plot(logx=True, logy=True)
+ax.set_title(name + "\nlower is better")
+
 
 #########################################
 # axpyw
@@ -161,8 +169,16 @@ rows = benchmark(
     numpy.array([0.5], dtype=numpy.float32))
 
 all_rows.extend(rows)
-piv = pandas.DataFrame(rows).pivot('impl', 'dim', 'average')
+piv = pandas.DataFrame(rows).pivot('dim', 'impl', 'average')
 piv
+
+#####################################
+# Graph.
+
+name = rows[0]['name']
+ax = piv.plot(logx=True, logy=True)
+ax.set_title(name + "\nlower is better")
+
 
 #######################################
 # axpyw2
@@ -191,7 +207,7 @@ rows = benchmark(
     numpy.array([0.5], dtype=numpy.float32))
 
 all_rows.extend(rows)
-piv = pandas.DataFrame(rows).pivot('impl', 'dim', 'average')
+piv = pandas.DataFrame(rows).pivot('dim', 'impl', 'average')
 piv
 
 
@@ -214,8 +230,16 @@ rows = benchmark(
     numpy.random.randn(1000, 10).astype(numpy.float32))
 
 all_rows.extend(rows)
-piv = pandas.DataFrame(rows).pivot('impl', 'dim', 'average')
+piv = pandas.DataFrame(rows).pivot('dim', 'impl', 'average')
 piv
+
+#####################################
+# Graph.
+
+name = rows[0]['name']
+ax = piv.plot(logx=True, logy=True)
+ax.set_title(name + "\nlower is better")
+
 
 #######################################
 # grad_loss_absolute_error
@@ -238,8 +262,15 @@ rows = benchmark(
     numpy.random.randn(1000, 10).astype(numpy.float32))
 
 all_rows.extend(rows)
-piv = pandas.DataFrame(rows).pivot('impl', 'dim', 'average')
+piv = pandas.DataFrame(rows).pivot('dim', 'impl', 'average')
 piv
+
+#####################################
+# Graph.
+
+name = rows[0]['name']
+ax = piv.plot(logx=True, logy=True)
+ax.set_title(name + "\nlower is better")
 
 
 #######################################
@@ -263,8 +294,15 @@ rows = benchmark(
     numpy.random.randn(1000, 10).astype(numpy.float32))
 
 all_rows.extend(rows)
-piv = pandas.DataFrame(rows).pivot('impl', 'dim', 'average')
+piv = pandas.DataFrame(rows).pivot('dim', 'impl', 'average')
 piv
+
+#####################################
+# Graph.
+
+name = rows[0]['name']
+ax = piv.plot(logx=True, logy=True)
+ax.set_title(name + "\nlower is better")
 
 
 #######################################
@@ -295,8 +333,16 @@ rows = benchmark(
     numpy.random.randn(1000, 10).astype(numpy.float32))
 
 all_rows.extend(rows)
-piv = pandas.DataFrame(rows).pivot('impl', 'dim', 'average')
+piv = pandas.DataFrame(rows).pivot('dim', 'impl', 'average')
 piv
+
+
+#####################################
+# Graph.
+
+name = rows[0]['name']
+ax = piv.plot(logx=True, logy=True)
+ax.set_title(name + "\nlower is better")
 
 
 #######################################
@@ -324,8 +370,15 @@ rows = benchmark(
     numpy.random.randn(1000, 10).astype(numpy.float32))
 
 all_rows.extend(rows)
-piv = pandas.DataFrame(rows).pivot('impl', 'dim', 'average')
+piv = pandas.DataFrame(rows).pivot('dim', 'impl', 'average')
 piv
+
+#####################################
+# Graph.
+
+name = rows[0]['name']
+ax = piv.plot(logx=True, logy=True)
+ax.set_title(name + "\nlower is better")
 
 
 #######################################
@@ -349,8 +402,16 @@ rows = benchmark(
     numpy.random.randn(1000, 10).astype(numpy.float32))
 
 all_rows.extend(rows)
-piv = pandas.DataFrame(rows).pivot('impl', 'dim', 'average')
+piv = pandas.DataFrame(rows).pivot('dim', 'impl', 'average')
 piv
+
+
+#####################################
+# Graph.
+
+name = rows[0]['name']
+ax = piv.plot(logx=True, logy=True)
+ax.set_title(name + "\nlower is better")
 
 
 #######################################
@@ -382,8 +443,15 @@ rows = benchmark(
     numpy.random.randn(1000, 10).astype(numpy.float32))
 
 all_rows.extend(rows)
-piv = pandas.DataFrame(rows).pivot('impl', 'dim', 'average')
+piv = pandas.DataFrame(rows).pivot('dim', 'impl', 'average')
 piv
+
+#####################################
+# Graph.
+
+name = rows[0]['name']
+ax = piv.plot(logx=True, logy=True)
+ax.set_title(name + "\nlower is better")
 
 
 ########################################
@@ -402,8 +470,7 @@ piv
 print(piv)
 
 ########################################
-# Graph
-# +++++
+# Graph.
 
 fig, ax = None, None
 
@@ -426,4 +493,5 @@ if fig is not None:
     fig.suptitle("lower is better")
     fig.tight_layout()
 
-# plt.show()
+
+plt.show()
