@@ -114,7 +114,7 @@ def _onnx_axpyw(target_opset=None, dtype=numpy.float32):
     """
     Returns the ONNX graph for function
     :math:`Y, Z = f(X1, X2, G, \\alpha, \\beta) = (Y, Z)`
-    where :math:`Z = \\beta * G + \\alpha X1` and
+    where :math:`Z = \\beta G + \\alpha X1` and
     :math:`Y = Z + X2`.
 
     .. gdot::
@@ -148,7 +148,7 @@ def _onnx_axpyw2(target_opset=None, dtype=numpy.float32):
     """
     Returns the ONNX graph for function
     :math:`Y, Z = f(X1, X2, G, \\alpha, \\beta) = (Y, Z)`
-    where :math:`Z = \\beta * G + \\alpha X1` and
+    where :math:`Z = \\beta G + \\alpha X1` and
     :math:`Y = \\beta * Z + \\alpha X1 + X2`.
 
     .. gdot::
@@ -363,7 +363,7 @@ def _onnx_grad_loss_square_error(target_opset=None, dtype=numpy.float32,
     """
     Returns the ONNX graph for function
     :math:`Y = f(X1, X2) = \\lVert (X1 - X2) \\rVert ^2` or
-    :math:`Y = f(X1, X2) = \\lVert (w**0.5)(X1 - X2) \\rVert ^2 w` if
+    :math:`Y = f(X1, X2) = \\lVert (\\sqrt{w}(X1 - X2) \\rVert ^2 w` if
     *weight_name* is not None and its gradient.
 
     .. gdot::
@@ -484,7 +484,7 @@ def _onnx_grad_loss_elastic_error(target_opset=None, dtype=numpy.float32,
     :math:`Y = f(X1, X2) = \\beta \\lVert X1 - X2 \\rVert +
     \\alpha \\lVert X1 - X2 \\rVert^2` or
     :math:`Y = f(X1, X2) = \\beta \\lVert w(X1 - X2) \\rVert +
-    \\alpha \\lVert (w**0.5)(X1 - X2) \\rVert^2` if
+    \\alpha \\lVert (\\sqrt{w})(X1 - X2) \\rVert^2` if
     *weight_name* is not None and its gradient.
     *l1_weight* is :math:`\\beta` and
     *l2_weight* is :math:`\\alpha`.

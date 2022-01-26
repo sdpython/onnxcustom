@@ -30,7 +30,7 @@ The following benchmarks compares a couple of implementations:
 axpy
 ++++
 
-This function implements :math:`Y = f(X1, X2, \alpha) = \alpha X1 + X2`.
+This function implements :math:`Y = f(X1, X2, \\alpha) = \\alpha X1 + X2`.
 
 """
 import numpy
@@ -147,7 +147,7 @@ ax.set_title(name + "\nlower is better")
 # +++++
 #
 # It does :math:`Y, Z = f(X1, X2, G, \alpha, \beta) = (Y, Z)`
-# where :math:`Z = \beta * G + \alpha X1` and
+# where :math:`Z = \beta G + \alpha X1` and
 # :math:`Y = Z + X2`.
 
 
@@ -185,7 +185,7 @@ ax.set_title(name + "\nlower is better")
 # ++++++
 #
 # It implements :math:`Y, Z = f(X1, X2, G, \alpha, \beta) = (Y, Z)`
-# where :math:`Z = \beta * G + \alpha X1` and
+# where :math:`Z = \beta G + \alpha X1` and
 # :math:`Y = \beta * Z + \alpha X1 + X2`.
 
 fct_onx = function_onnx_graph("axpyw2")
@@ -312,7 +312,7 @@ ax.set_title(name + "\nlower is better")
 # It implements :math:`Y = f(X1, X2) = \beta \lVert X1 - X2 \rVert +
 # \alpha \lVert X1 - X2 \rVert^2` or
 # :math:`Y = f(X1, X2) = \beta \lVert w(X1 - X2) \rVert +
-# \alpha \lVert (w**0.5)(X1 - X2) \rVert^2` if
+# \alpha \lVert (\sqrt{w}(X1 - X2) \rVert^2` if
 # *weight_name* is not None and its gradient.
 # *l1_weight* is :math:`\beta` and
 # *l2_weight* is :math:`\alpha`.
