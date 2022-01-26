@@ -26,16 +26,14 @@ from onnxcustom.utils.onnxruntime_helper import device_to_providers
 
 class TestOrtTrainingForwardBackward(ExtTestCase):
 
-    @classmethod
-    def setUpClass(cls):
+    def setUp(self):
         logger = logging.getLogger('skl2onnx')
         logger.setLevel(logging.WARNING)
         logger = logging.getLogger('onnxcustom')
         logger.setLevel(logging.WARNING)
         logging.basicConfig(level=logging.WARNING)
 
-    @classmethod
-    def tearDownClass(cls):
+    def tearDown(self):
         logger = logging.getLogger('skl2onnx')
         logger.setLevel(logging.WARNING)
         logger = logging.getLogger('onnxcustom')

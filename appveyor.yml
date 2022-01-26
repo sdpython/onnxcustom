@@ -23,8 +23,8 @@ before_test:
 
 test_script:
   - "%PYTHON%\\python -m pytest -v _unittests"
-  - "%PYTHON%\\python -m flake8 onnxcustom --max-line-length 100"
-  - "%PYTHON%\\python -m flake8 _doc/examples --max-line-length 100"
+  - "%PYTHON%\\python -m flake8 onnxcustom --max-line-length=100 --ignore=E731,W504"
+  - "%PYTHON%\\python -m flake8 _doc/examples --max-line-length=100 --ignore=E731,W504"
 
 after_test:
   - "%PYTHON%\\python setup.py bdist_wheel"
