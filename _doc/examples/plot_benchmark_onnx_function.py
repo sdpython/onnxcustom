@@ -425,4 +425,5 @@ for i, name in enumerate(sorted(set(df['name']))):
 if fig is not None:
     fig.suptitle("lower is better")
     fig.tight_layout()
-plt.show()
+
+# plt.show()
