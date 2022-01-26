@@ -71,7 +71,7 @@ class BaseLearningPenalty(BaseLearningOnnx):
 
 class NoLearningPenalty(BaseLearningPenalty):
     """
-    No weight penalty.
+    No regularization.
     """
 
     def __init__(self):
@@ -105,7 +105,7 @@ class NoLearningPenalty(BaseLearningPenalty):
 
 class ElasticLearningPenalty(BaseLearningPenalty):
     """
-    Implements a L1 or L2 penalty on weights.
+    Implements a L1 or L2 regularization on weights.
     """
 
     def __init__(self, l1=0.5, l2=0.5):

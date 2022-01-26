@@ -102,8 +102,8 @@ df.plot(title="Train loss against iterations (Nesterov)", logy=True)
 # do not update the learning exactly the same way.
 
 ##############################################
-# Penalty
-# +++++++
+# Regularization
+# ++++++++++++++
 #
 # Default parameters for MLPRegressor suggest to penalize weights
 # during training: `alpha=1e-4`.

@@ -126,8 +126,8 @@ print(onnx_simple_text_plot(onx))
 
 ################################################
 # We select the log loss (see :class:`NegLogLearningLoss
-# <from onnxcustom.training.sgd_learning_loss.NegLogLearningLoss>`,
-# a simple penalty defined with :class:`ElasticLearningPenalty
+# <onnxcustom.training.sgd_learning_loss.NegLogLearningLoss>`,
+# a simple regularization defined with :class:`ElasticLearningPenalty
 # <onnxcustom.training.sgd_learning_penalty.ElasticLearningPenalty>`,
 # and the Nesterov algorithm to update the weights with
 # `LearningRateSGDNesterov

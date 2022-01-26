@@ -40,7 +40,7 @@ another to compute the gradient. It implements *forward* and *backward*
 as explained in section :ref:`l-orttraining-second-api`.
 
 In addition the class holds three attributes defining the loss, its gradient,
-the penalty, its gradient, a learning rate possibly with momentum.
+the regularization, its gradient, a learning rate possibly with momentum.
 They are not implemented in :epkg:`onnxruntime-training`.
 That's why they are part of this package.
 
@@ -67,7 +67,7 @@ That's why they are part of this package.
   to penalize the weights, it could be seen as an extension
   of the loss but this design seemed more simple as it does not mix
   the gradient applied to the output and the gradient due to the
-  penalty, the most simple penalty is no penalty with
+  regularization, the most simple regularization is no regularization with
   :class:`NoLearningPenalty
   <onnxcustom.training.sgd_learning_penalty.NoLearningPenalty>`,
   but it could be L1 or L2 penalty as well with :class:`ElasticLearningPenalty
@@ -76,7 +76,7 @@ That's why they are part of this package.
 Following graph summarizes how these pieces are gathered altogether.
 Blue piece is implemented by :epkg:`onnxruntime-training`. Green pieces
 represents the three ONNX graphs needed to compute the loss and its gradient,
-the penalty, the weight update.
+the regularization, the weight update.
 
 .. image:: images/onnxfwbwloss.png
 
@@ -85,7 +85,7 @@ compare to what :epkg:`pytorch` does. The main reason is :class:`torch.Tensor`
 supports matrix operations and class :epkg:`OrtValue` does not.
 They can only be manipulated through ONNX graph and :epkg:`InferenceSession`.
 These three attributes hide ONNX graph and :epkg:`InferenceSession` to compute
-loss, penalty and their gradient, and to update the weights accordingly.
+loss, regularization and their gradient, and to update the weights accordingly.
 These three classes all implement method `build_onnx_function` which
 creates the ONNX graph based on the argument the classes were
 initialized with.

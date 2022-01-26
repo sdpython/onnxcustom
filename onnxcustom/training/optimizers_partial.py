@@ -222,7 +222,7 @@ class OrtGradientForwardBackwardOptimizer(BaseEstimator):
         # weight update
         self.learning_rate.build_onnx_function(opset, self.device, n)
 
-        # penalty
+        # regularization
         self.learning_penalty.build_onnx_function(opset, self.device, n)
 
         # zero

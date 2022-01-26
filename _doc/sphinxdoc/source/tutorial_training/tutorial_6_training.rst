@@ -30,10 +30,10 @@ Then function :func:`add_loss_output
 <onnxcustom.utils.orttraining_helper.add_loss_output>`
 adds a loss to define a graph *loss, Y=loss(f(W, X), W, expected_Y)*.
 This same function is able to add the necessary nodes to compute
-L1 and L2 losses or a combination of both, a L1 or L2 penalties
+L1 and L2 losses or a combination of both, a L1 or L2 regularizations
 or a combination of both. Assuming the user was able to create
 an an ONNX graph, he would add *0.1 L1 loss + 0.9 L2 loss*
-and a L2 penalty on the coefficients by calling :func:`add_loss_output
+and a L2 regularization on the coefficients by calling :func:`add_loss_output
 <onnxcustom.utils.orttraining_helper.add_loss_output>`
 like that:
 

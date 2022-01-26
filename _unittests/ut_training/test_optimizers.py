@@ -173,7 +173,7 @@ class TestOptimizers(ExtTestCase):
                       black_op={'LinearRegressor'})
         set_model_props(onx, {'info': 'unit test'})
 
-        # no penalty
+        # no regularization
         onx_loss = add_loss_output(
             onx, weight_name='weight', score_name='elastic',
             l1_weight=0.1, l2_weight=0.9)
