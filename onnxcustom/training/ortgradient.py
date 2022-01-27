@@ -513,12 +513,10 @@ class OrtGradientForwardBackwardFunction:
         """
         Saves onnx graph stored in this class.
         """
-        if folder is None:
-            return None  # pragma: no cover
         if prefix is None:
-            prefix = ''
+            prefix = ''  # pragma: no cover
         if suffix is None:
-            suffix = ''
+            suffix = ''  # pragma: no cover
         if isinstance(folder, str) and not os.path.exists(folder):
             raise FileNotFoundError(  # pragma: no cover
                 "Folder %r does not exist." % folder)

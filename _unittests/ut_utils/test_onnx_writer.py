@@ -10,7 +10,7 @@ from skl2onnx.algebra.onnx_ops import (  # pylint: disable=E0611
     OnnxReciprocal, OnnxDiv)
 from mlprodict.onnxrt import OnnxInference
 from onnxcustom import get_max_opset
-from onnxcustom.utils.onnx_rewriter import onnx_rewrite_operator
+from onnxcustom.utils.onnx_rewriter import onnx_rewrite_operator, _unique_name
 
 
 class TestOnnxWriter(ExtTestCase):
@@ -50,6 +50,14 @@ class TestOnnxWriter(ExtTestCase):
         oinf3 = OnnxInference(onx3)
         y3 = oinf3.run({'X': X})['Y']
         self.assertEqualArray(y1, y3)
+
+    def test__unique_name(self):
+        ex = set()
+        got = []
+        for n in ['u', 'u', 'u', 'u', 'v', 'v']:
+            got.append(_unique_name(ex, n))
+        self.assertEqual(ex, {'u', 'v_2', 'v', 'u_2', 'u_3', 'u_4'})
+        self.assertEqual(got, ['u', 'u_2', 'u_3', 'u_4', 'v', 'v_2'])
 
 
 if __name__ == "__main__":

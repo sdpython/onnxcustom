@@ -321,7 +321,7 @@ def _rewrite_op_no_grad(onx):
         for op in onx.opset_import:
             if op.domain in ('', 'ai.onnx'):
                 opset = op.version
-        if opset is None:
+        if opset is None:  # pragma: no cover
             from .. import get_max_opset
             opset = get_max_opset()
 

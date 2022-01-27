@@ -107,8 +107,6 @@ class BaseOnnxClass:
         """
         repls = {'Learning': 'L', 'OrtGradient': 'Grad',
                  'ForwardBackward': 'FB'}
-        if folder is None:
-            return None  # pragma: no cover
         if prefix is None:
             prefix = ''
         if suffix is None:
