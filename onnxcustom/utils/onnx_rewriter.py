@@ -37,12 +37,12 @@ def _onnx_rewrite_operator_node(existing_names, node, sub_onx):
     :return: new_initializer, new_nodes
     """
     if len(node.input) != len(sub_onx.graph.input):
-        raise ValueError(
+        raise ValueError(  # pragma: no cover
             "Mismatch with the number of inputs for operator type %r. "
             "%d != %d." % (
                 node.op_type, len(node.input), len(sub_onx.graph.nput)))
     if len(node.output) != len(sub_onx.graph.output):
-        raise ValueError(
+        raise ValueError(  # pragma: no cover
             "Mismatch with the number of outputs for operator type %r. "
             "%d != %d." % (
                 node.op_type, len(node.output), len(sub_onx.graph.output)))

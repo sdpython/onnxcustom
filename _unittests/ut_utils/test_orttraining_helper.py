@@ -9,8 +9,9 @@ from sklearn.datasets import make_regression, make_classification
 from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LinearRegression, LogisticRegression
 from sklearn.metrics import mean_squared_error, log_loss
-from skl2onnx.algebra.onnx_ops import OnnxIdentity  # pylint: disable=E0611
-from skl2onnx.common.data_types import DoubleTensorType
+from skl2onnx.algebra.onnx_ops import (  # pylint: disable=E0611
+    OnnxIdentity, OnnxReciprocal)
+from skl2onnx.common.data_types import DoubleTensorType, FloatTensorType
 from mlprodict.onnx_conv import to_onnx
 from mlprodict.onnxrt import OnnxInference
 from mlprodict.plotting.text_plot import onnx_simple_text_plot
@@ -49,6 +50,17 @@ class TestOrtTraining(ExtTestCase):
         loss = output['loss']
         skl_loss = mean_squared_error(reg.predict(X_test), y_test)
         self.assertLess(numpy.abs(skl_loss - loss[0, 0]), 1e-5)
+
+    def test_clean_grad(self):
+        from onnxcustom.utils.orttraining_helper import _rewrite_op_no_grad
+        onx = OnnxReciprocal(
+            'X', op_version=opset, output_names=['Y']).to_onnx(
+                {'X': FloatTensorType()},
+                {'Y': FloatTensorType()},
+                target_opset=opset)
+        self.assertIn('op_type: "Reciprocal"', str(onx))
+        onx2 = _rewrite_op_no_grad(onx)
+        self.assertNotIn('op_type: "Reciprocal"', str(onx2))
 
     @unittest.skipIf(TrainingSession is None, reason="not training")
     def test_get_train_initializer(self):

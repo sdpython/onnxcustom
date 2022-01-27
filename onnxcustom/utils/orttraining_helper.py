@@ -147,7 +147,7 @@ def _loss_log(existing_names, elem, shape,
     Parameter *eps* is used to avoid computing *log(0)*.
     """
     if output_name == 'output_label':
-        raise RuntimeError(
+        raise RuntimeError(  # pragma: no cover
             "output_name=%r, log loss does not work on labels."
             "" % output_name)
     dtype = TENSOR_TYPE_TO_NP_TYPE[elem]
@@ -235,7 +235,7 @@ def penalty_loss_onnx(name, dtype, l1=None, l2=None, existing_names=None):
 
     if l1 is None or l1 == 0:
         if l2 is None or l2 == 0:
-            raise ValueError(
+            raise ValueError(  # pragma: no cover
                 "l1 and l2 cannot be null or None at the same time, "
                 "name=%r." % name)
         l2_name = _unique_name(existing_names, "l2_weight_%s" % suffix)
@@ -311,7 +311,7 @@ def _rewrite_op_no_grad(onx):
     """
     Rewrites operators with no gradient.
     """
-    set_types = set(n.name for n in onx.graph.node)
+    set_types = set(n.op_type for n in onx.graph.node)
     if "Reciprocal" in set_types:
         from skl2onnx.algebra.onnx_ops import OnnxDiv  # pylint: disable=E0611
         from skl2onnx.common.data_types import FloatTensorType
@@ -483,7 +483,7 @@ def add_loss_output(onx, score_name='squared_error',
         output_index = outputs[0][0]
         outputs = [outputs[0][1]]
     else:
-        raise TypeError(
+        raise TypeError(  # pragma: no cover
             "output_index must be an integer or a str not %r."
             "" % type(output_index))
 

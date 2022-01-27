@@ -388,6 +388,33 @@ class TestOnnxFunction(ExtTestCase):
         got = sess.run(None, {'loss': loss, 'W0': w1, 'W1': w2})
         self.assertEqualArray(exp_loss.reshape((-1, )), got[0], decimal=5)
 
+    def test_penalty_3w(self):
+        loss = numpy.random.randn(1, 1).astype(numpy.float32)
+        w1 = numpy.random.randn(10, 1).astype(numpy.float32)
+        w2 = numpy.random.randn(5, 1).astype(numpy.float32)
+
+        def fct(x):
+            return numpy.abs(x).sum() * 0.1 + ((x) ** 2).sum() * 0.9
+
+        exp_loss = loss + fct(w1) + fct(w2)
+
+        onx = function_onnx_graph(
+            'n_penalty_elastic_error', target_opset=get_max_opset(),
+            dtype=numpy.float32, n_tensors=2,
+            l1_weight=0.1, l2_weight=0.9, weight_name='weight')
+
+        oinf = OnnxInference(onx)
+        got = oinf.run({'loss': loss, 'W0': w1, 'W1': w2})
+        self.assertEqualArray(exp_loss.reshape((-1, )), got['Y'], decimal=5)
+
+        providers = device_to_providers('cpu')
+        so = SessionOptions()
+        so.log_severity_level = 4
+        sess = InferenceSession(
+            onx.SerializeToString(), so, providers=providers)
+        got = sess.run(None, {'loss': loss, 'W0': w1, 'W1': w2})
+        self.assertEqualArray(exp_loss.reshape((-1, )), got[0], decimal=5)
+
     def test_penalty_update(self):
         x = numpy.random.randn(10, 1).astype(numpy.float32)
 

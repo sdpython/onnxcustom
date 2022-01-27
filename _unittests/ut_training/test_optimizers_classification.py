@@ -24,6 +24,8 @@ try:
 except ImportError:
     # onnxruntime not training
     TrainingSession = None
+from onnxruntime.capi._pybind_state import (  # pylint: disable=E0611
+    OrtDevice as C_OrtDevice, OrtValue as C_OrtValue)
 
 
 class TestOptimizersClassification(ExtTestCase):
@@ -38,29 +40,45 @@ class TestOptimizersClassification(ExtTestCase):
 
     @unittest.skipIf(TrainingSession is None, reason="not training")
     def test_ort_gradient_optimizers_binary(self):
+        self.wtest_ort_gradient_optimizers_binary(False)
+
+    @unittest.skipIf(TrainingSession is None, reason="not training")
+    def test_ort_gradient_optimizers_binary_weighted(self):
+        self.wtest_ort_gradient_optimizers_binary(True)
+
+    def wtest_ort_gradient_optimizers_binary(self, use_weight=False):
         from onnxcustom.utils.orttraining_helper import add_loss_output
         from onnxcustom.training.optimizers import OrtGradientOptimizer
         X, y = make_classification(  # pylint: disable=W0632
             100, n_features=10, random_state=0)
         X = X.astype(numpy.float32)
         y = y.astype(numpy.int64)
-        X_train, _, y_train, __ = train_test_split(X, y)
+        w = (numpy.random.rand(X.shape[0]) + 1).astype(numpy.float32)
+        X_train, _, y_train, __, w_train, ___ = train_test_split(X, y, w)
         reg = SGDClassifier(loss='log')
         reg.fit(X_train, y_train)
         onx = to_onnx(reg, X_train, target_opset=opset,
                       black_op={'LinearClassifier'},
                       options={'zipmap': False})
         set_model_props(onx, {'info': 'unit test'})
-        onx_loss = add_loss_output(onx, 'log', output_index=1)
+        onx_loss = add_loss_output(
+            onx, 'log', output_index=1,
+            weight_name='weight' if use_weight else None)
         inits = ['intercept', 'coef']
         inputs = onx_loss.graph.input
-        self.assertEqual(len(inputs), 2)
+        self.assertEqual(len(inputs), 3 if use_weight else 2)
         dt = inputs[1].type.tensor_type.elem_type
         self.assertEqual(TensorProto.INT64, dt)  # pylint: disable=E1101
         train_session = OrtGradientOptimizer(
             onx_loss, inits, learning_rate=1e-3)
         self.assertRaise(lambda: train_session.get_state(), AttributeError)
-        train_session.fit(X_train, y_train.reshape((-1, 1)), use_numpy=False)
+        if use_weight:
+            train_session.fit(
+                X_train, y_train.reshape((-1, 1)),
+                w_train.reshape((-1, 1)), use_numpy=False)
+        else:
+            train_session.fit(
+                X_train, y_train.reshape((-1, 1)), use_numpy=False)
         state_tensors = train_session.get_state()
         self.assertEqual(len(state_tensors), 2)
         r = repr(train_session)
@@ -69,6 +87,11 @@ class TestOptimizersClassification(ExtTestCase):
         losses = train_session.train_losses_
         self.assertGreater(len(losses), 1)
         self.assertFalse(any(map(numpy.isnan, losses)))
+
+        # state
+        state = train_session.get_state()
+        self.assertIsInstance(state, dict)
+        train_session.set_state(state)
 
     @unittest.skipIf(TrainingSession is None, reason="not training")
     def test_ort_gradient_optimizers_fw_nesterov_binary(self):
@@ -122,6 +145,16 @@ class TestOptimizersClassification(ExtTestCase):
         temp = get_temp_folder(
             __file__, "temp_ort_gradient_optimizers_fw_nesterov_binary")
         train_session.save_onnx_graph(temp)
+
+        # state
+        state = train_session.get_state()
+        self.assertIsInstance(state, list)
+        train_session.set_state(state)
+        device = C_OrtDevice(
+            C_OrtDevice.cpu(), C_OrtDevice.default_memory(), 0)
+        for k in range(len(state)):
+            state[k] = state[k].numpy()
+        train_session.set_state(state)
 
     @unittest.skipIf(TrainingSession is None, reason="not training")
     @ignore_warnings(ConvergenceWarning)
@@ -178,4 +211,5 @@ class TestOptimizersClassification(ExtTestCase):
 
 
 if __name__ == "__main__":
+
     unittest.main()

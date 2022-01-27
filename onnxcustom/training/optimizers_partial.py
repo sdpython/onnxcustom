@@ -504,7 +504,7 @@ class OrtGradientForwardBackwardOptimizer(BaseEstimator):
             state[0] = ortx
 
             if logger is not None:
-                logger.debug(
+                logger.debug(  # pragma: no cover
                     "[OrtGradientForwardBackwardOptimizer._evaluation] "
                     "batch %d", ib)
 
@@ -513,7 +513,7 @@ class OrtGradientForwardBackwardOptimizer(BaseEstimator):
                 self.device, orty, prediction[0])
             cpu_loss = loss.numpy()
             if numpy.isinf(cpu_loss) or numpy.isnan(cpu_loss):
-                raise ConvergenceError(
+                raise ConvergenceError(  # pragma: no cover
                     "Loss is nan, "
                     "the evaluation has failed "
                     "(past losses=%r)." %

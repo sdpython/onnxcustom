@@ -201,7 +201,7 @@ class OrtDataLoader:
                 bind.bind_input(
                     names[0], self.device, self.desc[0][1], shape_X,
                     self.X_ort.data_ptr() + offset * n_col_x * size_x)
-            except RuntimeError as e:
+            except RuntimeError as e:  # pragma: no cover
                 raise RuntimeError(
                     "Unable to bind data input (X) %r, device=%r desc=%r "
                     "data_ptr=%r offset=%r n_col_x=%r size_x=%r "
@@ -213,7 +213,7 @@ class OrtDataLoader:
                 bind.bind_input(
                     names[1], self.device, self.desc[1][1], shape_y,
                     self.y_ort.data_ptr() + offset * n_col_y * size_y)
-            except RuntimeError as e:
+            except RuntimeError as e:  # pragma: no cover
                 raise RuntimeError(
                     "Unable to bind data input (y) %r, device=%r desc=%r "
                     "data_ptr=%r offset=%r n_col_y=%r size_y=%r "

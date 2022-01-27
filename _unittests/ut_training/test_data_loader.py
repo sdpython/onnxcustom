@@ -36,6 +36,48 @@ class TestDataLoader(ExtTestCase):
             data.desc,
             [((100, 10), numpy.float64), ((100, 1), numpy.float64)])
 
+    def test_ort_data_loader_101(self):
+        X, y = make_regression(  # pylint: disable=W0632
+            101, n_features=10, bias=2)
+        data = OrtDataLoader(X, y, batch_size=5)
+        n = 0
+        for it in data.iter_ortvalue():
+            x, y = it
+            self.assertIsInstance(x, C_OrtValue)
+            self.assertIsInstance(y, C_OrtValue)
+            self.assertEqual(x.shape()[0], 5)
+            self.assertEqual(x.shape()[1], 10)
+            self.assertEqual(y.shape()[0], 5)
+            n += 1
+        self.assertEqual(n, 21)
+        self.assertStartsWith("OrtDataLoader(...", repr(data))
+        self.assertIsInstance(data.data_np, tuple)
+        self.assertIsInstance(data.data_ort, tuple)
+        self.assertEqual(
+            data.desc,
+            [((101, 10), numpy.float64), ((101, 1), numpy.float64)])
+
+    def test_ort_data_loader_11(self):
+        X, y = make_regression(  # pylint: disable=W0632
+            11, n_features=10, bias=2)
+        data = OrtDataLoader(X, y, batch_size=15)
+        n = 0
+        for it in data.iter_ortvalue():
+            x, y = it
+            self.assertIsInstance(x, C_OrtValue)
+            self.assertIsInstance(y, C_OrtValue)
+            self.assertEqual(x.shape()[0], 11)
+            self.assertEqual(x.shape()[1], 10)
+            self.assertEqual(y.shape()[0], 11)
+            n += 1
+        self.assertEqual(n, 1)
+        self.assertStartsWith("OrtDataLoader(...", repr(data))
+        self.assertIsInstance(data.data_np, tuple)
+        self.assertIsInstance(data.data_ort, tuple)
+        self.assertEqual(
+            data.desc,
+            [((11, 10), numpy.float64), ((11, 1), numpy.float64)])
+
     def test_ort_data_loader_numpy(self):
         X, y = make_regression(  # pylint: disable=W0632
             100, n_features=10, bias=2)
