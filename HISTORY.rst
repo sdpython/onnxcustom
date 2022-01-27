@@ -5,18 +5,34 @@
 History
 =======
 
-current - 2022-01-03 - 0.00Mb
+current - 2022-01-27 - 0.00Mb
+=============================
+
+* #47: Compare gradient values with scikit-learn (2022-01-25)
+* #48: Checks gradients are identical to scikit-learn for neural networks (2022-01-25)
+* #32: Implements classificiation loss (2022-01-23)
+* #45: Adds an example about classification (2022-01-23)
+* #44: Uses bind_ortvalue_input instead of bind_input to be faster (2022-01-23)
+* #43: Fixes the training of a binary classifier with weights (2022-01-22)
+* #42: Implements binary log loss for first API of orttraining (2022-01-22)
+* #41: Refactors to improve profiling analysis (fix penalty, export onnx graphs) (2022-01-15)
+* #40: Improves training fwbw with caching. (2022-01-14)
+* #37: Improves performance of caching (2022-01-09)
+* #36: Makes sure all plt.show() have been disabled in examples (2022-01-04)
+* #35: Reduces the number of calls to bind_ortvalue (2022-01-04)
+
+0.3.245 - 2022-01-03 - 0.06Mb
 =============================
 
 * #34: Implements L1, L2 losses for partial training (2022-01-03)
 * #31: Implements penalty when running the gradient (2022-01-03)
 * #33: Implements more loss functions (2022-01-02)
-* #26: Implements learning rate from neural network (2022-01-01)
 * #30: Implements different learning rate strategies (2022-01-01)
-* #16: Support weights when training a model (2021-12-30)
+* #26: Implements learning rate from neural network (2022-01-01)
 * #29: Fixes #16, support weights while training (2021-12-30)
-* #24: Be more consistent with OrtValue, OrtDevice, C and python versions (2021-12-19)
+* #16: Support weights when training a model (2021-12-30)
 * #28: Replaces OrtValue by C_OrtValue everywhere (2021-12-19)
+* #24: Be more consistent with OrtValue, OrtDevice, C and python versions (2021-12-19)
 * #27: Uses C_OrtDevice everywhere (2021-12-16)
 * #15: Add example with TrainingAgent (error gradient outside) (2021-12-14)
 * #25: Implements optimizers with forward, backward functionalities (2021-12-04)

@@ -17,15 +17,13 @@ from mlprodict.onnx_conv import to_onnx
 from mlprodict.plotting.text_plot import onnx_simple_text_plot
 from mlprodict.onnx_tools.onnx_manipulations import select_model_inputs_outputs
 # from mlprodict.onnxrt import OnnxInference
-from onnxcustom import __max_supported_opset__ as opset
-from onnxcustom.utils.onnx_helper import onnx_rename_weights
 try:
     from onnxruntime import TrainingSession
 except ImportError:
     # onnxruntime not training
     TrainingSession = None
-from onnxruntime.capi._pybind_state import (  # pylint: disable=E0611
-    OrtDevice as C_OrtDevice, OrtValue as C_OrtValue)
+from onnxcustom import __max_supported_opset__ as opset
+from onnxcustom.utils.onnx_helper import onnx_rename_weights
 
 
 class TestOptimizersClassification(ExtTestCase):
@@ -150,9 +148,7 @@ class TestOptimizersClassification(ExtTestCase):
         state = train_session.get_state()
         self.assertIsInstance(state, list)
         train_session.set_state(state)
-        device = C_OrtDevice(
-            C_OrtDevice.cpu(), C_OrtDevice.default_memory(), 0)
-        for k in range(len(state)):
+        for k in range(len(state)):  # pylint: disable=C0200
             state[k] = state[k].numpy()
         train_session.set_state(state)
 
