@@ -46,20 +46,18 @@ onnxcustom: deploy, train machine learned models
 Examples, tutorial on how to convert machine learned models into ONNX,
 implement your own converter or runtime, or even train with :epkg:`ONNX`,
 :epkg:`onnxruntime`.
-This package is used to write documentation in an early stage it
-is moved to over documentation website.
-Some of the tutorials has been merged into `sklearn-onnx documentation
-<http://onnx.ai/sklearn-onnx/index_tutorial.html>`_.
-Among the tools this package implements, you may find:
+The documentation introduces :epkg:`onnx`, :epkg:`onnxruntime` for
+inference and training. It implements training classes following
+:epkg:`scikit-learn` based on :epkg:`onnxruntime-training` enabling training
+linear models, neural networks on CPU or GPU.
+It implements tools to manipulate logs produced NVidia Profiler logs
+(:func:`convert_trace_to_json <onnxcustom.utils.nvprof2json.convert_trace_to_json>`),
+tools to manipulate :epkg:`onnx` graphs.
 
-* a tool to convert NVidia Profilder logs into a dataframe:
-  :func:`convert_trace_to_json <onnxcustom.utils.nvprof2json.convert_trace_to_json>`
-* A couple of SGD optimizer similar to what scikit-learn implements
-  (see `Stochastic Gradient Descent
-  <https://scikit-learn.org/stable/modules/sgd.html>`_)
-  but based on :epkg:`onnxruntime-training` and able to train an CPU and GPU
-  (see examples :ref:`l-orttraining-nn-gpu` or
-  :ref:`l-orttraining-nn-gpu-fwbw`).
+Section :ref:`l-apis` summarizes APIs for :epkg:`onnx`, :epkg:`onnxruntime`,
+and this package. Section :ref:`l-tutorials` explains the logic behind
+:epkg:`onnx`, :epkg:`onnxruntime` and this package. It guides the user
+through all the examples this documentation contains.
 
 **Contents**
 
@@ -78,6 +76,9 @@ Sources are available on
 `github/onnxcustom <https://github.com/sdpython/onnxcustom>`_.
 Package is available on `pypi <https://pypi.python.org/pypi/onnxcustom/>`_,
 :ref:`l-README`, and a blog for unclassified topics :ref:`blog <ap-main-0>`.
+The tutorial related to :epkg:`scikit-learn` has been merged into
+`sklearn-onnx documentation
+<http://onnx.ai/sklearn-onnx/index_tutorial.html>`_.
 
 +----------------------+---------------------+---------------------+--------------------+------------------------+------------------------------------------------+
 | :ref:`l-modules`     |  :ref:`l-functions` | :ref:`l-classes`    | :ref:`l-methods`   | :ref:`l-staticmethods` | :ref:`l-properties`                            |

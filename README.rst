@@ -60,10 +60,14 @@ time for a couple of functions or simply:
     import onnxcustom
     onnxcustom.check()
 
-Most of the tutorial has been merged into `sklearn-onnx documentation
+The documentation also introduces *onnx*, *onnxruntime* for
+inference and training.
+The tutorial related to *scikit-learn*
+has been merged into `sklearn-onnx documentation
 <http://onnx.ai/sklearn-onnx/index_tutorial.html>`_.
 Among the tools this package implements, you may find:
 
-* a tool to convert NVidia Profilder logs into a dataframe
-* a SGD optimizer similar to what scikit-learn implements but
-  based on *onnxruntime-training* and able to train an CPU and GPU.
+* a tool to convert NVidia Profilder logs into a dataframe,
+* a SGD optimizer similar to what *scikit-learn* implements but
+  based on *onnxruntime-training* and able to train an CPU and GPU,
+* functions to manipulate *onnx* graph.
