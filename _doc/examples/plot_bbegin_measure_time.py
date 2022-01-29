@@ -49,7 +49,8 @@ ereg.fit(X_train, y_train)
 # Measure the processing time
 # +++++++++++++++++++++++++++
 #
-# We use function :func:`onnxcustom.utils.measure_time`.
+# We use function :func:`measure_time
+# <onnxcustom.utils.benchmark.measure_time>`.
 # The page about `assume_finite <https://scikit-learn.org/
 # stable/modules/generated/sklearn.config_context.html>`_
 # may be useful if you need to optimize the prediction.
