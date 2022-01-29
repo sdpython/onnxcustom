@@ -64,7 +64,7 @@ through all the examples this documentation contains.
 .. toctree::
     :maxdepth: 1
 
-    tutorials
+    tutorials/index
     api/apis
     gyexamples/index
     all_notebooks
