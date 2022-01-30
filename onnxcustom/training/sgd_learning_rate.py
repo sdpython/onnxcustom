@@ -236,8 +236,8 @@ class LearningRateSGD(BaseLearningRate):
         self._bind_input_ortvalue("alpha", bind, ort_alpha, device, cache=True)
         self._bind_output_ortvalue('Y', bind, statei, cache=True)
         self._call_iobinding(self.axpy_sess_._sess, bind)
-        loss = bind.get_outputs()[0]
-        return loss
+        new_weights = bind.get_outputs()[0]
+        return new_weights
 
 
 class LearningRateSGDNesterov(LearningRateSGD):

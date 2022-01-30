@@ -279,7 +279,8 @@ class OrtGradientForwardBackwardOptimizer(BaseEstimator):
                 "weights_to_train=%r", self.weights_to_train)
             logger.info(
                 "[OrtGradientForwardBackwardOptimizer.fit] "
-                "device=%r", self.device)
+                "device=%r|%r",
+                self.device.device_id(), self.device.device_type())
             if logger is not None:
                 logger.info(
                     "[OrtGradientForwardBackwardOptimizer.fit] "
@@ -341,7 +342,7 @@ class OrtGradientForwardBackwardOptimizer(BaseEstimator):
         else:
             loop = range(self.max_iter)
 
-        train_losses = []
+        self.train_losses_ = []
         val_losses = []
         kinds = ['weight', 'grad'] if self.needs_grad else ['weight']
         for it in loop:
@@ -353,12 +354,16 @@ class OrtGradientForwardBackwardOptimizer(BaseEstimator):
                 loop.set_description(
                     "loss=%1.3g lr=%1.3g" % (  # pylint: disable=E1101,E1307
                         loss, lr))  # pylint: disable=E1101,E1307
-            train_losses.append(loss)
+            if logger is not None:
+                logger.info(
+                    "[OrtGradientForwardBackwardOptimizer.fit] "
+                    "lr value=%r", lr)
+
+            self.train_losses_.append(loss)
             if (data_loader_val is not None and
                     (it + 1) % self.validation_every == 0):
                 val_losses.append(
                     self._evaluation(data_loader_val, self.get_full_state()))
-        self.train_losses_ = train_losses
         self.validation_losses_ = (
             None if data_loader_val is None else val_losses)
 
