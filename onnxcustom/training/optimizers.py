@@ -134,8 +134,8 @@ class OrtGradientOptimizer(BaseEstimator):
         else:
             loop = range(self.max_iter)
 
-        train_losses = []
-        val_losses = []
+        self.train_losses_ = []
+        self.validation_losses_ = []
         lr = self.learning_rate.value
         for it in loop:
             lr_alive = numpy.array([lr / self.batch_size], dtype=numpy.float32)
@@ -149,13 +149,11 @@ class OrtGradientOptimizer(BaseEstimator):
                     "loss=%1.3g lr=%1.3g "  # pylint: disable=E1307
                     "lrn=%1.3g" % (
                         loss, lr, lr_alive[0]))
-            train_losses.append(loss)
+            self.train_losses_.append(loss)
             if (data_loader_val is not None and
                     (it + 1) % self.validation_every == 0):
-                val_losses.append(self._evaluation(data_loader_val, bind))
-        self.train_losses_ = train_losses
-        self.validation_losses_ = (
-            None if data_loader_val is None else val_losses)
+                self.validation_losses_.append(
+                    self._evaluation(data_loader_val, bind))
         self.trained_coef_ = self.train_session_.get_state()
         return self
 
@@ -188,12 +186,12 @@ class OrtGradientOptimizer(BaseEstimator):
         actual_losses = []
 
         bind.bind_output('loss', self.device)
+        idx = 3 if sample_weight else 2
 
         if use_numpy:
             # onnxruntime does not copy the data, so the numpy
             # array must remain alive all along the iteration
             lr_alive = ort_lr.numpy()
-            idx = 3 if sample_weight else 2
             self._bind_input_ortvalue(
                 self.input_names_[idx], bind, lr_alive)
 
@@ -227,7 +225,6 @@ class OrtGradientOptimizer(BaseEstimator):
                                 else actual_losses[-5:])]))
                 actual_losses.append(loss / data.shape[0])
         else:
-            idx = 3 if sample_weight else 2
             self._bind_input_ortvalue(self.input_names_[idx], bind, ort_lr)
 
             # Fast iterations
