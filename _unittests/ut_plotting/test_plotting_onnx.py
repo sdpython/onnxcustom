@@ -5,6 +5,7 @@
 import os
 import warnings
 import unittest
+import logging
 import numpy
 from pyquickhelper.pycode import (
     ExtTestCase, skipif_travis, skipif_circleci, get_temp_folder)
@@ -14,6 +15,13 @@ from onnxcustom.plotting.plotting_onnx import plot_onnxs
 
 
 class TestPlotOnnx(ExtTestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        logger = logging.getLogger('skl2onnx')
+        logger.setLevel(logging.WARNING)
+        logging.basicConfig(level=logging.WARNING)
+        logging.getLogger('matplotlib.font_manager').disabled = True
 
     @skipif_travis('graphviz is not installed')
     @skipif_circleci('graphviz is not installed')

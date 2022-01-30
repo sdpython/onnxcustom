@@ -79,5 +79,3 @@ Rare functions
 .. autofunction:: onnxruntime.capi._pybind_state.enable_telemetry_events
 
 .. autofunction:: onnxruntime.capi._pybind_state.disable_telemetry_events
-
-.. autofunction:: onnxruntime.capi._pybind_state._register_provider_lib

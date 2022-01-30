@@ -7,14 +7,15 @@ import inspect
 from io import BytesIO
 import numpy
 import onnx
-from onnxruntime import SessionOptions, InferenceSession
+from onnxruntime import SessionOptions, InferenceSession, RunOptions
 from onnxruntime.capi._pybind_state import (  # pylint: disable=E0611
     OrtValue as C_OrtValue)
 from ..utils.onnxruntime_helper import ort_device_to_string
 from .excs import ProviderError
+from ._base import BaseOnnxClass
 
 
-class BaseLearningOnnx:
+class BaseLearningOnnx(BaseOnnxClass):
     """
     Class handling ONNX function to manipulate OrtValue.
     Base class for @see cl BaseLearningRate and
@@ -31,6 +32,8 @@ class BaseLearningOnnx:
         """
         atts = [k for k in self.__dict__ if not k.endswith('_')]
         state = {k: getattr(self, k) for k in atts}
+        if hasattr(self, 'ro_'):
+            state['ro_'] = True
         onx = [k for k in self.__dict__ if k.endswith('_onnx_')]
         for o in onx:
             state[o] = getattr(self, o).SerializeToString()
@@ -50,7 +53,9 @@ class BaseLearningOnnx:
         Overwrites getstate to get rid of InferenceSession.
         """
         for k, v in state.items():
-            if not k.endswith('_onnx_') and not k.endswith('_sess_'):
+            if k == 'ro_':
+                self.ro_ = RunOptions()
+            elif not k.endswith('_onnx_') and not k.endswith('_sess_'):
                 setattr(self, k, v)
 
         so = SessionOptions()
@@ -219,12 +224,3 @@ class BaseLearningOnnx:
             raise TypeError(  # pragma: no cover
                 "Unable to bind type %r for name %r." % (
                     type(c_ortvalue), name))
-
-    @classmethod
-    def _get_param_names(cls):
-        init = getattr(cls.__init__, "deprecated_original", cls.__init__)
-        init_signature = inspect.signature(init)
-        parameters = [
-            p for p in init_signature.parameters.values()
-            if p.name != "self" and p.kind != p.VAR_KEYWORD]
-        return [(p.name, p.default) for p in parameters]

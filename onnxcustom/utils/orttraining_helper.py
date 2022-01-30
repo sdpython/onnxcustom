@@ -13,13 +13,12 @@ from onnx.helper import (
 from onnx import TensorProto
 
 
-def _unique_name(existing_names, name, add=True):
+def _unique_name(existing_names, name):
     """
     Returns a name different from any name in *existing_names*.
 
     :param existing_names: set of names
     :param name: current
-    :param add: add the name of the list of existing names
     :return: unique name
     """
     if name not in existing_names:
@@ -134,6 +133,85 @@ def _loss_elastic(existing_names, elem, shape,
         [make_tensor_value_info(loss_name, elem, [1, 1])])
 
 
+def _loss_log(existing_names, elem, shape,
+              output_name, label_name,
+              weight_name, loss_name,
+              eps=1e-6):
+    """
+    This only works for a binary classification.
+    The log loss is `'log(yt, yp) = (1-yt)\\log(1-yp) - yt\\log(yp)`,
+    this only works for a binary classification where *yp* is the
+    predicted probability, *yt* is the expected probability.
+    *yt* is expected to be binary, *yp* is a matrix with two
+    columns, the sum on every line is 1.
+    Parameter *eps* is used to avoid computing *log(0)*.
+    """
+    if output_name == 'output_label':
+        raise RuntimeError(  # pragma: no cover
+            "output_name=%r, log loss does not work on labels."
+            "" % output_name)
+    dtype = TENSOR_TYPE_TO_NP_TYPE[elem]
+    one_name = _unique_name(existing_names, "one_name")
+    eps_name = _unique_name(existing_names, "eps_name")
+    eps1_name = _unique_name(existing_names, "eps1_name")
+    axes_name = _unique_name(existing_names, "axes_name")
+
+    eps_init = from_array(numpy.array([eps], dtype=dtype), name=eps_name)
+    one_init = from_array(numpy.array([1], dtype=dtype), name=one_name)
+    eps1_init = from_array(
+        numpy.array([1 - eps], dtype=dtype), name=eps1_name)
+    axes_init = from_array(
+        numpy.array([1], dtype=numpy.int64), name=axes_name)
+
+    clip_name = _unique_name(existing_names, "clip_name")
+    clip_red_name = _unique_name(existing_names, "clip_red_name")
+    new_output_name = _unique_name(existing_names, "new_output_name")
+    cast_name = _unique_name(existing_names, "cast_name")
+    log_name = _unique_name(existing_names, "log_name")
+    subl_name = _unique_name(existing_names, "subl_name")
+    conc_name = _unique_name(existing_names, "conc_name")
+    mul_name = _unique_name(existing_names, "mul_name")
+    like_name = _unique_name(existing_names, "like_name")
+
+    nodes = [
+        make_node(
+            'Clip', [output_name, eps_name, eps1_name], [clip_name]),
+        make_node(
+            'ReduceSum', [clip_name, axes_name], [clip_red_name], keepdims=1),
+        make_node('Div', [clip_name, clip_red_name], [new_output_name]),
+        make_node('Log', [new_output_name], [log_name]),
+        make_node('Cast', [label_name], [cast_name], to=elem),
+        make_node('Sub', [one_name, cast_name], [subl_name]),
+        make_node('Concat', [subl_name, cast_name], [conc_name], axis=1),
+        make_node('Mul', [log_name, conc_name], [mul_name]),
+        make_node(
+            'ReduceSum', [mul_name, axes_name], [like_name], keepdims=1)]
+
+    inputs = [make_tensor_value_info(label_name, TensorProto.INT64, shape)]
+
+    if weight_name is not None:
+        inputs.append(
+            make_tensor_value_info(weight_name, elem, [shape[0]]))
+        likew_name = _unique_name(existing_names, "likew_name")
+        nodes.append(
+            make_node('Mul', [like_name, weight_name], [likew_name]))
+        like_name = likew_name
+
+    shape_name = _unique_name(existing_names, "shape_name")
+    onx_shape = from_array(
+        numpy.array([1, 1], dtype=numpy.int64), name=shape_name)
+    reduced_loss = _unique_name(existing_names, "reduced_loss")
+    neg_reduced_loss = _unique_name(existing_names, "neg_reduced_loss")
+    nodes.extend([
+        make_node('ReduceMean', [like_name], [reduced_loss]),
+        make_node('Neg', [reduced_loss], [neg_reduced_loss]),
+        make_node('Reshape', [neg_reduced_loss, shape_name], [loss_name])])
+
+    return (
+        [eps_init, eps1_init, one_init, axes_init, onx_shape],
+        inputs, nodes, [make_tensor_value_info(loss_name, elem, [1, 1])])
+
+
 def penalty_loss_onnx(name, dtype, l1=None, l2=None, existing_names=None):
     """
     Returns onnx nodes to compute
@@ -157,7 +235,7 @@ def penalty_loss_onnx(name, dtype, l1=None, l2=None, existing_names=None):
 
     if l1 is None or l1 == 0:
         if l2 is None or l2 == 0:
-            raise ValueError(
+            raise ValueError(  # pragma: no cover
                 "l1 and l2 cannot be null or None at the same time, "
                 "name=%r." % name)
         l2_name = _unique_name(existing_names, "l2_weight_%s" % suffix)
@@ -210,10 +288,59 @@ def penalty_loss_onnx(name, dtype, l1=None, l2=None, existing_names=None):
     return inits, nodes
 
 
+def get_train_initializer(onx):
+    """
+    Returns the list of initializers to train.
+
+    :return: dictionary `{name: (value, tensor)}`
+
+    The function walk through the list of initializers and
+    returns all tensors with elements from types float or double.
+    """
+    res = OrderedDict()
+    for init in onx.graph.initializer:
+        if init.data_type in (
+                TensorProto.FLOAT16,  # pylint: disable=E1101
+                TensorProto.FLOAT,  # pylint: disable=E1101
+                TensorProto.DOUBLE):  # pylint: disable=E1101
+            res[init.name] = (to_array(init), init)
+    return res
+
+
+def _rewrite_op_no_grad(onx):
+    """
+    Rewrites operators with no gradient.
+    """
+    set_types = set(n.op_type for n in onx.graph.node)
+    if "Reciprocal" in set_types:
+        from skl2onnx.algebra.onnx_ops import OnnxDiv  # pylint: disable=E0611
+        from skl2onnx.common.data_types import FloatTensorType
+        from .onnx_rewriter import onnx_rewrite_operator
+
+        opset = None
+        for op in onx.opset_import:
+            if op.domain in ('', 'ai.onnx'):
+                opset = op.version
+        if opset is None:  # pragma: no cover
+            from .. import get_max_opset
+            opset = get_max_opset()
+
+        node = OnnxDiv(numpy.array([1], dtype=numpy.float32),
+                       'X', output_names=['Y'],
+                       op_version=opset)
+        rewrite_onx = node.to_onnx(
+            inputs={'X': FloatTensorType()},
+            outputs={'Y': FloatTensorType()},
+            target_opset=opset)
+        onx = onnx_rewrite_operator(onx, 'Reciprocal', rewrite_onx)
+
+    return onx
+
+
 def add_loss_output(onx, score_name='squared_error',
                     loss_name='loss', label_name='label',
-                    weight_name=None,
-                    penalty=None, **kwargs):
+                    weight_name=None, penalty=None,
+                    output_index=None, **kwargs):
     """
     Modifies an ONNX graph to add operators to score and allow training.
 
@@ -228,6 +355,10 @@ def add_loss_output(onx, score_name='squared_error',
         or `{ weight_name: beta}`,
         it adds a L1 and/or L2 penalty to one input or initializer,
         penalty = :math:`|w| \\alpha + w^2 \\beta`
+    :param output_index: the output used to compute the loss,
+        if None, the function assumes there is only one output,
+        it must be specified if there are more than 1,
+        it can be an integer or a string (output name)
     :param kwargs: additional arguments for losses (see below)
     :return: modified graph
 
@@ -241,6 +372,11 @@ def add_loss_output(onx, score_name='squared_error',
       is not None
     * `'elastic'`: mixture of losses, kwargs must define
       *l1_weight* and *l2_weight*, undefined, default value are 0.5
+    * `'log(yt, yp)'`: log loss :math:`(1-yt)\\log(1-yp) - yt\\log(yp)`,
+        this only works for a binary classification where *yp* is the
+        predicted probability, *yt* is the expected probability.
+        *yt* is expected to be binary, *yp* is a matrix with two
+        columns, the sum on every line is 1.
 
     See example :ref:`l-orttraining-nn-gpu`.
     Next example shows the loss with L1 and L2 loss.
@@ -311,11 +447,45 @@ def add_loss_output(onx, score_name='squared_error',
 
         print("DOT-SECTION", OnnxInference(onx_loss).to_dot())
     """
-    outputs = onx.graph.output
-    if len(outputs) != 1:
-        raise ValueError(  # pragma: no cover
-            "Unable to guess the output to compare to the "
-            "expacted labels among %r." % (o.name for o in outputs))
+    from mlprodict.onnx_tools.optim import onnx_remove_node_unused
+
+    # rename every intermediate output call label
+    def _replace(ens):
+        for i in range(len(ens)):  # pylint: disable=C0200
+            if ens[i] == 'label':
+                ens[i] = '_label_'
+
+    for node in onx.graph.node:
+        if "_label_" in node.input or "_label_" in node.output:
+            raise RuntimeError(  # pragma: no cover
+                "One intermediate result contains '_label_'. "
+                "It should be removed manually.\n%r" % node)
+        _replace(node.input)
+        _replace(node.output)
+
+    if output_index is None:
+        if len(onx.graph.output) != 1:
+            raise ValueError(  # pragma: no cover
+                "Unable to guess the output to compare to the "
+                "expacted labels among %r." % (
+                    [o.name for o in onx.graph.output]))
+        outputs = onx.graph.output
+        output_index = 0
+    elif isinstance(output_index, int):
+        outputs = [onx.graph.output[output_index]]
+    elif isinstance(output_index, str):
+        outputs = [(i, o) for i, o in enumerate(onx.graph.output)
+                   if o.name == output_index]
+        if len(outputs) != 1:
+            raise ValueError(  # pragma: no cover
+                "Unable to find output %r in %r." % (
+                    output_index, [o.name for o in onx.graph.output]))
+        output_index = outputs[0][0]
+        outputs = [outputs[0][1]]
+    else:
+        raise TypeError(  # pragma: no cover
+            "output_index must be an integer or a str not %r."
+            "" % type(output_index))
 
     existing_names = []
     for node in onx.graph.node:
@@ -323,10 +493,15 @@ def add_loss_output(onx, score_name='squared_error',
         existing_names.extend(node.input)
     existing_names = set(existing_names)
 
-    output_name = onx.graph.output[0].name
-    elem = onx.graph.output[0].type.tensor_type.elem_type
+    output_onx = onx.graph.output[output_index]
+    output_name = output_onx.name
+    elem = output_onx.type.tensor_type.elem_type
+    if elem == 0:
+        raise TypeError(  # pragma: no cover
+            "Unable to guess input tensor type from %r."
+            "" % output_onx)
     shape = []
-    for d in onx.graph.output[0].type.tensor_type.shape.dim:
+    for d in output_onx.type.tensor_type.shape.dim:
         shape.append(d.dim_value if d.dim_value > 0 else None)
 
     if score_name in ('squared_error', 'l2'):
@@ -339,6 +514,11 @@ def add_loss_output(onx, score_name='squared_error',
             weight_name, loss_name)
     elif score_name == 'elastic':
         inits, inputs, nodes, outputs = _loss_elastic(
+            existing_names, elem, shape, output_name, label_name,
+            weight_name, loss_name, **kwargs)
+    elif score_name == 'log':
+        shape = (None, 1)
+        inits, inputs, nodes, outputs = _loss_log(
             existing_names, elem, shape, output_name, label_name,
             weight_name, loss_name, **kwargs)
     else:
@@ -388,7 +568,7 @@ def add_loss_output(onx, score_name='squared_error',
         list(onx.graph.node) + nodes,
         onx.graph.name,
         list(onx.graph.input) + inputs,
-        outputs + list(onx.graph.output),
+        outputs + [onx.graph.output[output_index]],
         inits)
     onnx_model = make_model(graph)
     onnx_model.ir_version = onx.ir_version
@@ -407,23 +587,4 @@ def add_loss_output(onx, score_name='squared_error',
         op_set = onnx_model.opset_import.add()  # pylint: disable=E1101
         op_set.domain = oimp.domain
         op_set.version = oimp.version
-    return onnx_model
-
-
-def get_train_initializer(onx):
-    """
-    Returns the list of initializers to train.
-
-    :return: dictionary `{name: (value, tensor)}`
-
-    The function walk through the list of initializers and
-    returns all tensors with elements from types float or double.
-    """
-    res = OrderedDict()
-    for init in onx.graph.initializer:
-        if init.data_type in (
-                TensorProto.FLOAT16,  # pylint: disable=E1101
-                TensorProto.FLOAT,  # pylint: disable=E1101
-                TensorProto.DOUBLE):  # pylint: disable=E1101
-            res[init.name] = (to_array(init), init)
-    return res
+    return _rewrite_op_no_grad(onnx_remove_node_unused(onnx_model))

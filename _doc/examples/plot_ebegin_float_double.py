@@ -68,7 +68,7 @@ import matplotlib.pyplot as plt
 
 def area_mismatch_rule(N, delta, factor, rule=None):
     if rule is None:
-        def rule(t): return numpy.float32(t)
+        rule = lambda t: numpy.float32(t)
     xst = []
     yst = []
     xsf = []

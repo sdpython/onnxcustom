@@ -26,6 +26,20 @@ from onnxcustom.utils.onnxruntime_helper import device_to_providers
 
 class TestOrtTrainingForwardBackward(ExtTestCase):
 
+    def setUp(self):
+        logger = logging.getLogger('skl2onnx')
+        logger.setLevel(logging.WARNING)
+        logger = logging.getLogger('onnxcustom')
+        logger.setLevel(logging.WARNING)
+        logging.basicConfig(level=logging.WARNING)
+
+    def tearDown(self):
+        logger = logging.getLogger('skl2onnx')
+        logger.setLevel(logging.WARNING)
+        logger = logging.getLogger('onnxcustom')
+        logger.setLevel(logging.WARNING)
+        logging.basicConfig(level=logging.WARNING)
+
     def forward_no_training(self, exc=None, verbose=False):
         if exc is None:
             exc = __name__ != '__main__'
@@ -401,4 +415,4 @@ class TestOrtTrainingForwardBackward(ExtTestCase):
 
 if __name__ == "__main__":
     # TestOrtTrainingForwardBackward().forward_no_training(verbose=True)
-    unittest.main(verbosity=2)
+    unittest.main(verbosity=2, failfast=True)

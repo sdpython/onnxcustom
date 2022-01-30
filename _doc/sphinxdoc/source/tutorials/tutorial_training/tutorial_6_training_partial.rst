@@ -40,7 +40,7 @@ another to compute the gradient. It implements *forward* and *backward*
 as explained in section :ref:`l-orttraining-second-api`.
 
 In addition the class holds three attributes defining the loss, its gradient,
-the penalty, its gradient, a learning rate possibly with momentum.
+the regularization, its gradient, a learning rate possibly with momentum.
 They are not implemented in :epkg:`onnxruntime-training`.
 That's why they are part of this package.
 
@@ -67,7 +67,7 @@ That's why they are part of this package.
   to penalize the weights, it could be seen as an extension
   of the loss but this design seemed more simple as it does not mix
   the gradient applied to the output and the gradient due to the
-  penalty, the most simple penalty is no penalty with
+  regularization, the most simple regularization is no regularization with
   :class:`NoLearningPenalty
   <onnxcustom.training.sgd_learning_penalty.NoLearningPenalty>`,
   but it could be L1 or L2 penalty as well with :class:`ElasticLearningPenalty
@@ -76,7 +76,7 @@ That's why they are part of this package.
 Following graph summarizes how these pieces are gathered altogether.
 Blue piece is implemented by :epkg:`onnxruntime-training`. Green pieces
 represents the three ONNX graphs needed to compute the loss and its gradient,
-the penalty, the weight update.
+the regularization, the weight update.
 
 .. image:: images/onnxfwbwloss.png
 
@@ -85,7 +85,7 @@ compare to what :epkg:`pytorch` does. The main reason is :class:`torch.Tensor`
 supports matrix operations and class :epkg:`OrtValue` does not.
 They can only be manipulated through ONNX graph and :epkg:`InferenceSession`.
 These three attributes hide ONNX graph and :epkg:`InferenceSession` to compute
-loss, penalty and their gradient, and to update the weights accordingly.
+loss, regularization and their gradient, and to update the weights accordingly.
 These three classes all implement method `build_onnx_function` which
 creates the ONNX graph based on the argument the classes were
 initialized with.
@@ -107,21 +107,42 @@ And train losses:
 
     losses = train_session.train_losses_
 
+Method :meth:`save_onnx_graph
+<onnxcustom.training._base.BaseOnnxClass.save_onnx_graph>`
+exports all graphs used by a model. It can be saved on disk
+or just serialized in memory.
 Next examples show that in practice.
 
 Cache
 +++++
 
 Base class :class:`BaseLearningOnnx
-<onnxcustom.training.base_onnx_function.BaseLearningOnnx>` implements
+<onnxcustom.training._base_onnx_function.BaseLearningOnnx>` implements
 methods :meth:`_bind_input_ortvalue
-<onnxcustom.training.base_onnx_function.BaseLearningOnnx._bind_input_ortvalue>`
+<onnxcustom.training._base_onnx_function.BaseLearningOnnx._bind_input_ortvalue>`
 and :meth:`_bind_output_ortvalue
-<onnxcustom.training.base_onnx_function.BaseLearningOnnx._bind_output_ortvalue>`
+<onnxcustom.training._base_onnx_function.BaseLearningOnnx._bind_output_ortvalue>`
 used by the three components mentioned above. They cache the binded pointers
 (the value returns by `c_ortvalue.data_ptr()` and do not bind again
 if the method is called again with a different `OrtValue` but a same pointer
 returned by `data_ptr()`.
+
+Binary classification
++++++++++++++++++++++
+
+Probabilities are computed from raw scores with a function such as the
+`sigmoid function <https://en.wikipedia.org/wiki/Sigmoid_function>`_.
+A binary function produces two probilities: :math:`sigmoid(s)`
+:math:`(1 - sigmoid(s))` where *s* is the raw score. The associated loss
+function is usually the log loss: :math:`loss(y, X) =
+(1-y) \log(1-p(s)) + y \log p(s)` where *y* is the expected class (0 or 1),
+*s=s(X)* is the raw score, *p(s)* is the probability.
+We could compute the gradient of the loss
+against the probability and let :epkg:`onnxruntime-training` handle the
+computation of the gradient from the probability to the input.
+However, the gradient of the loss against the raw score can easily be
+expressed as :math:`grad(loss(y, s)) = p(s) - y`. The second
+option is implemented in example :ref:`l-orttraining-benchmark-fwbw-cls`.
 
 Examples
 ++++++++
@@ -139,3 +160,5 @@ with ONNX and :epkg:`onnxruntime-training`.
     ../gyexamples/plot_orttraining_nn_gpu_fwbw
     ../gyexamples/plot_orttraining_nn_gpu_fwbw_nesterov
     ../gyexamples/plot_orttraining_benchmark_fwbw
+    ../gyexamples/plot_orttraining_benchmark_fwbw_cls
+    ../gyexamples/plot_benchmark_onnx_function

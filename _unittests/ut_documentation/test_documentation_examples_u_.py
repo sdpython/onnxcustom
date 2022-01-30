@@ -7,7 +7,7 @@ import sys
 import importlib
 import subprocess
 from datetime import datetime
-from pyquickhelper.pycode import skipif_circleci, ExtTestCase
+from pyquickhelper.pycode import skipif_circleci, ExtTestCase, skipif_appveyor
 
 
 def import_source(module_file_path, module_name):
@@ -27,6 +27,7 @@ def import_source(module_file_path, module_name):
 class TestDocumentationExampleU_(ExtTestCase):
 
     @skipif_circleci('too long')
+    @skipif_appveyor("too long")
     def test_documentation_examplesU_(self):
 
         this = os.path.abspath(os.path.dirname(__file__))

@@ -11,7 +11,7 @@ try:
     import onnxruntime.capi.ort_trainer as ortt
 except ImportError:
     ortt = None
-from pyquickhelper.pycode import skipif_circleci, ExtTestCase
+from pyquickhelper.pycode import skipif_circleci, ExtTestCase, skipif_appveyor
 from pyquickhelper.texthelper import compare_module_version
 from mlprodict import __version__ as mlp_version
 
@@ -38,7 +38,8 @@ class TestDocumentationExampleBenchmark(ExtTestCase):
     @unittest.skipIf(
         ortt is None, reason="onnxruntime-training not installed.")
     @skipif_circleci("stuck")
-    def test_documentation_examples_training(self):
+    @skipif_appveyor("too long")
+    def test_documentation_examples(self):
 
         this = os.path.abspath(os.path.dirname(__file__))
         onxc = os.path.normpath(os.path.join(this, '..', '..'))
@@ -53,6 +54,8 @@ class TestDocumentationExampleBenchmark(ExtTestCase):
         tested = 0
         for name in sorted(found):
             if 'benchmark' not in name:
+                continue
+            if 'orttraining' in name:
                 continue
             if not name.startswith("plot_") or not name.endswith(".py"):
                 continue

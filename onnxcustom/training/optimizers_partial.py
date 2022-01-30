@@ -14,7 +14,7 @@ from ..utils.onnx_function import function_onnx_graph
 from ..utils.print_helper import str_ortvalue
 from ..utils.orttraining_helper import get_train_initializer
 from .ortgradient import OrtGradientForwardBackward
-from .base_estimator import BaseEstimator
+from ._base_estimator import BaseEstimator
 from .sgd_learning_loss import BaseLearningLoss
 from .sgd_learning_penalty import BaseLearningPenalty
 from .data_loader import OrtDataLoader
@@ -222,7 +222,7 @@ class OrtGradientForwardBackwardOptimizer(BaseEstimator):
         # weight update
         self.learning_rate.build_onnx_function(opset, self.device, n)
 
-        # penalty
+        # regularization
         self.learning_penalty.build_onnx_function(opset, self.device, n)
 
         # zero
@@ -279,7 +279,8 @@ class OrtGradientForwardBackwardOptimizer(BaseEstimator):
                 "weights_to_train=%r", self.weights_to_train)
             logger.info(
                 "[OrtGradientForwardBackwardOptimizer.fit] "
-                "device=%r", self.device)
+                "device=%r|%r",
+                self.device.device_id(), self.device.device_type())
             if logger is not None:
                 logger.info(
                     "[OrtGradientForwardBackwardOptimizer.fit] "
@@ -341,7 +342,7 @@ class OrtGradientForwardBackwardOptimizer(BaseEstimator):
         else:
             loop = range(self.max_iter)
 
-        train_losses = []
+        self.train_losses_ = []
         val_losses = []
         kinds = ['weight', 'grad'] if self.needs_grad else ['weight']
         for it in loop:
@@ -353,12 +354,16 @@ class OrtGradientForwardBackwardOptimizer(BaseEstimator):
                 loop.set_description(
                     "loss=%1.3g lr=%1.3g" % (  # pylint: disable=E1101,E1307
                         loss, lr))  # pylint: disable=E1101,E1307
-            train_losses.append(loss)
+            if logger is not None:
+                logger.info(
+                    "[OrtGradientForwardBackwardOptimizer.fit] "
+                    "lr value=%r", lr)
+
+            self.train_losses_.append(loss)
             if (data_loader_val is not None and
                     (it + 1) % self.validation_every == 0):
                 val_losses.append(
                     self._evaluation(data_loader_val, self.get_full_state()))
-        self.train_losses_ = train_losses
         self.validation_losses_ = (
             None if data_loader_val is None else val_losses)
 
@@ -405,6 +410,10 @@ class OrtGradientForwardBackwardOptimizer(BaseEstimator):
                 prediction_cache_shape is not None and
                 ortx_shape == prediction_cache_shape)
 
+            if logger is not None:
+                logger.debug(
+                    "[OrtGradientForwardBackwardOptimizer._iteration] forward")
+
             # forward
             if prediction_cache_shape is None or same_shape:
                 prediction_cache = None
@@ -415,13 +424,33 @@ class OrtGradientForwardBackwardOptimizer(BaseEstimator):
             prediction_cache = prediction
             prediction_cache_shape = ortx_shape
 
+            if logger is not None:
+                logger.debug(
+                    "[OrtGradientForwardBackwardOptimizer._iteration] "
+                    "loss types=%r,%r",
+                    orty.data_type(), prediction[0].data_type())
+
             # loss
             loss, loss_gradient = self.learning_loss.loss_gradient(
                 self.device, orty, prediction[0], weight=ortw)
+
+            if logger is not None:
+                logger.debug(
+                    "[OrtGradientForwardBackwardOptimizer._iteration] "
+                    "loss=%g has_weight=%r",
+                    loss.numpy(), ortw is not None)
+
             n = len(state) - n_weights
             loss = self.learning_penalty.penalty_loss(
                 self.device, loss, *state[n:])
+
             cpu_loss = loss.numpy()
+
+            if logger is not None:
+                logger.debug(
+                    "[OrtGradientForwardBackwardOptimizer._iteration] "
+                    "cpu_loss=%r", cpu_loss)
+
             if numpy.isinf(cpu_loss) or numpy.isnan(cpu_loss):
                 raise ConvergenceError(
                     "Loss is nan, learning_rate=%r, "
@@ -445,6 +474,7 @@ class OrtGradientForwardBackwardOptimizer(BaseEstimator):
                     "%r != %r." % (len(gradient), len(state)))
 
             n = len(state) - n_weights
+
             for i in range(n, len(state)):
                 self.learning_penalty.update_weights(
                     i - n, self.device, state[i])
@@ -456,7 +486,7 @@ class OrtGradientForwardBackwardOptimizer(BaseEstimator):
             if logger is not None:
                 logger.debug(
                     "[OrtGradientForwardBackwardOptimizer._iteration] "
-                    "loss=%g", cpu_loss)
+                    "loss=%g n_weights=%d", cpu_loss, n)
                 for i in range(n, len(state)):
                     logger.debug(
                         "[OrtGradientForwardBackwardOptimizer._iteration] "
@@ -479,7 +509,7 @@ class OrtGradientForwardBackwardOptimizer(BaseEstimator):
             state[0] = ortx
 
             if logger is not None:
-                logger.debug(
+                logger.debug(  # pragma: no cover
                     "[OrtGradientForwardBackwardOptimizer._evaluation] "
                     "batch %d", ib)
 
@@ -488,7 +518,7 @@ class OrtGradientForwardBackwardOptimizer(BaseEstimator):
                 self.device, orty, prediction[0])
             cpu_loss = loss.numpy()
             if numpy.isinf(cpu_loss) or numpy.isnan(cpu_loss):
-                raise ConvergenceError(
+                raise ConvergenceError(  # pragma: no cover
                     "Loss is nan, "
                     "the evaluation has failed "
                     "(past losses=%r)." %

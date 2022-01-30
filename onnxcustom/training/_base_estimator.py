@@ -7,10 +7,12 @@ from onnxruntime.capi._pybind_state import (  # pylint: disable=E0611
     OrtDevice as C_OrtDevice)
 from ..utils.onnxruntime_helper import (
     get_ort_device, ort_device_to_string)
+from ._base import BaseOnnxClass
+from ._base_onnx_function import BaseLearningOnnx
 from .sgd_learning_rate import BaseLearningRate
 
 
-class BaseEstimator:
+class BaseEstimator(BaseOnnxClass):
     """
     Base class for optimizers.
     Implements common methods such `__repr__`.
@@ -43,7 +45,7 @@ class BaseEstimator:
             if k not in self.__dict__:
                 continue  # pragma: no cover
             ov = getattr(self, k)
-            if isinstance(ov, BaseLearningRate):
+            if isinstance(ov, BaseLearningOnnx):
                 ps.append("%s=%s" % (k, repr(ov)))
             elif isinstance(ov, C_OrtDevice):
                 ps.append("%s=%r" % (k, ort_device_to_string(ov)))

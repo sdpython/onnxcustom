@@ -214,6 +214,46 @@ data.append(obs)
 
 
 ###################################
+# Fifth implementation is equivalent to the previous one
+# but does not copy anything.
+
+print('ort-run-inplace')
+sess = InferenceSession(onx.SerializeToString(),
+                        providers=['CPUExecutionProvider'])
+bind = SessionIOBinding(sess._sess)
+ort_device = C_OrtDevice(C_OrtDevice.cpu(), C_OrtDevice.default_memory(), 0)
+
+Y = sess.run(None, {'X': X})[0]
+bX = X.copy()
+bY = Y.copy()
+
+bind.bind_input('X', ort_device, numpy.float32, bX.shape,
+                bX.__array_interface__['data'][0])
+bind.bind_output('variable', ort_device, numpy.float32, bY.shape,
+                 bY.__array_interface__['data'][0])
+ortvalues = bind.get_outputs()
+
+
+def run_with_iobinding_no_copy(sess, bX, bY, X, bind, ortvalues):
+    if X.__array_interface__['strides'] is not None:
+        raise RuntimeError("onnxruntime only supports contiguous arrays.")
+    # bX[:, :] = X[:, :]
+    sess._sess.run_with_iobinding(bind, None)
+    return bY
+
+
+obs = measure_time(
+    lambda: run_with_iobinding_no_copy(
+        sess, bX, bY, X, bind, ortvalues),
+    context=dict(run_with_iobinding_no_copy=run_with_iobinding_no_copy, X=X,
+                 sess=sess, bind=bind, ortvalues=ortvalues, bX=bX, bY=bY),
+    repeat=repeat, number=number)
+
+obs['name'] = 'ort-run-inplace'
+data.append(obs)
+
+
+###################################
 # Final
 # +++++
 

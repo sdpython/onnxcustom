@@ -3,7 +3,9 @@
 @file
 @brief Gradient with :epkg:`onnxruntime-training` forward backward.
 """
+import os
 import logging
+import warnings
 from io import BytesIO
 import onnx
 from onnx.numpy_helper import to_array
@@ -122,6 +124,9 @@ class OrtGradientForwardBackward:
                 "You shoud use function onnx_rename_weights to do that "
                 "before calling this class." % self.weights_to_train)
         set_weights = set(self.weights_to_train)
+        if len(set_weights) != len(self.weights_to_train):
+            raise ValueError(  # pragma: no cover
+                "One weight is not unique in %r." % self.weights_to_train)
         found = []
         for i in self.onnx_model.graph.initializer:
             if i.name not in set_weights:
@@ -130,7 +135,9 @@ class OrtGradientForwardBackward:
         if len(found) != len(self.weights_to_train):
             raise ValueError(
                 "One weight name in self.weights_to_train was not found in "
-                "the initializers %r." % (self.weights_to_train, ))
+                "the initializers %r found=%r init names=%r." % (
+                    self.weights_to_train, found,
+                    [i.name for i in self.onnx_model.graph.initializer]))
         if found != self.weights_to_train:
             raise ValueError(
                 "List of weights to train must be sorted and follow the "
@@ -500,6 +507,38 @@ class OrtGradientForwardBackwardFunction:
     def __init__(self):
         self.states_ = []
         self.saved_tensors_ = None
+
+    @classmethod
+    def save_onnx_graph(cls, folder, prefix=None, suffix=None):
+        """
+        Saves onnx graph stored in this class.
+        """
+        if prefix is None:
+            prefix = ''  # pragma: no cover
+        if suffix is None:
+            suffix = ''  # pragma: no cover
+        if isinstance(folder, str) and not os.path.exists(folder):
+            raise FileNotFoundError(  # pragma: no cover
+                "Folder %r does not exist." % folder)
+        saved = {}
+        for k, v in cls.__dict__.items():
+            if hasattr(v, "SerializeToString"):
+                if isinstance(folder, str):
+                    name = "%s%s%s.%s.onnx" % (
+                        prefix, cls.__name__, suffix, k)
+                    filename = os.path.join(folder, name)
+                    if os.path.exists(filename):
+                        warnings.warn(  # pragma: no cover
+                            "Filename %r already exists." % filename)
+                    with open(filename, "wb") as f:
+                        f.write(v.SerializeToString())
+                    saved[k] = filename
+                else:
+                    saved[k] = v.SerializeToString()
+            elif hasattr(v, "save_onnx_graph"):
+                saved[k] = v.save_onnx_graph(
+                    folder, prefix=prefix, suffix="%s.%s" % (suffix, k))
+        return saved
 
     @staticmethod
     def device_name(device):

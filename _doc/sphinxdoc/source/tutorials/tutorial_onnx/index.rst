@@ -15,3 +15,4 @@ some of challenges faced when moving to ONNX in production.
     concepts
     python
     challenges
+    onnxops

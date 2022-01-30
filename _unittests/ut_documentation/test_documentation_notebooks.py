@@ -5,8 +5,7 @@
 import os
 import unittest
 from pyquickhelper.loghelper import fLOG
-from pyquickhelper.pycode import ExtTestCase, skipif_circleci
-from pyquickhelper.ipythonhelper import test_notebook_execution_coverage
+from pyquickhelper.pycode import ExtTestCase, skipif_circleci, skipif_appveyor
 import onnxcustom
 
 
@@ -17,7 +16,9 @@ class TestDocumentationNotebooksPython(ExtTestCase):
         self.assertTrue(jyquickhelper is not None)
 
     @skipif_circleci("stuck")
+    @skipif_appveyor("too long")
     def test_notebook_artificiel(self):
+        from pyquickhelper.ipythonhelper import test_notebook_execution_coverage
         fLOG(
             __file__,
             self._testMethodName,

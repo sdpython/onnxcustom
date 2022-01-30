@@ -1,4 +1,6 @@
 
+.. _l-tutorials:
+
 Tutorials
 =========
 

@@ -53,7 +53,7 @@ optimized weights.
 
 :epkg:`onnxruntime-training` does not implement loss functions.
 That must be done independently. That's what function
-:func:`onnxcustom.utils.orttraining_helper.add_loss_output>` does.
+:func:`onnxcustom.utils.orttraining_helper.add_loss_output` does.
 It implements a couple of usual losses in ONNX.
 Another function :func:`onnxcustom.utils.orttraining_helper.get_train_initializer`
 guesses all the coefficients of an ONNX graph if the user does not specify any.
@@ -166,10 +166,10 @@ to be complete.
   <onnxcustom.training.sgd_learning_rate.LearningRateSGD>` or
   something more complex such as :class:`LearningRateSGDNesterov
   <onnxcustom.training.sgd_learning_rate.LearningRateSGDNesterov>`.
-* **a penalty applied to the weight**, it could be seen as an extension
+* **a regularization applied to the weight**, it could be seen as an extension
   of the loss but this design seemed more simple as it does not mix
   the gradient applied to the output and the gradient due to the
-  penalty, the most simple penalty is no penalty with
+  regularization, the most simple regularization is no regularization with
   :class:`NoLearningPenalty
   <onnxcustom.training.sgd_learning_penalty.NoLearningPenalty>`,
   but it could be L1 or L2 penalty as well with :class:`ElasticLearningPenalty

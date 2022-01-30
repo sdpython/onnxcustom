@@ -1,10 +1,11 @@
 """
-@brief      test log(time=8s)
+@brief      test log(time=9s)
 """
 import os
 import unittest
 import io
 import pickle
+import logging
 from pyquickhelper.pycode import ExtTestCase, get_temp_folder
 import numpy
 from onnx.helper import set_model_props
@@ -23,6 +24,12 @@ except ImportError:
 
 
 class TestOptimizers(ExtTestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        logger = logging.getLogger('skl2onnx')
+        logger.setLevel(logging.WARNING)
+        logging.basicConfig(level=logging.WARNING)
 
     @unittest.skipIf(TrainingSession is None, reason="not training")
     def test_ort_gradient_optimizers_use_numpy(self):
@@ -166,7 +173,7 @@ class TestOptimizers(ExtTestCase):
                       black_op={'LinearRegressor'})
         set_model_props(onx, {'info': 'unit test'})
 
-        # no penalty
+        # no regularization
         onx_loss = add_loss_output(
             onx, weight_name='weight', score_name='elastic',
             l1_weight=0.1, l2_weight=0.9)

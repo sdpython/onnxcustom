@@ -26,7 +26,7 @@ BaseEstimator
 
 Ancestor to both classes wrapping :epkg:`onnxruntime` API.
 
-.. autosignature:: onnxcustom.training.base_estimator.BaseEstimator
+.. autosignature:: onnxcustom.training._base_estimator.BaseEstimator
     :members:
 
 Exceptions
@@ -51,6 +51,8 @@ be combination of L1, L2 losses and L1, L2 penalties.
 .. autosignature:: onnxcustom.utils.orttraining_helper.add_loss_output
 
 .. autosignature:: onnxcustom.utils.orttraining_helper.get_train_initializer
+
+.. autosignature:: onnxcustom.utils.onnx_rewriter.onnx_rewrite_operator
 
 .. _l-api-prt-gradient-optimizer:
 
@@ -100,11 +102,14 @@ LearningLoss
 .. autosignature:: onnxcustom.training.sgd_learning_loss.ElasticLearningLoss
     :members:
 
+.. autosignature:: onnxcustom.training.sgd_learning_loss.NegLogLearningLoss
+    :members:
+
 .. autosignature:: onnxcustom.training.sgd_learning_loss.SquareLearningLoss
     :members:
 
-Loss function
-+++++++++++++
+Loss functions
+++++++++++++++
 
 .. autosignature:: onnxcustom.utils.onnx_function.function_onnx_graph
 
