@@ -19,5 +19,5 @@ That's the difficult part.
 .. toctree::
     :maxdepth: 1
 
-    ../gyexamples/plot_pextend_python_runtime
-    ../gyexamples/plot_qextend_onnxruntime
+    ../../gyexamples/plot_pextend_python_runtime
+    ../../gyexamples/plot_qextend_onnxruntime

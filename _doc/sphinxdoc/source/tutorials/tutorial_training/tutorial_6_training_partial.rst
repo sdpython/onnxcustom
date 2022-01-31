@@ -156,9 +156,9 @@ with ONNX and :epkg:`onnxruntime-training`.
 .. toctree::
     :maxdepth: 1
 
-    ../gyexamples/plot_orttraining_linear_regression_fwbw
-    ../gyexamples/plot_orttraining_nn_gpu_fwbw
-    ../gyexamples/plot_orttraining_nn_gpu_fwbw_nesterov
-    ../gyexamples/plot_orttraining_benchmark_fwbw
-    ../gyexamples/plot_orttraining_benchmark_fwbw_cls
-    ../gyexamples/plot_benchmark_onnx_function
+    ../../gyexamples/plot_orttraining_linear_regression_fwbw
+    ../../gyexamples/plot_orttraining_nn_gpu_fwbw
+    ../../gyexamples/plot_orttraining_nn_gpu_fwbw_nesterov
+    ../../gyexamples/plot_orttraining_benchmark_fwbw
+    ../../gyexamples/plot_orttraining_benchmark_fwbw_cls
+    ../../gyexamples/plot_benchmark_onnx_function

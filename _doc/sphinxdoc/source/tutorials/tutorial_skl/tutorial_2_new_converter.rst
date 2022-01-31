@@ -29,11 +29,11 @@ Following section shows how to create a custom converter.
 .. toctree::
     :maxdepth: 1
 
-    ../gyexamples/plot_icustom_converter
-    ../gyexamples/plot_jcustom_syntax
-    ../gyexamples/plot_kcustom_converter_wrapper
-    ../gyexamples/plot_lcustom_options
-    ../gyexamples/plot_mcustom_parser
-    ../gyexamples/plot_mcustom_parser_dataframe
-    ../gyexamples/plot_catwoe_transformer
-    ../gyexamples/plot_woe_transformer
+    ../../gyexamples/plot_icustom_converter
+    ../../gyexamples/plot_jcustom_syntax
+    ../../gyexamples/plot_kcustom_converter_wrapper
+    ../../gyexamples/plot_lcustom_options
+    ../../gyexamples/plot_mcustom_parser
+    ../../gyexamples/plot_mcustom_parser_dataframe
+    ../../gyexamples/plot_catwoe_transformer
+    ../../gyexamples/plot_woe_transformer
