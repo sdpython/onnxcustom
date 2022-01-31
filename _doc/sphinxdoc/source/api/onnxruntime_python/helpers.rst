@@ -41,7 +41,7 @@ Frequent functions
 Python Wrapper OrtDevice
 ++++++++++++++++++++++++
 
-.. autoclass:: onnxruntime.capi._pybind_state.OrtDevice
+.. autoclass:: onnxruntime.OrtDevice
     :members:
     :undoc-members:
 
