@@ -54,8 +54,8 @@ class BaseLearningRate(BaseLearningOnnx):
     def __repr_extended__(self):
         return (
             ', value=%r' % self.value
-            if hasattr(self, 'value_') and  # pylint: disable=E1101
-                self.value_ is not None else '')
+            if hasattr(self, 'value_') and self.value_ is not None  # pylint: disable=E1101
+            else '')
 
     @property
     def needs_grad(self):
