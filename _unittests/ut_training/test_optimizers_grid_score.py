@@ -86,8 +86,7 @@ class TestOptimizersGrid(ExtTestCase):
         y = numpy.arange(X.shape[0]).astype(numpy.float32).reshape((-1, 1))
         y[0, 0] += 1
         y[-1, 0] += 1
-        w = (numpy.random.rand(X.shape[0]) + 1).astype(numpy.float32)
-        X_train, _, y_train, __, w_train, ___ = train_test_split(X, y, w)
+        X_train, _, y_train, __ = train_test_split(X, y)
         reg = GridSearchCV(
             SGDRegressor(max_iter=20),
             param_grid={'eta0': values})

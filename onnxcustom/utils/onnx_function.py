@@ -755,7 +755,7 @@ def _onnx_grad_sigmoid_neg_log_loss_error(target_opset=None,
     from onnx.mapping import NP_TYPE_TO_TENSOR_TYPE
     from skl2onnx.algebra.onnx_ops import (
         OnnxSub, OnnxMul, OnnxSigmoid, OnnxLog, OnnxNeg,
-        OnnxReduceMean, OnnxReshape, OnnxAdd, OnnxCast, OnnxClip)
+        OnnxReduceSum, OnnxReshape, OnnxAdd, OnnxCast, OnnxClip)
 
     p1c = OnnxSigmoid('X2', op_version=target_opset)
     p1 = OnnxClip(p1c, numpy.array([eps], dtype=dtype),
@@ -774,13 +774,18 @@ def _onnx_grad_sigmoid_neg_log_loss_error(target_opset=None,
                 op_version=target_opset),
         op_version=target_opset)
 
+    loss_neg = OnnxNeg(loss_obs, op_version=target_opset)
     if weight_name is None:
-        loss = OnnxReduceMean(loss_obs, op_version=target_opset)
+        loss = OnnxReduceSum(loss_neg, op_version=target_opset)
         grad = OnnxSub(p1, y1, op_version=target_opset,
                        output_names=['Z'])
     else:
-        loss = OnnxReduceMean(
-            OnnxMul(loss_obs, weight_name, op_version=target_opset),
+        loss = OnnxReduceSum(
+            OnnxMul(loss_neg,
+                    OnnxReshape(
+                        weight_name, numpy.array([-1, 1], dtype=numpy.int64),
+                        op_version=target_opset),
+                    op_version=target_opset),
             op_version=target_opset)
         grad = OnnxMul(
             OnnxSub(p1, y1, op_version=target_opset),
@@ -788,8 +793,7 @@ def _onnx_grad_sigmoid_neg_log_loss_error(target_opset=None,
                         op_version=target_opset),
             output_names=['Z'], op_version=target_opset)
 
-    loss_neg = OnnxNeg(loss, op_version=target_opset)
-    res = OnnxReshape(loss_neg, numpy.array([-1], numpy.int64),
+    res = OnnxReshape(loss, numpy.array([-1], numpy.int64),
                       op_version=target_opset,
                       output_names=['Y'])
 

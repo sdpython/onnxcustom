@@ -13,6 +13,7 @@ from onnxcustom import get_max_opset
 from onnxcustom.utils.onnx_function import (
     function_onnx_graph, get_supported_functions)
 from onnxcustom.utils.onnxruntime_helper import device_to_providers
+from onnxcustom.utils.onnx_rewriter import unreduced_onnx_loss
 
 
 class TestOnnxFunction(ExtTestCase):
@@ -174,6 +175,21 @@ class TestOnnxFunction(ExtTestCase):
                 x1, x2, numpy.array([1], dtype=x1.dtype))
             self.assertEqualArray(exp_loss, got[0], decimal=5)
             self.assertEqualArray(exp_grad, got[1], decimal=5)
+
+        if 'grad' in name:
+            rew = unreduced_onnx_loss(onx)
+            if verbose > 0:
+                with open(name + ".unreduced.onnx", "wb") as f:
+                    f.write(onx.SerializeToString())
+            sess = InferenceSession(rew.SerializeToString())
+            if weight_name is None:
+                got = sess.run(None, {'X1': x1, 'X2': x2})
+            else:
+                got = sess.run(None, {'X1': x1, 'X2': x2, 'weight': w})
+            score = got[0]
+            self.assertEqual(len(score.shape), 2)
+            self.assertEqual(score.shape[0], 10)
+            self.assertEqual(score.shape[1], 1)
 
     def test_loss_grad_onnx_square_error(self):
         self.common_check_2(
@@ -449,7 +465,7 @@ class TestOnnxFunction(ExtTestCase):
 
         self.common_check_2(
             "grad_sigmoid_neg_log_loss_error",
-            lambda x1, x2: (loss(x1, x2).mean(), expit(x2) - x1),
+            lambda x1, x2: (loss(x1, x2).sum(), expit(x2) - x1),
             classification=True)
 
     def test_grad_sigmoid_neg_log_loss_error_weight(self):
@@ -458,7 +474,7 @@ class TestOnnxFunction(ExtTestCase):
             pr = expit(x2)
             cl = numpy.clip(pr, eps, 1 - eps)
             lo = - (1 - x1) * numpy.log(1 - cl) - x1 * numpy.log(cl)
-            return lo * w
+            return lo * w.reshape((-1, 1))
 
         def grad(x1, x2, w):
             r = - (x1 - expit(x2)) * w.reshape((-1, 1))
@@ -467,9 +483,9 @@ class TestOnnxFunction(ExtTestCase):
         self.common_check_2(
             "grad_sigmoid_neg_log_loss_error",
             lambda x1, x2, w:
-                (loss(x1, x2, w).mean(),
+                (loss(x1, x2, w).sum(),
                  grad(x1, x2, w)),
-            classification=True, weight_name='weight')
+            classification=True, weight_name='weight', verbose=1)
 
 
 if __name__ == "__main__":
