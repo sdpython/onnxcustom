@@ -238,7 +238,7 @@ class OrtGradientForwardBackwardOptimizer(BaseEstimator):
             self._logger = None
 
     def fit(self, X, y, sample_weight=None,
-            X_val=None, y_val=None, use_numpy=False):
+            X_val=None, y_val=None):
         """
         Trains the model.
 
@@ -247,8 +247,6 @@ class OrtGradientForwardBackwardOptimizer(BaseEstimator):
         :param sample_weight: training weight or None
         :param X_val: evaluation dataset
         :param y_val: evaluation dataset
-        :param use_numpy: if True, slow iterator using numpy,
-            otherwise, minimizes copy
         :return: self
         """
         if self.training_optimizer_name != 'SGDOptimizer':
@@ -502,7 +500,6 @@ class OrtGradientForwardBackwardOptimizer(BaseEstimator):
         return numpy.array(actual_losses).mean()
 
     def _evaluation(self, data_loader, state):
-        bs = data_loader.batch_size
         logger = self._logger
         actual_losses = []
         for ib, (ortx, orty) in enumerate(data_loader.iter_ortvalue()):
@@ -525,9 +522,43 @@ class OrtGradientForwardBackwardOptimizer(BaseEstimator):
                     [float(v) for v in (
                         actual_losses if len(actual_losses) < 5
                         else actual_losses[-5:])])
-            actual_losses.append(cpu_loss / bs)
+            actual_losses.append(cpu_loss)
 
         return numpy.array(actual_losses).sum() / len(data_loader)
+
+    def score(self, X, y, sample_weight=None):
+        """
+        Trains the model.
+
+        :param X: features
+        :param y: expected output
+        :param sample_weight: training weight or None
+        :return: self
+        """
+        data_loader = OrtDataLoader(
+            X, y, sample_weight, batch_size=self.batch_size,
+            device=self.device)
+
+        state = self.get_full_state()
+        scores = numpy.empty((X.shape[0], ), dtype=X.dtype)
+        pos = 0
+        for ito in data_loader.iter_ortvalue():
+            if len(ito) == 2:
+                (ortx, orty) = ito
+                ortw = None
+            else:
+                (ortx, orty, ortw) = ito
+            state[0] = ortx
+            prediction = self.train_function_.forward(state, training=False)
+            score = self.learning_loss.loss_score(
+                self.device, orty, prediction[0], ortw)
+            np_score = score.numpy()
+            # data copy could be avoided by giving a pointer to
+            # loss score or if we could create an OrtValue from a
+            # pointer.
+            scores[pos: pos + np_score.shape[0]] = np_score
+            pos += np_score[0]
+        return scores
 
     def _create_training_session(
             self, model_onnx, weights_to_train, device):

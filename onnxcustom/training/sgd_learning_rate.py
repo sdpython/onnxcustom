@@ -52,7 +52,10 @@ class BaseLearningRate(BaseLearningOnnx):
             "This method must be overwritten.")
 
     def __repr_extended__(self):
-        return ', value=%r' % self.value
+        return (
+            ', value=%r' % self.value
+            if hasattr(self, 'value_') and  # pylint: disable=E1101
+                self.value_ is not None else '')
 
     @property
     def needs_grad(self):

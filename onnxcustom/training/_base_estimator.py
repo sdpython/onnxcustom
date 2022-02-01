@@ -37,6 +37,16 @@ class BaseEstimator(BaseOnnxClass):
             if p.name != "self" and p.kind != p.VAR_KEYWORD]
         return [(p.name, p.default) for p in parameters]
 
+    def get_params(self, deep=False):
+        """
+        Returns the list of parameters.
+        Parameter *deep* is unused.
+        """
+        ps = set(p[0] for p in self._get_param_names())
+        return {att: getattr(self, att)
+                for att in dir(self)
+                if not att.endswith('_') and att in ps}
+
     def __repr__(self):
         "Usual."
         param = self._get_param_names()

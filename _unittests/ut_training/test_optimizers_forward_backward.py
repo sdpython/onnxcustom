@@ -52,7 +52,8 @@ class TestOptimizersForwardBackward(ExtTestCase):
         logging.basicConfig(level=logging.WARNING)
 
     @unittest.skipIf(TrainingSession is None, reason="not training")
-    def test_ort_gradient_optimizers_use_numpy_zero(self):
+    @ignore_warnings(DeprecationWarning)
+    def test_ort_gradient_optimizers_zero(self):
         from onnxcustom.training.optimizers_partial import OrtGradientForwardBackwardOptimizer
         X, y = make_regression(  # pylint: disable=W0632
             100, n_features=10, bias=2, random_state=0)
@@ -71,7 +72,7 @@ class TestOptimizersForwardBackward(ExtTestCase):
         train_session = OrtGradientForwardBackwardOptimizer(onx, inits)
         self.assertIsInstance(train_session.learning_loss, SquareLearningLoss)
         self.assertRaise(lambda: train_session.get_state(), AttributeError)
-        train_session.fit(X_train, y_train, use_numpy=True)
+        train_session.fit(X_train, y_train)
         state_tensors = train_session.get_state()
         self.assertEqual(len(state_tensors), 2)
         r = repr(train_session)
@@ -82,7 +83,8 @@ class TestOptimizersForwardBackward(ExtTestCase):
         self.assertFalse(any(map(numpy.isnan, losses)))
 
     @unittest.skipIf(TrainingSession is None, reason="not training")
-    def test_ort_gradient_optimizers_use_numpy_zero_w(self):
+    @ignore_warnings(DeprecationWarning)
+    def test_ort_gradient_optimizers_zero_w(self):
         from onnxcustom.training.optimizers_partial import OrtGradientForwardBackwardOptimizer
         X, y = make_regression(  # pylint: disable=W0632
             100, n_features=10, bias=2, random_state=0)
@@ -103,7 +105,7 @@ class TestOptimizersForwardBackward(ExtTestCase):
         train_session = OrtGradientForwardBackwardOptimizer(
             onx, inits, weight_name='weight')
         self.assertRaise(lambda: train_session.get_state(), AttributeError)
-        train_session.fit(X_train, y_train, w_train, use_numpy=True)
+        train_session.fit(X_train, y_train, w_train)
         state_tensors = train_session.get_state()
         self.assertEqual(len(state_tensors), 2)
         r = repr(train_session)
@@ -114,7 +116,8 @@ class TestOptimizersForwardBackward(ExtTestCase):
         self.assertFalse(any(map(numpy.isnan, losses)))
 
     @unittest.skipIf(TrainingSession is None, reason="not training")
-    def test_ort_gradient_optimizers_use_numpy(self):
+    @ignore_warnings(DeprecationWarning)
+    def test_ort_gradient_optimizers(self):
         from onnxcustom.training.optimizers_partial import OrtGradientForwardBackwardOptimizer
         X, y = make_regression(  # pylint: disable=W0632
             100, n_features=2, bias=2, random_state=0)
@@ -133,7 +136,7 @@ class TestOptimizersForwardBackward(ExtTestCase):
         train_session = OrtGradientForwardBackwardOptimizer(
             onx, inits, enable_logging=False)
         self.assertRaise(lambda: train_session.get_state(), AttributeError)
-        train_session.fit(X_train, y_train, use_numpy=True)
+        train_session.fit(X_train, y_train)
         state_tensors = train_session.get_state()
         self.assertEqual(len(state_tensors), 2)
         r = repr(train_session)
@@ -144,7 +147,8 @@ class TestOptimizersForwardBackward(ExtTestCase):
         self.assertFalse(any(map(numpy.isnan, losses)))
 
     @unittest.skipIf(TrainingSession is None, reason="not training")
-    def test_ort_gradient_optimizers_use_numpy_w(self):
+    @ignore_warnings(DeprecationWarning)
+    def test_ort_gradient_optimizers_w(self):
         from onnxcustom.training.optimizers_partial import OrtGradientForwardBackwardOptimizer
         X, y = make_regression(  # pylint: disable=W0632
             100, n_features=2, bias=2, random_state=0)
@@ -165,7 +169,7 @@ class TestOptimizersForwardBackward(ExtTestCase):
         train_session = OrtGradientForwardBackwardOptimizer(
             onx, inits, enable_logging=False, weight_name='weight')
         self.assertRaise(lambda: train_session.get_state(), AttributeError)
-        train_session.fit(X_train, y_train, w_train, use_numpy=True)
+        train_session.fit(X_train, y_train, w_train)
         state_tensors = train_session.get_state()
         self.assertEqual(len(state_tensors), 2)
         r = repr(train_session)
@@ -176,7 +180,8 @@ class TestOptimizersForwardBackward(ExtTestCase):
         self.assertFalse(any(map(numpy.isnan, losses)))
 
     @unittest.skipIf(TrainingSession is None, reason="not training")
-    def test_ort_gradient_optimizers_use_numpy_exc(self):
+    @ignore_warnings(DeprecationWarning)
+    def test_ort_gradient_optimizers_exc(self):
         from onnxcustom.training.optimizers_partial import OrtGradientForwardBackwardOptimizer
         X, y = make_regression(  # pylint: disable=W0632
             100, n_features=2, bias=2, random_state=0)
@@ -195,11 +200,12 @@ class TestOptimizersForwardBackward(ExtTestCase):
         train_session = OrtGradientForwardBackwardOptimizer(
             onx, inits, enable_logging=False, learning_rate=1e3)
         self.assertRaise(
-            lambda: train_session.fit(X_train, y_train, use_numpy=True),
+            lambda: train_session.fit(X_train, y_train),
             ConvergenceError)
 
     @unittest.skipIf(TrainingSession is None, reason="not training")
-    def test_ort_gradient_optimizers_use_numpy_exc_w(self):
+    @ignore_warnings(DeprecationWarning)
+    def test_ort_gradient_optimizers_exc_w(self):
         from onnxcustom.training.optimizers_partial import OrtGradientForwardBackwardOptimizer
         X, y = make_regression(  # pylint: disable=W0632
             100, n_features=2, bias=2, random_state=0)
@@ -222,12 +228,12 @@ class TestOptimizersForwardBackward(ExtTestCase):
             weight_name='weight')
         self.assertRaise(
             lambda: train_session.fit(
-                X_train, y_train, w_train, use_numpy=True),
-            ConvergenceError)
+                X_train, y_train, w_train), ConvergenceError)
 
     @unittest.skipIf(TrainingSession is None, reason="not training")
     @skipif_appveyor("logging issue")
-    def test_ort_gradient_optimizers_use_numpy_log(self):
+    @ignore_warnings(DeprecationWarning)
+    def test_ort_gradient_optimizers_log(self):
         from onnxcustom.training.optimizers_partial import OrtGradientForwardBackwardOptimizer
         X, y = make_regression(  # pylint: disable=W0632
             100, n_features=2, bias=2, random_state=0)
@@ -246,14 +252,15 @@ class TestOptimizersForwardBackward(ExtTestCase):
         train_session = OrtGradientForwardBackwardOptimizer(
             onx, inits, enable_logging=True)
         res, logs = self.assertLogging(
-            lambda: train_session.fit(X_train, y_train, use_numpy=True),
+            lambda: train_session.fit(X_train, y_train),
             'onnxcustom', level=logging.DEBUG)
         self.assertTrue(res is train_session)
         self.assertIn("[OrtGradientForwardBackwardOptimizer._iteration]", logs)
 
     @unittest.skipIf(TrainingSession is None, reason="not training")
     @skipif_appveyor("logging issue")
-    def test_ort_gradient_optimizers_use_numpy_log_w(self):
+    @ignore_warnings(DeprecationWarning)
+    def test_ort_gradient_optimizers_log_w(self):
         from onnxcustom.training.optimizers_partial import OrtGradientForwardBackwardOptimizer
         X, y = make_regression(  # pylint: disable=W0632
             100, n_features=2, bias=2, random_state=0)
@@ -275,13 +282,14 @@ class TestOptimizersForwardBackward(ExtTestCase):
             onx, inits, enable_logging=True, weight_name='weight')
         res, logs = self.assertLogging(
             lambda: train_session.fit(
-                X_train, y_train, w_train, use_numpy=True),
+                X_train, y_train, w_train),
             'onnxcustom', level=logging.DEBUG)
         self.assertTrue(res is train_session)
         self.assertIn("[OrtGradientForwardBackwardOptimizer._iteration]", logs)
 
     @unittest.skipIf(TrainingSession is None, reason="not training")
-    def test_ort_gradient_optimizers_use_numpy_log_appveyor(self):
+    @ignore_warnings(DeprecationWarning)
+    def test_ort_gradient_optimizers_log_appveyor(self):
         from onnxcustom.training.optimizers_partial import OrtGradientForwardBackwardOptimizer
         X, y = make_regression(  # pylint: disable=W0632
             100, n_features=2, bias=2, random_state=0)
@@ -299,11 +307,12 @@ class TestOptimizersForwardBackward(ExtTestCase):
         inits = ['coef', 'intercept']
         train_session = OrtGradientForwardBackwardOptimizer(
             onx, inits, enable_logging=True)
-        res = train_session.fit(X_train, y_train, use_numpy=True)
+        res = train_session.fit(X_train, y_train)
         self.assertTrue(res is train_session)
 
     @unittest.skipIf(TrainingSession is None, reason="not training")
-    def test_ort_gradient_optimizers_use_numpy_log_appveyor_w(self):
+    @ignore_warnings(DeprecationWarning)
+    def test_ort_gradient_optimizers_log_appveyor_w(self):
         from onnxcustom.training.optimizers_partial import OrtGradientForwardBackwardOptimizer
         X, y = make_regression(  # pylint: disable=W0632
             100, n_features=2, bias=2, random_state=0)
@@ -323,11 +332,12 @@ class TestOptimizersForwardBackward(ExtTestCase):
         inits = ['coef', 'intercept']
         train_session = OrtGradientForwardBackwardOptimizer(
             onx, inits, enable_logging=True, weight_name='weight')
-        res = train_session.fit(X_train, y_train, w_train, use_numpy=True)
+        res = train_session.fit(X_train, y_train, w_train)
         self.assertTrue(res is train_session)
 
     @unittest.skipIf(TrainingSession is None, reason="not training")
-    def test_ort_gradient_optimizers_use_numpy_pickle(self):
+    @ignore_warnings(DeprecationWarning)
+    def test_ort_gradient_optimizers_pickle(self):
         from onnxcustom.training.optimizers_partial import OrtGradientForwardBackwardOptimizer
         X, y = make_regression(  # pylint: disable=W0632
             100, n_features=10, bias=2, random_state=0)
@@ -349,7 +359,7 @@ class TestOptimizersForwardBackward(ExtTestCase):
         st2 = io.BytesIO(st.getvalue())
         train_session1 = pickle.load(st2)
 
-        train_session1.fit(X_train, y_train, use_numpy=True)
+        train_session1.fit(X_train, y_train)
 
         st = io.BytesIO()
         pickle.dump(train_session1, st)
@@ -358,7 +368,7 @@ class TestOptimizersForwardBackward(ExtTestCase):
         state_tensors = train_session.get_state()
         self.assertEqual(len(state_tensors), 2)
 
-        train_session.fit(X_train, y_train, use_numpy=True)
+        train_session.fit(X_train, y_train)
         state_tensors = train_session.get_state()
         self.assertEqual(len(state_tensors), 2)
         r = repr(train_session)
@@ -369,7 +379,8 @@ class TestOptimizersForwardBackward(ExtTestCase):
         self.assertFalse(any(map(numpy.isnan, losses)))
 
     @unittest.skipIf(TrainingSession is None, reason="not training")
-    def test_ort_gradient_optimizers_use_numpy_pickle_w(self):
+    @ignore_warnings(DeprecationWarning)
+    def test_ort_gradient_optimizers_pickle_w(self):
         from onnxcustom.training.optimizers_partial import OrtGradientForwardBackwardOptimizer
         X, y = make_regression(  # pylint: disable=W0632
             100, n_features=10, bias=2, random_state=0)
@@ -393,7 +404,7 @@ class TestOptimizersForwardBackward(ExtTestCase):
         st2 = io.BytesIO(st.getvalue())
         train_session1 = pickle.load(st2)
 
-        train_session1.fit(X_train, y_train, w_train, use_numpy=True)
+        train_session1.fit(X_train, y_train, w_train)
 
         st = io.BytesIO()
         pickle.dump(train_session1, st)
@@ -402,7 +413,7 @@ class TestOptimizersForwardBackward(ExtTestCase):
         state_tensors = train_session.get_state()
         self.assertEqual(len(state_tensors), 2)
 
-        train_session.fit(X_train, y_train, w_train, use_numpy=True)
+        train_session.fit(X_train, y_train, w_train)
         state_tensors = train_session.get_state()
         self.assertEqual(len(state_tensors), 2)
         r = repr(train_session)
@@ -413,6 +424,7 @@ class TestOptimizersForwardBackward(ExtTestCase):
         self.assertFalse(any(map(numpy.isnan, losses)))
 
     @unittest.skipIf(TrainingSession is None, reason="not training")
+    @ignore_warnings(DeprecationWarning)
     def test_ort_gradient_optimizers_use_ort(self):
         from onnxcustom.training.optimizers_partial import OrtGradientForwardBackwardOptimizer
         X, y = make_regression(  # pylint: disable=W0632
@@ -429,7 +441,7 @@ class TestOptimizersForwardBackward(ExtTestCase):
         inits = ['coef', 'intercept']
         train_session = OrtGradientForwardBackwardOptimizer(onx, inits)
         self.assertRaise(lambda: train_session.get_state(), AttributeError)
-        train_session.fit(X_train, y_train, use_numpy=False)
+        train_session.fit(X_train, y_train)
         state_tensors = train_session.get_state()
         self.assertEqual(len(state_tensors), 2)
         r = repr(train_session)
@@ -440,6 +452,7 @@ class TestOptimizersForwardBackward(ExtTestCase):
         self.assertFalse(any(map(numpy.isnan, losses)))
 
     @unittest.skipIf(TrainingSession is None, reason="not training")
+    @ignore_warnings(DeprecationWarning)
     def test_ort_gradient_optimizers_use_ort_w(self):
         from onnxcustom.training.optimizers_partial import OrtGradientForwardBackwardOptimizer
         X, y = make_regression(  # pylint: disable=W0632
@@ -459,7 +472,7 @@ class TestOptimizersForwardBackward(ExtTestCase):
         train_session = OrtGradientForwardBackwardOptimizer(
             onx, inits, weight_name='weight')
         self.assertRaise(lambda: train_session.get_state(), AttributeError)
-        train_session.fit(X_train, y_train, w_train, use_numpy=False)
+        train_session.fit(X_train, y_train, w_train)
         state_tensors = train_session.get_state()
         self.assertEqual(len(state_tensors), 2)
         r = repr(train_session)
@@ -470,7 +483,8 @@ class TestOptimizersForwardBackward(ExtTestCase):
         self.assertFalse(any(map(numpy.isnan, losses)))
 
     @unittest.skipIf(TrainingSession is None, reason="not training")
-    def test_ort_gradient_optimizers_optimal_use_numpy(self):
+    @ignore_warnings(DeprecationWarning)
+    def test_ort_gradient_optimizers_optimal(self):
         from onnxcustom.training.optimizers_partial import OrtGradientForwardBackwardOptimizer
         X, y = make_regression(  # pylint: disable=W0632
             100, n_features=10, bias=2, random_state=0)
@@ -487,7 +501,7 @@ class TestOptimizersForwardBackward(ExtTestCase):
             onx, inits, max_iter=10,
             learning_rate=LearningRateSGD(learning_rate='optimal'))
         self.assertRaise(lambda: train_session.get_state(), AttributeError)
-        train_session.fit(X_train, y_train, use_numpy=True)
+        train_session.fit(X_train, y_train)
         state_tensors = train_session.get_state()
         self.assertEqual(len(state_tensors), 2)
         losses = train_session.train_losses_
@@ -498,7 +512,8 @@ class TestOptimizersForwardBackward(ExtTestCase):
         self.assertIn("learning_rate='optimal'", r)
 
     @unittest.skipIf(TrainingSession is None, reason="not training")
-    def test_ort_gradient_optimizers_optimal_use_numpy_w(self):
+    @ignore_warnings(DeprecationWarning)
+    def test_ort_gradient_optimizers_optimal_w(self):
         from onnxcustom.training.optimizers_partial import OrtGradientForwardBackwardOptimizer
         X, y = make_regression(  # pylint: disable=W0632
             100, n_features=10, bias=2, random_state=0)
@@ -517,7 +532,7 @@ class TestOptimizersForwardBackward(ExtTestCase):
             onx, inits, max_iter=10, weight_name='weight',
             learning_rate=LearningRateSGD(learning_rate='optimal'))
         self.assertRaise(lambda: train_session.get_state(), AttributeError)
-        train_session.fit(X_train, y_train, w_train, use_numpy=True)
+        train_session.fit(X_train, y_train, w_train)
         state_tensors = train_session.get_state()
         self.assertEqual(len(state_tensors), 2)
         losses = train_session.train_losses_
@@ -528,6 +543,7 @@ class TestOptimizersForwardBackward(ExtTestCase):
         self.assertIn("learning_rate='optimal'", r)
 
     @unittest.skipIf(TrainingSession is None, reason="not training")
+    @ignore_warnings(DeprecationWarning)
     def test_ort_gradient_optimizers_optimal_use_ort(self):
         from onnxcustom.training.optimizers_partial import OrtGradientForwardBackwardOptimizer
         X, y = make_regression(  # pylint: disable=W0632
@@ -545,7 +561,7 @@ class TestOptimizersForwardBackward(ExtTestCase):
             onx, inits, max_iter=10,
             learning_rate=LearningRateSGD(learning_rate='optimal'))
         self.assertRaise(lambda: train_session.get_state(), AttributeError)
-        train_session.fit(X_train, y_train, use_numpy=False)
+        train_session.fit(X_train, y_train)
         state_tensors = train_session.get_state()
         self.assertEqual(len(state_tensors), 2)
         r = repr(train_session)
@@ -556,6 +572,7 @@ class TestOptimizersForwardBackward(ExtTestCase):
         self.assertFalse(any(map(numpy.isnan, losses)))
 
     @unittest.skipIf(TrainingSession is None, reason="not training")
+    @ignore_warnings(DeprecationWarning)
     def test_ort_gradient_optimizers_optimal_use_ort_w(self):
         from onnxcustom.training.optimizers_partial import OrtGradientForwardBackwardOptimizer
         X, y = make_regression(  # pylint: disable=W0632
@@ -575,7 +592,7 @@ class TestOptimizersForwardBackward(ExtTestCase):
             onx, inits, max_iter=10, weight_name='weight',
             learning_rate=LearningRateSGD(learning_rate='optimal'))
         self.assertRaise(lambda: train_session.get_state(), AttributeError)
-        train_session.fit(X_train, y_train, w_train, use_numpy=False)
+        train_session.fit(X_train, y_train, w_train)
         state_tensors = train_session.get_state()
         self.assertEqual(len(state_tensors), 2)
         r = repr(train_session)
@@ -586,6 +603,7 @@ class TestOptimizersForwardBackward(ExtTestCase):
         self.assertFalse(any(map(numpy.isnan, losses)))
 
     @unittest.skipIf(TrainingSession is None, reason="not training")
+    @ignore_warnings(DeprecationWarning)
     def test_ort_gradient_optimizers_optimal_use_ort_w_absolute(self):
         from onnxcustom.training.optimizers_partial import OrtGradientForwardBackwardOptimizer
         X, y = make_regression(  # pylint: disable=W0632
@@ -608,7 +626,7 @@ class TestOptimizersForwardBackward(ExtTestCase):
         self.assertIsInstance(
             train_session.learning_loss, AbsoluteLearningLoss)
         self.assertRaise(lambda: train_session.get_state(), AttributeError)
-        train_session.fit(X_train, y_train, w_train, use_numpy=False)
+        train_session.fit(X_train, y_train, w_train)
         state_tensors = train_session.get_state()
         self.assertEqual(len(state_tensors), 2)
         r = repr(train_session)
@@ -619,6 +637,7 @@ class TestOptimizersForwardBackward(ExtTestCase):
         self.assertFalse(any(map(numpy.isnan, losses)))
 
     @unittest.skipIf(TrainingSession is None, reason="not training")
+    @ignore_warnings(DeprecationWarning)
     def test_ort_gradient_optimizers_optimal_use_ort_w_elastic(self):
         from onnxcustom.training.optimizers_partial import OrtGradientForwardBackwardOptimizer
         X, y = make_regression(  # pylint: disable=W0632
@@ -644,7 +663,7 @@ class TestOptimizersForwardBackward(ExtTestCase):
         self.assertIsInstance(
             train_session.learning_penalty, NoLearningPenalty)
         self.assertRaise(lambda: train_session.get_state(), AttributeError)
-        train_session.fit(X_train, y_train, w_train, use_numpy=False)
+        train_session.fit(X_train, y_train, w_train)
         state_tensors = train_session.get_state()
         self.assertEqual(len(state_tensors), 2)
         r = repr(train_session)
@@ -655,6 +674,7 @@ class TestOptimizersForwardBackward(ExtTestCase):
         self.assertFalse(any(map(numpy.isnan, losses)))
 
     @unittest.skipIf(TrainingSession is None, reason="not training")
+    @ignore_warnings(DeprecationWarning)
     def test_ort_gradient_optimizers_optimal_use_ort_w_elastic_penalty(self):
         from onnxcustom.training.optimizers_partial import OrtGradientForwardBackwardOptimizer
         X, y = make_regression(  # pylint: disable=W0632
@@ -682,7 +702,7 @@ class TestOptimizersForwardBackward(ExtTestCase):
         self.assertIsInstance(
             train_session.learning_penalty, ElasticLearningPenalty)
         self.assertRaise(lambda: train_session.get_state(), AttributeError)
-        train_session.fit(X_train, y_train, w_train, use_numpy=False)
+        train_session.fit(X_train, y_train, w_train)
         state_tensors = train_session.get_state()
         self.assertEqual(len(state_tensors), 2)
         r = repr(train_session)
@@ -693,7 +713,8 @@ class TestOptimizersForwardBackward(ExtTestCase):
         self.assertFalse(any(map(numpy.isnan, losses)))
 
     @unittest.skipIf(TrainingSession is None, reason="not training")
-    def test_ort_gradient_optimizers_evaluation_use_numpy(self):
+    @ignore_warnings(DeprecationWarning)
+    def test_ort_gradient_optimizers_evaluation(self):
         from onnxcustom.training.optimizers_partial import OrtGradientForwardBackwardOptimizer
         X, y = make_regression(  # pylint: disable=W0632
             100, n_features=10, bias=2)
@@ -709,7 +730,7 @@ class TestOptimizersForwardBackward(ExtTestCase):
         train_session = OrtGradientForwardBackwardOptimizer(onx, inits)
         self.assertRaise(lambda: train_session.get_state(), AttributeError)
         train_session.fit(X_train, y_train, X_val=X_test,
-                          y_val=y_test, use_numpy=True)
+                          y_val=y_test)
         state_tensors = train_session.get_state()
         self.assertEqual(len(state_tensors), 2)
         r = repr(train_session)
@@ -723,7 +744,8 @@ class TestOptimizersForwardBackward(ExtTestCase):
         self.assertFalse(any(map(numpy.isnan, losses)))
 
     @unittest.skipIf(TrainingSession is None, reason="not training")
-    def test_ort_gradient_optimizers_evaluation_use_numpy_w(self):
+    @ignore_warnings(DeprecationWarning)
+    def test_ort_gradient_optimizers_evaluation_w(self):
         from onnxcustom.training.optimizers_partial import OrtGradientForwardBackwardOptimizer
         X, y = make_regression(  # pylint: disable=W0632
             100, n_features=10, bias=2)
@@ -742,8 +764,7 @@ class TestOptimizersForwardBackward(ExtTestCase):
             onx, inits, weight_name='weight')
         self.assertRaise(lambda: train_session.get_state(), AttributeError)
         train_session.fit(
-            X_train, y_train, w_train, X_val=X_test, y_val=y_test,
-            use_numpy=True)
+            X_train, y_train, w_train, X_val=X_test, y_val=y_test)
         state_tensors = train_session.get_state()
         self.assertEqual(len(state_tensors), 2)
         r = repr(train_session)
@@ -757,6 +778,7 @@ class TestOptimizersForwardBackward(ExtTestCase):
         self.assertFalse(any(map(numpy.isnan, losses)))
 
     @unittest.skipIf(TrainingSession is None, reason="not training")
+    @ignore_warnings(DeprecationWarning)
     def test_ort_gradient_optimizers_evaluation_use_ort(self):
         from onnxcustom.training.optimizers_partial import OrtGradientForwardBackwardOptimizer
         X, y = make_regression(  # pylint: disable=W0632
@@ -773,7 +795,7 @@ class TestOptimizersForwardBackward(ExtTestCase):
         train_session = OrtGradientForwardBackwardOptimizer(onx, inits)
         self.assertRaise(lambda: train_session.get_state(), AttributeError)
         train_session.fit(X_train, y_train, X_val=X_test,
-                          y_val=y_test, use_numpy=False)
+                          y_val=y_test)
         state_tensors = train_session.get_state()
         self.assertEqual(len(state_tensors), 2)
         r = repr(train_session)
@@ -787,6 +809,7 @@ class TestOptimizersForwardBackward(ExtTestCase):
         self.assertFalse(any(map(numpy.isnan, losses)))
 
     @unittest.skipIf(TrainingSession is None, reason="not training")
+    @ignore_warnings(DeprecationWarning)
     def test_ort_gradient_optimizers_evaluation_use_ort_w(self):
         from onnxcustom.training.optimizers_partial import OrtGradientForwardBackwardOptimizer
         X, y = make_regression(  # pylint: disable=W0632
@@ -807,7 +830,7 @@ class TestOptimizersForwardBackward(ExtTestCase):
         self.assertRaise(lambda: train_session.get_state(), AttributeError)
         train_session.fit(
             X_train, y_train, w_train,
-            X_val=X_test, y_val=y_test, use_numpy=False)
+            X_val=X_test, y_val=y_test)
         state_tensors = train_session.get_state()
         self.assertEqual(len(state_tensors), 2)
         r = repr(train_session)
@@ -821,8 +844,8 @@ class TestOptimizersForwardBackward(ExtTestCase):
         self.assertFalse(any(map(numpy.isnan, losses)))
 
     @unittest.skipIf(TrainingSession is None, reason="not training")
-    @ignore_warnings(ConvergenceWarning)
-    def test_ort_gradient_optimizers_use_numpy_nn(self):
+    @ignore_warnings((ConvergenceWarning, DeprecationWarning))
+    def test_ort_gradient_optimizers_nn(self):
         from onnxcustom.training.optimizers_partial import OrtGradientForwardBackwardOptimizer
         X, y = make_regression(  # pylint: disable=W0632
             100, n_features=2, bias=2, random_state=0)
@@ -842,20 +865,18 @@ class TestOptimizersForwardBackward(ExtTestCase):
         train_session = OrtGradientForwardBackwardOptimizer(
             onx, inits, enable_logging=False)
         self.assertRaise(
-            lambda: train_session.fit(X_train, y_train, use_numpy=True),
-            ValueError)
+            lambda: train_session.fit(X_train, y_train), ValueError)
         train_session = OrtGradientForwardBackwardOptimizer(
             onx, ["A"], enable_logging=False)
         self.assertRaise(
-            lambda: train_session.fit(X_train, y_train, use_numpy=True),
-            ValueError)
+            lambda: train_session.fit(X_train, y_train), ValueError)
 
         onx = onnx_rename_weights(onx)
         set_model_props(onx, {'info': 'unit test'})
         train_session = OrtGradientForwardBackwardOptimizer(
             onx, enable_logging=False)
         self.assertRaise(lambda: train_session.get_state(), AttributeError)
-        train_session.fit(X_train, y_train, use_numpy=True)
+        train_session.fit(X_train, y_train)
         state_tensors = train_session.get_state()
         self.assertEqual(len(state_tensors), 6)
         r = repr(train_session)
@@ -866,8 +887,8 @@ class TestOptimizersForwardBackward(ExtTestCase):
         self.assertFalse(any(map(numpy.isnan, losses)))
 
     @unittest.skipIf(TrainingSession is None, reason="not training")
-    @ignore_warnings(ConvergenceWarning)
-    def test_ort_gradient_optimizers_use_numpy_nn_w(self):
+    @ignore_warnings((ConvergenceWarning, DeprecationWarning))
+    def test_ort_gradient_optimizers_nn_w(self):
         from onnxcustom.training.optimizers_partial import OrtGradientForwardBackwardOptimizer
         X, y = make_regression(  # pylint: disable=W0632
             100, n_features=2, bias=2, random_state=0)
@@ -889,22 +910,18 @@ class TestOptimizersForwardBackward(ExtTestCase):
         train_session = OrtGradientForwardBackwardOptimizer(
             onx, inits, enable_logging=False, weight_name='weight')
         self.assertRaise(
-            lambda: train_session.fit(
-                X_train, y_train, w_train, use_numpy=True),
-            ValueError)
+            lambda: train_session.fit(X_train, y_train, w_train), ValueError)
         train_session = OrtGradientForwardBackwardOptimizer(
             onx, ["A"], enable_logging=False)
         self.assertRaise(
-            lambda: train_session.fit(
-                X_train, y_train, w_train, use_numpy=True),
-            ValueError)
+            lambda: train_session.fit(X_train, y_train, w_train), ValueError)
 
         onx = onnx_rename_weights(onx)
         set_model_props(onx, {'info': 'unit test'})
         train_session = OrtGradientForwardBackwardOptimizer(
             onx, enable_logging=False, weight_name='weight')
         self.assertRaise(lambda: train_session.get_state(), AttributeError)
-        train_session.fit(X_train, y_train, w_train, use_numpy=True)
+        train_session.fit(X_train, y_train, w_train)
         state_tensors = train_session.get_state()
         self.assertEqual(len(state_tensors), 6)
         r = repr(train_session)
@@ -915,7 +932,8 @@ class TestOptimizersForwardBackward(ExtTestCase):
         self.assertFalse(any(map(numpy.isnan, losses)))
 
     @unittest.skipIf(TrainingSession is None, reason="not training")
-    def test_ort_gradient_optimizers_use_numpy_nesterov(self):
+    @ignore_warnings((ConvergenceWarning, DeprecationWarning))
+    def test_ort_gradient_optimizers_nesterov(self):
         from onnxcustom.training.optimizers_partial import OrtGradientForwardBackwardOptimizer
         X, y = make_regression(  # pylint: disable=W0632
             100, n_features=2, bias=2, random_state=0)
@@ -934,7 +952,7 @@ class TestOptimizersForwardBackward(ExtTestCase):
         train_session = OrtGradientForwardBackwardOptimizer(
             onx, inits, enable_logging=False, learning_rate='Nesterov')
         self.assertRaise(lambda: train_session.get_state(), AttributeError)
-        train_session.fit(X_train, y_train, use_numpy=True)
+        train_session.fit(X_train, y_train)
         self.assertIsInstance(train_session.learning_rate,
                               LearningRateSGDNesterov)
         state_tensors = train_session.get_state()
@@ -947,7 +965,8 @@ class TestOptimizersForwardBackward(ExtTestCase):
         self.assertFalse(any(map(numpy.isnan, losses)))
 
     @unittest.skipIf(TrainingSession is None, reason="not training")
-    def test_ort_gradient_optimizers_use_numpy_w_nesterov1(self):
+    @ignore_warnings((ConvergenceWarning, DeprecationWarning))
+    def test_ort_gradient_optimizers_w_nesterov1(self):
         from onnxcustom.training.optimizers_partial import OrtGradientForwardBackwardOptimizer
         X, y = make_regression(  # pylint: disable=W0632
             100, n_features=2, bias=2, random_state=0)
@@ -969,7 +988,7 @@ class TestOptimizersForwardBackward(ExtTestCase):
             onx, inits, enable_logging=False, weight_name='weight',
             learning_rate=LearningRateSGDNesterov(nesterov=False))
         self.assertRaise(lambda: train_session.get_state(), AttributeError)
-        train_session.fit(X_train, y_train, w_train, use_numpy=True)
+        train_session.fit(X_train, y_train, w_train)
         self.assertIsInstance(train_session.learning_rate,
                               LearningRateSGDNesterov)
         state_tensors = train_session.get_state()
@@ -982,7 +1001,8 @@ class TestOptimizersForwardBackward(ExtTestCase):
         self.assertFalse(any(map(numpy.isnan, losses)))
 
     @unittest.skipIf(TrainingSession is None, reason="not training")
-    def test_ort_gradient_optimizers_use_numpy_w_nesterov2(self):
+    @ignore_warnings((ConvergenceWarning, DeprecationWarning))
+    def test_ort_gradient_optimizers_w_nesterov2(self):
         from onnxcustom.training.optimizers_partial import OrtGradientForwardBackwardOptimizer
         X, y = make_regression(  # pylint: disable=W0632
             100, n_features=2, bias=2, random_state=0)
@@ -1004,7 +1024,7 @@ class TestOptimizersForwardBackward(ExtTestCase):
             onx, inits, enable_logging=False, weight_name='weight',
             learning_rate=LearningRateSGDNesterov(nesterov=True))
         self.assertRaise(lambda: train_session.get_state(), AttributeError)
-        train_session.fit(X_train, y_train, w_train, use_numpy=True)
+        train_session.fit(X_train, y_train, w_train)
         self.assertIsInstance(train_session.learning_rate,
                               LearningRateSGDNesterov)
         state_tensors = train_session.get_state()
@@ -1017,7 +1037,8 @@ class TestOptimizersForwardBackward(ExtTestCase):
         self.assertFalse(any(map(numpy.isnan, losses)))
 
     @unittest.skipIf(TrainingSession is None, reason="not training")
-    def test_ort_gradient_optimizers_use_numpy_pickle_w_nesterov(self):
+    @ignore_warnings((ConvergenceWarning, DeprecationWarning))
+    def test_ort_gradient_optimizers_pickle_w_nesterov(self):
         from onnxcustom.training.optimizers_partial import OrtGradientForwardBackwardOptimizer
         X, y = make_regression(  # pylint: disable=W0632
             100, n_features=10, bias=2, random_state=0)
@@ -1042,7 +1063,7 @@ class TestOptimizersForwardBackward(ExtTestCase):
         st2 = io.BytesIO(st.getvalue())
         train_session1 = pickle.load(st2)
 
-        train_session1.fit(X_train, y_train, w_train, use_numpy=True)
+        train_session1.fit(X_train, y_train, w_train)
         self.assertIsInstance(train_session1.learning_rate,
                               LearningRateSGDNesterov)
 
@@ -1053,7 +1074,7 @@ class TestOptimizersForwardBackward(ExtTestCase):
         state_tensors = train_session.get_state()
         self.assertEqual(len(state_tensors), 2)
 
-        train_session.fit(X_train, y_train, w_train, use_numpy=True)
+        train_session.fit(X_train, y_train, w_train)
         state_tensors = train_session.get_state()
         self.assertEqual(len(state_tensors), 2)
         r = repr(train_session)
@@ -1064,7 +1085,8 @@ class TestOptimizersForwardBackward(ExtTestCase):
         self.assertFalse(any(map(numpy.isnan, losses)))
 
     @unittest.skipIf(TrainingSession is None, reason="not training")
-    def test_ort_gradient_optimizers_use_numpy_pickle_w_nesterov_rate(self):
+    @ignore_warnings((ConvergenceWarning, DeprecationWarning))
+    def test_ort_gradient_optimizers_pickle_w_nesterov_rate(self):
         from onnxcustom.training.optimizers_partial import OrtGradientForwardBackwardOptimizer
         X, y = make_regression(  # pylint: disable=W0632
             100, n_features=10, bias=2, random_state=0)
@@ -1097,7 +1119,7 @@ class TestOptimizersForwardBackward(ExtTestCase):
         st2 = io.BytesIO(st.getvalue())
         train_session1 = pickle.load(st2)
 
-        train_session1.fit(X_train, y_train, w_train, use_numpy=True)
+        train_session1.fit(X_train, y_train, w_train)
         self.assertIsInstance(train_session1.learning_rate,
                               LearningRateSGDNesterov)
         self.assertIsInstance(train_session1.learning_loss,
@@ -1112,7 +1134,7 @@ class TestOptimizersForwardBackward(ExtTestCase):
         state_tensors = train_session.get_state()
         self.assertEqual(len(state_tensors), 2)
 
-        train_session.fit(X_train, y_train, w_train, use_numpy=True)
+        train_session.fit(X_train, y_train, w_train)
         state_tensors = train_session.get_state()
         self.assertEqual(len(state_tensors), 2)
         r = repr(train_session)
@@ -1123,6 +1145,7 @@ class TestOptimizersForwardBackward(ExtTestCase):
         self.assertFalse(any(map(numpy.isnan, losses)))
 
     @unittest.skipIf(TrainingSession is None, reason="not training")
+    @ignore_warnings((ConvergenceWarning, DeprecationWarning))
     def test_ort_gradient_optimizers_nesterov_penalty_l2(self):
         from onnxcustom.training.optimizers_partial import OrtGradientForwardBackwardOptimizer
         X, y = make_regression(  # pylint: disable=W0632
@@ -1181,6 +1204,7 @@ class TestOptimizersForwardBackward(ExtTestCase):
         train_session.fit(X, y, w)
 
     @unittest.skipIf(TrainingSession is None, reason="not training")
+    @ignore_warnings((ConvergenceWarning, DeprecationWarning))
     def test_ort_gradient_optimizers_nesterov_penalty_l1l2(self):
         from onnxcustom.training.optimizers_partial import OrtGradientForwardBackwardOptimizer
         X, y = make_regression(  # pylint: disable=W0632
@@ -1215,6 +1239,7 @@ class TestOptimizersForwardBackward(ExtTestCase):
         train_session.fit(X, y, w)
 
     @unittest.skipIf(TrainingSession is None, reason="not training")
+    @ignore_warnings((ConvergenceWarning, DeprecationWarning))
     def test_ort_gradient_optimizers_nesterov_penalty_l1l2_no(self):
         from onnxcustom.training.optimizers_partial import OrtGradientForwardBackwardOptimizer
         X, y = make_regression(  # pylint: disable=W0632

@@ -58,6 +58,20 @@ class BaseLearningLoss(BaseLearningOnnx):
         loss, grad = bind.get_outputs()
         return loss, grad
 
+    def loss_score(  # pylint: disable=E1101
+            self, device, expected, predicted, weight=None):
+        """
+        Returns the weighted loss for every observation as OrtValue.
+
+        :param device: device where the training takes place
+        :param expected: expected value
+        :param predicted: predicted value
+        :param weight: optional, training weights
+            (same dimension as expected and predicted tensors)
+        :return: loss
+        """
+        raise NotImplementedError()
+
     @staticmethod
     def select(class_name, **kwargs):
         """

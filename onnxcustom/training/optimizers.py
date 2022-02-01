@@ -252,6 +252,7 @@ class OrtGradientOptimizer(BaseEstimator):
         bind.bind_output('loss', self.device)
 
         actual_losses = []
+        total = 0
         for batch_size in data_loader.iter_bind(bind, self.input_names_):
             self.train_session_._sess.run_with_iobinding(bind, None)
             outputs = bind.copy_outputs_to_cpu()
@@ -259,8 +260,9 @@ class OrtGradientOptimizer(BaseEstimator):
                 raise EvaluationError(  # pragma: no cover
                     "Loss is nan or infinite (%r), "
                     "evaluation has failed." % outputs[0])
-            actual_losses.append(outputs[0] / batch_size)
-        return numpy.array(actual_losses).sum() / len(data_loader)
+            actual_losses.append(outputs[0])
+            total += batch_size
+        return numpy.array(actual_losses).sum() / max(total, 1)
 
     def _create_training_session(
             self, training_onnx, weights_to_train,
