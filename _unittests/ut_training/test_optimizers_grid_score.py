@@ -104,8 +104,8 @@ class TestOptimizersGrid(ExtTestCase):
             numpy.float32).reshape((-1, 1)) / 10
         X_train, _, y_train, __ = train_test_split(X, y)
         scorer = make_scorer(
-            lambda y_true, y_pred:
-                -mean_squared_error(y_true, y_pred))  # pylint: disable=E1130
+            lambda y_true, y_pred: (
+                -mean_squared_error(y_true, y_pred)))  # pylint: disable=E1130
         reg = GridSearchCV(
             SGDRegressor(max_iter=20),
             param_grid={'eta0': values},
@@ -161,8 +161,8 @@ class TestOptimizersGrid(ExtTestCase):
         X += numpy.random.randn(30, 3).astype(numpy.float32) / 10
         X_train, _, y_train, __ = train_test_split(X, y)
         scorer = make_scorer(
-            lambda y_true, y_pred:
-                -log_loss(y_true, y_pred))  # pylint: disable=E1130
+            lambda y_true, y_pred: (
+                -log_loss(y_true, y_pred)))  # pylint: disable=E1130
         reg = GridSearchCV(
             SGDClassifier(max_iter=20),
             param_grid={'eta0': values},
