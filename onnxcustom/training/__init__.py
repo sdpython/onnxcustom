@@ -2,4 +2,6 @@
 @file
 @brief Shortcuts to *training*.
 """
-from .excs import ConvergenceError  # noqa
+from .excs import (  # noqa
+    ConvergenceError, ConvergenceWarning,
+    EvaluationError, ProviderError)
