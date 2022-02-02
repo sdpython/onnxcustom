@@ -11,6 +11,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.exceptions import ConvergenceWarning
 from sklearn.linear_model import SGDRegressor, SGDClassifier
 from mlprodict.onnx_conv import to_onnx
+from mlprodict.onnx_tools.onnx_manipulations import select_model_inputs_outputs
 # from mlprodict.onnxrt import OnnxInference
 # from mlprodict.plotting.text_plot import onnx_simple_text_plot
 try:
@@ -92,7 +93,7 @@ class TestOptimizersGrid(ExtTestCase):
         from onnxcustom.training.sgd_learning_rate import (
             LearningRateSGD)
         from onnxcustom.training.sgd_learning_loss import SquareLearningLoss
-        values = [1e-6, 1e-5, 1e-4, 1e-3, 1e-2, 1e-1, 1]
+        values = [1e-6, 1e-5, 5e-5, 1e-4, 5e-4, 1e-3, 1e-2, 1e-1, 1]
         X = numpy.arange(60).astype(numpy.float32).reshape((-1, 3))
         y = numpy.arange(X.shape[0]).astype(numpy.float32).reshape((-1, 1))
         y[0, 0] += 1
@@ -109,8 +110,7 @@ class TestOptimizersGrid(ExtTestCase):
         onx = onnx_rename_weights(onx)
         inits = ['I0_coef', 'I1_intercept']
 
-        cvalues = [LearningRateSGD(v)
-                   for v in [1e-6, 1e-5, 1e-4, 1e-3, 1e-2, 1e-1, 1]]
+        cvalues = [LearningRateSGD(v) for v in values]
         grid = GridSearchCV(
             OrtGradientForwardBackwardOptimizer(
                 onx, inits, weight_name='weight' if use_weight else None,
@@ -129,7 +129,7 @@ class TestOptimizersGrid(ExtTestCase):
         self.assertEqual(len(grid.best_params_), 1)
         self.assertIsInstance(
             grid.best_params_['learning_rate'], LearningRateSGD)
-        print('REG', reg.best_params_, grid.best_params_['learning_rate'])
+        # print('REG', reg.best_params_, grid.best_params_['learning_rate'])
 
     @unittest.skipIf(TrainingSession is None, reason="not training")
     @ignore_warnings((ConvergenceWarning, DeprecationWarning))
@@ -142,7 +142,7 @@ class TestOptimizersGrid(ExtTestCase):
         from onnxcustom.training.sgd_learning_rate import (
             LearningRateSGD)
         from onnxcustom.training.sgd_learning_loss import NegLogLearningLoss
-        values = [1e-6, 1e-5, 1e-4, 1e-3, 1e-2, 1e-1, 1]
+        values = [1e-7, 1e-6, 1e-5, 1e-4, 5e-4, 1e-3, 5e-3, 1e-2, 1e-1, 1]
         X = numpy.arange(60).astype(numpy.float32).reshape((-1, 3))
         y = (numpy.arange(X.shape[0]) > X.shape[0] // 2).astype(
             numpy.int64).reshape((-1, 1))
@@ -154,12 +154,14 @@ class TestOptimizersGrid(ExtTestCase):
         self.assertIsInstance(reg.best_params_, dict)
         self.assertIn('eta0', reg.best_params_)
         onx = to_onnx(reg, X_train, target_opset=opset,
-                      black_op={'LinearClassifier'})
+                      black_op={'LinearClassifier'},
+                      options={'zipmap': False})
+        onx = select_model_inputs_outputs(
+            onx, outputs=['score'])
         onx = onnx_rename_weights(onx)
-        inits = ['I1_coef', 'I2_intercept']
+        inits = ['I0_coef', 'I1_intercept']
 
-        cvalues = [LearningRateSGD(v)
-                   for v in [1e-6, 1e-5, 1e-4, 1e-3, 1e-2, 1e-1, 1]]
+        cvalues = [LearningRateSGD(v) for v in values]
         grid = GridSearchCV(
             OrtGradientForwardBackwardOptimizer(
                 onx, inits, weight_name='weight' if use_weight else None,
@@ -178,7 +180,7 @@ class TestOptimizersGrid(ExtTestCase):
         self.assertEqual(len(grid.best_params_), 1)
         self.assertIsInstance(
             grid.best_params_['learning_rate'], LearningRateSGD)
-        print('CLS', reg.best_params_, grid.best_params_['learning_rate'])
+        # print('CLS', reg.best_params_, grid.best_params_['learning_rate'])
 
 
 if __name__ == "__main__":
