@@ -35,7 +35,8 @@ def _existing_names(onx):
     intermediate results.
     """
     existing_names = set()
-    for node in onx.graph.node:
+    graph = onx.graph if hasattr(onx, 'graph') else onx
+    for node in graph.node:
         existing_names.update(node.input)
         existing_names.update(node.output)
     return existing_names
