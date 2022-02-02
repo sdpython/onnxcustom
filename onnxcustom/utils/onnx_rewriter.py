@@ -2,7 +2,8 @@
 @file
 @brief Rewrites operator in ONNX graph.
 """
-from onnx.helper import make_graph
+from onnx.helper import (
+    make_graph, make_node, make_tensor_value_info, make_model)
 from onnx import NodeProto
 from onnx.numpy_helper import to_array, from_array
 
@@ -25,6 +26,20 @@ def _unique_name(existing_names, name):
         i += 1
     existing_names.add(name)
     return name
+
+
+def _existing_names(onx):
+    """
+    Makes the list of existing names.
+    Returns a set of unique names including
+    intermediate results.
+    """
+    existing_names = set()
+    graph = onx.graph if hasattr(onx, 'graph') else onx
+    for node in graph.node:
+        existing_names.update(node.input)
+        existing_names.update(node.output)
+    return existing_names
 
 
 def _onnx_rewrite_operator_node(existing_names, node, sub_onx):
@@ -134,11 +149,7 @@ def onnx_rewrite_operator(onx, op_type, sub_onx, recursive=True, debug_info=None
                    debug_info=debug_info))
         return _apply_optimisation_on_graph(fct, onx, recursive=recursive)
 
-    existing_names = set()
-    for node in onx.node:
-        existing_names.update(node.input)
-        existing_names.update(node.output)
-
+    existing_names = _existing_names(onx)
     nodes = list(onx.node)
     new_nodes = []
     new_inits = list(onx.initializer)
@@ -164,3 +175,68 @@ def onnx_rewrite_operator(onx, op_type, sub_onx, recursive=True, debug_info=None
     graph = make_graph(
         new_nodes, onx.name, onx.input, onx.output, new_inits)
     return graph
+
+
+def unreduced_onnx_loss(onx, output_name='score'):
+    """
+    Every loss function reduces the results to compute a loss.
+    The score function needs to get the loss for every observation,
+    not the whole loss. This function looks for a reducing node
+    and removes it before exposing the output as the only output.
+
+    :param onx: onx graph
+    :param output_name: new output name
+    :return: new onx graph
+    """
+    from mlprodict.onnx_tools.onnx_manipulations import (  # pylint: disable=C0415
+        select_model_inputs_outputs)
+
+    graph = onx.graph
+    found = []
+    for node in graph.node:
+        if node.op_type.startswith('Reduce'):
+            found.append(node)
+    if len(found) != 1:
+        raise RuntimeError(
+            "Unable to find one unique Reducing node but found %d - %r."
+            "" % (len(found), [(n.op_type, n.name) for n in found]))
+    node = found[0]
+    input_name = node.input[0]
+    new_onx = select_model_inputs_outputs(
+        onx, outputs=[input_name], infer_shapes=True)
+
+    inits = new_onx.graph.initializer
+    inputs = new_onx.graph.input  # pylint: disable=E1101
+    existing_names = _existing_names(new_onx)
+    new_name = _unique_name(existing_names, output_name)
+    new_nodes = list(new_onx.graph.node)  # pylint: disable=E1101
+    elem = graph.output[0].type.tensor_type.elem_type
+    new_output = [make_tensor_value_info(new_name, elem, [None, 1])]
+
+    if node.op_type == "ReduceSumSquare":
+        new_node = make_node('Mul', [input_name, input_name], [new_name])
+        new_nodes.append(new_node)
+    elif node.op_type == 'ReduceSum':
+        new_node = make_node('Identity', [input_name], [new_name])
+        new_nodes.append(new_node)
+    else:
+        raise RuntimeError(
+            "Unable to unreduce node %r." % node.op_type)
+
+    graph = make_graph(
+        new_nodes, graph.name, inputs, new_output, inits)
+    new_model = make_model(graph)
+    new_model.ir_version = onx.ir_version
+    new_model.producer_name = onx.producer_name
+    new_model.producer_version = onx.producer_version
+    new_model.domain = onx.domain
+    new_model.model_version = onx.model_version
+    new_model.doc_string = onx.doc_string
+    if hasattr(onx, 'value_info'):
+        graph.value_info.extend(onx.value_info)  # pylint: disable=E1101
+    del new_model.opset_import[:]  # pylint: disable=E1101
+    for oimp in onx.opset_import:
+        op_set = new_model.opset_import.add()  # pylint: disable=E1101
+        op_set.domain = oimp.domain
+        op_set.version = oimp.version
+    return new_model

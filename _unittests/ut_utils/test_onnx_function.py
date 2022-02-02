@@ -13,6 +13,7 @@ from onnxcustom import get_max_opset
 from onnxcustom.utils.onnx_function import (
     function_onnx_graph, get_supported_functions)
 from onnxcustom.utils.onnxruntime_helper import device_to_providers
+from onnxcustom.utils.onnx_rewriter import unreduced_onnx_loss
 
 
 class TestOnnxFunction(ExtTestCase):
@@ -117,7 +118,8 @@ class TestOnnxFunction(ExtTestCase):
         self.common_check_alpha("axpy", lambda x1, x2, alpha: x1 * alpha + x2)
 
     def common_check_2(self, name, fct, weight_name=None,
-                       verbose=0, classification=False, **kwargs):
+                       verbose=0, classification=False, rnd=True,
+                       **kwargs):
         onx = function_onnx_graph(
             name, target_opset=get_max_opset(),
             dtype=numpy.float32, weight_name=weight_name,
@@ -138,16 +140,25 @@ class TestOnnxFunction(ExtTestCase):
             x2 = p
             x1 = y
         else:
-            x1 = numpy.random.randn(10, 1).astype(numpy.float32)
-            x2 = numpy.random.randn(10, 1).astype(numpy.float32)
-        w = numpy.random.rand(10).astype(numpy.float32)
+            if rnd:
+                x1 = numpy.random.randn(10, 1).astype(numpy.float32)
+                x2 = numpy.random.randn(10, 1).astype(numpy.float32)
+            else:
+                x1 = numpy.zeros((10, 1), dtype=numpy.float32)
+                x2 = numpy.zeros((10, 1), dtype=numpy.float32) + 1
+        if rnd:
+            w = numpy.random.rand(10).astype(numpy.float32)
+        else:
+            w = numpy.zeros(10, dtype=numpy.float32) + 0.2
         if weight_name is None:
             exp_loss, exp_grad = fct(x1, x2)
         else:
-            exp_loss, exp_grad = fct(x1, x2, w)
+            exp_loss, exp_grad = fct(x1, x2, w.reshape((-1, 1)))
 
         oinf = OnnxInference(onx)
         run_params = dict(verbose=verbose, fLOG=print) if verbose > 0 else {}
+        if verbose > 0:
+            print("\n+++++ name(1)=%r" % name)
         if weight_name is None:
             got = oinf.run({'X1': x1, 'X2': x2}, **run_params)
         else:
@@ -159,9 +170,12 @@ class TestOnnxFunction(ExtTestCase):
 
         providers = device_to_providers('cpu')
         so = SessionOptions()
-        so.log_severity_level = 4
+        so.log_severity_level = 0 if verbose > 0 else 4
+        so.log_verbosity_level = 0 if verbose > 0 else 4
         sess = InferenceSession(
             onx.SerializeToString(), so, providers=providers)
+        if verbose > 0:
+            print("+++ run")
         if weight_name is None:
             got = sess.run(None, {'X1': x1, 'X2': x2})
         else:
@@ -169,11 +183,48 @@ class TestOnnxFunction(ExtTestCase):
         self.assertEqualArray(exp_loss, got[0], decimal=5)
         self.assertEqualArray(exp_grad, got[1], decimal=5)
         if weight_name is not None:
+            if verbose > 0:
+                print("+++ run*")
             got = sess.run(None, {'X1': x1, 'X2': x2})
-            exp_loss, exp_grad = fct(
+            exp_loss2, exp_grad2 = fct(
                 x1, x2, numpy.array([1], dtype=x1.dtype))
-            self.assertEqualArray(exp_loss, got[0], decimal=5)
-            self.assertEqualArray(exp_grad, got[1], decimal=5)
+            self.assertEqualArray(exp_loss2, got[0], decimal=5)
+            self.assertEqualArray(exp_grad2, got[1], decimal=5)
+
+        if 'grad' in name:
+            rew = unreduced_onnx_loss(onx)
+            if 'ReduceSum' in str(rew):
+                raise AssertionError("Isse with:\n%r" % rew)
+            if verbose > 0:
+                with open(name + ".unreduced.onnx", "wb") as f:
+                    f.write(rew.SerializeToString())
+
+            if verbose > 0:
+                print("\n+++++ name(2)=%r" % name)
+            oinf = OnnxInference(rew)
+            if weight_name is None:
+                got = oinf.run({'X1': x1, 'X2': x2}, **run_params)
+            else:
+                got = oinf.run({'X1': x1, 'X2': x2, 'weight': w}, **run_params)
+            score = got['score']
+            self.assertEqual(len(score.shape), 2)
+            self.assertEqual(score.shape[0], 10)
+            self.assertEqual(score.shape[1], 1)
+            self.assertEqualFloat(exp_loss, score.sum())
+
+            sess = InferenceSession(
+                rew.SerializeToString(), so, providers=providers)
+            if verbose > 0:
+                print("+++ run")
+            if weight_name is None:
+                got = sess.run(None, {'X1': x1, 'X2': x2})
+            else:
+                got = sess.run(None, {'X1': x1, 'X2': x2, 'weight': w})
+            score = got[0]
+            self.assertEqual(len(score.shape), 2)
+            self.assertEqual(score.shape[0], 10)
+            self.assertEqual(score.shape[1], 1)
+            self.assertEqualFloat(exp_loss, score.sum())
 
     def test_loss_grad_onnx_square_error(self):
         self.common_check_2(
@@ -201,6 +252,13 @@ class TestOnnxFunction(ExtTestCase):
                                numpy.sign(x1 - x2) * w.reshape((-1, 1))),
             weight_name='weight')
 
+    def test_loss_grad_onnx_absolute_error_w_norand(self):
+        self.common_check_2(
+            "grad_loss_absolute_error",
+            lambda x1, x2, w: ((numpy.abs(x1 - x2) * w.reshape((-1, 1))).sum(),
+                               numpy.sign(x1 - x2) * w.reshape((-1, 1))),
+            weight_name='weight', verbose=0, rnd=False)
+
     def test_loss_grad_onnx_elastic_error(self):
         self.common_check_2(
             "grad_loss_elastic_error",
@@ -208,7 +266,7 @@ class TestOnnxFunction(ExtTestCase):
                 numpy.abs(x1 - x2).sum() * 0.1 + ((x1 - x2) ** 2).sum() * 0.9,
                 numpy.sign(x1 - x2) * 0.1 - 2 * 0.9 * (x1 - x2)
             ),
-            l1_weight=0.1, l2_weight=0.9)
+            l1_weight=0.1, l2_weight=0.9, verbose=0)
 
     def test_loss_grad_onnx_elastic_error_w(self):
         self.common_check_2(
@@ -449,8 +507,8 @@ class TestOnnxFunction(ExtTestCase):
 
         self.common_check_2(
             "grad_sigmoid_neg_log_loss_error",
-            lambda x1, x2: (loss(x1, x2).mean(), expit(x2) - x1),
-            classification=True)
+            lambda x1, x2: (loss(x1, x2).sum(), expit(x2) - x1),
+            classification=True, verbose=0)
 
     def test_grad_sigmoid_neg_log_loss_error_weight(self):
 
@@ -458,7 +516,7 @@ class TestOnnxFunction(ExtTestCase):
             pr = expit(x2)
             cl = numpy.clip(pr, eps, 1 - eps)
             lo = - (1 - x1) * numpy.log(1 - cl) - x1 * numpy.log(cl)
-            return lo * w
+            return lo * w.reshape((-1, 1))
 
         def grad(x1, x2, w):
             r = - (x1 - expit(x2)) * w.reshape((-1, 1))
@@ -467,10 +525,10 @@ class TestOnnxFunction(ExtTestCase):
         self.common_check_2(
             "grad_sigmoid_neg_log_loss_error",
             lambda x1, x2, w:
-                (loss(x1, x2, w).mean(),
+                (loss(x1, x2, w).sum(),
                  grad(x1, x2, w)),
-            classification=True, weight_name='weight')
+            classification=True, weight_name='weight', verbose=0)
 
 
 if __name__ == "__main__":
-    unittest.main()
+    unittest.main(verbosity=2)

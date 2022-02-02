@@ -91,7 +91,9 @@ class TestGradientMlp(ExtTestCase):
             batch_loss, loss.numpy() / xp.shape[0], decimal=3)
         self.assertEqualArray(deltas, loss_gradient.numpy(), decimal=3)
 
-        ort_grad = [g.numpy() / xp.shape[0] for g in gradient][1:]
+        # do not use iterator for gradient, it may crash
+        ort_grad = [gradient[i].numpy() / xp.shape[0]
+                    for i in range(len(gradient))][1:]
         self.assertEqualArray(
             intercept_grads[1], ort_grad[3].ravel(), decimal=2)
         self.assertEqualArray(coef_grads[1], ort_grad[2], decimal=2)
@@ -172,10 +174,12 @@ class TestGradientMlp(ExtTestCase):
         # comparison
 
         self.assertEqualArray(
-            batch_loss, loss.numpy(), decimal=3)
+            batch_loss * 2, loss.numpy(), decimal=3)
         self.assertEqualArray(deltas, loss_gradient.numpy(), decimal=3)
 
-        ort_grad = [g.numpy() / xp.shape[0] for g in gradient][1:]
+        # do not use iterator for gradient, it may crash
+        ort_grad = [gradient[i].numpy() / xp.shape[0]
+                    for i in range(len(gradient))][1:]
         self.assertEqualArray(
             intercept_grads[1], ort_grad[3].ravel(), decimal=2)
         self.assertEqualArray(coef_grads[1], ort_grad[2], decimal=2)
@@ -189,4 +193,4 @@ if __name__ == "__main__":
     # logger = logging.getLogger('onnxcustom')
     # logger.setLevel(logging.DEBUG)
     # logging.basicConfig(level=logging.DEBUG)
-    unittest.main()
+    unittest.main(verbosity=2)

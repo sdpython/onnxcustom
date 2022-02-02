@@ -3,6 +3,7 @@
 @brief Optimizer with :epkg:`onnxruntime-training` forward backward training.
 """
 import logging
+import warnings
 import numpy
 from onnxruntime import InferenceSession, SessionOptions
 from onnxruntime.capi._pybind_state import (  # pylint: disable=E0611
@@ -18,7 +19,7 @@ from ._base_estimator import BaseEstimator
 from .sgd_learning_loss import BaseLearningLoss
 from .sgd_learning_penalty import BaseLearningPenalty
 from .data_loader import OrtDataLoader
-from .excs import ConvergenceError
+from .excs import ConvergenceError, ConvergenceWarning
 
 
 class OrtGradientForwardBackwardOptimizer(BaseEstimator):
@@ -52,6 +53,8 @@ class OrtGradientForwardBackwardOptimizer(BaseEstimator):
         with training weight
     :param learning_penalty: weight penalty, None, or instance of
         @see cl BaseLearningPenalty
+    :param exc: raise exceptions (about convergence for example)
+        or keep them silent as much as possible
 
     *learning_rate* can be any instance of @see cl BaseLearningRate or
     a nick name in the following list as specified in
@@ -71,7 +74,7 @@ class OrtGradientForwardBackwardOptimizer(BaseEstimator):
                  device='cpu', warm_start=False, verbose=0,
                  validation_every=0.1, learning_loss="square_error",
                  enable_logging=False, weight_name=None,
-                 learning_penalty=None):
+                 learning_penalty=None, exc=True):
         if weights_to_train is None:
             weights_to_train = list(get_train_initializer(model_onnx))
         BaseEstimator.__init__(self, learning_rate, device)
@@ -87,6 +90,7 @@ class OrtGradientForwardBackwardOptimizer(BaseEstimator):
         self.learning_penalty = BaseLearningPenalty.select(learning_penalty)
         self.enable_logging = enable_logging
         self.weight_name = weight_name
+        self.exc = exc
         if validation_every < 1:
             self.validation_every = int(self.max_iter * validation_every)
         else:
@@ -238,7 +242,7 @@ class OrtGradientForwardBackwardOptimizer(BaseEstimator):
             self._logger = None
 
     def fit(self, X, y, sample_weight=None,
-            X_val=None, y_val=None, use_numpy=False):
+            X_val=None, y_val=None):
         """
         Trains the model.
 
@@ -247,8 +251,6 @@ class OrtGradientForwardBackwardOptimizer(BaseEstimator):
         :param sample_weight: training weight or None
         :param X_val: evaluation dataset
         :param y_val: evaluation dataset
-        :param use_numpy: if True, slow iterator using numpy,
-            otherwise, minimizes copy
         :return: self
         """
         if self.training_optimizer_name != 'SGDOptimizer':
@@ -452,14 +454,26 @@ class OrtGradientForwardBackwardOptimizer(BaseEstimator):
                     "cpu_loss=%r", cpu_loss)
 
             if numpy.isinf(cpu_loss) or numpy.isnan(cpu_loss):
-                raise ConvergenceError(
+                if self.exc:
+                    raise ConvergenceError(
+                        "Loss is nan, learning_rate=%r, "
+                        "the gradient descent has failed "
+                        "(past losses=%r)." % (
+                            self.learning_rate,
+                            [float(v) for v in (
+                                actual_losses if len(actual_losses) < 5
+                                else actual_losses[-5:])]))
+                warnings.warn(
                     "Loss is nan, learning_rate=%r, "
                     "the gradient descent has failed "
                     "(past losses=%r)." % (
                         self.learning_rate,
                         [float(v) for v in (
                             actual_losses if len(actual_losses) < 5
-                            else actual_losses[-5:])]))
+                            else actual_losses[-5:])]),
+                    ConvergenceWarning)
+                if numpy.isinf(cpu_loss):
+                    cpu_loss = numpy.nan
 
             # backward
             if not same_shape:
@@ -502,7 +516,6 @@ class OrtGradientForwardBackwardOptimizer(BaseEstimator):
         return numpy.array(actual_losses).mean()
 
     def _evaluation(self, data_loader, state):
-        bs = data_loader.batch_size
         logger = self._logger
         actual_losses = []
         for ib, (ortx, orty) in enumerate(data_loader.iter_ortvalue()):
@@ -518,16 +531,78 @@ class OrtGradientForwardBackwardOptimizer(BaseEstimator):
                 self.device, orty, prediction[0])
             cpu_loss = loss.numpy()
             if numpy.isinf(cpu_loss) or numpy.isnan(cpu_loss):
-                raise ConvergenceError(  # pragma: no cover
-                    "Loss is nan, "
-                    "the evaluation has failed "
-                    "(past losses=%r)." %
-                    [float(v) for v in (
-                        actual_losses if len(actual_losses) < 5
-                        else actual_losses[-5:])])
-            actual_losses.append(cpu_loss / bs)
+                if self.exc:
+                    raise ConvergenceError(
+                        "Loss is nan, "
+                        "the evaluation has failed "
+                        "(past losses=%r)." %
+                        [float(v) for v in (
+                            actual_losses if len(actual_losses) < 5
+                            else actual_losses[-5:])])
+                warnings.warn(
+                    "Loss is nan, learning_rate=%r, "
+                    "the gradient descent has failed "
+                    "(past losses=%r)." % (
+                        self.learning_rate,
+                        [float(v) for v in (
+                            actual_losses if len(actual_losses) < 5
+                            else actual_losses[-5:])]),
+                    ConvergenceWarning)
+                if numpy.isinf(cpu_loss):
+                    cpu_loss = numpy.nan
+            actual_losses.append(cpu_loss)
 
         return numpy.array(actual_losses).sum() / len(data_loader)
+
+    def score(self, X, y, sample_weight=None):
+        """
+        Return the whole score associated.
+
+        :param X: features
+        :param y: expected output
+        :param sample_weight: training weight or None
+        :return: score
+        """
+        scores = self.losses(X, y, sample_weight=sample_weight)
+        return -scores.sum() / X.shape[0]
+
+    def losses(self, X, y, sample_weight=None):
+        """
+        Returns the score associated to every observation.
+
+        :param X: features
+        :param y: expected output
+        :param sample_weight: training weight or None
+        :return: scores
+        """
+        data_loader = OrtDataLoader(
+            X, y, sample_weight, batch_size=self.batch_size,
+            device=self.device)
+
+        state = self.get_full_state()
+        scores = numpy.empty((X.shape[0], ), dtype=X.dtype)
+        pos = 0
+        for ito in data_loader.iter_ortvalue():
+            if len(ito) == 2:
+                (ortx, orty) = ito
+                ortw = None
+            else:
+                (ortx, orty, ortw) = ito
+            state[0] = ortx
+            prediction = self.train_function_.forward(state, training=False)
+            score = self.learning_loss.loss_scores(
+                self.device, orty, prediction[0], ortw)
+            np_score = score.numpy()
+            # data copy could be avoided by giving a pointer to
+            # loss score or if we could create an OrtValue from a
+            # pointer.
+            end = pos + np_score.shape[0]
+            if end <= scores.shape[0]:
+                scores[pos: end] = np_score.ravel()
+            else:
+                scores[pos: end] = np_score.ravel()[end - scores.shape[0]:]
+            pos += np_score.shape[0]
+        return scores
 
     def _create_training_session(
             self, model_onnx, weights_to_train, device):

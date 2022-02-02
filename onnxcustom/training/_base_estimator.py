@@ -37,6 +37,31 @@ class BaseEstimator(BaseOnnxClass):
             if p.name != "self" and p.kind != p.VAR_KEYWORD]
         return [(p.name, p.default) for p in parameters]
 
+    def get_params(self, deep=False):
+        """
+        Returns the list of parameters.
+        Parameter *deep* is unused.
+        """
+        ps = set(p[0] for p in self._get_param_names())
+        res = {att: getattr(self, att)
+               for att in dir(self)
+               if not att.endswith('_') and att in ps}
+        if 'device' in res and not isinstance(res['device'], str):
+            res['device'] = ort_device_to_string(res['device'])
+        return res
+
+    def set_params(self, **params):
+        """
+        Returns the list of parameters.
+        Parameter *deep* is unused.
+        """
+        for k, v in params.items():
+            if k == 'device' and isinstance(v, str):
+                v = get_ort_device(v)
+            setattr(self, k, v)
+        self.build_onnx_function()  # pylint: disable=E1101
+        return self
+
     def __repr__(self):
         "Usual."
         param = self._get_param_names()

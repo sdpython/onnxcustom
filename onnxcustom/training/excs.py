@@ -12,6 +12,14 @@ class ConvergenceError(RuntimeError):
     pass
 
 
+class ConvergenceWarning(UserWarning):
+    """
+    Raised when a learning algorithm failed
+    to converge.
+    """
+    pass
+
+
 class EvaluationError(RuntimeError):
     """
     Raised when an evaluation failed.
