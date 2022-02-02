@@ -528,12 +528,24 @@ class OrtGradientForwardBackwardOptimizer(BaseEstimator):
 
     def score(self, X, y, sample_weight=None):
         """
-        Trains the model.
+        Return the whole score associated.
 
         :param X: features
         :param y: expected output
         :param sample_weight: training weight or None
-        :return: self
+        :return: score
+        """
+        scores = self.scores(X, y, sample_weight=sample_weight)
+        return scores.sum()
+
+    def scores(self, X, y, sample_weight=None):
+        """
+        Returns the score associated to every observation.
+
+        :param X: features
+        :param y: expected output
+        :param sample_weight: training weight or None
+        :return: scores
         """
         data_loader = OrtDataLoader(
             X, y, sample_weight, batch_size=self.batch_size,
@@ -550,14 +562,18 @@ class OrtGradientForwardBackwardOptimizer(BaseEstimator):
                 (ortx, orty, ortw) = ito
             state[0] = ortx
             prediction = self.train_function_.forward(state, training=False)
-            score = self.learning_loss.loss_score(
+            score = self.learning_loss.loss_scores(
                 self.device, orty, prediction[0], ortw)
             np_score = score.numpy()
             # data copy could be avoided by giving a pointer to
             # loss score or if we could create an OrtValue from a
             # pointer.
-            scores[pos: pos + np_score.shape[0]] = np_score
-            pos += np_score[0]
+            end = pos + np_score.shape[0]
+            if end <= scores.shape[0]:
+                scores[pos: end] = np_score.ravel()
+            else:
+                scores[pos: end] = np_score.ravel()[end - scores.shape[0]:]
+            pos += np_score.shape[0]
         return scores
 
     def _create_training_session(

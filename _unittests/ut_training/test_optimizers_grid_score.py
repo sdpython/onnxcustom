@@ -3,6 +3,7 @@
 """
 import unittest
 import logging
+import numbers
 import numpy
 from pyquickhelper.pycode import ExtTestCase, ignore_warnings
 from sklearn.model_selection import GridSearchCV
@@ -37,6 +38,11 @@ class TestOptimizersGrid(ExtTestCase):
     def test_ort_gradient_optimizers_score_reg(self):
         self.wtest_ort_gradient_optimizers_score_reg(False)
 
+    @unittest.skipIf(TrainingSession is None, reason="not training")
+    @ignore_warnings((ConvergenceWarning, DeprecationWarning))
+    def test_ort_gradient_optimizers_score_reg_w(self):
+        self.wtest_ort_gradient_optimizers_score_reg(True)
+
     def wtest_ort_gradient_optimizers_score_reg(self, use_weight=False):
         from onnxcustom.training.optimizers_partial import (
             OrtGradientForwardBackwardOptimizer)
@@ -63,12 +69,17 @@ class TestOptimizersGrid(ExtTestCase):
             warm_start=False, max_iter=20, batch_size=10)
         if use_weight:
             model.fit(X_train, y_train, w_train)
+            scores = model.scores(X_train, y_train, w_train)
             score = model.score(X_train, y_train, w_train)
         else:
             model.fit(X_train, y_train)
+            scores = model.scores(X_train, y_train)
             score = model.score(X_train, y_train)
-        self.assertEqual(score.shape, y_train.shape)
-        self.assertFalse(any(map(numpy.isnan, score)))
+        self.assertEqual(scores.shape[0], y_train.shape[0])
+        self.assertFalse(any(map(numpy.isnan, scores)))
+        self.assertIsInstance(score, numbers.Number)
+        params = model.get_params()
+        self.assertIsInstance(params['device'], str)
 
     @unittest.skipIf(TrainingSession is None, reason="not training")
     @ignore_warnings((ConvergenceWarning, DeprecationWarning))
@@ -98,20 +109,27 @@ class TestOptimizersGrid(ExtTestCase):
         onx = onnx_rename_weights(onx)
         inits = ['I0_coef', 'I1_intercept']
 
+        cvalues = [LearningRateSGD(v)
+                   for v in [1e-6, 1e-5, 1e-4, 1e-3, 1e-2, 1e-1, 1]]
         grid = GridSearchCV(
             OrtGradientForwardBackwardOptimizer(
                 onx, inits, weight_name='weight' if use_weight else None,
-                learning_rate=LearningRateSGD(1e10),
+                learning_rate=LearningRateSGD(1e-4),
                 learning_loss=SquareLearningLoss(),
                 warm_start=False, max_iter=20, batch_size=10,
                 enable_logging=False),
-            param_grid={'learning_rate': values})
+            param_grid={'learning_rate': cvalues},
+            # error_score='raise')
+        )
         if use_weight:
             grid.fit(X_train, y_train)
         else:
             grid.fit(X_train, y_train)
-        print(grid.best_params_)
+        self.assertIsInstance(grid.best_params_, dict)
+        self.assertEqual(len(grid.best_params_), 1)
+        self.assertIsInstance(
+            grid.best_params_['learning_rate'], LearningRateSGD)
 
 
 if __name__ == "__main__":
-    unittest.main()
+    unittest.main(verbosity=2)
