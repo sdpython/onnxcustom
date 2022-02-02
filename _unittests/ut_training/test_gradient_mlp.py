@@ -91,6 +91,7 @@ class TestGradientMlp(ExtTestCase):
             batch_loss, loss.numpy() / xp.shape[0], decimal=3)
         self.assertEqualArray(deltas, loss_gradient.numpy(), decimal=3)
 
+        # do not use iterator for gradient, it may crash
         ort_grad = [gradient[i].numpy() / xp.shape[0]
                     for i in range(len(gradient))][1:]
         self.assertEqualArray(
@@ -176,6 +177,7 @@ class TestGradientMlp(ExtTestCase):
             batch_loss * 2, loss.numpy(), decimal=3)
         self.assertEqualArray(deltas, loss_gradient.numpy(), decimal=3)
 
+        # do not use iterator for gradient, it may crash
         ort_grad = [gradient[i].numpy() / xp.shape[0]
                     for i in range(len(gradient))][1:]
         self.assertEqualArray(

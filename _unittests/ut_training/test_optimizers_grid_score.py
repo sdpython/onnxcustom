@@ -9,7 +9,7 @@ from pyquickhelper.pycode import ExtTestCase, ignore_warnings
 from sklearn.model_selection import GridSearchCV
 from sklearn.model_selection import train_test_split
 from sklearn.exceptions import ConvergenceWarning
-from sklearn.linear_model import SGDRegressor
+from sklearn.linear_model import SGDRegressor, SGDClassifier
 from mlprodict.onnx_conv import to_onnx
 # from mlprodict.onnxrt import OnnxInference
 # from mlprodict.plotting.text_plot import onnx_simple_text_plot
@@ -129,6 +129,56 @@ class TestOptimizersGrid(ExtTestCase):
         self.assertEqual(len(grid.best_params_), 1)
         self.assertIsInstance(
             grid.best_params_['learning_rate'], LearningRateSGD)
+        print('REG', reg.best_params_, grid.best_params_['learning_rate'])
+
+    @unittest.skipIf(TrainingSession is None, reason="not training")
+    @ignore_warnings((ConvergenceWarning, DeprecationWarning))
+    def test_ort_gradient_optimizers_grid_cls(self):
+        self.wtest_ort_gradient_optimizers_grid_cls(False)
+
+    def wtest_ort_gradient_optimizers_grid_cls(self, use_weight=False):
+        from onnxcustom.training.optimizers_partial import (
+            OrtGradientForwardBackwardOptimizer)
+        from onnxcustom.training.sgd_learning_rate import (
+            LearningRateSGD)
+        from onnxcustom.training.sgd_learning_loss import NegLogLearningLoss
+        values = [1e-6, 1e-5, 1e-4, 1e-3, 1e-2, 1e-1, 1]
+        X = numpy.arange(60).astype(numpy.float32).reshape((-1, 3))
+        y = (numpy.arange(X.shape[0]) > X.shape[0] // 2).astype(
+            numpy.int64).reshape((-1, 1))
+        X_train, _, y_train, __ = train_test_split(X, y)
+        reg = GridSearchCV(
+            SGDClassifier(max_iter=20),
+            param_grid={'eta0': values})
+        reg.fit(X_train, y_train.ravel())
+        self.assertIsInstance(reg.best_params_, dict)
+        self.assertIn('eta0', reg.best_params_)
+        onx = to_onnx(reg, X_train, target_opset=opset,
+                      black_op={'LinearClassifier'})
+        onx = onnx_rename_weights(onx)
+        inits = ['I1_coef', 'I2_intercept']
+
+        cvalues = [LearningRateSGD(v)
+                   for v in [1e-6, 1e-5, 1e-4, 1e-3, 1e-2, 1e-1, 1]]
+        grid = GridSearchCV(
+            OrtGradientForwardBackwardOptimizer(
+                onx, inits, weight_name='weight' if use_weight else None,
+                learning_rate=LearningRateSGD(1e-4),
+                learning_loss=NegLogLearningLoss(),
+                warm_start=False, max_iter=20, batch_size=10,
+                enable_logging=False),
+            param_grid={'learning_rate': cvalues},
+            # error_score='raise')
+        )
+        if use_weight:
+            grid.fit(X_train, y_train)
+        else:
+            grid.fit(X_train, y_train)
+        self.assertIsInstance(grid.best_params_, dict)
+        self.assertEqual(len(grid.best_params_), 1)
+        self.assertIsInstance(
+            grid.best_params_['learning_rate'], LearningRateSGD)
+        print('CLS', reg.best_params_, grid.best_params_['learning_rate'])
 
 
 if __name__ == "__main__":
