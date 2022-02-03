@@ -197,7 +197,7 @@ def unreduced_onnx_loss(onx, output_name='score'):
         if node.op_type.startswith('Reduce'):
             found.append(node)
     if len(found) != 1:
-        raise RuntimeError(
+        raise RuntimeError(  # pragma: no cover
             "Unable to find one unique Reducing node but found %d - %r."
             "" % (len(found), [(n.op_type, n.name) for n in found]))
     node = found[0]
@@ -220,7 +220,7 @@ def unreduced_onnx_loss(onx, output_name='score'):
         new_node = make_node('Identity', [input_name], [new_name])
         new_nodes.append(new_node)
     else:
-        raise RuntimeError(
+        raise RuntimeError(  # pragma: no cover
             "Unable to unreduce node %r." % node.op_type)
 
     graph = make_graph(

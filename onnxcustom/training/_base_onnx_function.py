@@ -180,7 +180,7 @@ class BaseLearningOnnx(BaseOnnxClass):
             self._bio_do_bind_in(name, bind, c_ortvalue)
         elif isinstance(c_ortvalue, numpy.ndarray):
             if self.device_type() != device.cpu():  # pylint: disable=E1101
-                raise ProviderError(
+                raise ProviderError(  # pragma: no cover
                     "device=%s is not CPU." % ort_device_to_string(
                         device))
             if cache and self._bio_cache(

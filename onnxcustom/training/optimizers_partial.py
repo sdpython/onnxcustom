@@ -463,7 +463,7 @@ class OrtGradientForwardBackwardOptimizer(BaseEstimator):
                             [float(v) for v in (
                                 actual_losses if len(actual_losses) < 5
                                 else actual_losses[-5:])]))
-                warnings.warn(
+                warnings.warn(  # pragma: no cover
                     "Loss is nan, learning_rate=%r, "
                     "the gradient descent has failed "
                     "(past losses=%r)." % (
@@ -472,7 +472,7 @@ class OrtGradientForwardBackwardOptimizer(BaseEstimator):
                             actual_losses if len(actual_losses) < 5
                             else actual_losses[-5:])]),
                     ConvergenceWarning)
-                if numpy.isinf(cpu_loss):
+                if numpy.isinf(cpu_loss):  # pragma: no cover
                     cpu_loss = numpy.nan
 
             # backward
@@ -532,14 +532,14 @@ class OrtGradientForwardBackwardOptimizer(BaseEstimator):
             cpu_loss = loss.numpy()
             if numpy.isinf(cpu_loss) or numpy.isnan(cpu_loss):
                 if self.exc:
-                    raise ConvergenceError(
+                    raise ConvergenceError(  # pragma: no cover
                         "Loss is nan, "
                         "the evaluation has failed "
                         "(past losses=%r)." %
                         [float(v) for v in (
                             actual_losses if len(actual_losses) < 5
                             else actual_losses[-5:])])
-                warnings.warn(
+                warnings.warn(  # pragma: no cover
                     "Loss is nan, learning_rate=%r, "
                     "the gradient descent has failed "
                     "(past losses=%r)." % (
@@ -548,7 +548,7 @@ class OrtGradientForwardBackwardOptimizer(BaseEstimator):
                             actual_losses if len(actual_losses) < 5
                             else actual_losses[-5:])]),
                     ConvergenceWarning)
-                if numpy.isinf(cpu_loss):
+                if numpy.isinf(cpu_loss):  # pragma: no cover
                     cpu_loss = numpy.nan
             actual_losses.append(cpu_loss)
 
