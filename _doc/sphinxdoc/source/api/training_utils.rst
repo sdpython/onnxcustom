@@ -20,6 +20,8 @@ ONNX
 
 .. autosignature:: onnxcustom.utils.onnx_helper.onnx_rename_weights
 
+.. autosignature:: onnxcustom.utils.onnx_rewriter.onnx_rewrite_operator
+
 onnxruntime
 +++++++++++
 
@@ -40,8 +42,8 @@ functions
 
 .. autosignature:: onnxcustom.utils.orttraining_helper.add_loss_output
 
-.. autosignature:: onnxcustom.utils.onnx_functions.get_supported_functions
+.. autosignature:: onnxcustom.utils.onnx_function.get_supported_functions
 
-.. autosignature:: onnxcustom.utils.onnx_functions.function_onnx_graph
+.. autosignature:: onnxcustom.utils.onnx_function.function_onnx_graph
 
 .. autosignature:: onnxcustom.utils.orttraining_helper.penalty_loss_onnx
