@@ -568,7 +568,7 @@ class OrtGradientForwardBackwardOptimizer(BaseEstimator):
 
     def losses(self, X, y, sample_weight=None):
         """
-        Returns the score associated to every observation.
+        Returns the losses associated to every observation.
 
         :param X: features
         :param y: expected output
