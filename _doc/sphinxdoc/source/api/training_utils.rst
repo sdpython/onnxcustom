@@ -22,6 +22,8 @@ ONNX
 
 .. autosignature:: onnxcustom.utils.onnx_rewriter.onnx_rewrite_operator
 
+.. autosignature:: onnxcustom.utils.onnx_helper.replace_initializers_into_onnx
+
 onnxruntime
 +++++++++++
 

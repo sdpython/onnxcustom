@@ -19,7 +19,7 @@ class OrtGradientOptimizer(BaseEstimator):
     Implements a simple :epkg:`Stochastic Gradient Descent`
     with :epkg:`onnxruntime-training`.
 
-    :param model_onnx: ONNX graph used to train
+    :param model_onnx: onnx graph to train
     :param weights_to_train: names of initializers to be optimized
     :param loss_output_name: name of the loss output
     :param max_iter: number of training iterations
@@ -51,8 +51,7 @@ class OrtGradientOptimizer(BaseEstimator):
                  device='cpu', warm_start=False, verbose=0,
                  validation_every=0.1, saved_gradient=None,
                  sample_weight_name="weight"):
-        BaseEstimator.__init__(self, learning_rate, device)
-        self.model_onnx = model_onnx
+        BaseEstimator.__init__(self, model_onnx, learning_rate, device)
         self.batch_size = batch_size
         self.weights_to_train = weights_to_train
         self.loss_output_name = loss_output_name
@@ -335,6 +334,22 @@ class OrtGradientOptimizer(BaseEstimator):
                 return self.trained_coef_
             raise AttributeError("Method fit must be called before.")
         return self.train_session_.get_state()
+
+    def get_trained_onnx(self, model=None):
+        """
+        Returns the trained onnx graph, the initial graph
+        modified by replacing the initializers with the trained
+        weights. If model is not specified, it uses the model
+        given as an argument to this class. This graph outputs
+        the loss and not the predictions. Parameter *model*
+        can be used to use the graph before loss was added
+        and then the returned graph will produce the predictions.
+
+        :param model: replace the weights in another graph
+            than the training graph
+        :return: onnx graph
+        """
+        return self._get_trained_onnx(self.get_state(), model=model)
 
     def set_state(self, state):
         """

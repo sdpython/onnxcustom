@@ -6,6 +6,8 @@
 import math
 import numpy
 from onnx import TensorProto, numpy_helper, helper
+from onnxruntime import OrtValue
+from onnxruntime.capi._pybind_state import OrtValue as C_OrtValue
 
 
 def onnx_rename_weights(onx):
@@ -88,6 +90,26 @@ def dtype_to_var_type(dtype):
         "Unexpected value dtype=%r." % dtype)
 
 
+def _finalize_new_onnx(graph, onx):
+    onnx_model = helper.make_model(graph)
+    onnx_model.ir_version = onx.ir_version
+    onnx_model.producer_name = onx.producer_name
+    onnx_model.producer_version = onx.producer_version
+    onnx_model.domain = onx.domain
+    onnx_model.model_version = onx.model_version
+    onnx_model.doc_string = onx.doc_string
+    if len(onx.metadata_props) > 0:  # pragma: no cover
+        values = {p.key: p.value for p in onx.metadata_props}
+        helper.set_model_props(onnx_model, values)
+
+    del onnx_model.opset_import[:]  # pylint: disable=E1101
+    for oimp in onx.opset_import:
+        op_set = onnx_model.opset_import.add()  # pylint: disable=E1101
+        op_set.domain = oimp.domain
+        op_set.version = oimp.version
+    return onnx_model
+
+
 def add_initializer(model, name, value):
     """
     Adds an initializer to graph.
@@ -109,20 +131,36 @@ def add_initializer(model, name, value):
         model.graph.node, model.graph.name,
         model.graph.input, model.graph.output,
         list_inits)
-    onnx_model = helper.make_model(graph_def)
-    onnx_model.ir_version = model.ir_version
-    onnx_model.producer_name = model.producer_name
-    onnx_model.producer_version = model.producer_version
-    onnx_model.domain = model.domain
-    onnx_model.model_version = model.model_version
-    onnx_model.doc_string = model.doc_string
-    if len(model.metadata_props) > 0:  # pragma: no cover
-        values = {p.key: p.value for p in model.metadata_props}
-        helper.set_model_props(onnx_model, values)
+    return _finalize_new_onnx(graph_def, model)
 
-    del onnx_model.opset_import[:]  # pylint: disable=E1101
-    for oimp in model.opset_import:
-        op_set = onnx_model.opset_import.add()  # pylint: disable=E1101
-        op_set.domain = oimp.domain
-        op_set.version = oimp.version
-    return onnx_model
+
+def replace_initializers_into_onnx(model, results):
+    """
+    Replaces initializers by other initializers,
+    usually trained ones.
+
+    :param model: onnx graph
+    :param results: results to be added in a dictionary
+    :return: new onnx graph
+    """
+    inputs = list(model.graph.input)
+    outputs = list(model.graph.output)
+    inits = list(model.graph.initializer)
+
+    inits_dict = {init.name: i for i, init in enumerate(inits)}
+    for k, v in results.items():
+        if k in inits_dict:
+            if isinstance(v, numpy.ndarray):
+                v = numpy_helper.from_array(v, k)
+            elif isinstance(v, (C_OrtValue, OrtValue)):
+                v = numpy_helper.from_array(v.numpy(), k)
+            inits[inits_dict[k]] = v
+        else:
+            raise RuntimeError(
+                "Unable to find initializer %r in "
+                "%r." % (k, inits_dict))
+
+    graph = helper.make_graph(
+        list(model.graph.node), model.graph.name, inputs,
+        outputs, inits)
+    return _finalize_new_onnx(graph, model)
