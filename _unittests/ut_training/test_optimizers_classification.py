@@ -3,8 +3,9 @@
 """
 import unittest
 import logging
+from io import BytesIO
 import numpy
-from onnx import TensorProto
+from onnx import TensorProto, load as load_onnx
 from onnx.helper import set_model_props
 from pyquickhelper.pycode import (
     ExtTestCase, get_temp_folder, ignore_warnings)
@@ -17,6 +18,7 @@ from mlprodict.onnx_conv import to_onnx
 from mlprodict.plotting.text_plot import onnx_simple_text_plot
 from mlprodict.onnx_tools.onnx_manipulations import select_model_inputs_outputs
 # from mlprodict.onnxrt import OnnxInference
+from onnxruntime import InferenceSession
 try:
     from onnxruntime import TrainingSession
 except ImportError:
@@ -58,6 +60,7 @@ class TestOptimizersClassification(ExtTestCase):
         onx = to_onnx(reg, X_train, target_opset=opset,
                       black_op={'LinearClassifier'},
                       options={'zipmap': False})
+        onx2 = load_onnx(BytesIO(onx.SerializeToString()))
         set_model_props(onx, {'info': 'unit test'})
         onx_loss = add_loss_output(
             onx, 'log', output_index=1,
@@ -85,6 +88,15 @@ class TestOptimizersClassification(ExtTestCase):
         losses = train_session.train_losses_
         self.assertGreater(len(losses), 1)
         self.assertFalse(any(map(numpy.isnan, losses)))
+
+        # get_trained_weight
+        trained_onnx = train_session.get_trained_onnx(model=onx2)
+        sess = InferenceSession(onx2.SerializeToString())
+        got1 = sess.run(None, {'X': X_train})
+        sess = InferenceSession(trained_onnx.SerializeToString())
+        got2 = sess.run(None, {'X': X_train})
+        self.assertEqual(len(got1), len(got2))
+        self.assertEqual(got1[0].shape, got2[0].shape)
 
         # state
         state = train_session.get_state()
@@ -121,6 +133,7 @@ class TestOptimizersClassification(ExtTestCase):
                       black_op={'LinearRegressor'},
                       options={'zipmap': False,
                                'raw_scores': True})
+        onx2 = onx
         onx = select_model_inputs_outputs(onx, outputs=['score'])
         self.assertIn("output: name='score'",
                       onnx_simple_text_plot(onx))
@@ -143,6 +156,15 @@ class TestOptimizersClassification(ExtTestCase):
         temp = get_temp_folder(
             __file__, "temp_ort_gradient_optimizers_fw_nesterov_binary")
         train_session.save_onnx_graph(temp)
+
+        # get_trained_weight
+        trained_onnx = train_session.get_trained_onnx(model=onx2)
+        sess = InferenceSession(onx2.SerializeToString())
+        got1 = sess.run(None, {'X': X_train})
+        sess = InferenceSession(trained_onnx.SerializeToString())
+        got2 = sess.run(None, {'X': X_train})
+        self.assertEqual(len(got1), len(got2))
+        self.assertEqual(got1[0].shape, got2[0].shape)
 
         # state
         state = train_session.get_state()

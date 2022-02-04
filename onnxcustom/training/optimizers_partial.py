@@ -28,7 +28,7 @@ class OrtGradientForwardBackwardOptimizer(BaseEstimator):
     with :epkg:`onnxruntime-training`. It leverages class
     @see class OrtGradientForwardBackward.
 
-    :param model_onnx: ONNX graph used to train
+    :param model_onnx: onnx graph to train
     :param weights_to_train: names of initializers to be optimized,
         if None, function @see fn get_train_initialize returns
         the list of float iniitializer
@@ -77,8 +77,7 @@ class OrtGradientForwardBackwardOptimizer(BaseEstimator):
                  learning_penalty=None, exc=True):
         if weights_to_train is None:
             weights_to_train = list(get_train_initializer(model_onnx))
-        BaseEstimator.__init__(self, learning_rate, device)
-        self.model_onnx = model_onnx
+        BaseEstimator.__init__(self, model_onnx, learning_rate, device)
         self.batch_size = batch_size
         self.weights_to_train = weights_to_train
         self.loss_output_name = loss_output_name
@@ -147,7 +146,7 @@ class OrtGradientForwardBackwardOptimizer(BaseEstimator):
 
     def get_full_state(self, kind='weight'):
         """
-        Returns the trained weights.
+        Returns the trained weights and the inputs.
         """
         if isinstance(kind, list):
             return [self.get_full_state(kind=k) for k in kind]
@@ -173,6 +172,19 @@ class OrtGradientForwardBackwardOptimizer(BaseEstimator):
         value = getattr(self, att)
         n = len(value) - len(self.weights_to_train)
         return value[n:]
+
+    def get_trained_onnx(self, model=None):
+        """
+        Returns the trained onnx graph, the initial graph
+        modified by replacing the initializers with the trained
+        weights.
+
+        :param model: replace the weights in another graph
+            than the training graph
+        :return: onnx graph
+        """
+        state = dict(zip(self.weights_to_train, self.get_state()))
+        return self._get_trained_onnx(state, model=model)
 
     def set_state(self, state, check_trained=True, kind='weight', zero=False):
         """

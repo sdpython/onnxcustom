@@ -7,6 +7,7 @@ from onnxruntime.capi._pybind_state import (  # pylint: disable=E0611
     OrtDevice as C_OrtDevice)
 from ..utils.onnxruntime_helper import (
     get_ort_device, ort_device_to_string)
+from ..utils.onnx_helper import replace_initializers_into_onnx
 from ._base import BaseOnnxClass
 from ._base_onnx_function import BaseLearningOnnx
 from .sgd_learning_rate import BaseLearningRate
@@ -17,13 +18,15 @@ class BaseEstimator(BaseOnnxClass):
     Base class for optimizers.
     Implements common methods such `__repr__`.
 
+    :param model_onnx: onnx graph to train
     :param learning_rate: learning rate class,
         see module :mod:`onnxcustom.training.sgd_learning_rate`
     :param device: device as :epkg:`C_OrtDevice` or a string
         representing this device
     """
 
-    def __init__(self, learning_rate, device):
+    def __init__(self, model_onnx, learning_rate, device):
+        self.model_onnx = model_onnx
         self.learning_rate = BaseLearningRate.select(learning_rate)
         self.device = get_ort_device(device)
 
@@ -98,3 +101,30 @@ class BaseEstimator(BaseOnnxClass):
             setattr(self, att, v)
         self.device = get_ort_device(self.device)
         return self
+
+    def get_trained_onnx(self):
+        """
+        Returns the trained onnx graph, the initial graph
+        modified by replacing the initializers with the trained
+        weights.
+
+        :return: onnx graph
+        """
+        raise NotImplementedError(  # pragma: no cover
+            "The method needs to be overloaded.")
+
+    def _get_trained_onnx(self, state, model=None):
+        """
+        Returns the trained onnx graph, the initial graph
+        modified by replacing the initializers with the trained
+        weights.
+
+        :param state: trained weights
+        :param model: replace the weights in another graph
+            than the training graph
+        :return: onnx graph
+        """
+        if model is None:
+            return replace_initializers_into_onnx(
+                self.model_onnx, state)
+        return replace_initializers_into_onnx(model, state)
