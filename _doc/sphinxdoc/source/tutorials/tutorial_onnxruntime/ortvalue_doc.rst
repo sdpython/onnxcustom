@@ -23,7 +23,7 @@ on CPU, CUDA, ...
     and a python wrapper for it also named :epkg:`OrtValue`.
     This documentation uses :epkg:`C_OrtValue` directly.
     The wrapper is usually calling the same C functions.
-    The same goes for :epkg:`OrtDevice` and :epkg:`OrtDevice`.
+    The same goes for :epkg:`OrtDevice` and :epkg:`C_OrtDevice`.
     They can be imported like this:
 
     ::
@@ -127,7 +127,7 @@ However even that simple example hides some important detail.
     print(ort_value.data_ptr())
     print(vect.__array_interface__['data'])
 
-The last two lines show that both objects points to the same location.
+The last two lines show that both objects point to the same location.
 To avoid copying the data, :epkg:`onnxruntime` only creates a structure
 wrapping the same memory buffer. As a result, the numpy array must
 **remain alive** as long as the instance of `C_OrtValue` is.
@@ -164,7 +164,7 @@ Export to numpy
 +++++++++++++++
 
 Unless it is reused by another library or :epkg:`onnxruntime`
-itself, the only way to access the data is contains is to
+itself, the only way to access the data it contains is to
 create a numpy array with method `numpy`.
 
 .. runpython::
@@ -198,7 +198,7 @@ about avoiding that copy.
 DLPack
 ======
 
-:epkg:`DLPack` is protocol imagined to avoid copying memory when data
+:epkg:`DLPack` is a protocol imagined to avoid copying memory when data
 is created by one framework and used by another one. The safest way is
 to copy entirely the data in its own containers. But that costs a lot
 if the data is big or may be even difficult if the data is big compared
@@ -212,7 +212,7 @@ When a library B receives a DLpack structure from a library A, it:
   store in the structure itself.
 
 The library B takes ownership of the data and is now responsible for
-its deletion unless a library C requests its ownship through a DLpack
+its deletion unless a library C requests its ownership through a DLpack
 structure as well.
 
 :epkg:`pytorch` implements this through two functions `to_dlpack` and

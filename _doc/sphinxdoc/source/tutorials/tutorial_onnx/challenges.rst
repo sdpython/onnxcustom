@@ -9,7 +9,7 @@ A runtime must be chosen, one available on the platform
 the model is deployed. Discrepancies are checked
 and finally the latency is measured.
 The first step about the model conversion can be easy
-if there exist a converting library for this framework
+if there exists a converting library for this framework
 supporting all the pieces of the model. If it is not the
 case, the missing parts must be implemented in ONNX.
 That may be very time consuming.

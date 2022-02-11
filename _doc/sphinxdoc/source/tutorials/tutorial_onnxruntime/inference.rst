@@ -75,7 +75,7 @@ inputs and outputs.
 The class :epkg:`InferenceSession` is not pickable.
 It must be restored from the ONNX file.
 C API is slightly different. The C object is
-stored in attribute `sess_`.
+stored in attribute `_sess`.
 
 .. runpython::
     :showcode:
