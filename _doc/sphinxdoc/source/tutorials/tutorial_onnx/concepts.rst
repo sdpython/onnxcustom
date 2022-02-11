@@ -439,3 +439,6 @@ made with this tool.
 blob/master/onnxconverter_common/onnx2py.py>`_
 creates a python file from an ONNX graph. This script can create
 the same graph. It may be modified by a user to change the graph.
+
+:epkg:`zetane` can load onnx model and show intermediate results
+when the model is executed.

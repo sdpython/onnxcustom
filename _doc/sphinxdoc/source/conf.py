@@ -180,6 +180,7 @@ epkg_dictionary.update({
     'xgboost': 'https://xgboost.readthedocs.io/en/latest/',
     'XGBoost': 'https://xgboost.readthedocs.io/en/latest/',
     'WSL': 'https://docs.microsoft.com/en-us/windows/wsl/install',
+    'zetane': 'https://github.com/zetane/viewer',
 })
 
 # APIs, links which should be replaced.
