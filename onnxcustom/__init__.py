@@ -6,7 +6,7 @@
 @brief Experimentation with ONNX, examples.
 """
 
-__version__ = "0.4.274"
+__version__ = "0.4.293"
 __author__ = "Xavier Dupré, ..."
 __max_supported_opset__ = 15  # Converters are tested up to this version.
 

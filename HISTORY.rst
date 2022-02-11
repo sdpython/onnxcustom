@@ -5,14 +5,21 @@
 History
 =======
 
-current - 2022-01-27 - 0.00Mb
+current - 2022-02-11 - 0.00Mb
 =============================
 
-* #47: Compare gradient values with scikit-learn (2022-01-25)
+* #53: Implements get_trained_onnx to retrieve the trained model (2022-02-04)
+* #51: Implements scoring functions (2022-02-02)
+* #49: Check nan values during training (2022-01-30)
+
+0.4.274 - 2022-01-29 - 0.06Mb
+=============================
+
 * #48: Checks gradients are identical to scikit-learn for neural networks (2022-01-25)
-* #32: Implements classificiation loss (2022-01-23)
+* #47: Compare gradient values with scikit-learn (2022-01-25)
 * #45: Adds an example about classification (2022-01-23)
 * #44: Uses bind_ortvalue_input instead of bind_input to be faster (2022-01-23)
+* #32: Implements classificiation loss (2022-01-23)
 * #43: Fixes the training of a binary classifier with weights (2022-01-22)
 * #42: Implements binary log loss for first API of orttraining (2022-01-22)
 * #41: Refactors to improve profiling analysis (fix penalty, export onnx graphs) (2022-01-15)
