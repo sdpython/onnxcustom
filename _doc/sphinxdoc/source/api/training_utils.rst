@@ -49,3 +49,8 @@ functions
 .. autosignature:: onnxcustom.utils.onnx_function.function_onnx_graph
 
 .. autosignature:: onnxcustom.utils.orttraining_helper.penalty_loss_onnx
+
+gradient
+++++++++
+
+.. autosignature:: onnxcustom.training.grad_helper.onnx_derivative
