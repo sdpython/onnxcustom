@@ -4,6 +4,7 @@
 """
 from io import BytesIO
 import onnx
+from onnx.helper import make_model, make_graph
 from onnxruntime.capi._pybind_state import (  # pylint: disable=E0611
     OrtModuleGraphBuilder,
     OrtModuleGraphBuilderConfiguration,
@@ -135,8 +136,54 @@ def onnx_derivative(onx, weights=None, inputs=None,
     if not out_yield_op:
         return grad_yield
 
-    yields_op = [node for node in grad_yield.graph.node  # pylint: disable=E1101
-                 if node.op_type == 'YieldOp']
+    yields_op = [
+        node for node in grad_yield.graph.node  # pylint: disable=E1101
+        if node.op_type == 'YieldOp']
     if len(yields_op) == 0:
         raise RuntimeError(  # pragma: no cover
             "No YieldOp was found. The input graph must be wrong.")
+
+    other_nodes = [
+        node for node in grad_yield.graph.node  # pylint: disable=E1101
+        if node.op_type != 'YieldOp']
+    inputs = list(grad_yield.graph.input)  # pylint: disable=E1101
+    outputs = list(grad_yield.graph.output)  # pylint: disable=E1101
+    map_out = {o.name: o for o in onx.graph.output}
+    for yn in yields_op:
+        if len(yn.input) != 1 or len(yn.output) != 1:
+            raise NotImplementedError(  # pragma: no cover
+                "Unexpected configuration for YieldOp node %r." % yn)
+        if yn.input[0] not in map_out:
+            raise RuntimeError(  # pragma: no cover
+                "Unable to find output %r in %r." % (
+                    yn.input[0], list(map_out)))
+        out = map_out[yn.input[0]]
+        new_input = onnx.ValueInfoProto()
+        new_input.name = yn.output[0]
+        new_input.doc_string = "from yieldop"
+        new_input.type.CopyFrom(out.type)  # pylint: disable=E1101
+        inputs.append(new_input)
+
+        if keep_output:
+            # Keeps output from the original graph.
+            outputs.append(out)
+
+    # Final graph.
+    graph = make_graph(
+        other_nodes, grad_yield.graph.name, inputs, outputs,  # pylint: disable=E1101
+        list(grad_yield.graph.initializer))  # pylint: disable=E1101
+    new_model = make_model(graph)
+    new_model.ir_version = grad_yield.ir_version  # pylint: disable=E1101
+    new_model.producer_name = grad_yield.producer_name  # pylint: disable=E1101
+    new_model.producer_version = grad_yield.producer_version  # pylint: disable=E1101
+    new_model.domain = grad_yield.domain  # pylint: disable=E1101
+    new_model.model_version = grad_yield.model_version  # pylint: disable=E1101
+    new_model.doc_string = grad_yield.doc_string  # pylint: disable=E1101
+    if hasattr(onx, 'value_info'):
+        graph.value_info.extend(grad_yield.value_info)  # pylint: disable=E1101
+    del new_model.opset_import[:]  # pylint: disable=E1101
+    for oimp in grad_yield.opset_import:  # pylint: disable=E1101
+        op_set = new_model.opset_import.add()  # pylint: disable=E1101
+        op_set.domain = oimp.domain
+        op_set.version = oimp.version
+    return new_model

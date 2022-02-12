@@ -24,7 +24,7 @@ from onnxcustom.training.grad_helper import onnx_derivative
 
 class TestGradHelper(ExtTestCase):
 
-    def check_runtime(self, onx, name):
+    def check_runtime(self, onx, name, decimal=5):
         feeds = random_feed(onx.graph.input)
         n = 0
         for _, v in feeds.items():
@@ -46,7 +46,7 @@ class TestGradHelper(ExtTestCase):
         output_names = [o.name for o in onx.graph.output]
         self.assertGreater(len(output_names), 1)
         for i, o in enumerate(output_names):
-            self.assertEqualArray(got[i], pygot[o])
+            self.assertEqualArray(got[i], pygot[o], decimal=decimal)
 
     @classmethod
     def setUpClass(cls):
@@ -63,7 +63,8 @@ class TestGradHelper(ExtTestCase):
                            {'Y': FloatTensorType([None, 10])},
                            target_opset=opv)
         new_onx = onnx_derivative(onx, out_yield_op=False)
-        types = set(n.op_type for n in new_onx.graph.node)  # pylint: disable=E1101
+        types = set(
+            n.op_type for n in new_onx.graph.node)  # pylint: disable=E1101
         self.assertIn('YieldOp', types)
 
     @unittest.skipIf(TrainingSession is None, reason="not training")
@@ -76,6 +77,17 @@ class TestGradHelper(ExtTestCase):
                            target_opset=opv)
         new_onx = onnx_derivative(onx)
         self.check_runtime(new_onx, 'test_grad_helper')
+
+    @unittest.skipIf(TrainingSession is None, reason="not training")
+    def test_grad_helper_nooutput(self):
+        opv = opset
+        node = OnnxAdd('X', numpy.array([1], dtype=numpy.float32),
+                       op_version=opv, output_names=['Y'])
+        onx = node.to_onnx({'X': FloatTensorType([None, 10])},
+                           {'Y': FloatTensorType([None, 10])},
+                           target_opset=opv)
+        new_onx = onnx_derivative(onx, keep_output=False)
+        self.check_runtime(new_onx, 'test_grad_helper_nooutput')
 
     @unittest.skipIf(TrainingSession is None, reason="not training")
     def test_grad_helper_mul(self):
