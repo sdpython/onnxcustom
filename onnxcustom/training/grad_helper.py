@@ -1,10 +1,12 @@
+# pylint: disable=E1101
 """
 @file
 @brief ONNX and gradient.
 """
 from io import BytesIO
+from enum import IntFlag
 import onnx
-from onnx.helper import make_model, make_graph
+from onnx.helper import make_model, make_graph, make_node, make_tensor
 from onnxruntime.capi._pybind_state import (  # pylint: disable=E0611
     OrtModuleGraphBuilder,
     OrtModuleGraphBuilderConfiguration,
@@ -12,17 +14,33 @@ from onnxruntime.capi._pybind_state import (  # pylint: disable=E0611
 from ..utils.orttraining_helper import get_train_initializer
 
 
+class DerivativeOptions(IntFlag):
+    """
+    Options defining how to build the onnx graph of the
+    gradients.
+
+    * `KeepYieldOp`: keeps the operator *YieldOp* in the graph,
+        see @see fn onnx_derivative
+    * `KeepOutput`: keeps the output of the original graph
+    * `FillGrad`: do not add any output to specify the gradient
+        of the output but assumes it is one
+    """
+
+    Zero = 0
+    KeepYieldOp = 1
+    KeepOutputs = 2
+    FillGrad = 4
+
+
 def onnx_derivative(onx, weights=None, inputs=None,
-                    out_yield_op=True, keep_output=True):
+                    options=DerivativeOptions.Zero):
     """
     Builds the gradient for an onnx graph.
 
     :param onx: onnx graph
     :param weights: gradient against those weights, None for all real weights
     :param inputs: gradient against inputs, None for all real inputs
-    :param out_yield_op: promotes yield operator as output
-    :param keep_output: keep the function output or only returns the
-        gradient, this parameter is unused if *out_yield_op* is False
+    :param options: options of type @see cl DerivativeOptions,
     :return: onnx graph
 
     The function calls :epkg:`OrtModuleGraphBuilderConfiguration`
@@ -38,7 +56,8 @@ def onnx_derivative(onx, weights=None, inputs=None,
             OnnxAdd, OnnxMul, OnnxIdentity)
         from skl2onnx.common.data_types import FloatTensorType
         from mlprodict.onnxrt import OnnxInference
-        from onnxcustom.training.grad_helper import onnx_derivative
+        from onnxcustom.training.grad_helper import (
+            onnx_derivative, DerivativeOptions)
         from onnxcustom import __max_supported_opset__ as opv
 
         node = OnnxAdd('X', numpy.array([1], dtype=numpy.float32),
@@ -46,7 +65,7 @@ def onnx_derivative(onx, weights=None, inputs=None,
         onx = node.to_onnx({'X': FloatTensorType([None, 10])},
                            {'Y': FloatTensorType([None, 10])},
                            target_opset=opv)
-        new_onx = onnx_derivative(onx, out_yield_op=False)
+        new_onx = onnx_derivative(onx, options=DerivativeOptions.KeepYieldOp)
 
         oinf = OnnxInference(new_onx)
         print("DOT-SECTION", oinf.to_dot())
@@ -64,7 +83,8 @@ def onnx_derivative(onx, weights=None, inputs=None,
             OnnxAdd, OnnxMul, OnnxIdentity)
         from skl2onnx.common.data_types import FloatTensorType
         from mlprodict.onnxrt import OnnxInference
-        from onnxcustom.training.grad_helper import onnx_derivative
+        from onnxcustom.training.grad_helper import (
+            onnx_derivative, DerivativeOptions)
         from onnxcustom import __max_supported_opset__ as opv
 
         node = OnnxAdd('X', numpy.array([1], dtype=numpy.float32),
@@ -72,7 +92,7 @@ def onnx_derivative(onx, weights=None, inputs=None,
         onx = node.to_onnx({'X': FloatTensorType([None, 10])},
                            {'Y': FloatTensorType([None, 10])},
                            target_opset=opv)
-        new_onx = onnx_derivative(onx, out_yield_op=True, keep_output=False)
+        new_onx = onnx_derivative(onx, options=DerivativeOptions.Zero)
 
         oinf = OnnxInference(new_onx)
         print("DOT-SECTION", oinf.to_dot())
@@ -87,7 +107,8 @@ def onnx_derivative(onx, weights=None, inputs=None,
             OnnxAdd, OnnxMul, OnnxIdentity)
         from skl2onnx.common.data_types import FloatTensorType
         from mlprodict.onnxrt import OnnxInference
-        from onnxcustom.training.grad_helper import onnx_derivative
+        from onnxcustom.training.grad_helper import (
+            onnx_derivative, DerivativeOptions)
         from onnxcustom import __max_supported_opset__ as opv
 
         node = OnnxAdd('X', numpy.array([1], dtype=numpy.float32),
@@ -95,11 +116,41 @@ def onnx_derivative(onx, weights=None, inputs=None,
         onx = node.to_onnx({'X': FloatTensorType([None, 10])},
                            {'Y': FloatTensorType([None, 10])},
                            target_opset=opv)
-        new_onx = onnx_derivative(onx, out_yield_op=True, keep_output=True)
+        new_onx = onnx_derivative(onx, options=DerivativeOptions.KeepOutputs)
+
+        oinf = OnnxInference(new_onx)
+        print("DOT-SECTION", oinf.to_dot())
+
+    The input gradient can be filled with a constant matrix
+    filled with one and with the expected shape.
+
+    .. gdot::
+        :script: DOT-SECTION
+
+        import numpy
+        from skl2onnx.algebra.onnx_ops import (  # pylint: disable=E0611
+            OnnxAdd, OnnxMul, OnnxIdentity)
+        from skl2onnx.common.data_types import FloatTensorType
+        from mlprodict.onnxrt import OnnxInference
+        from onnxcustom.training.grad_helper import (
+            onnx_derivative, DerivativeOptions)
+        from onnxcustom import __max_supported_opset__ as opv
+
+        node = OnnxAdd('X', numpy.array([1], dtype=numpy.float32),
+                       op_version=opv, output_names=['Y'])
+        onx = node.to_onnx({'X': FloatTensorType([None, 10])},
+                           {'Y': FloatTensorType([None, 10])},
+                           target_opset=opv)
+        new_onx = onnx_derivative(onx, options=(
+            DerivativeOptions.KeepOutputs | DerivativeOptions.FillGrad))
 
         oinf = OnnxInference(new_onx)
         print("DOT-SECTION", oinf.to_dot())
     """
+    if not isinstance(options, DerivativeOptions):
+        raise TypeError(
+            "Options must be from type DerivativeOptions not %r."
+            "" % type(options))
     if weights is None:
         inits = get_train_initializer(onx)
         weights = list(inits)
@@ -117,9 +168,9 @@ def onnx_derivative(onx, weights=None, inputs=None,
                 # not a vector
                 continue
             if elem_type in (
-                    onnx.TensorProto.FLOAT16,  # pylint: disable=E1101
-                    onnx.TensorProto.FLOAT,  # pylint: disable=E1101
-                    onnx.TensorProto.DOUBLE):  # pylint: disable=E1101
+                    onnx.TensorProto.FLOAT16,
+                    onnx.TensorProto.FLOAT,
+                    onnx.TensorProto.DOUBLE):
                 inputs_name.append(i.name)
         if len(inputs_name) > 0:
             config.input_names_require_grad = inputs_name
@@ -133,21 +184,24 @@ def onnx_derivative(onx, weights=None, inputs=None,
     train_onnx_model_serialized = builder.get_model()
     # optimized_pre_grad_model = builder.get_inference_optimized_model()
     grad_yield = onnx.load(BytesIO(train_onnx_model_serialized))
-    if not out_yield_op:
+    if options & DerivativeOptions.KeepYieldOp:
+        if options != DerivativeOptions.KeepYieldOp:
+            raise ValueError(
+                "Option YieldOd cannot be combined with any other.")
         return grad_yield
 
     yields_op = [
-        node for node in grad_yield.graph.node  # pylint: disable=E1101
+        node for node in grad_yield.graph.node
         if node.op_type == 'YieldOp']
     if len(yields_op) == 0:
         raise RuntimeError(  # pragma: no cover
             "No YieldOp was found. The input graph must be wrong.")
 
     other_nodes = [
-        node for node in grad_yield.graph.node  # pylint: disable=E1101
+        node for node in grad_yield.graph.node
         if node.op_type != 'YieldOp']
-    inputs = list(grad_yield.graph.input)  # pylint: disable=E1101
-    outputs = list(grad_yield.graph.output)  # pylint: disable=E1101
+    inputs = list(grad_yield.graph.input)
+    outputs = list(grad_yield.graph.output)
     map_out = {o.name: o for o in onx.graph.output}
     for yn in yields_op:
         if len(yn.input) != 1 or len(yn.output) != 1:
@@ -157,33 +211,47 @@ def onnx_derivative(onx, weights=None, inputs=None,
             raise RuntimeError(  # pragma: no cover
                 "Unable to find output %r in %r." % (
                     yn.input[0], list(map_out)))
-        out = map_out[yn.input[0]]
-        new_input = onnx.ValueInfoProto()
-        new_input.name = yn.output[0]
-        new_input.doc_string = "from yieldop"
-        new_input.type.CopyFrom(out.type)  # pylint: disable=E1101
-        inputs.append(new_input)
-
-        if keep_output:
+        if not(options & DerivativeOptions.FillGrad):  # pylint: disable=C0325
+            out = map_out[yn.input[0]]
+            new_input = onnx.ValueInfoProto()
+            new_input.name = yn.output[0]
+            new_input.doc_string = "from yieldop"
+            new_input.type.CopyFrom(out.type)
+            inputs.append(new_input)
+        else:
+            if not(options & DerivativeOptions.KeepOutputs):  # pylint: disable=C0325
+                raise ValueError(  # pragma: no cover
+                    "FillGrad should be set with KeepOutputs.")
+            name = "%s_shape" % yn.input[0]
+            node = make_node('Shape', [yn.input[0]], [name])
+            other_nodes.append(node)
+            out = map_out[yn.input[0]]
+            elem_type = out.type.tensor_type.elem_type
+            node = make_node(
+                'ConstantOfShape', [name], [yn.output[0]],
+                value=make_tensor(
+                    "value", elem_type, (1, ), [1]))
+            other_nodes.append(node)
+        if options & DerivativeOptions.KeepOutputs:
             # Keeps output from the original graph.
             outputs.append(out)
 
     # Final graph.
     graph = make_graph(
-        other_nodes, grad_yield.graph.name, inputs, outputs,  # pylint: disable=E1101
-        list(grad_yield.graph.initializer))  # pylint: disable=E1101
+        other_nodes, grad_yield.graph.name, inputs, outputs,
+        list(grad_yield.graph.initializer))
     new_model = make_model(graph)
-    new_model.ir_version = grad_yield.ir_version  # pylint: disable=E1101
-    new_model.producer_name = grad_yield.producer_name  # pylint: disable=E1101
-    new_model.producer_version = grad_yield.producer_version  # pylint: disable=E1101
-    new_model.domain = grad_yield.domain  # pylint: disable=E1101
-    new_model.model_version = grad_yield.model_version  # pylint: disable=E1101
-    new_model.doc_string = grad_yield.doc_string  # pylint: disable=E1101
+    new_model.ir_version = grad_yield.ir_version
+    new_model.producer_name = grad_yield.producer_name
+    new_model.producer_version = grad_yield.producer_version
+    new_model.domain = grad_yield.domain
+    new_model.model_version = grad_yield.model_version
+    new_model.doc_string = grad_yield.doc_string
     if hasattr(onx, 'value_info'):
-        graph.value_info.extend(grad_yield.value_info)  # pylint: disable=E1101
-    del new_model.opset_import[:]  # pylint: disable=E1101
-    for oimp in grad_yield.opset_import:  # pylint: disable=E1101
-        op_set = new_model.opset_import.add()  # pylint: disable=E1101
+        graph.value_info.extend(grad_yield.value_info)
+    del new_model.opset_import[:]
+    for oimp in grad_yield.opset_import:
+        op_set = new_model.opset_import.add()
         op_set.domain = oimp.domain
         op_set.version = oimp.version
     return new_model
