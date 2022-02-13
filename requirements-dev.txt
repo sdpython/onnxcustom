@@ -14,7 +14,7 @@ lightgbm
 loky
 matplotlib
 mlinsights
-mlprodict>=0.7
+mlprodict>=0.8.1697
 myst-parser
 nbsphinx
 onnxconverter-common
