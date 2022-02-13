@@ -543,15 +543,15 @@ class OrtGradientForwardBackwardOptimizer(BaseEstimator):
                 self.device, orty, prediction[0])
             cpu_loss = loss.numpy()
             if numpy.isinf(cpu_loss) or numpy.isnan(cpu_loss):
-                if self.exc:
-                    raise ConvergenceError(  # pragma: no cover
+                if self.exc:  # pragma: no cover
+                    raise ConvergenceError(
                         "Loss is nan, "
                         "the evaluation has failed "
                         "(past losses=%r)." %
                         [float(v) for v in (
                             actual_losses if len(actual_losses) < 5
                             else actual_losses[-5:])])
-                warnings.warn(  # pragma: no cover
+                warnings.warn(
                     "Loss is nan, learning_rate=%r, "
                     "the gradient descent has failed "
                     "(past losses=%r)." % (
@@ -560,7 +560,7 @@ class OrtGradientForwardBackwardOptimizer(BaseEstimator):
                             actual_losses if len(actual_losses) < 5
                             else actual_losses[-5:])]),
                     ConvergenceWarning)
-                if numpy.isinf(cpu_loss):  # pragma: no cover
+                if numpy.isinf(cpu_loss):
                     cpu_loss = numpy.nan
             actual_losses.append(cpu_loss)
 

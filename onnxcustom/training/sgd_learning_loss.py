@@ -32,7 +32,7 @@ class BaseLearningLoss(BaseLearningOnnx):
         for the method `loss_score`.
         """
         if not hasattr(self, 'loss_grad_onnx_'):
-            raise RuntimeError(
+            raise RuntimeError(  # pragma: no cover
                 "Missing attribute 'loss_grad_onnx_'. "
                 "Method 'build_onnx_function' should be called first.")
 

@@ -4,7 +4,7 @@
 """
 import unittest
 import logging
-from pyquickhelper.pycode import ExtTestCase
+from pyquickhelper.pycode import ExtTestCase, ignore_warnings
 import numpy
 from onnxruntime import InferenceSession
 try:
@@ -62,6 +62,7 @@ class TestGradHelper(ExtTestCase):
         logging.basicConfig(level=logging.WARNING)
 
     @unittest.skipIf(TrainingSession is None, reason="not training")
+    @ignore_warnings(DeprecationWarning)
     def test_grad_helper_keep_yield(self):
         opv = opset
         node = OnnxAdd('X', numpy.array([1], dtype=numpy.float32),
@@ -77,6 +78,7 @@ class TestGradHelper(ExtTestCase):
             f.write(new_onx.SerializeToString())
 
     @unittest.skipIf(TrainingSession is None, reason="not training")
+    @ignore_warnings(DeprecationWarning)
     def test_grad_helper(self):
         opv = opset
         node = OnnxAdd('X', numpy.array([1], dtype=numpy.float32),
@@ -88,6 +90,7 @@ class TestGradHelper(ExtTestCase):
         self.check_runtime(new_onx, 'test_grad_helper')
 
     @unittest.skipIf(TrainingSession is None, reason="not training")
+    @ignore_warnings(DeprecationWarning)
     def test_grad_helper_nooutput(self):
         opv = opset
         node = OnnxAdd('X', numpy.array([1], dtype=numpy.float32),
@@ -99,6 +102,7 @@ class TestGradHelper(ExtTestCase):
         self.check_runtime(new_onx, 'test_grad_helper_nooutput')
 
     @unittest.skipIf(TrainingSession is None, reason="not training")
+    @ignore_warnings(DeprecationWarning)
     def test_grad_helper_mul(self):
         opv = opset
         xi = OnnxIdentity('X', op_version=opv)
@@ -110,6 +114,7 @@ class TestGradHelper(ExtTestCase):
         self.check_runtime(new_onx, 'test_grad_helper_mul')
 
     @unittest.skipIf(TrainingSession is None, reason="not training")
+    @ignore_warnings(DeprecationWarning)
     def test_grad_helper_noweight(self):
         opv = opset
         node = OnnxAdd('X', numpy.array([1], dtype=numpy.float32),
@@ -121,6 +126,7 @@ class TestGradHelper(ExtTestCase):
         self.check_runtime(new_onx, 'test_grad_helper_noweight')
 
     @unittest.skipIf(TrainingSession is None, reason="not training")
+    @ignore_warnings(DeprecationWarning)
     def test_grad_helper_fillgrad(self):
         opv = opset
         node = OnnxAdd('X', numpy.array([1], dtype=numpy.float32),
@@ -137,7 +143,19 @@ class TestGradHelper(ExtTestCase):
                 DerivativeOptions.FillGrad | DerivativeOptions.KeepOutputs))
         input_names = set(i.name for i in new_onx.graph.input)
         self.assertNotIn('Y_grad', input_names)
-        self.check_runtime(new_onx, 'test_grad_helper_fillgrad', verbose=True)
+        self.check_runtime(new_onx, 'test_grad_helper_fillgrad', verbose=False)
+
+    @ignore_warnings(DeprecationWarning)
+    def test_grad_helper_exc(self):
+        opv = opset
+        node = OnnxAdd('X', numpy.array([1], dtype=numpy.float32),
+                       op_version=opv, output_names=['Y'])
+        onx = node.to_onnx({'X': FloatTensorType([None, 10])},
+                           {'Y': FloatTensorType([None, 10])},
+                           target_opset=opv)
+        self.assertRaise(
+            lambda: onnx_derivative(onx, weights=[], options=1),
+            TypeError)
 
 
 if __name__ == "__main__":

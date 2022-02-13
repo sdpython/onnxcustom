@@ -3,7 +3,7 @@
 """
 import unittest
 import logging
-from pyquickhelper.pycode import ExtTestCase
+from pyquickhelper.pycode import ExtTestCase, ignore_warnings
 import numpy
 from sklearn.datasets import make_regression, make_classification
 from sklearn.model_selection import train_test_split
@@ -32,6 +32,7 @@ class TestOrtTraining(ExtTestCase):
         logging.basicConfig(level=logging.WARNING)
 
     @unittest.skipIf(TrainingSession is None, reason="not training")
+    @ignore_warnings(DeprecationWarning)
     def test_add_loss_output_reg(self):
         from onnxcustom.utils.orttraining_helper import add_loss_output
         X, y = make_regression(  # pylint: disable=W0632
@@ -51,6 +52,28 @@ class TestOrtTraining(ExtTestCase):
         skl_loss = mean_squared_error(reg.predict(X_test), y_test)
         self.assertLess(numpy.abs(skl_loss - loss[0, 0]), 1e-5)
 
+    @unittest.skipIf(TrainingSession is None, reason="not training")
+    @ignore_warnings(DeprecationWarning)
+    def test_add_loss_output_reg_l1(self):
+        from onnxcustom.utils.orttraining_helper import add_loss_output
+        X, y = make_regression(  # pylint: disable=W0632
+            100, n_features=10, bias=2)
+        X = X.astype(numpy.float32)
+        y = y.astype(numpy.float32)
+        X_train, X_test, y_train, y_test = train_test_split(X, y)
+        reg = LinearRegression()
+        reg.fit(X_train, y_train)
+        reg.coef_ = reg.coef_.reshape((1, -1))
+        onx = to_onnx(reg, X_train, target_opset=opset,
+                      black_op={'LinearRegressor'})
+        onx_loss = add_loss_output(onx, 'l1')
+        oinf = OnnxInference(onx_loss)
+        output = oinf.run({'X': X_test, 'label': y_test.reshape((-1, 1))})
+        loss = output['loss']
+        skl_loss = mean_squared_error(reg.predict(X_test), y_test)
+        self.assertLess(numpy.abs(skl_loss - loss[0, 0]), 1e-2)
+
+    @ignore_warnings(DeprecationWarning)
     def test_clean_grad(self):
         from onnxcustom.utils.orttraining_helper import _rewrite_op_no_grad
         onx = OnnxReciprocal(
@@ -63,6 +86,7 @@ class TestOrtTraining(ExtTestCase):
         self.assertNotIn('op_type: "Reciprocal"', str(onx2))
 
     @unittest.skipIf(TrainingSession is None, reason="not training")
+    @ignore_warnings(DeprecationWarning)
     def test_get_train_initializer(self):
         from onnxcustom.utils.orttraining_helper import get_train_initializer
         X, y = make_regression(  # pylint: disable=W0632
@@ -79,6 +103,7 @@ class TestOrtTraining(ExtTestCase):
         self.assertEqual({'intercept', 'coef'}, set(inits))
 
     @unittest.skipIf(TrainingSession is None, reason="not training")
+    @ignore_warnings(DeprecationWarning)
     def test_add_log_loss(self):
         from onnxcustom.utils.orttraining_helper import add_loss_output
         ide = OnnxIdentity("X", op_version=opset, output_names=['Y'])
@@ -96,6 +121,7 @@ class TestOrtTraining(ExtTestCase):
         self.assertLess(numpy.abs(skl_loss - loss[0, 0]), 1e-5)
 
     @unittest.skipIf(TrainingSession is None, reason="not training")
+    @ignore_warnings(DeprecationWarning)
     def test_add_loss_output_cls(self):
         from onnxcustom.utils.orttraining_helper import add_loss_output
         X, y = make_classification(  # pylint: disable=W0632

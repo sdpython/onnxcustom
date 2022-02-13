@@ -124,7 +124,4 @@ class BaseEstimator(BaseOnnxClass):
             than the training graph
         :return: onnx graph
         """
-        if model is None:
-            return replace_initializers_into_onnx(
-                self.model_onnx, state)
-        return replace_initializers_into_onnx(model, state)
+        return replace_initializers_into_onnx(model or self.model_onnx, state)

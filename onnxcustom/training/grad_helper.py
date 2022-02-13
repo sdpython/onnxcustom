@@ -20,10 +20,10 @@ class DerivativeOptions(IntFlag):
     gradients.
 
     * `KeepYieldOp`: keeps the operator *YieldOp* in the graph,
-        see @see fn onnx_derivative
-    * `KeepOutput`: keeps the output of the original graph
+      see @see fn onnx_derivative
+    * `KeepOutputs`: keeps the output of the original graph
     * `FillGrad`: do not add any output to specify the gradient
-        of the output but assumes it is one
+      of the output but assumes it is one
     """
 
     Zero = 0
@@ -45,7 +45,7 @@ def onnx_derivative(onx, weights=None, inputs=None,
 
     The function calls :epkg:`OrtModuleGraphBuilderConfiguration`
     from :epkg:`onnxruntime-training`. This graph is meant to be used
-    with :epkg:`OrtGradientForwardBackward` and includes
+    with @see cl OrtGradientForwardBackward and includes
     operator `YieldOp`. That's the graph looks this way:
 
     .. gdot::
@@ -164,7 +164,7 @@ def onnx_derivative(onx, weights=None, inputs=None,
         for i in onx.graph.input:
             try:
                 elem_type = i.type.tensor_type.elem_type
-            except AttributeError:
+            except AttributeError:  # pragma: no cover
                 # not a vector
                 continue
             if elem_type in (

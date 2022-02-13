@@ -156,7 +156,7 @@ def replace_initializers_into_onnx(model, results):
                 v = numpy_helper.from_array(v.numpy(), k)
             inits[inits_dict[k]] = v
         else:
-            raise RuntimeError(
+            raise RuntimeError(  # pragma: no cover
                 "Unable to find initializer %r in "
                 "%r." % (k, inits_dict))
 
