@@ -60,6 +60,7 @@ class TestGradHelper(ExtTestCase):
         logger = logging.getLogger('skl2onnx')
         logger.setLevel(logging.WARNING)
         logging.basicConfig(level=logging.WARNING)
+        ExtTestCase.setUpClass()
 
     @unittest.skipIf(TrainingSession is None, reason="not training")
     @ignore_warnings(DeprecationWarning)

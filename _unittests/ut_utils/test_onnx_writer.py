@@ -15,12 +15,6 @@ from onnxcustom.utils.onnx_rewriter import onnx_rewrite_operator, _unique_name
 
 class TestOnnxWriter(ExtTestCase):
 
-    @classmethod
-    def setUpClass(cls):
-        logger = logging.getLogger('skl2onnx')
-        logger.setLevel(logging.WARNING)
-        logging.basicConfig(level=logging.WARNING)
-
     def test_onnx_rewrite_operator(self):
         opset = get_max_opset()
         node1 = OnnxReciprocal('X', output_names=['Y'],

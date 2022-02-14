@@ -15,12 +15,6 @@ from onnxcustom import get_max_opset
 class TestOnnxRuntimes(ExtTestCase):
     """Test style."""
 
-    @classmethod
-    def setUpClass(cls):
-        logger = logging.getLogger('skl2onnx')
-        logger.setLevel(logging.WARNING)
-        logging.basicConfig(level=logging.WARNING)
-
     def test_check(self):
         opset = get_max_opset()
         min_values = [-41.621277, -40.621277, -30.621277, -20.621277,

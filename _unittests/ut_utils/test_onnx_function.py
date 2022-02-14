@@ -18,12 +18,6 @@ from onnxcustom.utils.onnx_rewriter import unreduced_onnx_loss
 
 class TestOnnxFunction(ExtTestCase):
 
-    @classmethod
-    def setUpClass(cls):
-        logger = logging.getLogger('skl2onnx')
-        logger.setLevel(logging.WARNING)
-        logging.basicConfig(level=logging.WARNING)
-
     def common_check(self, name, fct, weight_name=None):
         onx = function_onnx_graph(
             name, target_opset=get_max_opset(),

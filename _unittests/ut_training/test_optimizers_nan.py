@@ -30,6 +30,7 @@ class TestOptimizersNan(ExtTestCase):
         logger = logging.getLogger('onnxcustom')
         logger.setLevel(logging.WARNING)
         logging.basicConfig(level=logging.WARNING)
+        ExtTestCase.setUpClass()
 
     @unittest.skipIf(TrainingSession is None, reason="not training")
     def test_ort_gradient_optimizers_reg(self):

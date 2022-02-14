@@ -34,6 +34,7 @@ class TestOptimizersGrid(ExtTestCase):
         logger = logging.getLogger('onnxcustom')
         logger.setLevel(logging.WARNING)
         logging.basicConfig(level=logging.WARNING)
+        ExtTestCase.setUpClass()
 
     @unittest.skipIf(TrainingSession is None, reason="not training")
     @ignore_warnings((ConvergenceWarning, DeprecationWarning))

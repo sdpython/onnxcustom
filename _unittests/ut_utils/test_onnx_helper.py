@@ -16,12 +16,6 @@ from onnxcustom.utils.onnx_helper import (
 
 class TestOnnxHelper(ExtTestCase):
 
-    @classmethod
-    def setUpClass(cls):
-        logger = logging.getLogger('skl2onnx')
-        logger.setLevel(logging.WARNING)
-        logging.basicConfig(level=logging.WARNING)
-
     def test_onnx_rename_weights(self):
         N, D_in, D_out, H = 3, 3, 3, 3
         var = [('X', FloatTensorType([N, D_in]))]

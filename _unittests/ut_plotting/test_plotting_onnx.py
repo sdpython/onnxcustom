@@ -22,6 +22,7 @@ class TestPlotOnnx(ExtTestCase):
         logger.setLevel(logging.WARNING)
         logging.basicConfig(level=logging.WARNING)
         logging.getLogger('matplotlib.font_manager').disabled = True
+        ExtTestCase.setUpClass()
 
     @skipif_travis('graphviz is not installed')
     @skipif_circleci('graphviz is not installed')

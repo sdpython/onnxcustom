@@ -25,12 +25,6 @@ except ImportError:
 
 class TestOrtTraining(ExtTestCase):
 
-    @classmethod
-    def setUpClass(cls):
-        logger = logging.getLogger('skl2onnx')
-        logger.setLevel(logging.WARNING)
-        logging.basicConfig(level=logging.WARNING)
-
     @unittest.skipIf(TrainingSession is None, reason="not training")
     @ignore_warnings(DeprecationWarning)
     def test_add_loss_output_reg(self):
