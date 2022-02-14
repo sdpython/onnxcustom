@@ -2,7 +2,6 @@
 @brief      test log(time=0s)
 """
 import unittest
-import logging
 import numpy
 from scipy.special import expit  # pylint: disable=E0611
 from pyquickhelper.pycode import ExtTestCase

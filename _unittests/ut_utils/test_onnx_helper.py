@@ -2,7 +2,6 @@
 @brief      test log(time=9s)
 """
 import unittest
-import logging
 import numpy
 from pyquickhelper.pycode import ExtTestCase
 from skl2onnx.common.data_types import (

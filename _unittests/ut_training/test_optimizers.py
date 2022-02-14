@@ -5,7 +5,6 @@ import os
 import unittest
 import io
 import pickle
-import logging
 from pyquickhelper.pycode import ExtTestCase, get_temp_folder
 import numpy
 from onnx.helper import set_model_props

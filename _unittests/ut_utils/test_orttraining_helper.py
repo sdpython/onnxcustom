@@ -2,7 +2,6 @@
 @brief      test log(time=5s)
 """
 import unittest
-import logging
 from pyquickhelper.pycode import ExtTestCase, ignore_warnings
 import numpy
 from sklearn.datasets import make_regression, make_classification
