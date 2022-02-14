@@ -11,6 +11,7 @@ from onnxruntime.capi._pybind_state import (  # pylint: disable=E0611
     OrtModuleGraphBuilder,
     OrtModuleGraphBuilderConfiguration,
     TrainingGraphTransformerConfiguration)
+from mlprodict.onnx_tools.optim.onnx_optimisation import onnx_remove_node
 from ..utils.orttraining_helper import get_train_initializer
 
 
@@ -201,7 +202,12 @@ def onnx_derivative(onx, weights=None, inputs=None,
         node for node in grad_yield.graph.node
         if node.op_type != 'YieldOp']
     inputs = list(grad_yield.graph.input)
-    outputs = list(grad_yield.graph.output)
+    if options & DerivativeOptions.KeepOutputs:
+        outputs = list(grad_yield.graph.output)
+    else:
+        original = set(i.name for i in onx.graph.output)
+        outputs = [o for o in grad_yield.graph.output
+                   if o.name not in original]
     map_out = {o.name: o for o in onx.graph.output}
     for yn in yields_op:
         if len(yn.input) != 1 or len(yn.output) != 1:
@@ -254,4 +260,5 @@ def onnx_derivative(onx, weights=None, inputs=None,
         op_set = new_model.opset_import.add()
         op_set.domain = oimp.domain
         op_set.version = oimp.version
-    return new_model
+
+    return onnx_remove_node(new_model)

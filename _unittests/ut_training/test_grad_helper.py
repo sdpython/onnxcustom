@@ -88,6 +88,8 @@ class TestGradHelper(ExtTestCase):
                            {'Y': FloatTensorType([None, 10])},
                            target_opset=opv)
         new_onx = onnx_derivative(onx)
+        out_names = [o.name for o in new_onx.graph.output]
+        self.assertNotIn('Y', out_names)
         self.check_runtime(new_onx, 'test_grad_helper')
 
     @unittest.skipIf(TrainingSession is None, reason="not training")
