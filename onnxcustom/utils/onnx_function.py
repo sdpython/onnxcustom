@@ -65,6 +65,7 @@ def function_onnx_graph(name, target_opset=None, dtype=numpy.float32,
 
     .. runpython::
         :showcode:
+        :warningout: DeprecationWarning
 
         from onnxcustom.utils.onnx_function import get_supported_functions
         print("\\n".join(sorted(get_supported_functions())))
@@ -252,7 +253,7 @@ def _onnx_grad_square_error(target_opset=None, dtype=numpy.float32,
     diff = OnnxSub('X1', 'X2', op_version=target_opset)
     if weight_name is None:
         res = OnnxMul(diff, numpy.array([-2], dtype=dtype),
-                      op_version=target_opset, output_names=['Y'])
+                      op_version=target_opset, output_names=['Y_grad'])
     else:
         res = OnnxMul(
             OnnxMul(diff, numpy.array([-2], dtype=dtype),
@@ -260,12 +261,12 @@ def _onnx_grad_square_error(target_opset=None, dtype=numpy.float32,
             OnnxReshape(weight_name,
                         numpy.array([-1, 1], dtype=numpy.int64),
                         op_version=target_opset),
-            op_version=target_opset, output_names=['Y'])
+            op_version=target_opset, output_names=['Y_grad'])
     var_type = dtype_to_var_type(dtype)
     varsx = [('X1', var_type([None, None])), ('X2', var_type([None, None]))]
     if weight_name is not None:
         varsx.append((weight_name, var_type([None])))
-    onx = res.to_onnx(varsx, outputs=[('Y', var_type())],
+    onx = res.to_onnx(varsx, outputs=[('Y_grad', var_type())],
                       target_opset=target_opset)
     if weight_name is not None:
         onx = add_initializer(
@@ -386,7 +387,7 @@ def _onnx_grad_loss_square_error(target_opset=None, dtype=numpy.float32,
                       numpy.array([multiply * 0.5], dtype=numpy.float32),
                       op_version=target_opset)
         res2 = OnnxMul(diff, numpy.array([-multiply], dtype=dtype),
-                       op_version=target_opset, output_names=['Z'])
+                       op_version=target_opset, output_names=['Y_grad'])
     else:
         resh = OnnxReshape(weight_name,
                            numpy.array([-1, 1], dtype=numpy.int64),
@@ -401,7 +402,7 @@ def _onnx_grad_loss_square_error(target_opset=None, dtype=numpy.float32,
         res2 = OnnxMul(
             OnnxMul(diff, numpy.array([-multiply], dtype=dtype),
                     op_version=target_opset),
-            resh, op_version=target_opset, output_names=['Z'])
+            resh, op_version=target_opset, output_names=['Y_grad'])
 
     res = OnnxReshape(res, numpy.array([-1], numpy.int64),
                       op_version=target_opset,
@@ -413,7 +414,7 @@ def _onnx_grad_loss_square_error(target_opset=None, dtype=numpy.float32,
     if weight_name is not None:
         varsx.append((weight_name, var_type([None])))
     onx = res.to_onnx(
-        varsx, outputs=[('Y', var_type()), ('Z', var_type())],
+        varsx, outputs=[('Y', var_type()), ('Y_grad', var_type())],
         target_opset=target_opset, other_outputs=[res2])
     if weight_name is not None:
         onx = add_initializer(
@@ -448,7 +449,7 @@ def _onnx_grad_loss_absolute_error(target_opset=None, dtype=numpy.float32,
     if weight_name is None:
         res = OnnxReduceSum(abs_diff, op_version=target_opset)
         res2 = OnnxSign(diff, op_version=target_opset,
-                        output_names=['Z'])
+                        output_names=['Y_grad'])
     else:
         resh = OnnxReshape(weight_name,
                            numpy.array([-1, 1], dtype=numpy.int64),
@@ -457,7 +458,7 @@ def _onnx_grad_loss_absolute_error(target_opset=None, dtype=numpy.float32,
         res = OnnxReduceSum(mul, op_version=target_opset)
         res2 = OnnxMul(
             OnnxSign(diff, op_version=target_opset),
-            resh, op_version=target_opset, output_names=['Z'])
+            resh, op_version=target_opset, output_names=['Y_grad'])
 
     res = OnnxReshape(res, numpy.array([-1], numpy.int64),
                       op_version=target_opset,
@@ -468,7 +469,7 @@ def _onnx_grad_loss_absolute_error(target_opset=None, dtype=numpy.float32,
     if weight_name is not None:
         varsx.append((weight_name, var_type([None])))
     onx = res.to_onnx(
-        varsx, outputs=[('Y', var_type()), ('Z', var_type())],
+        varsx, outputs=[('Y', var_type()), ('Y_grad', var_type())],
         target_opset=target_opset, other_outputs=[res2])
     if weight_name is not None:
         onx = add_initializer(
@@ -529,7 +530,7 @@ def _onnx_grad_loss_elastic_error(target_opset=None, dtype=numpy.float32,
     if weight_name is None:
         res = OnnxReduceSum(score, op_version=target_opset)
         res2 = OnnxIdentity(grad, op_version=target_opset,
-                            output_names=['Z'])
+                            output_names=['Y_grad'])
     else:
         resh = OnnxReshape(weight_name,
                            numpy.array([-1, 1], dtype=numpy.int64),
@@ -538,7 +539,7 @@ def _onnx_grad_loss_elastic_error(target_opset=None, dtype=numpy.float32,
             OnnxMul(score, resh, op_version=target_opset),
             op_version=target_opset)
         res2 = OnnxMul(grad, resh, op_version=target_opset,
-                       output_names=['Z'])
+                       output_names=['Y_grad'])
 
     res = OnnxReshape(res, numpy.array([-1], numpy.int64),
                       op_version=target_opset,
@@ -550,7 +551,7 @@ def _onnx_grad_loss_elastic_error(target_opset=None, dtype=numpy.float32,
     if weight_name is not None:
         varsx.append((weight_name, var_type([None])))
     onx = res.to_onnx(
-        varsx, outputs=[('Y', var_type()), ('Z', var_type())],
+        varsx, outputs=[('Y', var_type()), ('Y_grad', var_type())],
         target_opset=target_opset, other_outputs=[res2])
     if weight_name is not None:
         onx = add_initializer(
@@ -603,12 +604,12 @@ def _onnx_grad_penalty_elastic_error(target_opset=None, dtype=numpy.float32,
                 op_version=target_opset),
         OnnxMul(res2_l2, numpy.array([l2_weight * (2)], dtype=dtype),
                 op_version=target_opset),
-        op_version=target_opset, output_names=['Z'])
+        op_version=target_opset, output_names=['Y_grad'])
 
     var_type = dtype_to_var_type(dtype)
     varsx = [('X', var_type([None, None]))]
     onx = res.to_onnx(
-        varsx, outputs=[('Y', var_type([None])), ('Z', var_type())],
+        varsx, outputs=[('Y', var_type([None])), ('Y_grad', var_type())],
         target_opset=target_opset, other_outputs=[res2])
     return onx
 
@@ -779,7 +780,7 @@ def _onnx_grad_sigmoid_neg_log_loss_error(target_opset=None,
     if weight_name is None:
         loss = OnnxReduceSum(loss_neg, op_version=target_opset)
         grad = OnnxSub(p1, y1, op_version=target_opset,
-                       output_names=['Z'])
+                       output_names=['Y_grad'])
     else:
         loss = OnnxReduceSum(
             OnnxMul(loss_neg,
@@ -792,7 +793,7 @@ def _onnx_grad_sigmoid_neg_log_loss_error(target_opset=None,
             OnnxSub(p1, y1, op_version=target_opset),
             OnnxReshape(weight_name, numpy.array([-1, 1], dtype=numpy.int64),
                         op_version=target_opset),
-            output_names=['Z'], op_version=target_opset)
+            output_names=['Y_grad'], op_version=target_opset)
 
     res = OnnxReshape(loss, numpy.array([-1], numpy.int64),
                       op_version=target_opset,
@@ -805,7 +806,7 @@ def _onnx_grad_sigmoid_neg_log_loss_error(target_opset=None,
     if weight_name is not None:
         varsx.append((weight_name, var_type([None])))
     onx = res.to_onnx(
-        varsx, outputs=[('Y', var_type()), ('Z', var_type())],
+        varsx, outputs=[('Y', var_type()), ('Y_grad', var_type())],
         target_opset=target_opset, other_outputs=[grad])
     if weight_name is not None:
         onx = add_initializer(

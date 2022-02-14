@@ -1282,4 +1282,4 @@ if __name__ == "__main__":
     # cl = TestOptimizersForwardBackward()
     # cl.test_ort_gradient_optimizers_nesterov_penalty_l2()
     # stop
-    unittest.main()
+    unittest.main(verbosity=2)

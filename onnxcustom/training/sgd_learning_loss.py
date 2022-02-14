@@ -76,7 +76,7 @@ class BaseLearningLoss(BaseLearningOnnx):
         self._bind_input_ortvalue("X1", bind, expected, device, cache=True)
         self._bind_input_ortvalue("X2", bind, predicted, device, cache=True)
         self.loss_grad_sess_bind_.bind_output('Y', device)
-        self.loss_grad_sess_bind_.bind_output('Z', device)
+        self.loss_grad_sess_bind_.bind_output('Y_grad', device)
         self._call_iobinding(self.loss_grad_sess_._sess, bind)
         loss, grad = bind.get_outputs()
         return loss, grad

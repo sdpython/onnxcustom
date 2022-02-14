@@ -17,7 +17,7 @@ from onnxcustom.utils.onnx_rewriter import unreduced_onnx_loss
 
 class TestOnnxFunction(ExtTestCase):
 
-    def common_check(self, name, fct, weight_name=None):
+    def common_check(self, name, fct, weight_name=None, output_name='Y'):
         onx = function_onnx_graph(
             name, target_opset=get_max_opset(),
             dtype=numpy.float32, weight_name=weight_name)
@@ -34,12 +34,12 @@ class TestOnnxFunction(ExtTestCase):
             got = oinf.run({'X1': expected, 'X2': predicted})
         else:
             got = oinf.run({'X1': expected, 'X2': predicted, 'weight': w})
-        self.assertEqualArray(fin, got['Y'], decimal=5)
+        self.assertEqualArray(fin, got[output_name], decimal=5)
         if weight_name is not None:
             got = oinf.run({'X1': expected, 'X2': predicted})
             fin1 = fct(
                 expected, predicted, numpy.array([1], dtype=expected.dtype))
-            self.assertEqualArray(fin1, got['Y'], decimal=5)
+            self.assertEqualArray(fin1, got[output_name], decimal=5)
 
         providers = device_to_providers('cpu')
         so = SessionOptions()
@@ -72,13 +72,14 @@ class TestOnnxFunction(ExtTestCase):
             weight_name='weight')
 
     def test_grad_onnx_square_error(self):
-        self.common_check("grad_square_error", lambda x1, x2: (x1 - x2) * (-2))
+        self.common_check("grad_square_error", lambda x1, x2: (x1 - x2) * (-2),
+                          output_name='Y_grad')
 
     def test_grad_onnx_square_error_w(self):
         self.common_check(
             "grad_square_error", lambda x1, x2, w:
                 (x1 - x2) * (-2) * w.reshape((-1, 1)),
-            weight_name='weight')
+            weight_name='weight', output_name='Y_grad')
 
     def test_get_supported_functions(self):
         res = get_supported_functions()
@@ -112,7 +113,7 @@ class TestOnnxFunction(ExtTestCase):
 
     def common_check_2(self, name, fct, weight_name=None,
                        verbose=0, classification=False, rnd=True,
-                       **kwargs):
+                       second_name='Y_grad', **kwargs):
         onx = function_onnx_graph(
             name, target_opset=get_max_opset(),
             dtype=numpy.float32, weight_name=weight_name,
@@ -158,7 +159,7 @@ class TestOnnxFunction(ExtTestCase):
             got = oinf.run({'X1': x1, 'X2': x2, 'weight': w}, **run_params)
         self.assertEqual(len(exp_grad.shape), 2)
         self.assertEqual(exp_grad.shape[-1], 1)
-        self.assertEqualArray(exp_grad, got['Z'], decimal=5)
+        self.assertEqualArray(exp_grad, got[second_name], decimal=5)
         self.assertEqualArray(exp_loss, got['Y'], decimal=5)
 
         providers = device_to_providers('cpu')
@@ -315,7 +316,7 @@ class TestOnnxFunction(ExtTestCase):
         sess = InferenceSession(onx.SerializeToString(), so)
         got2 = sess.run(None, {'X1': expected, 'X2': predicted})
         self.assertEqualArray(got1['Y'], got2[0], decimal=5)
-        self.assertEqualArray(got1['Z'], got2[1])
+        self.assertEqualArray(got1['Y_grad'], got2[1])
 
     def common_unary(self, name, fct):
         onx = function_onnx_graph(
@@ -392,7 +393,7 @@ class TestOnnxFunction(ExtTestCase):
         oinf = OnnxInference(onx)
         got = oinf.run({'X': x})
         self.assertEqualArray(exp_loss, got['Y'], decimal=5)
-        self.assertEqualArray(exp_grad, got['Z'], decimal=5)
+        self.assertEqualArray(exp_grad, got['Y_grad'], decimal=5)
 
         providers = device_to_providers('cpu')
         so = SessionOptions()
