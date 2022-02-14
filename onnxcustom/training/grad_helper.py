@@ -20,10 +20,11 @@ class DerivativeOptions(IntFlag):
     Options defining how to build the onnx graph of the
     gradients.
 
+    * `Zero`: default option, all options are disabled
     * `KeepYieldOp`: keeps the operator *YieldOp* in the graph,
       see @see fn onnx_derivative
     * `KeepOutputs`: keeps the output of the original graph
-    * `FillGrad`: do not add any output to specify the gradient
+    * `FillGrad`: does not add any output to specify the gradient
       of the output but assumes it is one
     """
 
