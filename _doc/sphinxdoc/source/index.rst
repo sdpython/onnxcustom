@@ -68,7 +68,6 @@ through all the examples this documentation contains.
     api/apis
     gyexamples/index
     all_notebooks
-    license
     other_pages
     blog/blogindex
 

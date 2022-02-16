@@ -20,3 +20,4 @@ Other pages
     index_module
     index_staticmethod
     blog/blogindex.rst
+    license
