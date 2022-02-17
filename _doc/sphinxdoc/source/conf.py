@@ -40,6 +40,7 @@ set_sphinx_variables(__file__, "onnxcustom", "Xavier Dupré", 2022,
 
 extensions.extend([
     "sphinxcontrib.blockdiag",
+    "sphinx.ext.napoleon",
     "myst_parser"
 ])
 

@@ -588,6 +588,12 @@ in a matrix based on the sign, returns 1 or -1.
     graph = make_graph([if_node, rsum, cond], 'if', [X], [Y], [zero])
     onnx_model = make_model(graph)
 
+    # Let's freeze the opset.
+    del onnx_model.opset_import[:]
+    opset = onnx_model.opset_import.add()
+    opset.domain = ''
+    opset.version = 15
+
     # Save.
     with open("onnx_if_sign.onnx", "wb") as f:
         f.write(onnx_model.SerializeToString())

@@ -295,7 +295,7 @@ This structure is usually created by an operator such as
 :epkg:`OneHotEncoder` or :epkg:`TfIdfVectorizer`.
 
 CSR
-~~~
++++
 
 The following example shows how to create a sparse tensor
 (C version, :epkg:`C_SparseTensor`) from a :epkg:`CSR` matrix
@@ -338,7 +338,7 @@ and to convert it back to this format.
     print(csr2)
 
 COO
-~~~
++++
 
 Previous example was changed to do the same with format
 :epkg:`COO`.
