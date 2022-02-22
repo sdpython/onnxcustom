@@ -5,7 +5,7 @@
 """
 import numpy
 from .onnx_helper import dtype_to_var_type, add_initializer
-from .cst import SUPPORTED_OPSET
+from .. import __max_supported_opset__ as SUPPORTED_OPSET
 
 
 def get_supported_functions():
@@ -26,7 +26,10 @@ def function_onnx_graph(name, target_opset=None, dtype=numpy.float32,
     Returns the ONNX graph corresponding to a function.
 
     :param name: name
-    :param target_opset: opset version
+    :param target_opset: opset version, if None, *target_opset*
+        is replaced by the latest supported opset defined
+        in the main `__init__.py` of this package in
+        `__max_supported_opset__`
     :param dtype: computation type
     :param weight_name: weight name if any
     :param kwargs: additional parameters

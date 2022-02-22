@@ -78,6 +78,27 @@ Package is available on `pypi <https://pypi.python.org/pypi/onnxcustom/>`_,
 The tutorial related to :epkg:`scikit-learn` has been merged into
 `sklearn-onnx documentation
 <http://onnx.ai/sklearn-onnx/index_tutorial.html>`_.
+This package supports ONNX opsets to the latest opset stored
+in `onnxcustom.__max_supported_opset__` which is:
+
+.. runpython::
+    :showcode:
+
+    import onnxcustom
+    print(onnxcustom.__max_supported_opset__)
+
+Any opset beyond that value is not supported and could fail.
+That's for the main set of ONNX functions or domain.
+Converters for :epkg:`scikit-learn` requires another domain,
+`'ai.onnxml'` to implement tree. Latest supported options
+are defined here:
+
+.. runpython::
+    :showcode:
+
+    import pprint
+    import onnxcustom
+    pprint.pprint(onnxcustom.__max_supported_opsets__)
 
 +----------------------+---------------------+---------------------+--------------------+------------------------+------------------------------------------------+
 | :ref:`l-modules`     |  :ref:`l-functions` | :ref:`l-classes`    | :ref:`l-methods`   | :ref:`l-staticmethods` | :ref:`l-properties`                            |
