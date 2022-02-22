@@ -158,7 +158,7 @@ update_registered_converter(
 # And conversion.
 
 onx = to_onnx(dec, X.astype(numpy.float32),
-              target_opset=14)
+              target_opset={'': 14, 'ai.onnx.ml': 2})
 
 sess = InferenceSession(onx.SerializeToString(),
                         providers=['CPUExecutionProvider'])

@@ -39,7 +39,7 @@ clr = LogisticRegression(max_iter=500)
 clr.fit(X_train, y_train)
 print(clr)
 
-onx = to_onnx(clr, X_train, target_opset=12)
+onx = to_onnx(clr, X_train, target_opset={'': 14, 'ai.onnx.ml': 2})
 
 ############################
 # Default behaviour: zipmap=True
@@ -63,7 +63,8 @@ print("type for the first observations:", type(res[1][0]))
 
 initial_type = [('float_input', FloatTensorType([None, 4]))]
 options = {id(clr): {'zipmap': False}}
-onx2 = to_onnx(clr, X_train, options=options, target_opset=12)
+onx2 = to_onnx(clr, X_train, options=options,
+               target_opset={'': 14, 'ai.onnx.ml': 2})
 
 sess2 = rt.InferenceSession(onx2.SerializeToString(),
                             providers=['CPUExecutionProvider'])
@@ -81,7 +82,8 @@ print("type for the first observations:", type(res2[1][0]))
 # one output for the label, and one output per class.
 
 options = {id(clr): {'zipmap': 'columns'}}
-onx3 = to_onnx(clr, X_train, options=options, target_opset=12)
+onx3 = to_onnx(clr, X_train, options=options,
+               target_opset={'': 14, 'ai.onnx.ml': 2})
 
 sess3 = rt.InferenceSession(onx3.SerializeToString(),
                             providers=['CPUExecutionProvider'])
@@ -125,7 +127,8 @@ print(sum(repeat(lambda: sess3.run(None, {'X': X_test}),
 
 initial_type = [('float_input', FloatTensorType([None, 4]))]
 options = {id(clr): {'zipmap': False, 'output_class_labels': True}}
-onx4 = to_onnx(clr, X_train, options=options, target_opset=12)
+onx4 = to_onnx(clr, X_train, options=options,
+               target_opset={'': 14, 'ai.onnx.ml': 2})
 
 sess4 = rt.InferenceSession(onx4.SerializeToString(),
                             providers=['CPUExecutionProvider'])
@@ -162,7 +165,7 @@ clr = MultiOutputClassifier(LogisticRegression(max_iter=500))
 clr.fit(X_train, y_train)
 print(clr)
 
-onx5 = to_onnx(clr, X_train, target_opset=12)
+onx5 = to_onnx(clr, X_train, target_opset={'': 14, 'ai.onnx.ml': 2})
 
 sess5 = rt.InferenceSession(onx5.SerializeToString(),
                             providers=['CPUExecutionProvider'])
@@ -173,7 +176,7 @@ print(res5)
 # Option zipmap is ignored. Labels are missing but they can be
 # added back as a third output.
 
-onx6 = to_onnx(clr, X_train, target_opset=12,
+onx6 = to_onnx(clr, X_train, target_opset={'': 14, 'ai.onnx.ml': 2},
                options={'zipmap': False, 'output_class_labels': True})
 
 sess6 = rt.InferenceSession(onx6.SerializeToString(),

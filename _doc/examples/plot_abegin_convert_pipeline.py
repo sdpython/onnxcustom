@@ -57,7 +57,7 @@ ereg.fit(X_train, y_train)
 # support doubles.
 
 onx = to_onnx(ereg, X_train[:1].astype(numpy.float32),
-              target_opset=12)
+              target_opset={'': 14, 'ai.onnx.ml': 2})
 
 ###################################
 # Prediction with ONNX

@@ -37,7 +37,8 @@ model = LogisticRegression(penalty='elasticnet', C=2.,
                            solver='saga', l1_ratio=0.5)
 model.fit(X_train, y_train)
 
-onx = to_onnx(model, X_train[:1], target_opset=12,
+onx = to_onnx(model, X_train[:1],
+              target_opset={'': 14, 'ai.onnx.ml': 2},
               options={'zipmap': False})
 
 ########################################
