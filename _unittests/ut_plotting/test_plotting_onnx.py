@@ -36,7 +36,7 @@ class TestPlotOnnx(ExtTestCase):
         model_def = onx.to_onnx({'X': X.astype(numpy.float32),
                                  'Y': Y.astype(numpy.float32)},
                                 outputs=[('Z', FloatTensorType([2]))],
-                                target_opset=12)
+                                target_opset={'': 14, 'ai.onnx.ml': 2})
 
         import matplotlib.pyplot as plt
         self.assertRaise(lambda: plot_onnxs(*[]), ValueError)
@@ -74,7 +74,7 @@ class TestPlotOnnx(ExtTestCase):
         model_def = onx.to_onnx({'X': X.astype(numpy.float32),
                                  'Y': Y.astype(numpy.float32)},
                                 outputs=[('Z', FloatTensorType([2]))],
-                                target_opset=12)
+                                target_opset={'': 14, 'ai.onnx.ml': 2})
 
         import matplotlib.pyplot as plt
         ax = numpy.array([0])

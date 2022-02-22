@@ -5,6 +5,7 @@
 """
 import numpy
 from .onnx_helper import dtype_to_var_type, add_initializer
+from .cst import SUPPORTED_OPSET
 
 
 def get_supported_functions():
@@ -70,6 +71,8 @@ def function_onnx_graph(name, target_opset=None, dtype=numpy.float32,
         from onnxcustom.utils.onnx_function import get_supported_functions
         print("\\n".join(sorted(get_supported_functions())))
     """
+    if target_opset is None:
+        target_opset = SUPPORTED_OPSET
     glo = globals()
     full_name = "_onnx_" + name
     if full_name in glo:
