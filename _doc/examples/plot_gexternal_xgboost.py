@@ -152,7 +152,8 @@ print("predict", pipe.predict(X_test[:5]))
 #############################
 # ONNX
 
-onx = to_onnx(pipe, X_train.astype(numpy.float32))
+onx = to_onnx(pipe, X_train.astype(numpy.float32),
+              target_opset={'': 15, 'ai.onnx.ml': 2})
 
 sess = rt.InferenceSession(onx.SerializeToString(),
                            providers=['CPUExecutionProvider'])
@@ -183,8 +184,7 @@ param = {'objective': 'multi:softmax', 'num_class': 3}
 bst = train_xgb(param, dtrain, 10)
 
 initial_type = [('float_input', FloatTensorType([None, X_train.shape[1]]))]
-onx = convert_xgboost_booster(bst, "name", initial_types=initial_type,
-                              target_opset={'': 14, 'ai.onnx.ml': 2})
+onx = convert_xgboost_booster(bst, "name", initial_types=initial_type)
 
 sess = rt.InferenceSession(onx.SerializeToString(),
                            providers=['CPUExecutionProvider'])
