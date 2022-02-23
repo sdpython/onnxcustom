@@ -26,3 +26,4 @@ It is recommended to use C classes in that case
     training_partial
     training_torch
     exceptions
+    grad
