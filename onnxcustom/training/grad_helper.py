@@ -10,8 +10,7 @@ from onnx.helper import make_model, make_graph, make_node, make_tensor
 from onnxruntime.capi._pybind_state import (  # pylint: disable=E0611
     OrtModuleGraphBuilder,
     OrtModuleGraphBuilderConfiguration,
-    TrainingGraphTransformerConfiguration,
-    GradientGraphBuilder)
+    TrainingGraphTransformerConfiguration)
 from mlprodict.onnx_tools.optim.onnx_optimisation import onnx_remove_node
 from ..utils.orttraining_helper import get_train_initializer
 
@@ -299,6 +298,8 @@ def _onnx_derivative_loss(onx, weights, inputs, options, loss, label,
     """
     Implements a gradient based on class `PyGradientGraphBuilder`.
     """
+    from onnxruntime.capi._pybind_state import (  # pylint: disable=E0611
+        GradientGraphBuilder)
     if path_name is None:
         raise ValueError(
             "path_name must not be None if options is 'Loss'.")

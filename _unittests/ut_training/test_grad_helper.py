@@ -13,6 +13,11 @@ try:
 except ImportError:
     # onnxruntime not training
     TrainingSession = None
+try:
+    from onnxruntime.capi._pybind_state import (  # pylint: disable=E0611
+        GradientGraphBuilder)
+except ImportError:
+    GradientGraphBuilder = None
 from onnxruntime.capi.onnxruntime_pybind11_state import (  # pylint: disable=E0611
     Fail as OrtFail)
 from sklearn.datasets import make_regression
@@ -167,6 +172,7 @@ class TestGradHelper(ExtTestCase):
             TypeError)
 
     @unittest.skipIf(TrainingSession is None, reason="not training")
+    @unittest.skipIf(GradientGraphBuilder is None, reason="not recent")
     def test_grad_helper_loss(self):
         temp = get_temp_folder(__file__, "temp_grad_helper_loss")
         grad_file = os.path.join(temp, "grad.onnx")
