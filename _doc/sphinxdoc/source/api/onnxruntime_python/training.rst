@@ -46,3 +46,10 @@ TrainingParameters
 .. autoclass:: onnxruntime.capi._pybind_state.TrainingParameters
     :members:
     :undoc-members:
+
+GradientGraphBuilder
+++++++++++++++++++++
+
+.. autoclass:: onnxruntime.capi._pybind_state.GradientGraphBuilder
+    :members:
+    :undoc-members:

@@ -1,10 +1,11 @@
-# pylint: disable=E1101
+        # pylint: disable=E1101
 """
 @brief      test log(time=9s)
 """
+import os
 import unittest
 import logging
-from pyquickhelper.pycode import ExtTestCase, ignore_warnings
+from pyquickhelper.pycode import ExtTestCase, ignore_warnings, get_temp_folder
 import numpy
 from onnxruntime import InferenceSession
 try:
@@ -14,13 +15,18 @@ except ImportError:
     TrainingSession = None
 from onnxruntime.capi.onnxruntime_pybind11_state import (  # pylint: disable=E0611
     Fail as OrtFail)
+from sklearn.datasets import make_regression
+from sklearn.linear_model import LinearRegression
 from skl2onnx.algebra.onnx_ops import (  # pylint: disable=E0611
     OnnxAdd, OnnxMul, OnnxIdentity)
 from skl2onnx.common.data_types import FloatTensorType
 from mlprodict.onnxrt.validate.validate_latency import random_feed
+from mlprodict.plotting.text_plot import onnx_simple_text_plot
 from mlprodict.onnxrt import OnnxInference
+from mlprodict.onnx_conv import to_onnx
 from onnxcustom import __max_supported_opset__ as opset
 from onnxcustom.training.grad_helper import onnx_derivative, DerivativeOptions
+from onnxcustom.utils.orttraining_helper import add_loss_output
 
 
 class TestGradHelper(ExtTestCase):
@@ -159,6 +165,27 @@ class TestGradHelper(ExtTestCase):
         self.assertRaise(
             lambda: onnx_derivative(onx, weights=[], options=1),
             TypeError)
+
+    @unittest.skipIf(TrainingSession is None, reason="not training")
+    def test_grad_helper_loss(self):
+        temp = get_temp_folder(__file__, "temp_grad_helper_loss")
+        grad_file = os.path.join(temp, "grad.onnx")
+        X, y = make_regression(  # pylint: disable=W0632
+            100, n_features=10, bias=2, random_state=0)
+        X = X.astype(numpy.float32)
+        y = y.astype(numpy.float32)
+        reg = LinearRegression()
+        reg.fit(X, y)
+        reg.coef_ = reg.coef_.reshape((1, -1))
+        onx = to_onnx(reg, X, target_opset=opset,
+                      black_op={'LinearRegressor'})
+        onx_loss = add_loss_output(onx)
+        print(onnx_simple_text_plot(onx_loss))
+        new_onx = onnx_derivative(
+            onx, options=DerivativeOptions.Loss,
+            label='variable', loss='loss', path_name=grad_file)
+        print('----')
+        print(onnx_simple_text_plot(new_onx))
 
 
 if __name__ == "__main__":

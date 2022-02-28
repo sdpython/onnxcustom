@@ -10,7 +10,8 @@ from onnx.helper import make_model, make_graph, make_node, make_tensor
 from onnxruntime.capi._pybind_state import (  # pylint: disable=E0611
     OrtModuleGraphBuilder,
     OrtModuleGraphBuilderConfiguration,
-    TrainingGraphTransformerConfiguration)
+    TrainingGraphTransformerConfiguration,
+    GradientGraphBuilder)
 from mlprodict.onnx_tools.optim.onnx_optimisation import onnx_remove_node
 from ..utils.orttraining_helper import get_train_initializer
 
@@ -26,23 +27,32 @@ class DerivativeOptions(IntFlag):
     * `KeepOutputs`: keeps the output of the original graph
     * `FillGrad`: does not add any output to specify the gradient
       of the output but assumes it is one
+    * `Loss`: the function assumes the loss was added to the graph
     """
 
     Zero = 0
     KeepYieldOp = 1
     KeepOutputs = 2
     FillGrad = 4
+    Loss = 5
 
 
 def onnx_derivative(onx, weights=None, inputs=None,
-                    options=DerivativeOptions.Zero):
+                    options=DerivativeOptions.Zero,
+                    loss=None, label=None, path_name=None):
     """
     Builds the gradient for an onnx graph.
 
     :param onx: onnx graph
     :param weights: gradient against those weights, None for all real weights
     :param inputs: gradient against inputs, None for all real inputs
-    :param options: options of type @see cl DerivativeOptions,
+    :param options: options of type @see cl DerivativeOptions
+    :param loss: loss output in case a loss was added in the graph,
+        *options* must be equal to `DerivativeOptions.Loss`
+    :param label: if *loss* is specified, then the label must be
+        specified as well
+    :param path_name: if *options* equal to `DerivativeOptions.Loss`,
+        the gradient is saved to that path
     :return: onnx graph
 
     The function calls :epkg:`OrtModuleGraphBuilderConfiguration`
@@ -153,6 +163,36 @@ def onnx_derivative(onx, weights=None, inputs=None,
         raise TypeError(
             "Options must be from type DerivativeOptions not %r."
             "" % type(options))
+
+    if options == DerivativeOptions.Loss:
+        return _onnx_derivative_loss(onx, weights=weights, inputs=inputs,
+                                     options=options, loss=loss, label=label,
+                                     path_name=path_name)
+    return _onnx_derivative_fw(onx, weights=weights, inputs=inputs,
+                               options=options)
+
+
+def _default_inputs(onx):
+    "Guesses default inputs (float ones) if not specified."
+    inputs_name = []
+    for i in onx.graph.input:
+        try:
+            elem_type = i.type.tensor_type.elem_type
+        except AttributeError:  # pragma: no cover
+            # not a vector
+            continue
+        if elem_type in (
+                onnx.TensorProto.FLOAT16,
+                onnx.TensorProto.FLOAT,
+                onnx.TensorProto.DOUBLE):
+            inputs_name.append(i.name)
+    return inputs_name
+
+
+def _onnx_derivative_fw(onx, weights, inputs, options):
+    """
+    Implements a gradient based on class `OrtModuleGraphBuilder`.
+    """
     if weights is None:
         inits = get_train_initializer(onx)
         weights = list(inits)
@@ -162,18 +202,7 @@ def onnx_derivative(onx, weights=None, inputs=None,
     config.initializer_names = weights
     config.initializer_names_to_train = weights
     if inputs is None:
-        inputs_name = []
-        for i in onx.graph.input:
-            try:
-                elem_type = i.type.tensor_type.elem_type
-            except AttributeError:  # pragma: no cover
-                # not a vector
-                continue
-            if elem_type in (
-                    onnx.TensorProto.FLOAT16,
-                    onnx.TensorProto.FLOAT,
-                    onnx.TensorProto.DOUBLE):
-                inputs_name.append(i.name)
+        inputs_name = _default_inputs(onx)
         if len(inputs_name) > 0:
             config.input_names_require_grad = inputs_name
     config.build_gradient_graph = True
@@ -263,3 +292,41 @@ def onnx_derivative(onx, weights=None, inputs=None,
         op_set.version = oimp.version
 
     return onnx_remove_node(new_model)
+
+
+def _onnx_derivative_loss(onx, weights, inputs, options, loss, label,
+                          path_name):
+    """
+    Implements a gradient based on class `PyGradientGraphBuilder`.
+    """
+    if path_name is None:
+        raise ValueError(
+            "path_name must not be None if options is 'Loss'.")
+    if weights is not None:
+        raise ValueError(
+            "weights must be None if options is 'Loss'.")
+    if label is None:
+        raise ValueError(
+            "label must not be None if options is 'Loss'.")
+    if loss is None or not isinstance(loss, str):
+        raise ValueError(
+            "loss must not None and a string if options is 'Loss'.")
+    if isinstance(label, str):
+        label = {label}
+    else:
+        label = set(label)
+    if inputs is None:
+        inputs_name = _default_inputs(onx)
+        inputs = inputs_name
+    if isinstance(inputs, str):
+        inputs = {inputs}
+    else:
+        inputs = set(inputs)
+    inputs = set(x for x in inputs if x not in label)
+
+    builder = GradientGraphBuilder(
+        onx.SerializeToString(), label, inputs, loss)
+    builder.build()
+    builder.save(path_name)
+    with open(path_name, "rb") as f:
+        return onnx.load(f)
