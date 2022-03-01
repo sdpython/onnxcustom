@@ -29,7 +29,8 @@ from skl2onnx.common.data_types import FloatTensorType
 from skl2onnx.algebra.onnx_ops import OnnxSlice, OnnxAdd, OnnxMul
 from cpyquickhelper.numbers import measure_time
 from tqdm import tqdm
-from mlprodict.testing.experimental_c import code_optimisation
+from mlprodict.testing.experimental_c_impl.experimental_c import (
+    code_optimisation)
 from mlprodict.onnxrt.ops_whole.session import OnnxWholeSession
 from onnxcustom.utils.onnxruntime_helper import get_ort_device
 
