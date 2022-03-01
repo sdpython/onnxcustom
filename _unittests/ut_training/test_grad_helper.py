@@ -1,4 +1,4 @@
-        # pylint: disable=E1101
+# pylint: disable=E1101
 """
 @brief      test log(time=9s)
 """

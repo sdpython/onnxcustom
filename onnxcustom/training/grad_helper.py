@@ -298,7 +298,7 @@ def _onnx_derivative_loss(onx, weights, inputs, options, loss, label,
     """
     Implements a gradient based on class `PyGradientGraphBuilder`.
     """
-    from onnxruntime.capi._pybind_state import (  # pylint: disable=E0611
+    from onnxruntime.capi._pybind_state import (  # pylint: disable=E0611,C0415
         GradientGraphBuilder)
     if path_name is None:
         raise ValueError(
