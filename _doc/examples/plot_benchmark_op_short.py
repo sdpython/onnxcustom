@@ -24,7 +24,7 @@ from onnxruntime.capi._pybind_state import (  # pylint: disable=E0611
 from skl2onnx.common.data_types import FloatTensorType
 from skl2onnx.algebra.onnx_ops import OnnxSlice, OnnxAdd, OnnxMul
 from cpyquickhelper.numbers.speed_measure import measure_time
-from mlprodict.testing.experimental_c import code_optimisation
+from mlprodict.testing.experimental_c_impl.experimental_c import code_optimisation
 from mlprodict.onnxrt import OnnxInference
 from mlprodict.plotting.plotting_onnx import plot_onnx
 from onnxcustom.utils.onnxruntime_helper import get_ort_device

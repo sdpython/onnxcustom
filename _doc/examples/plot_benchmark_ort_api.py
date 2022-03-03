@@ -37,7 +37,7 @@ from skl2onnx import to_onnx
 from cpyquickhelper.numbers.speed_measure import measure_time
 from mlprodict.onnxrt import OnnxInference
 from mlprodict.plotting.plotting import onnx_simple_text_plot
-from mlprodict.testing.experimental_c import code_optimisation
+from mlprodict.testing.experimental_c_impl.experimental_c import code_optimisation
 
 ############################################
 # Available optimisation on this machine.

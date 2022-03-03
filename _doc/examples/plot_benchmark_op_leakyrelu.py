@@ -31,7 +31,7 @@ from skl2onnx.algebra.onnx_ops import (
     OnnxLeakyRelu, OnnxSign, OnnxMul, OnnxAdd, OnnxDiv,
     OnnxGreater, OnnxCast)
 from cpyquickhelper.numbers.speed_measure import measure_time
-from mlprodict.testing.experimental_c import code_optimisation
+from mlprodict.testing.experimental_c_impl.experimental_c import code_optimisation
 from mlprodict.plotting.plotting import onnx_simple_text_plot
 from onnxcustom.plotting.plotting_onnx import plot_onnxs
 from tqdm import tqdm
