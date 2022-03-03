@@ -404,6 +404,20 @@ Scan. However, a dedicated operator called CDist is proved significantly
 faster, significantly enough to make the effort to implement a dedicated runtime
 for it.
 
+Functions
++++++++++
+
+Functions are one way to extend ONNX specifications. Some model requires
+the same combination of operators. This can be avoid by created a function
+itself defined with existing ONNX operators. Once defined, a function behaves
+like any other operators. It has inputs, outputs and attributes.
+
+There are two advantages of using functions. The first one is to have a
+shorter code and easier to read. The second one is that any onnxruntime
+can leverage that information to run predictions faster. The runtime
+could have a specific implementation for a function not relying on the
+implementation of the existing operators.
+
 Shape (and Type) Inference
 ++++++++++++++++++++++++++
 

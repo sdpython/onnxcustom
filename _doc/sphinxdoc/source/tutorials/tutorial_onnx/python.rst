@@ -866,6 +866,68 @@ Here is a short summary. Green is the first iteration, blue the second.
 .. image:: images/scanop.png
     :width: 400
 
+Functions
+=========
+
+As mentioned in previous chapter, functions can be used to shorten
+the code to build the model and offer more possibilities to the runtime
+running predictions to be faster if there exists a specific implementation
+of this function. If it is not the case, the runtime can still use
+the default implementation based on existing operators.
+
+Function `make_function` is used to define a function.
+It works like a graph with less types. It is more like a
+template. This API may evolve. It does not include intializers either.
+
+.. runpython::
+    :showcode:
+
+    # imports
+    import numpy
+    from onnx import numpy_helper, TensorProto
+    from onnx.helper import (
+        make_model, make_node, set_model_props, make_tensor,
+        make_graph, make_tensor_value_info, make_opsetid,
+        make_function)
+    from mlprodict.plotting.text_plot import onnx_simple_text_plot
+
+    new_domain = 'custom'
+    opset_imports = [make_opsetid("", 14), make_opsetid(new_domain, 1)]
+
+    # Let's define a function for a linear regression
+
+    node1 = make_node('MatMul', ['X', 'A'], ['XA'])
+    node2 = make_node('Add', ['XA', 'B'], ['Y'])
+
+    linear_regression = make_function(
+        new_domain,            # domain name
+        'LinearRegression',     # function name
+        ['X', 'A', 'B'],        # input names
+        ['Y'],                  # output names
+        [node1, node2],         # nodes
+        opset_imports,          # opsets
+        [])                     # attribute names
+
+    # Let's use it in a graph.
+
+    X = make_tensor_value_info('X', TensorProto.FLOAT, [None, None])
+    A = make_tensor_value_info('A', TensorProto.FLOAT, [None, None])
+    B = make_tensor_value_info('B', TensorProto.FLOAT, [None, None])
+    Y = make_tensor_value_info('Y', TensorProto.FLOAT, None)
+
+    graph = make_graph(
+        [make_node('LinearRegression', ['X', 'A', 'B'], ['Y1'], domain=new_domain),
+         make_node('Abs', ['Y1'], ['Y'])],
+        'example',
+        [X, A, B], [Y])
+
+    onnx_model = make_model(
+        graph, opset_imports=opset_imports,
+        functions=[linear_regression])  # functions to add)
+
+    # the work is done, let's display it...
+    print(onnx_simple_text_plot(onnx_model))
+
 Parsing
 =======
 

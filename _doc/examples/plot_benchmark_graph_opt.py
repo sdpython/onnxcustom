@@ -30,7 +30,7 @@ from onnxruntime.capi._pybind_state import (  # pylint: disable=E0611
 from sklearn.neighbors import RadiusNeighborsRegressor
 from skl2onnx import to_onnx
 from tqdm import tqdm
-from mlprodict.testing.experimental_c import code_optimisation
+from mlprodict.testing.experimental_c_impl.experimental_c import code_optimisation
 
 
 ############################################
