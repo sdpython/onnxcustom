@@ -57,6 +57,8 @@ All functions uses to create an ONNX graph.
 
 .. autofunction:: onnx.helper.make_tensor_sequence_value_info
 
+.. autofunction:: onnx.helper.make_tensor_type_proto
+
 .. autofunction:: onnx.helper.make_training_info
 
 .. autofunction:: onnx.helper.make_tensor_type_proto
