@@ -109,14 +109,8 @@ class OrtGradientForwardBackward:
                 "CUDAExecutionProvider" for i in self.input_names]
             if self.provider_options is None:
                 self.provider_options = [{} for i in self.input_names]
-        if len(self.input_names) != len(self.providers):
-            raise ValueError(  # pragma: no cover
-                "input_names and providers must have the same length.")
         if self.provider_options is None:
-            self.provider_options = [{} for i in self.input_names]
-        if len(self.input_names) != len(self.provider_options):
-            raise ValueError(  # pragma: no cover
-                "input_names and provider_options must have the same length.")
+            self.provider_options = [{} for i in self.providers]
 
         if list(sorted(self.weights_to_train)) != self.weights_to_train:
             raise ValueError(  # pragma: no cover
