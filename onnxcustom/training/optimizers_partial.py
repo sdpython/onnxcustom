@@ -173,6 +173,13 @@ class OrtGradientForwardBackwardOptimizer(BaseEstimator):
         n = len(value) - len(self.weights_to_train)
         return value[n:]
 
+    @property
+    def trained_coef_(self):
+        """
+        Returns the trained coefficients a dictionary.
+        """
+        return dict(zip(self.weights_to_train, self.get_state()))
+
     def get_trained_onnx(self, model=None):
         """
         Returns the trained onnx graph, the initial graph
