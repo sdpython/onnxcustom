@@ -89,7 +89,8 @@ class BaseEstimator(BaseOnnxClass):
     def __getstate__(self):
         "Removes any non pickable attribute."
         atts = [k for k in self.__dict__ if not k.endswith('_')]
-        if hasattr(self, 'trained_coef_'):
+        if (hasattr(self, 'trained_coef_') and
+                not hasattr(self.__class__, 'trained_coef_')):
             atts.append('trained_coef_')
         state = {att: getattr(self, att) for att in atts}
         state['device'] = ort_device_to_string(state['device'])

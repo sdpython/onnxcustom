@@ -6,6 +6,7 @@ import unittest
 import io
 import pickle
 import logging
+import pprint
 from pyquickhelper.pycode import (
     ExtTestCase, ignore_warnings, skipif_appveyor,
     get_temp_folder)
@@ -362,7 +363,13 @@ class TestOptimizersForwardBackward(ExtTestCase):
         train_session1.fit(X_train, y_train)
 
         st = io.BytesIO()
-        pickle.dump(train_session1, st)
+        try:
+            pickle.dump(train_session1, st)
+        except TypeError as e:
+            raise AssertionError(
+                "Unable to pickle type %r. state=%s." % (
+                    type(train_session1),
+                    pprint.pformat(train_session1.__getstate__()))) from e
         st2 = io.BytesIO(st.getvalue())
         train_session = pickle.load(st2)
         state_tensors = train_session.get_state()
