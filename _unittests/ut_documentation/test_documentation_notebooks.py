@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-@brief      test log(time=80s)
+@brief      test log(time=121s)
 """
 import os
 import unittest
@@ -17,7 +17,7 @@ class TestDocumentationNotebooksPython(ExtTestCase):
 
     @skipif_circleci("stuck")
     @skipif_appveyor("too long")
-    def test_notebook_artificiel(self):
+    def test_notebook_tree(self):
         from pyquickhelper.ipythonhelper import test_notebook_execution_coverage
         fLOG(
             __file__,
@@ -29,6 +29,21 @@ class TestDocumentationNotebooksPython(ExtTestCase):
                               "..", "..", "_doc", "notebooks")
         test_notebook_execution_coverage(
             __file__, "tree", folder, 'onnxcustom', copy_files=[], fLOG=fLOG)
+
+    @skipif_circleci("stuck")
+    @skipif_appveyor("too long")
+    def test_notebook_training(self):
+        from pyquickhelper.ipythonhelper import test_notebook_execution_coverage
+        fLOG(
+            __file__,
+            self._testMethodName,
+            OutputPrint=__name__ == "__main__")
+
+        self.assertTrue(onnxcustom is not None)
+        folder = os.path.join(os.path.dirname(__file__),
+                              "..", "..", "_doc", "notebooks")
+        test_notebook_execution_coverage(
+            __file__, "training", folder, 'onnxcustom', copy_files=[], fLOG=fLOG)
 
 
 if __name__ == "__main__":
