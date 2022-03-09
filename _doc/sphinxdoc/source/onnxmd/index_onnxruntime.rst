@@ -68,3 +68,4 @@ Others
     onnxruntime_docs/WinML_principles.md
     onnxruntime_docs/Reduced_Operator_Kernel_build.md
     onnxruntime_docs/ReleaseManagement.md
+    onnxruntime_docs/TVM_EP.md
