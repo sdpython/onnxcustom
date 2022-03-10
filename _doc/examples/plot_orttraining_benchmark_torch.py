@@ -67,6 +67,10 @@ def from_numpy(v, device=None, requires_grad=False):
 
 def train_model_torch(model, device, x, y, n_iter=100, learning_rate=1e-5,
                       profiler=None):
+
+    def forward_torch(model, x):
+        return model(x)
+
     model = model.to(device)
     x = from_numpy(x, requires_grad=True, device=device)
     y = from_numpy(y, requires_grad=True, device=device)
@@ -77,7 +81,7 @@ def train_model_torch(model, device, x, y, n_iter=100, learning_rate=1e-5,
     for t in range(n_iter):
 
         def step_train_torch():
-            y_pred = model(x)
+            y_pred = forward_torch(model, x)
             loss = criterion(y_pred, y)
             optimizer.zero_grad()
             loss.backward()
@@ -94,6 +98,9 @@ def train_model_torch(model, device, x, y, n_iter=100, learning_rate=1e-5,
 
 def train_model_ort(model, device, x, y, n_iter=100, learning_rate=1e-5,
                     profiler=None):
+    def forward_ort(model, x):
+        return model(x)
+
     model = model.to(device)
     x = from_numpy(x, requires_grad=True, device=device)
     y = from_numpy(y, requires_grad=True, device=device)
@@ -104,7 +111,7 @@ def train_model_ort(model, device, x, y, n_iter=100, learning_rate=1e-5,
     for t in range(n_iter):
 
         def step_train_ort():
-            y_pred = model(x)
+            y_pred = forward_ort(model, x)
             loss = criterion(y_pred, y)
             optimizer.zero_grad()
             loss.backward()
