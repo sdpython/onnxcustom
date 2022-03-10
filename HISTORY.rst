@@ -5,7 +5,18 @@
 History
 =======
 
-current - 2022-02-11 - 0.00Mb
+current - 2022-03-10 - 0.00Mb
+=============================
+
+* #60: Extends notebook coverage (2022-03-07)
+* #59: Removes unnecessary exceptions (2022-03-06)
+* #58: Uses new API to retrieve gradient for a model (2022-03-03)
+* #57: Fix opset for ai.onnx.ml in examples after updating to onnx==1.11 (2022-02-22)
+* #56: Renames Z into Y_grad in loss functions returning grad (2022-02-14)
+* #55: Removes unncessary nodes in onnx_derivative (2022-02-14)
+* #54: Implements a function which returns the gradient (2022-02-13)
+
+0.4.293 - 2022-02-11 - 0.07Mb
 =============================
 
 * #53: Implements get_trained_onnx to retrieve the trained model (2022-02-04)
