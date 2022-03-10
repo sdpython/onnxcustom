@@ -30,6 +30,7 @@ First comparison: neural network
 import time
 import numpy
 from pandas import DataFrame
+import matplotlib.pyplot as plt
 import torch
 from onnxruntime import get_device
 from onnxruntime.training.ortmodule import ORTModule
@@ -121,7 +122,7 @@ def train_model_ort(model, device, x, y, n_iter=100, learning_rate=1e-5,
 # Benchmark function
 
 
-def benchmark(model_torch, model_ort, device, name, verbose=True):
+def benchmark(model_torch, model_ort, device, name, verbose=True, max_iter=100):
 
     print("[benchmark] %s" % name)
     begin = time.perf_counter()
@@ -133,7 +134,7 @@ def benchmark(model_torch, model_ort, device, name, verbose=True):
         length_torch, duration_torch))
 
     begin = time.perf_counter()
-    losses = train_model_ort(model_ort, device, X_train, y_train, n_iter=200)
+    losses = train_model_ort(model_ort, device, X_train, y_train, n_iter=max_iter)
     duration_ort = time.perf_counter() - begin
     length_ort = len(losses)
     print("[benchmark] onxrt=%r iteration - %r seconds" % (
@@ -159,9 +160,11 @@ class MLPNet(torch.nn.Module):
 d_in, d_out, N = X.shape[1], 1, X.shape[0]
 model_torch = MLPNet(d_in, d_out)
 model_ort = ORTModule(MLPNet(d_in, d_out))
+max_iter = 100
 
 device = torch.device('cpu')
-benches = [benchmark(model_torch, model_ort, device, name='NN-CPU')]
+benches = [benchmark(model_torch, model_ort, device, name='NN-CPU',
+                     max_iter=max_iter)]
 
 ######################################
 # Profiling
@@ -185,7 +188,7 @@ def clean_name(text):
 
 
 ps = profile(lambda: benchmark(
-    model_torch, model_ort, device, name='LR-CPU'))[0]
+    model_torch, model_ort, device, name='LR-CPU', max_iter=max_iter))[0]
 root, nodes = profile2graph(ps, clean_text=clean_name)
 text = root.to_text()
 print(text)
@@ -197,7 +200,8 @@ print(text)
 if get_device().upper() == 'GPU':
 
     device = torch.device('cuda:0')
-    benches.append(benchmark(model_torch, model_ort, device, name='LR-GPU'))
+    benches.append(benchmark(model_torch, model_ort, device, name='LR-GPU',
+                             max_iter=max_iter))
 
 ######################################
 # Linear Regression
@@ -218,13 +222,15 @@ model_torch = LinearRegressionNet(d_in, d_out)
 model_ort = ORTModule(LinearRegressionNet(d_in, d_out))
 
 device = torch.device('cpu')
-benches.append(benchmark(model_torch, model_ort, device, name='LR-CPU'))
+benches.append(benchmark(model_torch, model_ort, device, name='LR-CPU',
+                         max_iter=max_iter))
 
 
 if get_device().upper() == 'GPU':
 
     device = torch.device('cuda:0')
-    benches.append(benchmark(model_torch, model_ort, device, name='LR-GPU'))
+    benches.append(benchmark(model_torch, model_ort, device, name='LR-GPU',
+                             max_iter=max_iter))
 
     ######################################
     # GPU profiling
@@ -232,7 +238,8 @@ if get_device().upper() == 'GPU':
 
     if get_device().upper() == 'GPU':
         ps = profile(lambda: benchmark(
-            model_torch, model_ort, device, name='LR-GPU'))[0]
+            model_torch, model_ort, device, name='LR-GPU',
+            max_iter=max_iter))[0]
         root, nodes = profile2graph(ps, clean_text=clean_name)
         text = root.to_text()
         print(text)
@@ -255,8 +262,9 @@ print(df)
 # Graphs.
 
 print(df.columns)
-ax = df[['torch', 'ort']].plot.bar(title="Processing time")
+fig, ax = plt.subplots(1, 1, figsize=(4, 4))
+df[['torch', 'ort']].plot.bar(title="Processing time", ax=ax)
 ax.tick_params(axis='x', rotation=30)
+fig.savefig(__file__ + ".png")
 
-# import matplotlib.pyplot as plt
 # plt.show()
