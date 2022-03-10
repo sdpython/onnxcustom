@@ -62,7 +62,7 @@ OrtGradientOptimizer
 .. autosignature:: onnxcustom.training.optimizers.OrtGradientOptimizer
     :members:
 
-Second API: loss part of the graph
+Second API: loss outside the graph
 ==================================
 
 ONNX

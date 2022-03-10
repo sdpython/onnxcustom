@@ -215,4 +215,5 @@ ax[1].legend()
 # The gradient update are not exactly the same.
 # It should be improved for a fair comprison.
 
+fig.savefig(__file__ + ".png")
 # plt.show()

@@ -372,7 +372,7 @@ def add_loss_output(onx, score_name='squared_error',
       is not None
     * `'elastic'`: mixture of losses, kwargs must define
       *l1_weight* and *l2_weight*, undefined, default value are 0.5
-    * `'log(yt, yp)'`: log loss :math:`(1-yt)\\log(1-yp) - yt\\log(yp)`,
+    * `'log'`: log loss :math:`(1-yt)\\log(1-yp) - yt\\log(yp)`,
         this only works for a binary classification where *yp* is the
         predicted probability, *yt* is the expected probability.
         *yt* is expected to be binary, *yp* is a matrix with two

@@ -103,9 +103,8 @@ class BaseLearningOnnx(BaseOnnxClass):
 
     def build_onnx_function(self, opset, device, *args):
         """
-        This class updates the weights.
-        It assumes it can do operator on *OrtValue*.
-        This can be done through ONNX graph.
+        This class computes a function represented as an ONNX graph.
+        This method builds it.
         This function creates :epkg:`InferenceSession`
         which do that.
 

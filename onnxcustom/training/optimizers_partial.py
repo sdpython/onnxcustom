@@ -26,7 +26,7 @@ class OrtGradientForwardBackwardOptimizer(BaseEstimator):
     """
     Implements a simple :epkg:`Stochastic Gradient Descent`
     with :epkg:`onnxruntime-training`. It leverages class
-    @see class OrtGradientForwardBackward.
+    @see cl OrtGradientForwardBackward.
 
     :param model_onnx: onnx graph to train
     :param weights_to_train: names of initializers to be optimized,
