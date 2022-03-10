@@ -39,7 +39,7 @@ from sklearn.datasets import make_regression
 from sklearn.model_selection import train_test_split
 
 
-X, y = make_regression(2000, n_features=100, bias=2)
+X, y = make_regression(1000, n_features=100, bias=2)
 X = X.astype(numpy.float32)
 y = y.astype(numpy.float32)
 X_train, X_test, y_train, y_test = train_test_split(X, y)
@@ -188,7 +188,7 @@ def clean_name(text):
 
 
 ps = profile(lambda: benchmark(
-    model_torch, model_ort, device, name='LR-CPU', max_iter=max_iter))[0]
+    model_torch, model_ort, device, name='NN-CPU', max_iter=max_iter))[0]
 root, nodes = profile2graph(ps, clean_text=clean_name)
 text = root.to_text()
 print(text)
@@ -200,7 +200,7 @@ print(text)
 if get_device().upper() == 'GPU':
 
     device = torch.device('cuda:0')
-    benches.append(benchmark(model_torch, model_ort, device, name='LR-GPU',
+    benches.append(benchmark(model_torch, model_ort, device, name='NN-GPU',
                              max_iter=max_iter))
 
 ######################################
