@@ -179,7 +179,7 @@ if get_device().upper() == 'GPU':
 
 if get_device().upper() == 'GPU':
     ps = profile(lambda: benchmark(X_train, y_train,
-                 device='cuda', lr, train_session, name='LR-GPU'))[0]
+                 lr, train_session, name='LR-GPU'))[0]
     root, nodes = profile2graph(ps, clean_text=clean_name)
     text = root.to_text()
     print(text)
