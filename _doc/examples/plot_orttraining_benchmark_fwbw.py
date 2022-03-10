@@ -135,7 +135,7 @@ if get_device().upper() == 'GPU':
 
     train_session = OrtGradientForwardBackwardOptimizer(
         onx, device='cuda', learning_rate=1e-5,
-        warm_start=False, max_iter=200, batch_size=batch_size)
+        warm_start=False, max_iter=max_iter, batch_size=batch_size)
 
     benches.append(benchmark(X_train, y_train, nn,
                    train_session, name='NN-GPU'))
@@ -167,7 +167,7 @@ if get_device().upper() == 'GPU':
 
     train_session = OrtGradientForwardBackwardOptimizer(
         onx, device='cuda', learning_rate=5e-4,
-        warm_start=False, max_iter=200, batch_size=batch_size)
+        warm_start=False, max_iter=max_iter, batch_size=batch_size)
 
     benches.append(benchmark(X_train, y_train, nn,
                    train_session, name='LR-GPU'))
