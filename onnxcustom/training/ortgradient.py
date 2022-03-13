@@ -464,8 +464,7 @@ class OrtGradientForwardBackward:
             '_fw_outputs_device_info': fw_outputs_device_info,
             '_bw_outputs_device_info': bw_outputs_device_info,
             '_fw_no_grad_output_device_info': fw_no_grad_output_device_info,
-            '_weights_to_train': list(sorted(
-                self.weights_to_train)),
+            '_weights_to_train': list(sorted(self.weights_to_train)),
             '_graph_info': graph_info,
             #
             '_trained_onnx': trained_onnx,
@@ -636,16 +635,12 @@ class OrtGradientForwardBackwardFunction:
                          cls.__name__, len(inputs), *args)
 
         if logger is not None:
-            if training:
-                _log("begin with gradient")
-            else:
-                _log("begin")
+            _log("begin with gradient" if training else "begin")
             _log("torch function %r", type(cls))
             _log("ort class %r", cls)
             _log("create OrtValueVector (through dlpack)")
 
-        forward_inputs = cls.input_to_ort(
-            inputs, cls._devices, cls._debug)
+        forward_inputs = cls.input_to_ort(inputs, cls._devices, cls._debug)
 
         if training:
             forward_outputs = forward_outputs_cache or OrtValueVector()
