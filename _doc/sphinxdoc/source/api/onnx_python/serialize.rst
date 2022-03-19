@@ -48,7 +48,13 @@ Load data
 Data means here any type containing data including a model, a tensor,
 a sparse tensor...
 
-.. autofunction:: onnx.load_from_string
+.. autofunction:: onnx.load_model_from_string
+
+.. autofunction:: onnx.load_tensor_from_string
+
+:epkg:`protobuf` does not store any information about the class
+of the saved data. Therefore, this class must be known before
+restoring an object.
 
 Save data
 +++++++++

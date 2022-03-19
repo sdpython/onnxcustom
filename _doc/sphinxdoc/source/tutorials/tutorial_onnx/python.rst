@@ -300,17 +300,16 @@ The same schema can be used for :epkg:`TensorProto` but not only:
     pprint.pprint([p for p in dir(onnx)
                    if p.endswith('Proto') and p[0] != '_'])    
 
-However, the type of the serialized object is not always known.
-In that case, function :epkg:`load_from_string` must be used.
+This code can be simplified with function :epkg:`load_tensor_from_string`.
 
 .. runpython::
     :showcode:
 
-    from onnx import load_from_string
+    from onnx import load_tensor_from_string
 
     with open("saved_tensor.pb", "rb") as f:
         serialized = f.read()
-    proto = load_from_string(serialized)
+    proto = load_tensor_from_string(serialized)
     print(type(proto))
 
 .. _l-onnx-linear-regression-onnx-api-init:
