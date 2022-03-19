@@ -13,6 +13,14 @@ AttributeProto
 .. autoclass:: onnx.AttributeProto
     :members:
 
+.. _l-onnx-function-proto:
+
+FunctionProto
++++++++++++++
+
+.. autoclass:: onnx.FunctionProto
+    :members:
+
 .. _l-onnx-map-proto:
 
 MapProto
