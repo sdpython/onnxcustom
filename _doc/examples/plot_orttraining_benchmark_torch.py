@@ -141,7 +141,8 @@ def benchmark(model_torch, model_ort, device, name, verbose=True, max_iter=100):
         length_torch, duration_torch))
 
     begin = time.perf_counter()
-    losses = train_model_ort(model_ort, device, X_train, y_train, n_iter=max_iter)
+    losses = train_model_ort(model_ort, device, X_train,
+                             y_train, n_iter=max_iter)
     duration_ort = time.perf_counter() - begin
     length_ort = len(losses)
     print("[benchmark] onxrt=%r iteration - %r seconds" % (

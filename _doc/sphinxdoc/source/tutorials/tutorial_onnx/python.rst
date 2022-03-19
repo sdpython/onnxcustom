@@ -298,7 +298,7 @@ The same schema can be used for :epkg:`TensorProto` but not only:
     import onnx
     import pprint
     pprint.pprint([p for p in dir(onnx)
-                   if p.endswith('Proto') and p[0] != '_'])    
+                   if p.endswith('Proto') and p[0] != '_'])
 
 This code can be simplified with function :epkg:`load_tensor_from_string`.
 
