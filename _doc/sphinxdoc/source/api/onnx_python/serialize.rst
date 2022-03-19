@@ -36,3 +36,26 @@ in every ONNX objects.
 
     with open("model.onnx", "wb") as f:
         f.write(onnx_model.SerializeToString())
+
+This method has the following signature.
+
+.. autoclass:: onnx.ModelProto
+    :members: SerializeToString
+
+Load data
++++++++++
+
+Data means here any type containing data including a model, a tensor,
+a sparse tensor...
+
+.. autofunction:: onnx.load_from_string
+
+Save data
++++++++++
+
+Any `Proto` class includes a method called `SerializeToString`.
+It must be called to serialize any :epkg:`onnx` object into
+an array of bytes.
+
+.. autoclass:: onnx.TensorProto
+    :members: SerializeToString

@@ -183,6 +183,15 @@ equivalent type with :epkg:`numpy`.
 Serialization
 =============
 
+:epkg:`ONNX` is built on the top of protobuf. It adds the necessary definitions
+to describes a machine learned and most of the time, :epkg:`ONNX` is used
+to serialize or deserialize a model. First section addresses this need.
+Second section introduces the serialization and deserialization of
+data such as tensors, sparse tensors...
+
+Model Serialization
++++++++++++++++++++
+
 The model needs to be saved to be deployed.
 ONNX is based on :epkg:`protobuf`. It minimizes the space needed
 to save the graph on disk. Every object (see :ref:`l-onnx-classes`)
@@ -236,6 +245,73 @@ It looks exactly the same. Any model can be serialized this way
 unless they are bigger than 2 Gb. :epkg:`protobuf` is limited to size
 smaller than this threshold. Next sections will show how to
 overcome that limit.
+
+Data Serialization
+++++++++++++++++++
+
+The serialization of tensor usually happens the following:
+
+.. runpython::
+    :showcode:
+
+    import numpy
+    from onnx import TensorProto
+    from onnx.numpy_helper import from_array
+
+    numpy_tensor = numpy.array([0, 1, 4, 5, 3], dtype=numpy.float32)
+    print(type(numpy_tensor))
+
+    onnx_tensor = from_array(numpy_tensor)
+    print(type(onnx_tensor))
+
+    serialized_tensor = onnx_tensor.SerializeToString()
+    print(type(serialized_tensor))
+
+    with open("saved_tensor.pb", "wb") as f:
+        f.write(serialized_tensor)
+
+And the deserialization.
+
+.. runpython::
+    :showcode:
+
+    import numpy
+    from onnx import TensorProto
+    from onnx.numpy_helper import to_array
+
+    with open("saved_tensor.pb", "rb") as f:
+        serialized_tensor = f.read()
+    print(type(serialized_tensor))
+
+    onnx_tensor = TensorProto()
+    onnx_tensor.ParseFromString(serialized_tensor)
+    print(type(onnx_tensor))
+
+    numpy_tensor = to_array(onnx_tensor)
+    print(numpy_tensor)
+
+The same schema can be used for :epkg:`TensorProto` but not only:
+
+.. runpython::
+    :showcode:
+
+    import onnx
+    import pprint
+    pprint.pprint([p for p in dir(onnx)
+                   if p.endswith('Proto') and p[0] != '_'])    
+
+However, the type of the serialized object is not always known.
+In that case, function :epkg:`load_from_string` must be used.
+
+.. runpython::
+    :showcode:
+
+    from onnx import load_from_string
+
+    with open("saved_tensor.pb", "rb") as f:
+        serialized = f.read()
+    proto = load_from_string(serialized)
+    print(type(proto))
 
 .. _l-onnx-linear-regression-onnx-api-init:
 
@@ -408,6 +484,17 @@ as a named attribute in function `make_node`.
                        'lr', [X, A, B], [Y])
     onnx_model = make_model(graph)
     print("DOT-SECTION", OnnxInference(onnx_model).to_dot())
+
+The whole list of *make* functions is the following. Many of them
+are described in section :ref:`l-onnx-make-function`.
+
+.. runpython::
+    :showcode:
+
+    import onnx
+    import pprint
+    pprint.pprint([k for k in dir(onnx.helper)
+                   if k.startswith('make')])
 
 Opset and metadata
 ==================
