@@ -161,7 +161,7 @@ class TestOptimizersClassification(ExtTestCase):
         # get_trained_weight
         trained_onnx = train_session.get_trained_onnx(model=onx2)
         sess = InferenceSession(onx2.SerializeToString(),
-                                providers=['CPUxecutionProvider'])
+                                providers=['CPUExecutionProvider'])
         got1 = sess.run(None, {'X': X_train})
         sess = InferenceSession(trained_onnx.SerializeToString())
         got2 = sess.run(None, {'X': X_train})
