@@ -220,8 +220,8 @@ class LearningRateSGD(BaseLearningRate):
             [0], dtype=TENSOR_TYPE_TO_NP_TYPE[
                 self.axpy_onnx_.graph.input[0].type.tensor_type.elem_type])
 
-    def update_weights(self, n_bind, device, statei, gradienti, batch_size,
-                       velocity=None):
+    def update_weights(self, n_bind, device, statei,  # pylint: disable=W0237
+                       gradienti, batch_size, velocity=None):
         if velocity is not None:
             raise RuntimeError(  # pragma: no cover
                 "Velocity must be None for this way of updating weights.")
