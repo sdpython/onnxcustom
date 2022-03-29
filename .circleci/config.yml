@@ -14,10 +14,10 @@ jobs:
           - v3-dependencies-{{ checksum "requirements.txt" }}
           - v3-dependencies-
 
-      - run:
-          name: Install graphviz
-          command: |
-                    sudo apt-get install -y graphviz
+#      - run:
+#          name: Install graphviz
+#          command: |
+#                    sudo apt-get install -y graphviz
 
       - run:
           name: install dependencies
