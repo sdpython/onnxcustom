@@ -45,7 +45,8 @@ class TestGradHelper(ExtTestCase):
         if n == 0:
             raise AssertionError(
                 "No input with more than 5 rows: %r." % feeds)
-        sess = InferenceSession(onx.SerializeToString())
+        sess = InferenceSession(onx.SerializeToString(),
+                                providers=['CPUExecutionProvider'])
         try:
             got = sess.run(None, feeds)
         except OrtFail as e:

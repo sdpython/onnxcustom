@@ -313,7 +313,8 @@ class TestOnnxFunction(ExtTestCase):
         got1 = oinf.run({'X1': expected, 'X2': predicted})
         so = SessionOptions()
         so.log_severity_level = 4
-        sess = InferenceSession(onx.SerializeToString(), so)
+        sess = InferenceSession(onx.SerializeToString(), so,
+                                providers=['CPUExecutionProvider'])
         got2 = sess.run(None, {'X1': expected, 'X2': predicted})
         self.assertEqualArray(got1['Y'], got2[0], decimal=5)
         self.assertEqualArray(got1['Y_grad'], got2[1])
