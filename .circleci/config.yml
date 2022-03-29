@@ -32,7 +32,7 @@ jobs:
           command: |
             python -m venv venv
             . venv/bin/activate
-            pip install onnxruntime-training
+            pip install onnxruntime-training --extra-index-url https://download.onnxruntime.ai/onnxruntime_nightly_cpu.html
 
       - save_cache:
           paths:
