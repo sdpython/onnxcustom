@@ -2,7 +2,7 @@ version: 2
 jobs:
   build:
     docker:
-      - image: circleci/python:3.9.0
+      - image: circleci/python:3.9.9
     
     working_directory: ~/repo
     
@@ -32,6 +32,7 @@ jobs:
           command: |
             python -m venv venv
             . venv/bin/activate
+            # pip install onnxruntime-training --extra-index-url https://download.onnxruntime.ai/onnxruntime_nightly_cpu.html
             pip install onnxruntime-training --extra-index-url https://download.onnxruntime.ai/onnxruntime_nightly_cpu.html
 
       - save_cache:

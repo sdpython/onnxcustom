@@ -64,6 +64,7 @@ through all the examples this documentation contains.
 .. toctree::
     :maxdepth: 1
 
+    installation
     tutorials/index
     api/apis
     gyexamples/index
