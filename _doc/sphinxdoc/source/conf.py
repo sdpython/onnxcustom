@@ -41,7 +41,8 @@ set_sphinx_variables(__file__, "onnxcustom", "Xavier Dupré", 2022,
 extensions.extend([
     "sphinxcontrib.blockdiag",
     "sphinx.ext.napoleon",
-    "myst_parser"
+    "myst_parser",
+    'mlprodict.npy.xop_sphinx',
 ])
 
 html_theme_options = {
@@ -59,7 +60,7 @@ html_css_files = ['my-styles.css']
 html_logo = "phdoc_static/project_ico.png"
 html_sidebars = {}
 language = "en"
-
+onnx_doc_folder = os.path.join(os.path.dirname(__file__), 'api', 'onnxops')
 mathdef_link_only = True
 
 custom_preamble = """\n
