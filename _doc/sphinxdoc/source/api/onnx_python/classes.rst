@@ -21,6 +21,14 @@ FunctionProto
 .. autoclass:: onnx.FunctionProto
     :members:
 
+.. _l-onnx-graph-proto:
+
+GraphProto
+++++++++++
+
+.. autoclass:: onnx.GraphProto
+    :members:
+
 .. _l-onnx-map-proto:
 
 MapProto
