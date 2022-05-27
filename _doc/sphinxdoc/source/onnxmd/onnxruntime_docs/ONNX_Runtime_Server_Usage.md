@@ -55,7 +55,7 @@ http://<your_ip_address>:<port>/v1/models/<your-model-name>/versions/<your-versi
 
 The request and response need to be a protobuf message. The Protobuf definition can be found [here](../server/protobuf/predict.proto).
 
-A protobuf message could have two formats: binary and JSON. Usually the binary payload has better latency, in the meanwhile the JSON format is easy for human readability.
+A protobuf message could have two formats: binary and JSON. Usually the binary payload has better latency, in the meanwhile the JSON format is easy for human readability. 
 
 The HTTP request header field `Content-Type` tells the server how to handle the request and thus it is mandatory for all requests. Requests missing `Content-Type` will be rejected as `400 Bad Request`.
 
@@ -105,4 +105,5 @@ If you prefer using an ONNX Runtime Server with [rsyslog](https://www.rsyslog.co
 
 ## Report Issues
 
-If you see any issues or want to ask questions about the server, please feel free to do so in this repo with the version and commit id from the command line.
+If you see any issues or want to ask questions about the server, please feel free to do so in this repo with the version and commit id from the command line. 
+

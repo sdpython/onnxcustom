@@ -12,15 +12,15 @@ git add onnx
 ```
 (Change the <commit_id> to yours. If you are not sure, use 'origin/master'. Like 'git reset --hard origin/master')
 
-2. Update [cgmanifests/submodules/cgmanifest.json](/cgmanifests/submodules/cgmanifest.json).
+2. Update [cgmanifests/generated/cgmanifest.json](/cgmanifests/generated/cgmanifest.json).
 This file should be generated. See [cgmanifests/README](/cgmanifests/README.md) for instructions.
 
-3. Update [tools/ci_build/github/linux/docker/scripts/install_onnx.sh](/tools/ci_build/github/linux/docker/scripts/install_onnx.sh).
-Search 'for version2tag', update the commit hashes. The list should contain every release version from ONNX 1.2, and the latest one in our cmake/external/onnx folder.
+3. Update [tools/ci_build/github/linux/docker/scripts/requirements.txt](/tools/ci_build/github/linux/docker/scripts/requirements.txt) and [tools/ci_build/github/linux/docker/scripts/manylinux/requirements.txt](/tools/ci_build/github/linux/docker/scripts/manylinux/requirements.txt).
+Update the commit hash for `git+http://github.com/onnx/onnx.git@targetonnxcommithash#egg=onnx`.
 
 4. If there is any change to `cmake/external/onnx/onnx/*.in.proto`, you need to re-regenerate OnnxMl.cs. Please build onnxruntime on Windows with csharp enabled, then the file will be auto-updated.
 
-6. If you are updating ONNX from a released tag to a new commit, please tell Changming deploying the new test data along with other test models to our CI build machines. This is to ensure that our tests cover every ONNX opset.
+6. If you are updating ONNX from a released tag to a new commit, please tell Changming deploying the new test data along with other test models to our CI build machines. This is to ensure that our tests cover every ONNX opset. 
 
 5. Send you PR, and **manually** queue a build for every packaging pipeline for your branch.
 
