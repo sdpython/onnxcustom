@@ -11,7 +11,6 @@ redirect_from: /docs/reference/execution-providers/CUDA-ExecutionProvider
 
 The CUDA Execution Provider enables hardware accelerated computation on Nvidia CUDA-enabled GPUs.
 
-
 ## Contents
 {: .no_toc }
 
@@ -24,7 +23,7 @@ Pre-built binaries of ONNX Runtime with CUDA EP are published for most language 
 
 ## Requirements
 
-Please reference table below for official GPU packages dependencies for the ONNX Runtime inferencing package. Note that ONNX Runtime Training is aligned with PyTorch CUDA versions; refer to the Training tab on https://onnxruntime.ai/ for supported versions. 
+Please reference table below for official GPU packages dependencies for the ONNX Runtime inferencing package. Note that ONNX Runtime Training is aligned with PyTorch CUDA versions; refer to the Training tab on https://onnxruntime.ai/ for supported versions.
 
 Note: Because of CUDA Minor Version Compatibility, Onnx Runtime built with CUDA 11.4 should be compatible with any CUDA 11.x version.
 Please reference [Nvidia CUDA Minor Version Compatibility](https://docs.nvidia.com/deploy/cuda-compatibility/#minor-version-compatibility).

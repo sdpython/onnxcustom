@@ -11,13 +11,11 @@ redirect_from: /docs/reference/execution-providers/ACL-ExecutionProvider
 
 The integration of ACL as an execution provider (EP) into ONNX Runtime accelerates performance of ONNX model workloads across Armv8 cores. [Arm Compute Library](https://github.com/ARM-software/ComputeLibrary){:target="_blank"} is an open source inference engine maintained by Arm and Linaro companies.
 
-
 ## Contents
 {: .no_toc }
 
 * TOC placeholder
 {:toc}
-
 
 ## Build
 For build instructions, please see the [build page](../build/eps.md#arm-compute-library).

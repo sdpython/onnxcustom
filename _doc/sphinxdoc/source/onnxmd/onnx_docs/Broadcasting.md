@@ -8,7 +8,6 @@ ONNX supports two types of broadcasting: multidirectional broadcasting and
 unidirectional broadcasting. We will introduce these two types of broadcasting
 respectively in the following sections.
 
-
 ## Multidirectional Broadcasting
 
 In ONNX, a set of tensors are multidirectional broadcastable to the same shape

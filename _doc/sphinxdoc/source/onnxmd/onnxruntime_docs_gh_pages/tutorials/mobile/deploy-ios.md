@@ -119,4 +119,3 @@ Here's an example screenshot of the app:
 * For more information on converting tflite models to ONNX [Converting TFlite models to ONNX](https://github.com/onnx/tensorflow-onnx#getting-started)
 
 * [Convert ONNX models to ORT format](../../reference/ort-format-models.md)
-

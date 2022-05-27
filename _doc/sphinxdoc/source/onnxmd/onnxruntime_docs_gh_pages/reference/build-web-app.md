@@ -64,7 +64,7 @@ Install onnxruntime-web. These command line will update the application's `packa
 ### With yarn
 
 ```bash
-yarn add onnxruntime-web 
+yarn add onnxruntime-web
 ```
 
 ### With npm
@@ -91,7 +91,7 @@ Add "@dev" to the package name to use the nightly build (eg. npm install onnxrun
    Session run happens each time their is new user input.
 
 Refer to [ONNX Runtime Web API docs](../api/js) for more detail.
-  
+
 ## Pre and post processing
 
 Raw input is usually a string (for NLP model) or an image (for image model). They come from multiple forms and formats.

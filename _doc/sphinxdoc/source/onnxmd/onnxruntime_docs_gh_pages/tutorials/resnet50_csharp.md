@@ -1,7 +1,6 @@
 ---
-nav_exclude: true 
+nav_exclude: true
 ---
-
 
 # Image recognition with ResNet50v2 in C#
 {: .no_toc }

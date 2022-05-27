@@ -8,11 +8,9 @@ redirect_from: /docs/how-to/install
 
 # Install ONNX Runtime (ORT)
 
-
 See the [installation matrix](https://onnxruntime.ai) for recommended instructions for desired combinations of target operating system, hardware, accelerator, and language.
 
 Details on OS versions, compilers, language versions, dependent libraries, etc can be found under [Compatibility](../reference/compatibility).
-
 
 ## Contents
 {: .no_toc }
@@ -100,7 +98,6 @@ npm install onnxruntime-node
 ```
 
 #### Install ONNX Runtime for React Native
-
 
 ```bash
 # install latest release version
@@ -215,12 +212,7 @@ by running `locale-gen en_US.UTF-8` and `update-locale LANG=en_US.UTF-8`
 |Node.js|[**onnxruntime-node**](https://www.npmjs.com/package/onnxruntime-node)||[View](../api/js)|
 |Web|[**onnxruntime-web**](https://www.npmjs.com/package/onnxruntime-web)||[View](../api/js)|
 
-
-
 *Note: Dev builds created from the master branch are available for testing newer changes between official releases. Please use these at your own risk. We strongly advise against deploying these to production workloads as support is limited for dev builds.*
-
-
-
 
 ## Training install table for all languages
 

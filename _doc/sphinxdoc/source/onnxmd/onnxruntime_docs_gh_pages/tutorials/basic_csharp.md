@@ -1,13 +1,12 @@
 ---
-nav_exclude: true 
+nav_exclude: true
 ---
 
 # C# Tutorial: Basic
 
-Here is simple tutorial for getting started with running inference on an existing ONNX model for a given input data. The model is typically trained using any of the well-known training frameworks and exported into the ONNX format. 
+Here is simple tutorial for getting started with running inference on an existing ONNX model for a given input data. The model is typically trained using any of the well-known training frameworks and exported into the ONNX format.
 
 To start scoring using the model, open a session using the `InferenceSession` class, passing in the file path to the model as a parameter.
-
 
 ```cs
 var session = new InferenceSession("model.onnx");

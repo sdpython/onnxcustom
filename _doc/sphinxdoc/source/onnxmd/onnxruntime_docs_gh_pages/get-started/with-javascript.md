@@ -58,7 +58,6 @@ npm install onnxruntime-web@dev
 
 ### Import
 
-
 ```js
 // use ES6 style import syntax (recommended)
 import * as ort from 'onnxruntime-web';
@@ -76,18 +75,13 @@ ONNX Runtime Web can also be imported via a script tag in a HTML file, from a CD
 - [ONNX Runtime Web for In Browser Inference](https://youtu.be/0dskvE4IvGM)
 - [Inference in Javascript with ONNX Runtime Web](https://youtu.be/vYzWrT3A7wQ)
 
-
 ### Supported Versions
 
-
-ONNX Runtime supports mainstream modern browsers/OS on Windows, Ubuntu, macOS, Android, and iOS. You can check the [compatibility](https://github.com/Microsoft/onnxjs#Compatibility) of ONNX Runtime with modern browsers and operating systems for your desktop and mobile platforms. In-browser inference is possible with [ONNX Runtime Web JavaScript](https://cloudblogs.microsoft.com/opensource/2021/09/02/onnx-runtime-web-running-your-machine-learning-model-in-browser/) that can enable cross-platform portability for web-applications. 
-
-
+ONNX Runtime supports mainstream modern browsers/OS on Windows, Ubuntu, macOS, Android, and iOS. You can check the [compatibility](https://github.com/Microsoft/onnxjs#Compatibility) of ONNX Runtime with modern browsers and operating systems for your desktop and mobile platforms. In-browser inference is possible with [ONNX Runtime Web JavaScript](https://cloudblogs.microsoft.com/opensource/2021/09/02/onnx-runtime-web-running-your-machine-learning-model-in-browser/) that can enable cross-platform portability for web-applications.
 
 ## ONNX Runtime for React Native
 You can install and import ONNX Runtime Web for React Native.
 ### Install
-
 
 ```bash
 # install latest release version
@@ -95,7 +89,6 @@ npm install onnxruntime-react-native
 ```
 
 ### Import
-
 
 ```js
 // use ES6 style import syntax (recommended)
@@ -105,7 +98,6 @@ import * as ort from 'onnxruntime-react-native';
 // or use CommonJS style import syntax
 const ort = require('onnxruntime-react-native');
 ```
-
 
 ## Builds
 
@@ -118,8 +110,8 @@ const ort = require('onnxruntime-react-native');
 |React Native|[onnxruntime-react-native](https://www.npmjs.com/package/onnxruntime-react-native)|CPU|Android, iOS|
 
 - For Node.js binding, to use on platforms without pre-built binaries, you can [build Node.js binding from source](../build/inferencing.md#apis-and-language-bindings) and consume using `npm install <onnxruntime_repo_root>/js/node/`.
-- Consider the [options and considerations](https://onnxruntime.ai/docs/reference/build-web-app.html) for building a Web app with ONNX Runtime Web using JavaScript. 
-- Explore a simple web application to [classify images with ONNX Runtime Web](https://onnxruntime.ai/docs/tutorials/web/classify-images-nextjs-github-template.html). 
+- Consider the [options and considerations](https://onnxruntime.ai/docs/reference/build-web-app.html) for building a Web app with ONNX Runtime Web using JavaScript.
+- Explore a simple web application to [classify images with ONNX Runtime Web](https://onnxruntime.ai/docs/tutorials/web/classify-images-nextjs-github-template.html).
 
 ## API Reference
 

@@ -22,7 +22,6 @@ A new op can be registered with ONNX Runtime using the Custom Operator API in [o
 2. Create an OrtCustomOp structure for each op and add them to the OrtCustomOpDomain with OrtCustomOpDomain_Add.
 3. Call OrtAddCustomOpDomain to add the custom domain of ops to the session options.
 
-
 ## Examples
 {: .no_toc}
 
@@ -40,7 +39,6 @@ When a model is run on a GPU, ONNX Runtime will insert a `MemcpyToHost` op befor
 When using CUDA custom ops, to ensure synchronization between ORT's CUDA kernels and the custom CUDA kernels, they must all use the same CUDA compute stream. To ensure this, you may first create a CUDA stream and pass it to the underlying Session via SessionOptions (use the `OrtCudaProviderOptions` struct). This will ensure ORT's CUDA kernels use that stream and if the custom CUDA kernels are launched using the same stream, synchronization is now taken care of implicitly.
 
 For example, see how the afore-mentioned `MyCustomOp` is being launched and how the Session using this custom op is created.
-
 
 ## Contrib ops
 

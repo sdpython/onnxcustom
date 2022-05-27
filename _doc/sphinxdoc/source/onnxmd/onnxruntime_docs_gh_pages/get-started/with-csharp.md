@@ -85,7 +85,7 @@ using (var outputs1 = session1.Run(inputs1))
 {
     // get intermediate value
     var input2 = outputs1.First();
-    
+
     // modify the name of the ONNX value
     input2.Name = "name2";
 
@@ -130,14 +130,12 @@ The ONNX runtime provides a C# .NET binding for running inference on ONNX models
 | [Microsoft.ML.OnnxRuntime.DirectML](https://www.nuget.org/packages/Microsoft.ML.OnnxRuntime.directml) | GPU - DirectML (Release) | Windows 10 1709+ |
 | [ort-nightly](https://aiinfra.visualstudio.com/PublicPackages/_packaging?_a=feed&feed=ORT-Nightly) | CPU, GPU (Dev) | Same as Release versions |
 
-
 ## API Reference
 [C# API Reference](../api/csharp-api)
 
 ## Samples
 
 See [Tutorials: Basics - C#](../tutorials/api-basics)
-
 
 ## Learn More
 - [C# Tutorials](../tutorials/)

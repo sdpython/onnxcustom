@@ -7,8 +7,7 @@ has_children: false
 nav_order: 1
 ---
 
-
-# Classify images in a web application with ONNX Runtime Web 
+# Classify images in a web application with ONNX Runtime Web
 {: .no_toc }
 
 In this tutorial we will use a GitHub repository template to build an image classification web app using ONNX Runtime web. We will do the inference in JavaScript on the browser for a computer vision model.
@@ -43,9 +42,9 @@ We will be using [SqueezeNet](https://github.com/onnx/models/tree/master/vision/
 {: .no_toc }
 The goal of this template is to provide a starting point for your accelerated ML web application. The template generates a computer vision application using the [NextJS](https://nextjs.org/) framework, authored in typescript and built with webpack. Let’s dive into the template and breakdown the code.
 
-### The `utils` Folder 
+### The `utils` Folder
 {: .no_toc }
-There are three files in the Utils folder `imageHelper.ts`, `modelHelper.ts` and `predict.ts`. Predict is the entry point from the web component to start inferencing. Here we import the helpers and call the default functions to get the image tensor and to run our model inference. 
+There are three files in the Utils folder `imageHelper.ts`, `modelHelper.ts` and `predict.ts`. Predict is the entry point from the web component to start inferencing. Here we import the helpers and call the default functions to get the image tensor and to run our model inference.
 
 ### predict.ts
 
@@ -67,14 +66,14 @@ export async function inferenceSqueezenet(path: string): Promise<[any,number]> {
 
 ### imageHelper.ts
 
-First, we need to get our image from a local file or URL and convert it to a tensor. The `getImageTensorFromPath` function in the `imageHelper.ts` uses `JIMP` to read the file, resize and return the `imageData`. [JIMP](https://www.npmjs.com/package/jimp) is a JavaScript image manipulation library. It has many built in functions for working with image data such as resizing, grey scale, write, and more. In this example we only need to resize however in your code you may need additional image data processing. 
+First, we need to get our image from a local file or URL and convert it to a tensor. The `getImageTensorFromPath` function in the `imageHelper.ts` uses `JIMP` to read the file, resize and return the `imageData`. [JIMP](https://www.npmjs.com/package/jimp) is a JavaScript image manipulation library. It has many built in functions for working with image data such as resizing, grey scale, write, and more. In this example we only need to resize however in your code you may need additional image data processing.
 
 ```javascript
 import * as Jimp from 'jimp';
 import { Tensor } from 'onnxruntime-web';
 
 export async function getImageTensorFromPath(path: string, dims: number[] =  [1, 3, 224, 224]): Promise<Tensor> {
-  // 1. load the image  
+  // 1. load the image
   var image = await loadImagefromPath(path, dims[2], dims[3]);
   // 2. convert to tensor
   var imageTensor = imageDataToTensor(image, dims);
@@ -134,10 +133,10 @@ import _ from 'lodash';
 import { imagenetClasses } from '../data/imagenet';
 
 export async function runSqueezenetModel(preprocessedData: any): Promise<[any, number]> {
-  // Create session and set options. See the docs here for more options: 
+  // Create session and set options. See the docs here for more options:
   //https://onnxruntime.ai/docs/api/js/interfaces/InferenceSession.SessionOptions.html#graphOptimizationLevel
   const session = await ort.InferenceSession
-                          .create('./_next/static/chunks/pages/squeezenet1_1.onnx', 
+                          .create('./_next/static/chunks/pages/squeezenet1_1.onnx',
                           { executionProviders: ['webgl'], graphOptimizationLevel: 'all' });
   console.log('Inference session created');
   // Run inference and get results.
@@ -200,7 +199,7 @@ const ImageCanvas = (props: Props) => {
   const [topResultLabel, setLabel] = useState("");
   const [topResultConfidence, setConfidence] = useState("");
   const [inferenceTime, setInferenceTime] = useState("");
-  
+
   // Load the image from the IMAGE_URLS array
   const getImage = () => {
     var sampleImageUrls: Array<{ text: string; value: string }> = IMAGE_URLS;
@@ -209,7 +208,7 @@ const ImageCanvas = (props: Props) => {
   }
 
   // Draw image and other  UI elements then run inference
-  const displayImageAndRunInference = () => { 
+  const displayImageAndRunInference = () => {
     // Get the image
     image = new Image();
     var sampleImage = getImage();
@@ -271,7 +270,7 @@ This web component element is then imported in the `index.tsx`.
 
 ## next.config.js
 
-We need to add a couple plugins in the `next.config.js`. This is the webpack configuration implemented in the NextJS Framework. The `CopyPlugin` is used to copy the `wasm` files and the model folder files to the `out` folder for deployment. 
+We need to add a couple plugins in the `next.config.js`. This is the webpack configuration implemented in the NextJS Framework. The `CopyPlugin` is used to copy the `wasm` files and the model folder files to the `out` folder for deployment.
 
 ```javascript
 /** @type {import('next').NextConfig} */
@@ -287,7 +286,7 @@ module.exports = {
     config.resolve.fallback = { fs: false };
 
     config.plugins.push(
-    new NodePolyfillPlugin(), 
+    new NodePolyfillPlugin(),
     new CopyPlugin({
       patterns: [
         {
@@ -296,7 +295,7 @@ module.exports = {
         },             {
           from: './node_modules/onnxruntime-web/dist/ort-wasm-simd.wasm',
           to: 'static/chunks/pages',
-        },          
+        },
           {
             from: './model',
             to: 'static/chunks/pages',
@@ -306,7 +305,7 @@ module.exports = {
     );
 
     return config;
-  } 
+  }
 }
 ```
 
@@ -368,7 +367,7 @@ Now that we have built out the site we are ready to deploy it to a [Azure Static
 
 ## TypeScript Notebook
 
-We have walked through how to use this template, there is a bonus here though! Under the notebook folder in the tempalte there is a [notebook](https://github.com/microsoft/onnxruntime-nextjs-template/blob/main/notebook/inferenceNotebook.ipynb) with this code for you to experiment and try out changes you might need. This way if you have a different model or image you want to try out you can do it quite easily. To use the TypeScript Jupyter notebook download the VS Code Jupyter notebooks extension. 
+We have walked through how to use this template, there is a bonus here though! Under the notebook folder in the tempalte there is a [notebook](https://github.com/microsoft/onnxruntime-nextjs-template/blob/main/notebook/inferenceNotebook.ipynb) with this code for you to experiment and try out changes you might need. This way if you have a different model or image you want to try out you can do it quite easily. To use the TypeScript Jupyter notebook download the VS Code Jupyter notebooks extension.
 
 ## More Resources
 

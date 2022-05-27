@@ -8,7 +8,6 @@ nav_order: 10
 {: .no_toc }
 The ORT Training API is a PyTorch frontend that implements the torch.nn.Module interface.
 
-
 ## ORT Training Example
 In this example we will go over how to use ORT for Training a model with PyTorch.
 
@@ -27,7 +26,6 @@ python -m torch_ort.configure
    .
    model = ORTModule(model)
 ```
-
 
 ## Samples
 [ONNX Runtime Training Examples](https://github.com/microsoft/onnxruntime-training-examples)

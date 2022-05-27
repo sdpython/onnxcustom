@@ -20,7 +20,6 @@ Newer versions of ONNX Runtime support all models that worked with prior version
 ## Environment compatibility
 ONNX Runtime is not explicitly tested with every variation/combination of environments and dependencies, so this list is not comprehensive. Please use this as starting reference. For specific questions or requests, please [file an issue](https://github.com/microsoft/onnxruntime/issues) on Github.
 
-
 ### Platforms
 
 * Windows
@@ -55,12 +54,9 @@ ONNX Runtime is not explicitly tested with every variation/combination of enviro
 * [Submodules](https://github.com/microsoft/onnxruntime/tree/master/cgmanifests)
 * See the [Execution Provider page](../execution-providers) for details on specific hardware libary version requirements
 
-
 ## ONNX opset support
-ONNX Runtime supports all opsets from the latest released version of the [ONNX](https://onnx.ai) spec. All versions of ONNX Runtime support ONNX opsets from ONNX v1.2.1+ (opset version 7 and higher). 
-  * For example: if an ONNX Runtime release implements ONNX opset 9, it can run models stamped with ONNX opset versions in the range [7-9]. 
-
-
+ONNX Runtime supports all opsets from the latest released version of the [ONNX](https://onnx.ai) spec. All versions of ONNX Runtime support ONNX opsets from ONNX v1.2.1+ (opset version 7 and higher).
+  * For example: if an ONNX Runtime release implements ONNX opset 9, it can run models stamped with ONNX opset versions in the range [7-9].
 
 * [Supported Operator Data Types](https://github.com/microsoft/onnxruntime/blob/master/docs/OperatorKernels.md)
   * *Operators not supported in the current ONNX spec may be available as a [Contrib Operator](https://github.com/microsoft/onnxruntime/blob/master/docs/ContribOperators.md)*
@@ -87,7 +83,6 @@ ONNX Runtime supports all opsets from the latest released version of the [ONNX](
 
 Unless otherwise noted, please use the latest released version of the tools to convert/export the ONNX model. Most tools are backwards compatible and support multiple ONNX versions. Join this with the table above to evaluate ONNX Runtime compatibility.
 
-
 |Tool|Recommended Version|
 |---|---|
 |[PyTorch](https://pytorch.org/)|[Latest stable](https://pytorch.org/get-started/locally/)|
@@ -97,4 +92,3 @@ Unless otherwise noted, please use the latest released version of the tools to c
 |[Tensorflow-ONNX](https://pypi.org/project/tf2onnx/)|[Latest stable](https://github.com/onnx/tensorflow-onnx/releases)|
 |[WinMLTools](https://docs.microsoft.com/en-us/windows/ai/windows-ml/convert-model-winmltools)|[Latest stable](https://pypi.org/project/winmltools/)|
 |[AutoML](https://docs.microsoft.com/en-us/azure/machine-learning/service/concept-automated-ml)|[1.0.39+](https://pypi.org/project/azureml-automl-core) (ONNX v1.5) <br/>[1.0.33](https://pypi.org/project/azureml-automl-core/1.0.33/) (ONNX v1.4) |
-

@@ -13,7 +13,6 @@ redirect_from: /docs/reference/execution-providers/Vitis-AI-ExecutionProvider
 
 The current Vitis-AI execution provider inside ONNXRuntime enables acceleration of Neural Network model inference using DPUv1. DPUv1 is a hardware accelerator for Convolutional Neural Networks (CNN) on top of the Xilinx [Alveo](https://www.xilinx.com/products/boards-and-kits/alveo.html) platform and targets U200 and U250 accelerator cards.
 
-
 ## Contents
 {: .no_toc }
 
@@ -22,8 +21,7 @@ The current Vitis-AI execution provider inside ONNXRuntime enables acceleration 
 
 ## Requirements
 
-The following table lists system requirements for running docker containers as well as Alveo cards.  
-
+The following table lists system requirements for running docker containers as well as Alveo cards.
 
 | **Component**                                       | **Requirement**                                            |
 |-----------------------------------------------------|------------------------------------------------------------|
@@ -72,7 +70,7 @@ See [Build instructions](../build/eps.md#vitis-ai).
    docker build -t onnxruntime-vitisai -f Dockerfile.vitisai .
    ./scripts/docker_run_vitisai.sh
    ```
-   
+
    Setup inside container
    ```
    source /opt/xilinx/xrt/setup.sh
@@ -106,7 +104,7 @@ import pyxir.contrib.dpuv1.dpuv1
 
 import onnxruntime
 
-# Add other imports 
+# Add other imports
 # ...
 
 # Load inputs and do preprocessing

@@ -187,7 +187,6 @@ This version of the operator has been available since version 1 of the 'ai.onnx.
       For example: if the ``string_vocabulary`` parameter is set to ``["a", "c", "b", "z"]``,
       then an input of ``{"a": 4, "c": 8}`` will produce an output of ``[4, 8, 0, 0]``.
 
-
 #### Version
 
 This version of the operator has been available since version 1 of the 'ai.onnx.ml' operator set.
@@ -1146,4 +1145,3 @@ This version of the operator has been available since version 3 of the 'ai.onnx.
 <dt><tt>T</tt> : tensor(float), tensor(double), tensor(int64), tensor(int32)</dt>
 <dd>The input type must be a tensor of a numeric type.</dd>
 </dl>
-

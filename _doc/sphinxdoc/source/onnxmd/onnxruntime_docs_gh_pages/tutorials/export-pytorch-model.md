@@ -73,7 +73,6 @@ import numpy
 import onnxruntime
 import torch
 
-
 class CustomInverse(torch.nn.Module):
     def forward(self, x):
         return torch.inverse(x) + x

@@ -11,7 +11,7 @@ redirect_from: /docs/reference/execution-providers/oneDNN-ExecutionProvider
 
 Accelerate performance of ONNX Runtime using Intel® Math Kernel Library for Deep Neural Networks (Intel® DNNL) optimized primitives with the Intel oneDNN execution provider.
 
-Intel® oneAPI Deep Neural Network Library is an open-source performance library for deep-learning applications. The library accelerates deep-learning applications and frameworks on Intel® architecture and Intel® Processor Graphics Architecture. Intel DNNL contains vectorized and threaded building blocks that you can use to implement deep neural networks (DNN) with C and C++ interfaces. 
+Intel® oneAPI Deep Neural Network Library is an open-source performance library for deep-learning applications. The library accelerates deep-learning applications and frameworks on Intel® architecture and Intel® Processor Graphics Architecture. Intel DNNL contains vectorized and threaded building blocks that you can use to implement deep neural networks (DNN) with C and C++ interfaces.
 
 The DNNL Execution Provider (EP) for ONNX Runtime is developed by a partnership between Intel and Microsoft.
 
@@ -26,7 +26,6 @@ The DNNL Execution Provider (EP) for ONNX Runtime is developed by a partnership 
 ## Build
 
 For build instructions, please see the [BUILD page](../build/eps.md#onednn).
-
 
 ## Usage
 
@@ -53,7 +52,7 @@ For performance tuning, please see guidance on this page: [ONNX Runtime Perf Tun
 
 ### Subgraph Optimization
 
-DNNL uses blocked layout (example: nhwc with channels blocked by 16 – nChw16c) to take advantage of vector operations using AVX512.  To get best performance, we avoid reorders (example. Nchw16c to nchw) and propagate blocked layout to next primitive. 
+DNNL uses blocked layout (example: nhwc with channels blocked by 16 – nChw16c) to take advantage of vector operations using AVX512.  To get best performance, we avoid reorders (example. Nchw16c to nchw) and propagate blocked layout to next primitive.
 
 Subgraph optimization achieves this in the following steps.
 
@@ -64,8 +63,8 @@ Subgraph optimization achieves this in the following steps.
 #### Subgraph (IR) Internal Representation
 
 DnnlExecutionProvider::GetCapability() parses ONNX model graph and creates IR (Internal Representation) of subgraphs of DNNL operators.
-Each subgraph contains a vector DnnlNodes, inputs, outputs and attributes for all its DnnlNodes. There can be attributes of same name. So, we prefix attribute names with Node name and its index. 
-Unique id for subgraph is set as an attribute. 
+Each subgraph contains a vector DnnlNodes, inputs, outputs and attributes for all its DnnlNodes. There can be attributes of same name. So, we prefix attribute names with Node name and its index.
+Unique id for subgraph is set as an attribute.
 
 DnnlNode has an index to its inputs and outputs and pointer to its parent nodes. DnnlNode directly reads blocked memory from its parent to avoid data reordering.
 
@@ -99,7 +98,7 @@ SubgraphPrimitve::CreatePrimitives()
       } else if (mklnode.name == "MaxPool") {
         kernel.reset(new DnnlPool());
         context_.kernels.push_back(kernel);
-      } 
+      }
       .
       .
       .
@@ -107,7 +106,7 @@ SubgraphPrimitve::CreatePrimitives()
 
 In CreatePrimitives method, we iterate DnnlNodes and creates DnnlKernel objects and add DNNL primitive to a vector. It also reads attributes. This is done only once, at first iteration.
 
-```c++ 
+```c++
 SubgraphPrimitve::Compute()
    for (auto& kernel : kernels) {
       kernel->Bind(input_tensors, output_tensors);
@@ -121,7 +120,7 @@ In SubgraphPrimitve::Compute() method, we iterate thru Dnnl Kernels and bind inp
 **Supported OS**
 
 * Ubuntu 16.04
-* Windows 10 
+* Windows 10
 * Mac OS X
 
 **Supported backend**

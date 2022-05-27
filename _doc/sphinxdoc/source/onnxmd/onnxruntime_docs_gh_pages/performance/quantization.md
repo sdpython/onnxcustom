@@ -161,4 +161,3 @@ Per-channel quantization can improve the accuracy for models whose weight ranges
 {: .no_toc}
 
 8-bit type support for some operators like MaxPool is added in ONNX opeset 12. Please check your model version and upgrade it to opset 12 and above if your model version is older.
-

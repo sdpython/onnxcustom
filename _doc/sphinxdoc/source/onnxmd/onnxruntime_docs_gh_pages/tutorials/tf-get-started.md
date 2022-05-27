@@ -1,6 +1,6 @@
 ---
 title: Getting Started - TensorFlow
-nav_exclude: true 
+nav_exclude: true
 parent: Accelerate TensorFlow
 grand_parent: Inferencing
 ---

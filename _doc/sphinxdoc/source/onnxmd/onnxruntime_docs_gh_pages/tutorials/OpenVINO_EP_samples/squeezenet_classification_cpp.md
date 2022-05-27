@@ -28,13 +28,12 @@ The source code for this sample is available [here](https://github.com/microsoft
 ## Build steps
 [build instructions](../../build/eps.md#openvino)
 
-
 ## Reference Documentation
 [Documentation](../../execution-providers/OpenVINO-ExecutionProvider.md)
 
-If you build it by yourself, you must append the "--build_shared_lib" flag to your build command. 
+If you build it by yourself, you must append the "--build_shared_lib" flag to your build command.
 ```
-./build.sh --config Release --use_openvino CPU_FP32 --build_shared_lib 
+./build.sh --config Release --use_openvino CPU_FP32 --build_shared_lib
 ```
 
 ## Build the sample C++ Application

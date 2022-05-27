@@ -15,7 +15,6 @@ ONNX Runtime functions as part of an ecosystem of tools and platforms to deliver
 * TOC placeholder
 {:toc}
 
-
 ## Azure Machine Learning Services
 * [Azure Container Instance: BERT](https://github.com/microsoft/onnxruntime/tree/master/onnxruntime/python/tools/transformers/notebooks/Inference_Bert_with_OnnxRuntime_on_AzureML.ipynb){:target="_blank"}
 * [Azure Container Instance: Facial Expression Recognition](https://github.com/Azure/MachineLearningNotebooks/blob/master/how-to-use-azureml/deployment/onnx/onnx-inference-facial-expression-recognition-deploy.ipynb){:target="_blank"}
@@ -37,7 +36,6 @@ ONNX Runtime functions as part of an ecosystem of tools and platforms to deliver
 
 ## Azure Synapse Analytics
 * [ML predictions in Synapse SQL](https://docs.microsoft.com/en-us/azure/synapse-analytics/sql-data-warehouse/sql-data-warehouse-predict){:target="_blank"}
-
 
 ## ML.NET
 * [Automated Machine Learning](https://docs.microsoft.com/en-us/azure/machine-learning/how-to-use-automl-onnx-model-dotnet?toc=/dotnet/machine-learning/how-to-guides/toc.json&bc=/dotnet/machine-learning/how-to-guides/toc.json){:target="_blank"}

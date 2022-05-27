@@ -9,7 +9,7 @@ redirect_from: /docs/reference/execution-providers/MIGraphX-ExecutionProvider
 # MIGraphX Execution Provider
 {: .no_toc }
 
-The [MIGraphX](https://github.com/ROCmSoftwarePlatform/AMDMIGraphX/) execution provider uses AMD's Deep Learning graph optimization engine to accelerate ONNX model on AMD GPUs. 
+The [MIGraphX](https://github.com/ROCmSoftwarePlatform/AMDMIGraphX/) execution provider uses AMD's Deep Learning graph optimization engine to accelerate ONNX model on AMD GPUs.
 
 ## Contents
 {: .no_toc }
@@ -18,7 +18,7 @@ The [MIGraphX](https://github.com/ROCmSoftwarePlatform/AMDMIGraphX/) execution p
 {:toc}
 
 ## Build
-For build instructions, please see the [BUILD page](../build/eps.md#amd-migraphx). 
+For build instructions, please see the [BUILD page](../build/eps.md#amd-migraphx).
 
 ## Usage
 
@@ -50,4 +50,4 @@ MIGraphX providers an environment variable ORT_MIGRAPHX_FP16_ENABLE to enable th
 ## Performance Tuning
 For performance tuning, please see guidance on this page: [ONNX Runtime Perf Tuning](../performance/tune-performance.md)
 
-When/if using [onnxruntime_perf_test](https://github.com/microsoft/onnxruntime/tree/master/onnxruntime/test/perftest#onnxruntime-performance-test), use the flag `-e migraphx` 
+When/if using [onnxruntime_perf_test](https://github.com/microsoft/onnxruntime/tree/master/onnxruntime/test/perftest#onnxruntime-performance-test), use the flag `-e migraphx`

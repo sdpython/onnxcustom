@@ -17,8 +17,7 @@ RKNPU DDK is an advanced interface to access Rockchip NPU. The RKNPU Execution P
 * TOC placeholder
 {:toc}
 
-
-## Build 
+## Build
 For build instructions, please see the [BUILD page](../build/eps.md#rknpu).
 
 ## Usage
@@ -33,7 +32,6 @@ Ort::Session session(env, model_path, sf);
 ```
 The C API details are [here](../get-started/with-c.md).
 
-
 ## Support Coverage
 ### Supported Platform
 {: .no_toc }
@@ -43,7 +41,6 @@ The C API details are [here](../get-started/with-c.md).
 *Note: RK3399Pro platform is not supported.*
 ### Supported Operators
 {: .no_toc }
-
 
 The table below shows the ONNX Ops supported using the RKNPU Execution Provider and the mapping between ONNX Ops and RKNPU Ops.
 
@@ -73,10 +70,8 @@ The table below shows the ONNX Ops supported using the RKNPU Execution Provider 
 | DequantizeLinear | DATACONVERT |
 | Clip | CLIP |
 
-
 ### Supported Models
 {: .no_toc }
-
 
 The following models from the ONNX model zoo are supported using the RKNPU Execution Provider
 

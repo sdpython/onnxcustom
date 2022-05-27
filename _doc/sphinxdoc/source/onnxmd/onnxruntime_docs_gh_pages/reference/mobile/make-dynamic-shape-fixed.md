@@ -1,6 +1,6 @@
 ---
 title: Make dynamic input shape fixed
-descriptions: 
+descriptions:
 parent: Mobile
 grand_parent: Reference
 nav_exclude: true
@@ -9,7 +9,7 @@ nav_exclude: true
 # Making dynamic input shapes fixed
 {: .no_toc }
 
-If a model can potentially be used with NNAPI or CoreML as reported by the [model usability checker](./model-usability-checker.md), it may require the input shapes to be made 'fixed'. This is because NNAPI and CoreML do not support dynamic input shapes. 
+If a model can potentially be used with NNAPI or CoreML as reported by the [model usability checker](./model-usability-checker.md), it may require the input shapes to be made 'fixed'. This is because NNAPI and CoreML do not support dynamic input shapes.
 
 For example, often models have a dynamic batch size so that training is more efficient. In mobile scenarios the batch generally has a size of 1. Making the batch size dimension 'fixed' by setting it to 1 may allow NNAPI and CoreML to run of the model.
 
@@ -46,12 +46,10 @@ optional arguments:
 
 To determine the update required by the model, it's generally helpful to view the model in [Netron](https://netron.app/) to inspect the inputs.
 
-
 ## Making a symbolic dimension fixed
 
-Here is an example model, viewed using Netron, with a symbolic dimension called 'batch' for the batch size in 'input:0'. 
+Here is an example model, viewed using Netron, with a symbolic dimension called 'batch' for the batch size in 'input:0'.
 We will update that to use the fixed value of 1.
-
 
 ![Model with symbolic dimension in input shape](../../../images/model-with-symbolic-input-dim.png)
 
@@ -65,10 +63,9 @@ After replacement you should see that the shape for 'input:0' is now 'fixed' wit
 
 ![Model with symbolic dimension in input shape replaced with fixed value](../../../images/model-with-symbolic-input-dim-fixed.png)
 
-
 ## Making an input shape fixed
 
-Here is an example model that has unnamed dynamic dimensions for the 'x' input. Netron represents these with '?'. 
+Here is an example model that has unnamed dynamic dimensions for the 'x' input. Netron represents these with '?'.
 As there is no name for the dimension, we need to update the shape using the `--input_shape` option.
 
 ![Model with dynamic input shape](../../../images/model-with-dynamic-inputs.png)
@@ -82,4 +79,3 @@ python -m onnxruntime.tools.make_dynamic_shape_fixed --input_name x --input_shap
 After replacement you should see that the shape for 'x' is now 'fixed' with a value of [1, 3, 960, 960]
 
 ![Updated model with dynamic input shape now having fixed values](../../../images/model-with-dynamic-inputs-fixed.png)
-

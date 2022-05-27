@@ -16,5 +16,4 @@ nav_order: 2
 
 * [Accelerate fine tuning of Huggingface GPT2 model](https://github.com/microsoft/onnxruntime-training-examples/tree/master/orttrainer/huggingface-gpt2)
 
-
 * *More coming soon!*

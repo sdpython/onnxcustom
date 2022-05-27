@@ -69,9 +69,9 @@ ONNX Runtime gives you a variety of options to add machine learning to your mobi
    If you are starting from scratch, bootstrap your mobile application according in your mobile framework XCode or Android Development Kit. TODO check this.
 
    a. Add the ONNX Runtime dependency
-  
+
    b. Consume the onnxruntime API in your application
-   
+
    c. Add pre and post processing appropriate to your application and model
 
 4. How do I optimize my application?

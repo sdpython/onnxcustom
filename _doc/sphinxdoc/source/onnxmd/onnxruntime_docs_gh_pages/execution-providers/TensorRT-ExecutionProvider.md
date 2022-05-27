@@ -9,7 +9,7 @@ redirect_from: /docs/reference/execution-providers/TensorRT-ExecutionProvider
 # TensorRT Execution Provider
 {: .no_toc }
 
-With the TensorRT execution provider, the ONNX Runtime delivers better inferencing performance on the same hardware compared to generic GPU acceleration. 
+With the TensorRT execution provider, the ONNX Runtime delivers better inferencing performance on the same hardware compared to generic GPU acceleration.
 
 The TensorRT execution provider in the ONNX Runtime makes use of NVIDIA's [TensorRT](https://developer.nvidia.com/tensorrt) Deep Learning inferencing engine to accelerate ONNX model in their family of GPUs. Microsoft and NVIDIA worked closely to integrate the TensorRT execution provider with ONNX Runtime.
 
@@ -59,7 +59,6 @@ The C API details are [here](../get-started/with-c.md).
 #### Shape Inference for TensorRT Subgraphs
 If some operators in the model are not supported by TensorRT, ONNX Runtime will partition the graph and only send supported subgraphs to TensorRT execution provider. Because TensorRT requires that all inputs of the subgraphs have shape specified, ONNX Runtime will throw error if there is no input shape info. In this case please run shape inference for the entire model first by running script [here](https://github.com/microsoft/onnxruntime/blob/master/onnxruntime/python/tools/symbolic_shape_infer.py).
 
-
 ### Python
 To use TensorRT execution provider, you must explicitly register TensorRT execution provider when instantiating the InferenceSession.
 Note that it is recommended you also register CUDAExecutionProvider to allow Onnx Runtime to assign nodes to CUDA execution provider that TensorRT does not support.
@@ -90,10 +89,10 @@ Following environment variables can be set for TensorRT execution provider.
 * ORT_TENSORRT_INT8_USE_NATIVE_CALIBRATION_TABLE: Select what calibration table is used for non-QDQ models in INT8 mode. If 1, native TensorRT generated calibration table is used; if 0, ONNXRUNTIME tool generated calibration table is used. Default value: 0.
 **Note: Please copy up-to-date calibration table file to ORT_TENSORRT_CACHE_PATH before inference. Calibration table is specific to models and calibration data sets. Whenever new calibration table is generated, old file in the path should be cleaned up or be replaced.
 
-* ORT_TENSORRT_DLA_ENABLE: Enable DLA (Deep Learning Accelerator). 1: enabled, 0: disabled. Default value: 0. Note not all Nvidia GPUs support DLA. 
+* ORT_TENSORRT_DLA_ENABLE: Enable DLA (Deep Learning Accelerator). 1: enabled, 0: disabled. Default value: 0. Note not all Nvidia GPUs support DLA.
 
 * ORT_TENSORRT_DLA_CORE: Specify DLA core to execute on. Default value: 0.
- 
+
 * ORT_TENSORRT_ENGINE_CACHE_ENABLE: Enable TensorRT engine caching. The purpose of using engine caching is to save engine build time in the case that TensorRT may take long time to optimize and build engine. Engine will be cached when it's built for the first time so next time when new inference session is created the engine can be loaded directly from cache. In order to validate that the loaded engine is usable for current inference, engine profile is also cached and loaded along with engine. If current input shapes are in the range of the engine profile, the loaded engine can be safely used. Otherwise if input shapes are out of range, profile cache will be updated to cover the new shape and engine will be recreated based on the new profile (and also refreshed in the engine cache). Note each engine is created for specific settings such as model path/name, precision (FP32/FP16/INT8 etc), workspace, profiles etc, and specific GPUs and it's not portable, so it's essential to make sure those settings are not changing, otherwise the engine needs to be rebuilt and cached again. 1: enabled, 0: disabled. Default value: 0.
 **Warning: Please clean up any old engine and profile cache files (.engine and .profile) if any of the following changes:**
   - Model changes (if there are any changes to the model topology, opset version, operators etc.)
@@ -113,9 +112,9 @@ e.g. on Linux
 #### Override default max workspace size to 2GB
 export ORT_TENSORRT_MAX_WORKSPACE_SIZE=2147483648
 
-#### Override default maximum number of iterations to 10 
+#### Override default maximum number of iterations to 10
 export ORT_TENSORRT_MAX_PARTITION_ITERATIONS=10
-        
+
 #### Override default minimum subgraph node size to 5
 export ORT_TENSORRT_MIN_SUBGRAPH_SIZE=5
 
@@ -183,7 +182,7 @@ trt_options.trt_int8_enable = 1;
 trt_options.trt_int8_use_native_calibration_table = 1;
 trt_options.trt_engine_cache_enable = 1;
 trt_options.trt_engine_cache_path = "/path/to/cache"
-trt_options.trt_dump_subgraphs = 1;  
+trt_options.trt_dump_subgraphs = 1;
 session_options.AppendExecutionProvider_TensorRT(trt_options);
 ```
 
@@ -215,7 +214,7 @@ sess = ort.InferenceSession(model_path, sess_options=sess_opt, providers=provide
 ## Performance Tuning
 For performance tuning, please see guidance on this page: [ONNX Runtime Perf Tuning](../performance/tune-performance.md)
 
-When/if using [onnxruntime_perf_test](https://github.com/microsoft/onnxruntime/tree/master/onnxruntime/test/perftest#onnxruntime-performance-test), use the flag `-e tensorrt` 
+When/if using [onnxruntime_perf_test](https://github.com/microsoft/onnxruntime/tree/master/onnxruntime/test/perftest#onnxruntime-performance-test), use the flag `-e tensorrt`
 
 ## Samples
 
@@ -228,11 +227,10 @@ This example shows how to run the Faster R-CNN model on TensorRT execution provi
     python symbolic_shape_infer.py --input /path/to/onnx/model/model.onnx --output /path/to/onnx/model/new_model.onnx --auto_merge
     ```
 
-3. Replace the original model with the new model and run the 
+3. Replace the original model with the new model and run the
     onnx_test_runner tool under ONNX Runtime build directory.
     ```
     ./onnx_test_runner -e tensorrt /path/to/onnx/model/
     ```
 
 Please see [this Notebook](https://github.com/microsoft/onnxruntime/blob/master/docs/python/inference/notebooks/onnx-inference-byoc-gpu-cpu-aks.ipynb) for an example of running a model on GPU using ONNX Runtime through Azure Machine Learning Services.
-

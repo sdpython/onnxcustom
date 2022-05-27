@@ -1,5 +1,5 @@
 ---
-nav_exclude: true 
+nav_exclude: true
 ---
 
 # Number recognition with MNIST in C++
@@ -39,7 +39,6 @@ A single Ort::Env is created globally to initialize the runtime.
 Ort::Env env{ORT_LOGGING_LEVEL_WARNING, "test"};
 ```
 [[Source]](https://github.com/microsoft/onnxruntime/blob/521dc757984fbf9770d0051997178fbb9565cd52/samples/c_cxx/MNIST/MNIST.cpp#L12)
- 
 
 The MNIST structure abstracts away all of the interaction with the Onnx Runtime, creating the tensors, and running the model.
 
@@ -95,7 +94,7 @@ void ConvertDibToMnist() {
 MNIST's output is a simple {1,10} float tensor that holds the likelihood weights per number. The number with the highest value is the model's best guess.
 
 The MNIST structure uses std::max_element to do this and stores it in result_:
-```   
+```
 result_ = std::distance(results_.begin(), std::max_element(results_.begin(), results_.end()));
 ```
 [[Source]](https://github.com/microsoft/onnxruntime/blob/521dc757984fbf9770d0051997178fbb9565cd52/samples/c_cxx/MNIST/MNIST.cpp#L31)
@@ -158,5 +157,3 @@ To make things more interesting, the window painting handler graphs the probabil
     }
      ```
     [[Source]](https://github.com/microsoft/onnxruntime/blob/521dc757984fbf9770d0051997178fbb9565cd52/samples/c_cxx/MNIST/MNIST.cpp#L25-L33)
-
-

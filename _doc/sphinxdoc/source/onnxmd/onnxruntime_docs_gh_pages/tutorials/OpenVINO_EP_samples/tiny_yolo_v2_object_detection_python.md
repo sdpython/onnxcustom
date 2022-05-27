@@ -6,7 +6,7 @@ nav_exclude: true
 {: .no_toc }
 
 1. The Object detection sample again uses a tinyYOLOv2 Deep Learning ONNX Model from the ONNX Model Zoo.
- 
+
 2. The sample involves presenting a frame-by-frame video to ONNX Runtime (RT), which uses the OpenVINO Execution Provider to run inference on various Intel hardware devices as mentioned before and perform object detection to detect up to 20 different objects like birds, buses, cars, people and much more.
 
 The source code for this sample is available [here](https://github.com/microsoft/onnxruntime-inference-examples/tree/main/python/OpenVINO_EP/tiny_yolo_v2_object_detection).
@@ -24,10 +24,8 @@ The source code for this sample is available [here](https://github.com/microsoft
 ## Build steps
 [build instructions](../../execution-providers/OpenVINO-ExecutionProvider.md#build)
 
-
 ## Reference Documentation
 [Documentation](../../execution-providers/OpenVINO-ExecutionProvider.md)
-
 
 ## Requirements
 
@@ -49,4 +47,3 @@ python3 tiny_yolov2_obj_detection_sample.py
 ```bash
 Just press the letter 'q' or Ctrl+C if on Windows
 ```
-

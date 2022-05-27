@@ -23,7 +23,7 @@ ONNX Runtime supports many different execution providers today. Some of the EPs 
 * TOC placeholder
 {:toc}
 
-### Summary of supported Execution Providers 
+### Summary of supported Execution Providers
 
 |CPU|GPU|IoT/Edge/Mobile|Other|
 ---|---|---|---
@@ -50,7 +50,7 @@ The same ONNX Runtime API is used across all EPs. This provides the consistent i
 
     `get_providers`: Return list of registered execution providers.
     `get_provider_options`: Return the registered execution providers' configurations.
-    `set_providers`: Register the given list of execution providers. The underlying session is re-created. 
+    `set_providers`: Register the given list of execution providers. The underlying session is re-created.
         The list of providers is ordered by Priority. For example ['CUDAExecutionProvider', 'CPUExecutionProvider']
         means execute a node using CUDAExecutionProvider if capable, otherwise execute using CPUExecutionProvider.
 
@@ -72,12 +72,12 @@ output_name = sess.get_outputs()[0].name
 # get the inputs metadata as a list of :class:`onnxruntime.NodeArg`
 input_name = sess.get_inputs()[0].name
 
-# inference run using image_data as the input to the model 
+# inference run using image_data as the input to the model
 detections = sess.run([output_name], {input_name: image_data})[0]
 
 print("Output shape:", detections.shape)
 
-# Process the image to mark the inference points 
+# Process the image to mark the inference points
 image = post.image_postprocess(original_image, input_size, detections)
 image = Image.fromarray(image)
 image.save("kite-with-objects.jpg")
@@ -88,5 +88,3 @@ sess.set_providers(['CPUExecutionProvider'])
 cpu_detection = sess.run(...)
 
 ```
-
-

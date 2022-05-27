@@ -24,7 +24,6 @@ Support for creating a CoreML-aware ORT format model, similar to [creating an NN
 * TOC
 {:toc}
 
-
 ## 1. ONNX Model Optimization Example
 
 ONNX Runtime applies optimizations to the ONNX model to improve inferencing performance. These optimizations occur prior to exporting an ORT format model. See the [graph optimization](./graph-optimizations.md) documentation for further details of the available optimizations.
@@ -45,7 +44,6 @@ _Layout_ optimizations may be hardware specific and involve internal conversions
 
 - For ONNX Runtime versions prior to 1.8 layout optimizations should not be used when creating ORT format models.
 - For ONNX Runtime version 1.8 or later layout optimizations may be enabled, as the hardware specific optimizations are automatically disabled.
-
 
 ### Outcome of optimizations when creating an optimized ORT format model
 

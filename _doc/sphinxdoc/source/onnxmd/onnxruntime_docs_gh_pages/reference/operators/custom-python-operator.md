@@ -22,7 +22,7 @@ onnxruntime                        python capi                         script
      |                                  |                                 |
      | ------------------------------>  |                                 |
      |       call with tensor(s)        | ------------------------------> |
-     |                                  |         call with numpy(s)      | 
+     |                                  |         call with numpy(s)      |
      |                                  |                                 | compute
      |                                  | <------------------------------ |
      | <------------------------------  |           return numpys(s)      |
@@ -31,7 +31,7 @@ onnxruntime                        python capi                         script
 
 ## How to Use
 ### Step 1
-Build onnxruntime with `--config Release --enable_language_interop_ops --build_wheel` and pip install the latest wheel file. 
+Build onnxruntime with `--config Release --enable_language_interop_ops --build_wheel` and pip install the latest wheel file.
 
 ### Step 2
 Create an onnx model containing Python operator nodes:

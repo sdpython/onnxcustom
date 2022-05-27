@@ -5,7 +5,6 @@ grand_parent: Reference
 nav_order: 5
 ---
 
-
 # ONNX Runtime 1.10 Mobile Pre-Built Package Operator and Type Support
 
 ## Supported operators and types

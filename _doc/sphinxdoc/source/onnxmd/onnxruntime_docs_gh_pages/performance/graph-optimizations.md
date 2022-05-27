@@ -68,7 +68,6 @@ These optimizations include complex node fusions. They are run after graph parti
 | Bias GELU Fusion                | CPU or CUDA        | Fuse bias of fully connected layer and GELU activation                      |
 | GELU Approximation*             | CUDA               | Disabled by default. Enable with [kOrtSessionOptionsEnableGeluApproximation](https://cs.github.com/microsoft/onnxruntime/blob/175acf08f470db0bb2e4b8eefe55cdeb87c8b132/include/onnxruntime/core/session/onnxruntime_session_options_config_keys.h?q=kOrtSessionOptionsEnableGeluApproximation#L52) |
 
-
 <details>
   <summary>
     Approximations (click to expand)

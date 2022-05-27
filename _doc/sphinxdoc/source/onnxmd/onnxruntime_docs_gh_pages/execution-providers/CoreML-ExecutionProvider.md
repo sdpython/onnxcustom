@@ -72,7 +72,6 @@ This may decrease the performance but will provide reference output value withou
 
 Enable CoreML EP to run on a subgraph in the body of a control flow operator (i.e. a [Loop](https://github.com/onnx/onnx/blob/master/docs/Operators.md#loop), [Scan](https://github.com/onnx/onnx/blob/master/docs/Operators.md#scan) or [If](https://github.com/onnx/onnx/blob/master/docs/Operators.md#if) operator).
 
-
 ##### COREML_FLAG_ONLY_ENABLE_DEVICE_WITH_ANE
 
 By default the CoreML EP will be enabled for all compatible Apple devices.

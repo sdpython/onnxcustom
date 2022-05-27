@@ -3,7 +3,7 @@ title: Java
 parent: Get Started
 toc: true
 nav_order: 5
---- 
+---
 # Get Started with ORT for Java
 {: .no_toc }
 
@@ -14,7 +14,6 @@ The ONNX runtime provides a Java binding for running inference on ONNX models on
 
 * TOC placeholder
 {:toc}
-
 
 ## Supported Versions
 Java 8 or newer
@@ -52,7 +51,7 @@ probabilities).  Two example models are provided in [testdata](https://github.co
 `cnn_mnist_pytorch.onnx` and `lr_mnist_scikit.onnx`. The first is a LeNet5 style
 CNN trained using PyTorch, the second is a logistic regression trained using scikit-learn.
 
-The unit tests contain several examples of loading models, inspecting input/output node shapes and types, as well as constructing tensors for scoring. 
+The unit tests contain several examples of loading models, inspecting input/output node shapes and types, as well as constructing tensors for scoring.
 
 * [https://github.com/microsoft/onnxruntime/tree/master/java/src/test/java/ai/onnxruntime/InferenceTest.java#L66](https://github.com/microsoft/onnxruntime/tree/master/java/src/test/java/ai/onnxruntime/InferenceTest.java#L66)
 
@@ -72,7 +71,7 @@ To start a scoring session, first create the `OrtEnvironment`, then open a sessi
 Once a session is created, you can execute queries using the `run` method of the `OrtSession` object. At the moment we support `OnnxTensor` inputs, and models can produce `OnnxTensor`, `OnnxSequence` or `OnnxMap` outputs. The latter two are more likely when scoring models produced by frameworks like scikit-learn.
 
 The run call expects a `Map<String,OnnxTensor>` where the keys match input node names stored in the model. These can be viewed by calling `session.getInputNames()` or `session.getInputInfo()` on an instantiated session.
-The run call produces a `Result` object, which contains a `Map<String,OnnxValue>` representing the output. The `Result` object is `AutoCloseable` and can be used in a try-with-resources statement to 
+The run call produces a `Result` object, which contains a `Map<String,OnnxValue>` representing the output. The `Result` object is `AutoCloseable` and can be used in a try-with-resources statement to
 prevent references from leaking out. Once the `Result` object is closed, all it's child `OnnxValue`s are closed too.
 
 ```java
@@ -90,7 +89,7 @@ You can load your input data into OnnxTensor objects in several ways. The most e
     long[] dimensions;       // and the dimensions of the input are stored here
     var tensorFromBuffer = OnnxTensor.createTensor(env,sourceData,dimensions);
 
-    float[][] sourceArray = new float[28][28];  // assume your data is loaded into a float array 
+    float[][] sourceArray = new float[28][28];  // assume your data is loaded into a float array
     var tensorFromArray = OnnxTensor.createTensor(env,sourceArray);
 ```
 

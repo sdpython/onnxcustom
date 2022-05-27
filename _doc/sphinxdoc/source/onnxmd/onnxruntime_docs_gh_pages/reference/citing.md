@@ -6,7 +6,6 @@ nav_order: 8
 
 # Citing ONNX Runtime
 
-
 ## Bibtex
 ```
 @misc{onnxruntime,
@@ -19,7 +18,7 @@ nav_order: 8
 ```
 
 ## Logos
-For visual accessibility, please use the dark formats of the icon/logo on light-colored backgrounds, and the light formats on dark-color backgrounds. 
+For visual accessibility, please use the dark formats of the icon/logo on light-colored backgrounds, and the light formats on dark-color backgrounds.
 
 ### For light backgrounds
 * Logo: [.png](../../images/logos/onnxruntime/ORT_logo_for_light_bg.png), [.svg](../../images/logos/onnxruntime/ORT_logo_for_light_bg.svg)

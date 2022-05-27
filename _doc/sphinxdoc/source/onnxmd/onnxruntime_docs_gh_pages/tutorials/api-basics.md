@@ -1,6 +1,6 @@
 ---
 title: API Basics
-descriptions: 
+descriptions:
 parent: Tutorials
 nav_order: 1
 ---
@@ -9,18 +9,15 @@ nav_order: 1
 
 These tutorials demonstrate basic inferencing with ONNX Runtime with each language API. More examples can be found on [microsoft/onnxruntime-inference-examples](https://github.com/microsoft/onnxruntime-inference-examples).
 
-
 ## Contents
 {: .no_toc }
 
 * TOC placeholder
 {:toc}
 
-
 ## Python
 * [Scikit-learn Logistic Regression](https://onnxruntime.ai/docs/api/python/tutorial.html)
 * [Image recognition (Resnet50)](https://github.com/onnx/onnx-docker/blob/master/onnx-ecosystem/inference_demos/resnet50_modelzoo_onnxruntime_inference.ipynb)
-
 
 ## C++
 * [C/C++ examples](https://github.com/microsoft/onnxruntime-inference-examples/tree/main/c_cxx)

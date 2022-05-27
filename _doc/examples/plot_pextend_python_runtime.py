@@ -329,7 +329,7 @@ class OpEig(OpRunCustom):
                              expected_attributes=OpEig.atts,
                              **options)
 
-    def run(self, x):
+    def run(self, x, verbose=0, fLOG=print):
         # computation
         if self.eigv:
             return numpy.linalg.eig(x)

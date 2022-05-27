@@ -15,7 +15,6 @@ Below is a quick guide to get the packages installed to use ONNX for model seria
 * TOC placeholder
 {:toc}
 
-
 ## Install ONNX Runtime
 
 There are two Python packages for ONNX Runtime. Only one of these packages should be installed at a time in any one environment. The GPU package encompasses most of the CPU functionality.
@@ -32,10 +31,9 @@ pip install onnxruntime
 
 ## Install ONNX for model export
 
-
 ```python
 ## ONNX is built into PyTorch
-pip install torch 
+pip install torch
 ```
 ```python
 ## tensorflow
@@ -77,7 +75,7 @@ x, y = test_data[0][0], test_data[0][1]
 ort_sess = ort.InferenceSession('fashion_mnist_model.onnx')
 outputs = ort_sess.run(None, {'input': x.numpy()})
 
-# Print Result 
+# Print Result
 predicted, actual = classes[outputs[0][0].argmax(0)], classes[y]
 print(f'Predicted: "{predicted}", Actual: "{actual}"')
 ```
@@ -143,7 +141,7 @@ model = ResNet50(weights='imagenet')
 preds = model.predict(x)
 print('Keras Predicted:', decode_predictions(preds, top=3)[0])
 model.save(os.path.join("/tmp", model.name))
-``` 
+```
 - Convert the model to onnx and export
 
 ```python
@@ -198,7 +196,6 @@ with open("logreg_iris.onnx", "wb") as f:
     f.write(onx.SerializeToString())
 ```
 
-    
 - Load and run the model using ONNX Runtime
 We will use ONNX Runtime to compute the predictions for this machine learning model.
 
@@ -236,10 +233,10 @@ print(pred_onx)
 
 ## Python API Reference Docs
 
- <span class="fs-5"> [Go to the ORT Python API Docs](../api/python/api_summary.html){: .btn  .mr-4 target="_blank"} </span> 
+ <span class="fs-5"> [Go to the ORT Python API Docs](../api/python/api_summary.html){: .btn  .mr-4 target="_blank"} </span>
 
 ## Builds
-If using pip, run pip install `--upgrade pip` prior to downloading.	 
+If using pip, run pip install `--upgrade pip` prior to downloading.	
 
 | Artifact      | Description | Supported Platforms |
 |-----------    |-------------|---------------------|
@@ -248,9 +245,7 @@ If using pip, run pip install `--upgrade pip` prior to downloading.
 |[onnxruntime-gpu](https://pypi.org/project/onnxruntime-gpu)|GPU (Release)| Windows (x64), Linux (x64, ARM64) |
 |[ort-nightly-gpu](https://test.pypi.org/project/ort-nightly-gpu)|GPU (Dev) | Same as above |
 
-
 For Python compiler version notes, see [this page](https://github.com/microsoft/onnxruntime/tree/master/docs/Python_Dev_Notes.md)
-
 
 ## Supported Versions
 Python 3.6 - 3.9
@@ -260,4 +255,3 @@ Python 3.6 - 3.9
 * [TensorFlow with ONNX Runtime](../tutorials/tf-get-started.md)
 * [PyTorch with ONNX Runtime](https://pytorch.org/tutorials/advanced/super_resolution_with_onnxruntime.html)
 * [scikit-learn with ONNX Runtime](http://onnx.ai/sklearn-onnx/index_tutorial.html)
- 

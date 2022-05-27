@@ -20,7 +20,7 @@ Accelerate ONNX models on Intel CPUs, GPUs and VPUs with ONNX Runtime and the In
 ## Install
 
 Pre-built packages and Docker images are published for  ONNX Runtime with OpenVINO by Intel for each release.
-* OpenVINO-EP Release page: [Latest v4.0 Release](https://github.com/intel/onnxruntime/releases) 
+* OpenVINO-EP Release page: [Latest v4.0 Release](https://github.com/intel/onnxruntime/releases)
 * Python wheels Ubuntu/Windows: [intel/onnxruntime](https://github.com/intel/onnxruntime/releases)
 * Docker image: [openvino/onnxruntime_ep_ubuntu18](https://hub.docker.com/r/openvino/onnxruntime_ep_ubuntu18)
 
@@ -43,7 +43,6 @@ For build instructions, please see the [BUILD page](../build/eps.md#openvino).
 
 * With this release, we have officially stopped supporting CentOS. We will start supporting RHEL OS from
 OpenVINO 2022.1.
-
 
 ## Usage
 
@@ -69,10 +68,9 @@ Initialize the OpenVINO environment by running the setupvars script as shown bel
    ```
    **Note:** If you are using a dockerfile to use OpenVINO-EP, sourcing OpenVINO won't be possible within the dockerfile. You would have to explicitly set the LD_LIBRARY_PATH to point to OpenVINO libraries location. Refer our [dockerfile].(https://github.com/microsoft/onnxruntime/blob/master/dockerfiles/Dockerfile.openvino)
 
-
 **C#**
 
-To use csharp api for openvino execution provider create a custom nuget package. Follow the instructions [here](../build/inferencing.md#build-nuget-packages) to install prerequisites for nuget creation. Once prerequisites are installed follow the instructions to [build openvino](../build/eps.md#openvino) and add an extra flag `--build_nuget` to create nuget packages. Two nuget packages will be created Microsoft.ML.OnnxRuntime.Managed and Microsoft.ML.OnnxRuntime.Openvino. 
+To use csharp api for openvino execution provider create a custom nuget package. Follow the instructions [here](../build/inferencing.md#build-nuget-packages) to install prerequisites for nuget creation. Once prerequisites are installed follow the instructions to [build openvino](../build/eps.md#openvino) and add an extra flag `--build_nuget` to create nuget packages. Two nuget packages will be created Microsoft.ML.OnnxRuntime.Managed and Microsoft.ML.OnnxRuntime.Openvino.
 
 ### Multi-threading for OpenVINO EP
 
@@ -450,7 +448,6 @@ VPUs as well as Intel<sup>®</sup> Vision accelerator Design with Intel Movidiu
 | Where | Yes | Yes | Yes |
 | Xor | Yes | Yes | No |
 
-
 ### Topology Support
 
 Below topologies from ONNX open model zoo are fully supported on OpenVINO Execution Provider and many more are supported through sub-graph partitioning
@@ -485,7 +482,6 @@ Below topologies from ONNX open model zoo are fully supported on OpenVINO Execut
 | zfnet512 | Yes | Yes | Yes |
 | mxnet_arcface | No | Yes | No |
 
-
 ### Image Recognition Networks
 
 | **MODEL NAME** | **CPU** | **GPU** | **VPU** |
@@ -517,7 +513,7 @@ Below topologies from ONNX open model zoo are fully supported on OpenVINO Execut
 
 ## OpenVINO-EP samples Tutorials
 
-In order to showcase what you can do with the OpenVINO Execution Provider for ONNX Runtime, we have created a few samples that shows how you can get that performance boost you’re looking for with just one additional line of code. 
+In order to showcase what you can do with the OpenVINO Execution Provider for ONNX Runtime, we have created a few samples that shows how you can get that performance boost you’re looking for with just one additional line of code.
 
 ### Python API
 [Object detection with tinyYOLOv2 in Python](https://github.com/microsoft/onnxruntime-inference-examples/tree/main/python/OpenVINO_EP/tiny_yolo_v2_object_detection)

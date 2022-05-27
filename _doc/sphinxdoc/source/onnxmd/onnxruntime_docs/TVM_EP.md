@@ -9,7 +9,6 @@
 - [Samples](#samples)
 - [Known issues](#known-issues)
 
-
 ## Introduction
 
 TVM is an execution provider for ONNX Runtime that is built on top of Apache TVM. It enables ONNX Runtime users to leverage Apache TVM model optimizations.

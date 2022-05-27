@@ -5,7 +5,6 @@ toc: true
 nav_order: 8
 ---
 
-
 # Get started with ORT for Windows Machine Learning WinRT
 {: .no_toc }
 
@@ -30,7 +29,6 @@ Windows 8.1+
 |Artifact|Description|Supported Platforms|
 |---|---|---|
 |[Microsoft.AI.MachineLearning](https://www.nuget.org/packages/Microsoft.AI.MachineLearning)|WinRT - CPU, GPU (DirectML)|Windows 8.1+|
-
 
 ## API Reference
 [Windows.AI.MachineLearning](https://docs.microsoft.com/en-us/windows/ai/windows-ml/api-reference)

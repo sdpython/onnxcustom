@@ -5,7 +5,6 @@ parent: Reference
 nav_order: 3
 ---
 
-
 # Reduced operator config file
 {: .no_toc}
 

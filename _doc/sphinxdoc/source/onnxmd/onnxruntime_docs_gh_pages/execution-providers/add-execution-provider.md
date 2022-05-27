@@ -28,8 +28,8 @@ redirect_from: /docs/how-to/add-execution-provider
 Examples:
 
 * [CPU Execution Provider](https://github.com/microsoft/onnxruntime/blob/master/onnxruntime/core/providers/cpu/cpu_execution_provider.h)
-* [CUDA Execution Provider](https://github.com/microsoft/onnxruntime/blob/master/onnxruntime/core/providers/cuda/cuda_execution_provider.h)               
-* [DNNL Execution Provider](https://github.com/microsoft/onnxruntime/blob/master/onnxruntime/core/providers/dnnl/dnnl_execution_provider.h)               
+* [CUDA Execution Provider](https://github.com/microsoft/onnxruntime/blob/master/onnxruntime/core/providers/cuda/cuda_execution_provider.h)
+* [DNNL Execution Provider](https://github.com/microsoft/onnxruntime/blob/master/onnxruntime/core/providers/dnnl/dnnl_execution_provider.h)
 
 ## Use the Execution Provider
 

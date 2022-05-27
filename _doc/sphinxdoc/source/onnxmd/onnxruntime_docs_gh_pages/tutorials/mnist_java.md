@@ -1,5 +1,5 @@
 ---
-nav_exclude: true 
+nav_exclude: true
 ---
 
 # Character recognition with MNIST in Java
@@ -15,10 +15,10 @@ To start a scoring session, first create the `OrtEnvironment`, then open a sessi
     var session = env.createSession("model.onnx",new OrtSession.SessionOptions());
 ```
 
-Once a session is created, you can execute queries using the `run` method of the `OrtSession` object. 
+Once a session is created, you can execute queries using the `run` method of the `OrtSession` object.
 At the moment we support `OnnxTensor` inputs, and models can produce `OnnxTensor`, `OnnxSequence` or `OnnxMap` outputs. The latter two are more likely when scoring models produced by frameworks like scikit-learn.
 The run call expects a `Map<String,OnnxTensor>` where the keys match input node names stored in the model. These can be viewed by calling `session.getInputNames()` or `session.getInputInfo()` on an instantiated session.
-The run call produces a `Result` object, which contains a `Map<String,OnnxValue>` representing the output. The `Result` object is `AutoCloseable` and can be used in a try-with-resources statement to 
+The run call produces a `Result` object, which contains a `Map<String,OnnxValue>` representing the output. The `Result` object is `AutoCloseable` and can be used in a try-with-resources statement to
 prevent references from leaking out. Once the `Result` object is closed, all it's child `OnnxValue`s are closed too.
 
 ```java
@@ -36,7 +36,7 @@ You can load your input data into OnnxTensor objects in several ways. The most e
     long[] dimensions;       // and the dimensions of the input are stored here
     var tensorFromBuffer = OnnxTensor.createTensor(env,sourceData,dimensions);
 
-    float[][] sourceArray = new float[28][28];  // assume your data is loaded into a float array 
+    float[][] sourceArray = new float[28][28];  // assume your data is loaded into a float array
     var tensorFromArray = OnnxTensor.createTensor(env,sourceArray);
 ```
 

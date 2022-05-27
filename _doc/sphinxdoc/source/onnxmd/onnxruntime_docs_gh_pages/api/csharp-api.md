@@ -23,17 +23,17 @@ No public constructor available.
 ```cs
 static OrtEnv Instance();
 ```
-Returns an instance of the singlton class `OrtEnv`.    
+Returns an instance of the singlton class `OrtEnv`.
 
 ```cs
 void EnableTelemetryEvents();
 ```
-Enables platform-specific telemetry collection where applicable. Please see [Privacy](https://github.com/microsoft/onnxruntime/blob/master/docs/Privacy.md) for more details.    
+Enables platform-specific telemetry collection where applicable. Please see [Privacy](https://github.com/microsoft/onnxruntime/blob/master/docs/Privacy.md) for more details.
 
 ```cs
 void DisableTelemetryEvents();
 ```
-Disables platform-specific telemetry collection. Please see [Privacy](https://github.com/microsoft/onnxruntime/blob/master/docs/Privacy.md) for more details.    
+Disables platform-specific telemetry collection. Please see [Privacy](https://github.com/microsoft/onnxruntime/blob/master/docs/Privacy.md) for more details.
 
 ### InferenceSession
 ```cs
@@ -47,15 +47,15 @@ The runtime representation of an ONNX model
 InferenceSession(string modelPath);
 InferenceSession(string modelPath, SessionOptions options);
 ```
-    
+
 #### Properties
 ```cs
-IReadOnlyDictionary<NodeMetadata> InputMetadata;    
+IReadOnlyDictionary<NodeMetadata> InputMetadata;
 ```
-Data types and shapes of the input nodes of the model.    
+Data types and shapes of the input nodes of the model.
 
 ```cs
-IReadOnlyDictionary<NodeMetadata> OutputMetadata; 
+IReadOnlyDictionary<NodeMetadata> OutputMetadata;
 ```
 Data types and shapes of the output nodes of the model.
 
@@ -96,13 +96,13 @@ Creates a NamedOnnxValue from a name and a Tensor<T> object.
 ```cs
 Tensor<T> AsTensor<T>();
 ```
-Accesses the value as a Tensor<T>. Returns null if the value is not a Tensor<T>.     
+Accesses the value as a Tensor<T>. Returns null if the value is not a Tensor<T>.
 
 ### DisposableNamedOnnxValue
 ```cs
 class DisposableNamedOnnxValue: NamedOnnxValue, IDisposable;
 ```
-This is a disposable variant of NamedOnnxValue, used for holding output values which contains objects allocated in unmanaged memory. 
+This is a disposable variant of NamedOnnxValue, used for holding output values which contains objects allocated in unmanaged memory.
 
 ### FixedBufferOnnxValue
 ```cs
@@ -118,7 +118,6 @@ Class `FixedBufferOnnxValue` enables the availability to pin the tensor buffer. 
 static FixedBufferOnnxValue CreateFromTensor<T>(Tensor<T>);
 ```
 Creates a FixedBufferOnnxValue from a name and a Tensor<T> object.
-
 
 ### IDisposableReadOnlyCollection
 ```cs
@@ -154,7 +153,7 @@ See [ONNX_Runtime_Graph_Optimizations.md] for more details.
 SetSessionExecutionMode(ExecutionMode execution_mode);
 ```
  * ORT_SEQUENTIAL - execute operators in the graph sequentially.
- * ORT_PARALLEL - execute operators in the graph in parallel.   
+ * ORT_PARALLEL - execute operators in the graph in parallel.
 See [How to tune performance](../performance/tune-performance.md) for more details.
 
 ### NodeMetadata
@@ -162,10 +161,10 @@ Container of metadata for a model graph node, used for communicating the shape a
 
 #### Properties
 ```cs
-int[] Dimensions;  
+int[] Dimensions;
 ```
 Read-only shape of the node, when the node is a Tensor. Undefined if the node is not a Tensor.
-    
+
 ```cs
 System.Type ElementType;
 ```
@@ -193,7 +192,7 @@ Encapsulates some metadata about the ONNX model.
 No public constructor available.
 
 The `ModelMetadata` instance for an ONNX model may be obtained by querying the `ModelMetadata` property of an `InferenceSession` instance.
-    
+
 #### Properties
 ```cs
 string ProducerName;

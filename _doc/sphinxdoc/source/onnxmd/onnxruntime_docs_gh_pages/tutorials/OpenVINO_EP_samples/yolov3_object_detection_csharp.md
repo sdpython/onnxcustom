@@ -28,7 +28,6 @@ The source code for this sample is available [here](https://github.com/microsoft
 ## Build steps
 [build instructions](../../build/eps.md#openvino)
 
-
 ## Reference Documentation
 [Documentation](../../execution-providers/OpenVINO-ExecutionProvider.md)
 
@@ -52,7 +51,6 @@ dotnet new console
     2. Right click on project, navigate to manage Nuget Packages.
     3. Install SixLabors.ImageSharp Package from nuget.org.
     4. Install Microsoft.ML.OnnxRuntime.Managed and Microsoft.ML.OnnxRuntime.Openvino from your build directory nuget-artifacts.
-    
 
 3. Compile the sample
 

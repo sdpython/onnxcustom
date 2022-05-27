@@ -30,7 +30,6 @@ For an operator input/output's differentiability, it can be differentiable,
 |<a href="#ai.onnx.ml.TreeEnsembleRegressor">ai.onnx.ml.TreeEnsembleRegressor</a>|<a href="Changelog-ml.md#ai.onnx.ml.TreeEnsembleRegressor-3">3</a>, <a href="Changelog-ml.md#ai.onnx.ml.TreeEnsembleRegressor-1">1</a>|
 |<a href="#ai.onnx.ml.ZipMap">ai.onnx.ml.ZipMap</a>|<a href="Changelog-ml.md#ai.onnx.ml.ZipMap-1">1</a>|
 
-
 ## ai.onnx.ml
 ### <a name="ai.onnx.ml.ArrayFeatureExtractor"></a><a name="ai.onnx.ml.arrayfeatureextractor">**ai.onnx.ml.ArrayFeatureExtractor**</a>
 
@@ -63,7 +62,6 @@ This version of the operator has been available since version 1 of the 'ai.onnx.
 <dt><tt>T</tt> : tensor(float), tensor(double), tensor(int64), tensor(int32), tensor(string)</dt>
 <dd>The input must be a tensor of a numeric type or string. The output will be of the same tensor type.</dd>
 </dl>
-
 
 ### <a name="ai.onnx.ml.Binarizer"></a><a name="ai.onnx.ml.binarizer">**ai.onnx.ml.Binarizer**</a>
 
@@ -100,7 +98,6 @@ This version of the operator has been available since version 1 of the 'ai.onnx.
 <dt><tt>T</tt> : tensor(float), tensor(double), tensor(int64), tensor(int32)</dt>
 <dd>The input must be a tensor of a numeric type. The output will be of the same tensor type.</dd>
 </dl>
-
 
 ### <a name="ai.onnx.ml.CastMap"></a><a name="ai.onnx.ml.castmap">**ai.onnx.ml.CastMap**</a>
 
@@ -145,7 +142,6 @@ This version of the operator has been available since version 1 of the 'ai.onnx.
 <dt><tt>T2</tt> : tensor(string), tensor(float), tensor(int64)</dt>
 <dd>The output is a 1-D tensor of string, float, or integer.</dd>
 </dl>
-
 
 ### <a name="ai.onnx.ml.CategoryMapper"></a><a name="ai.onnx.ml.categorymapper">**ai.onnx.ml.CategoryMapper**</a>
 
@@ -198,7 +194,6 @@ This version of the operator has been available since version 1 of the 'ai.onnx.
 <dd>The output is a tensor of strings or integers. Its shape will be the same as the input shape.</dd>
 </dl>
 
-
 ### <a name="ai.onnx.ml.DictVectorizer"></a><a name="ai.onnx.ml.dictvectorizer">**ai.onnx.ml.DictVectorizer**</a>
 
   Uses an index mapping to convert a dictionary to an array.<br>
@@ -212,7 +207,6 @@ This version of the operator has been available since version 1 of the 'ai.onnx.
       Any keys not present in the input dictionary, will be zero in the output array.<br>
       For example: if the ``string_vocabulary`` parameter is set to ``["a", "c", "b", "z"]``,
       then an input of ``{"a": 4, "c": 8}`` will produce an output of ``[4, 8, 0, 0]``.
-
 
 #### Version
 
@@ -249,7 +243,6 @@ This version of the operator has been available since version 1 of the 'ai.onnx.
 <dt><tt>T2</tt> : tensor(int64), tensor(float), tensor(double), tensor(string)</dt>
 <dd>The output will be a tensor of the value type of the input map. It's shape will be [1,C], where C is the length of the input dictionary.</dd>
 </dl>
-
 
 ### <a name="ai.onnx.ml.FeatureVectorizer"></a><a name="ai.onnx.ml.featurevectorizer">**ai.onnx.ml.FeatureVectorizer**</a>
 
@@ -289,7 +282,6 @@ This version of the operator has been available since version 1 of the 'ai.onnx.
 <dt><tt>T1</tt> : tensor(int32), tensor(int64), tensor(float), tensor(double)</dt>
 <dd>The input type must be a tensor of a numeric type.</dd>
 </dl>
-
 
 ### <a name="ai.onnx.ml.Imputer"></a><a name="ai.onnx.ml.imputer">**ai.onnx.ml.Imputer**</a>
 
@@ -339,7 +331,6 @@ This version of the operator has been available since version 1 of the 'ai.onnx.
 <dt><tt>T</tt> : tensor(float), tensor(double), tensor(int64), tensor(int32)</dt>
 <dd>The input type must be a tensor of a numeric type, either [N,C] or [C]. The output type will be of the same tensor type and shape.</dd>
 </dl>
-
 
 ### <a name="ai.onnx.ml.LabelEncoder"></a><a name="ai.onnx.ml.labelencoder">**ai.onnx.ml.LabelEncoder**</a>
 
@@ -413,7 +404,6 @@ Other versions of this operator: <a href="Changelog-ml.md#ai.onnx.ml.LabelEncode
 <dd>Output type is determined by the specified 'values_*' attribute.</dd>
 </dl>
 
-
 ### <a name="ai.onnx.ml.LinearClassifier"></a><a name="ai.onnx.ml.linearclassifier">**ai.onnx.ml.LinearClassifier**</a>
 
   Linear classifier
@@ -464,7 +454,6 @@ This version of the operator has been available since version 1 of the 'ai.onnx.
 <dd>The output will be a tensor of strings or integers.</dd>
 </dl>
 
-
 ### <a name="ai.onnx.ml.LinearRegressor"></a><a name="ai.onnx.ml.linearregressor">**ai.onnx.ml.LinearRegressor**</a>
 
   Generalized linear regression evaluation.<br>
@@ -512,7 +501,6 @@ This version of the operator has been available since version 1 of the 'ai.onnx.
 <dd>The input must be a tensor of a numeric type.</dd>
 </dl>
 
-
 ### <a name="ai.onnx.ml.Normalizer"></a><a name="ai.onnx.ml.normalizer">**ai.onnx.ml.Normalizer**</a>
 
   Normalize the input.  There are three normalization modes, which have the corresponding formulas,
@@ -557,7 +545,6 @@ This version of the operator has been available since version 1 of the 'ai.onnx.
 <dt><tt>T</tt> : tensor(float), tensor(double), tensor(int64), tensor(int32)</dt>
 <dd>The input must be a tensor of a numeric type.</dd>
 </dl>
-
 
 ### <a name="ai.onnx.ml.OneHotEncoder"></a><a name="ai.onnx.ml.onehotencoder">**ai.onnx.ml.OneHotEncoder**</a>
 
@@ -605,7 +592,6 @@ This version of the operator has been available since version 1 of the 'ai.onnx.
 <dt><tt>T</tt> : tensor(string), tensor(int64), tensor(int32), tensor(float), tensor(double)</dt>
 <dd>The input must be a tensor of a numeric type.</dd>
 </dl>
-
 
 ### <a name="ai.onnx.ml.SVMClassifier"></a><a name="ai.onnx.ml.svmclassifier">**ai.onnx.ml.SVMClassifier**</a>
 
@@ -667,7 +653,6 @@ This version of the operator has been available since version 1 of the 'ai.onnx.
 <dd>The output type will be a tensor of strings or integers, depending on which of the the classlabels_* attributes is used. Its size will match the bactch size of the input.</dd>
 </dl>
 
-
 ### <a name="ai.onnx.ml.SVMRegressor"></a><a name="ai.onnx.ml.svmregressor">**ai.onnx.ml.SVMRegressor**</a>
 
   Support Vector Machine regression prediction and one-class SVM anomaly detection.
@@ -718,7 +703,6 @@ This version of the operator has been available since version 1 of the 'ai.onnx.
 <dd>The input type must be a tensor of a numeric type, either [C] or [N,C].</dd>
 </dl>
 
-
 ### <a name="ai.onnx.ml.Scaler"></a><a name="ai.onnx.ml.scaler">**ai.onnx.ml.Scaler**</a>
 
   Rescale input data, for example to standardize features by removing the mean and scaling to unit variance.
@@ -756,7 +740,6 @@ This version of the operator has been available since version 1 of the 'ai.onnx.
 <dt><tt>T</tt> : tensor(float), tensor(double), tensor(int64), tensor(int32)</dt>
 <dd>The input must be a tensor of a numeric type.</dd>
 </dl>
-
 
 ### <a name="ai.onnx.ml.TreeEnsembleClassifier"></a><a name="ai.onnx.ml.treeensembleclassifier">**ai.onnx.ml.TreeEnsembleClassifier**</a>
 
@@ -850,7 +833,6 @@ Other versions of this operator: <a href="Changelog-ml.md#ai.onnx.ml.TreeEnsembl
 <dd>The output type will be a tensor of strings or integers, depending on which of the the classlabels_* attributes is used.</dd>
 </dl>
 
-
 ### <a name="ai.onnx.ml.TreeEnsembleRegressor"></a><a name="ai.onnx.ml.treeensembleregressor">**ai.onnx.ml.TreeEnsembleRegressor**</a>
 
   Tree Ensemble regressor.  Returns the regressed values for each input in N.<br>
@@ -940,7 +922,6 @@ Other versions of this operator: <a href="Changelog-ml.md#ai.onnx.ml.TreeEnsembl
 <dd>The input type must be a tensor of a numeric type.</dd>
 </dl>
 
-
 ### <a name="ai.onnx.ml.ZipMap"></a><a name="ai.onnx.ml.zipmap">**ai.onnx.ml.ZipMap**</a>
 
   Creates a map from the input and the attributes.<br>
@@ -981,5 +962,3 @@ This version of the operator has been available since version 1 of the 'ai.onnx.
 <dt><tt>T</tt> : seq(map(string, float)), seq(map(int64, float))</dt>
 <dd>The output will be a sequence of string or integer maps to float.</dd>
 </dl>
-
-
