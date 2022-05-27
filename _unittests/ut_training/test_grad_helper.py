@@ -186,12 +186,11 @@ class TestGradHelper(ExtTestCase):
         onx = to_onnx(reg, X, target_opset=opset,
                       black_op={'LinearRegressor'})
         onx_loss = add_loss_output(onx)
-        print(onnx_simple_text_plot(onx_loss))
+        self.assertNotEmpty(onnx_simple_text_plot(onx_loss))
         new_onx = onnx_derivative(
             onx, options=DerivativeOptions.Loss,
             label='variable', loss='loss', path_name=grad_file)
-        print('-----')
-        print(onnx_simple_text_plot(new_onx))
+        self.assertNotEmpty(onnx_simple_text_plot(onx_loss))
 
 
 if __name__ == "__main__":
