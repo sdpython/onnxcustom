@@ -12,7 +12,6 @@ from onnxruntime.capi._pybind_state import (  # pylint: disable=E0611
     OrtModuleGraphBuilderConfiguration,
     TrainingGraphTransformerConfiguration)
 from mlprodict.onnx_tools.optim.onnx_optimisation import onnx_remove_node
-from mlprodict.onnx_tools.model_checker import check_onnx
 from ..utils.orttraining_helper import get_train_initializer
 
 
@@ -293,7 +292,6 @@ def _onnx_derivative_fw(onx, weights, inputs, options):
         op_set.domain = oimp.domain
         op_set.version = oimp.version
 
-    check_onnx(new_model)
     return onnx_remove_node(new_model)
 
 
