@@ -273,6 +273,6 @@ print(df.columns)
 fig, ax = plt.subplots(1, 1, figsize=(4, 4))
 df[['torch', 'ort']].plot.bar(title="Processing time", ax=ax)
 ax.tick_params(axis='x', rotation=30)
-fig.savefig(__file__ + ".png")
+fig.savefig("plot_orttraining_benchmark_torch.png")
 
 # plt.show()
