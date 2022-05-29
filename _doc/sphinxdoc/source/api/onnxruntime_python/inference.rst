@@ -72,8 +72,15 @@ ExecutionMode
 .. autoclass:: onnxruntime.capi._pybind_state.ExecutionMode
     :members:
 
+GraphInfo
+~~~~~~~~~
+
+.. autoclass:: onnxruntime.capi._pybind_state.GraphInfo
+    :members:
+
 GraphOptimizationLevel
 ~~~~~~~~~~~~~~~~~~~~~~
 
 .. autoclass:: onnxruntime.capi._pybind_state.GraphOptimizationLevel
     :members:
+
