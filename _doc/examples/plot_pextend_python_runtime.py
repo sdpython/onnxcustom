@@ -282,7 +282,7 @@ def live_decorrelate_transformer_converter(scope, operator, container):
     # diag = numpy.diag(Linv)
     diag = OnnxMul(
         OnnxEyeLike(
-            numpy.array([op.nf_, op.nf_], dtype=numpy.int64),
+            numpy.zeros((op.nf_, op.nf_), dtype=numpy.int64),
             k=0, op_version=opv),
         Linv, op_version=opv)
     diag.set_onnx_name_prefix('diag')
