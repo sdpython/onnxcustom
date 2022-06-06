@@ -25,6 +25,11 @@ merge_graphs
 
 .. autofunction:: onnx.compose.merge_graphs
 
+merge_models
+++++++++++++
+
+.. autofunction:: onnx.compose.merge_models
+
 prefix
 ++++++
 
@@ -35,11 +40,8 @@ prefix
 dimension
 +++++++++
 
-.. autofunction:: onnx.compose.expand_out_dim_graph
-
 .. autofunction:: onnx.compose.expand_out_dim
 
-merge_models
-++++++++++++
+.. autofunction:: onnx.compose.expand_out_dim_graph
 
-.. autofunction:: onnx.compose.merge_models
+.. autofunction:: onnx.tools.update_model_dims
