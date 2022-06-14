@@ -92,9 +92,11 @@ class TestOptimizersClassification(ExtTestCase):
 
         # get_trained_weight
         trained_onnx = train_session.get_trained_onnx(model=onx2)
-        sess = InferenceSession(onx2.SerializeToString())
+        sess = InferenceSession(onx2.SerializeToString(),
+                                providers=['CPUExecutionProvider'])
         got1 = sess.run(None, {'X': X_train})
-        sess = InferenceSession(trained_onnx.SerializeToString())
+        sess = InferenceSession(trained_onnx.SerializeToString(),
+                                providers=['CPUExecutionProvider'])
         got2 = sess.run(None, {'X': X_train})
         self.assertEqual(len(got1), len(got2))
         self.assertEqual(got1[0].shape, got2[0].shape)
@@ -163,7 +165,8 @@ class TestOptimizersClassification(ExtTestCase):
         sess = InferenceSession(onx2.SerializeToString(),
                                 providers=['CPUExecutionProvider'])
         got1 = sess.run(None, {'X': X_train})
-        sess = InferenceSession(trained_onnx.SerializeToString())
+        sess = InferenceSession(trained_onnx.SerializeToString(),
+                                providers=['CPUExecutionProvider'])
         got2 = sess.run(None, {'X': X_train})
         self.assertEqual(len(got1), len(got2))
         self.assertEqual(got1[0].shape, got2[0].shape)
