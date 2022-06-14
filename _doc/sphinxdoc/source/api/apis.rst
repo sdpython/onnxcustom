@@ -11,3 +11,4 @@ API
     index
     onnx_python/index
     onnxruntime_python/index
+    onnxops/index

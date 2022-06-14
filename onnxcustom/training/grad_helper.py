@@ -221,14 +221,14 @@ def _onnx_derivative_fw(onx, weights, inputs, options):
         return grad_yield
 
     yields_op = [
-        node for node in grad_yield.graph.node
+        (index, node) for index, node in enumerate(grad_yield.graph.node)
         if node.op_type == 'YieldOp']
     if len(yields_op) == 0:
         raise RuntimeError(  # pragma: no cover
             "No YieldOp was found. The input graph must be wrong.")
 
     other_nodes = [
-        node for node in grad_yield.graph.node
+        (index, node) for index, node in enumerate(grad_yield.graph.node)
         if node.op_type != 'YieldOp']
     inputs = list(grad_yield.graph.input)
     if options & DerivativeOptions.KeepOutputs:
@@ -238,7 +238,7 @@ def _onnx_derivative_fw(onx, weights, inputs, options):
         outputs = [o for o in grad_yield.graph.output
                    if o.name not in original]
     map_out = {o.name: o for o in onx.graph.output}
-    for yn in yields_op:
+    for index, yn in yields_op:
         if len(yn.input) != 1 or len(yn.output) != 1:
             raise NotImplementedError(  # pragma: no cover
                 "Unexpected configuration for YieldOp node %r." % yn)
@@ -259,19 +259,21 @@ def _onnx_derivative_fw(onx, weights, inputs, options):
                     "FillGrad should be set with KeepOutputs.")
             name = "%s_shape" % yn.input[0]
             node = make_node('Shape', [yn.input[0]], [name])
-            other_nodes.append(node)
+            other_nodes.append((index + 0.1, node))
             out = map_out[yn.input[0]]
             elem_type = out.type.tensor_type.elem_type
             node = make_node(
                 'ConstantOfShape', [name], [yn.output[0]],
                 value=make_tensor(
                     "value", elem_type, (1, ), [1]))
-            other_nodes.append(node)
+            other_nodes.append((index + 0.2, node))
         if options & DerivativeOptions.KeepOutputs:
             # Keeps output from the original graph.
             outputs.append(out)
 
     # Final graph.
+    other_nodes.sort()
+    other_nodes = [o[1] for o in other_nodes]
     graph = make_graph(
         other_nodes, grad_yield.graph.name, inputs, outputs,
         list(grad_yield.graph.initializer))

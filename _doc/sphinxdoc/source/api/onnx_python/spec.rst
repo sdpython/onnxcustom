@@ -95,5 +95,3 @@ Internal module
 
 .. automodule:: onnx.onnx_cpp2py_export.defs
     :members:
-
-

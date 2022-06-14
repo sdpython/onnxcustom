@@ -79,3 +79,20 @@ Rare functions
 .. autofunction:: onnxruntime.capi._pybind_state.enable_telemetry_events
 
 .. autofunction:: onnxruntime.capi._pybind_state.disable_telemetry_events
+
+.. autofunction:: onnxruntime.capi._pybind_state.get_session_initializer
+
+.. autofunction:: onnxruntime.capi._pybind_state.is_dlpack_uint8_tensor
+
+.. autofunction:: onnxruntime.capi._pybind_state.unregister_python_functions
+
+Rare functions for training
++++++++++++++++++++++++++++
+
+.. autofunction:: onnxruntime.tools.have_torch
+
+.. autofunction:: onnxruntime.tools.infer_input_info
+
+.. autofunction:: onnxruntime.tools.optimize_onnx_model.optimize_model
+
+.. autofunction:: onnxruntime.tools.pytorch_export_helpers

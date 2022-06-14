@@ -5,9 +5,12 @@
 History
 =======
 
-current - 2022-03-10 - 0.00Mb
+current - 2022-05-30 - 0.00Mb
 =============================
 
+* #64: Fixes bug introduced by recent updates (2022-05-29)
+* #62: Adds a notebook about convolution (2022-05-27)
+* #63: Add GraphProto to the documentation (2022-04-28)
 * #60: Extends notebook coverage (2022-03-07)
 * #59: Removes unnecessary exceptions (2022-03-06)
 * #58: Uses new API to retrieve gradient for a model (2022-03-03)
