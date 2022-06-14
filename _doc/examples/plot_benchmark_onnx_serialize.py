@@ -107,4 +107,4 @@ piv.plot(title="Time processing of serialization functions\n"
 ax.set_xlabel("onnx size")
 ax.set_ylabel("s")
 
-plt.show()
+# plt.show()
