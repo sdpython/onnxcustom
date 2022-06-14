@@ -53,10 +53,12 @@ print(onnx_simple_text_plot(model))
 # Measure the time of serialization functions
 # +++++++++++++++++++++++++++++++++++++++++++
 
+
 def parse(buffer):
     proto = onnx.ModelProto()
     proto.ParseFromString(buffer)
     return proto
+
 
 data = []
 nodes = [5, 10, 20]
@@ -65,7 +67,8 @@ for size in tqdm([10, 100, 1000, 10000, 100000, 200000, 300000]):
         onx = build_model(n_nodes, size)
         serialized = onx.SerializeToString()
         onnx_size = len(serialized)
-        obs = measure_time(lambda: onx.SerializeToString(), div_by_number=True, repeat=20)
+        obs = measure_time(lambda: onx.SerializeToString(),
+                           div_by_number=True, repeat=20)
         obs['size'] = size
         obs['n_nodes'] = n_nodes
         obs['onnx_size'] = onnx_size
@@ -73,7 +76,8 @@ for size in tqdm([10, 100, 1000, 10000, 100000, 200000, 300000]):
         data.append(obs)
 
         parsed = parse(serialized)
-        obs = measure_time(lambda: parse(serialized), div_by_number=True, repeat=20)
+        obs = measure_time(lambda: parse(serialized),
+                           div_by_number=True, repeat=20)
         obs['size'] = size
         obs['n_nodes'] = n_nodes
         obs['onnx_size'] = onnx_size
@@ -81,7 +85,8 @@ for size in tqdm([10, 100, 1000, 10000, 100000, 200000, 300000]):
         data.append(obs)
 
 
-df = pandas.DataFrame(data).sort_values(['task', 'onnx_size', 'size', 'n_nodes'])
+df = pandas.DataFrame(data).sort_values(
+    ['task', 'onnx_size', 'size', 'n_nodes'])
 df[['task', 'onnx_size', 'size', 'n_nodes', 'average']]
 
 
