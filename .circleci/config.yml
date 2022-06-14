@@ -11,13 +11,13 @@ jobs:
 
       - restore_cache:
           keys:
-          - v2-dependencies-{{ checksum "requirements.txt" }}
-          - v2-dependencies-
+          - v3-dependencies-{{ checksum "requirements.txt" }}
+          - v3-dependencies-
 
-      - run:
-          name: Install graphviz
-          command: |
-                    sudo apt-get install -y graphviz
+#      - run:
+#          name: Install graphviz
+#          command: |
+#                    sudo apt-get install -y graphviz
 
       - run:
           name: install dependencies
@@ -32,12 +32,13 @@ jobs:
           command: |
             python -m venv venv
             . venv/bin/activate
-            pip install onnxruntime-training
+            # pip install onnxruntime-training --extra-index-url https://download.onnxruntime.ai/onnxruntime_nightly_cpu.html
+            pip install onnxruntime-training --extra-index-url https://download.onnxruntime.ai/onnxruntime_nightly_cpu.html
 
       - save_cache:
           paths:
             - ./venv
-          key: v2-dependencies-{{ checksum "requirements.txt" }}
+          key: v3-dependencies-{{ checksum "requirements.txt" }}
         
       - run:
           name: compile and build
@@ -56,7 +57,7 @@ jobs:
           name: run tests
           command: |
             . venv/bin/activate
-            python setup.py unittests -d 6
+            python setup.py unittests -d 50
 
       - run:
           name: wheel

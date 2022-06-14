@@ -38,6 +38,7 @@ from mlprodict.onnxrt.ops_cpu import OpRunCustom, register_operator
 from skl2onnx.algebra.onnx_ops import (
     OnnxAdd,
     OnnxCast,
+    # OnnxCastLike,
     OnnxDiv,
     OnnxGatherElements,
     OnnxEyeLike,
@@ -281,6 +282,8 @@ def live_decorrelate_transformer_converter(scope, operator, container):
 
     # diag = numpy.diag(Linv)
     diag = OnnxMul(
+        # OnnxCastLike(OnnxEyeLike(Linv, k=0, op_version=opv), V,
+        #              op_version=opv),
         OnnxEyeLike(
             numpy.zeros((op.nf_, op.nf_), dtype=numpy.int64),
             k=0, op_version=opv),
