@@ -65,3 +65,10 @@ an array of bytes.
 
 .. autoclass:: onnx.TensorProto
     :members: SerializeToString
+
+Performance
++++++++++++
+
+.. toctree::
+
+    ../../gyexamples/plot_benchmark_onnx_serialize

@@ -83,4 +83,3 @@ GraphOptimizationLevel
 
 .. autoclass:: onnxruntime.capi._pybind_state.GraphOptimizationLevel
     :members:
-
