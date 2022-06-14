@@ -38,7 +38,7 @@ from mlprodict.onnxrt.ops_cpu import OpRunCustom, register_operator
 from skl2onnx.algebra.onnx_ops import (
     OnnxAdd,
     OnnxCast,
-    OnnxCastLike,
+    # OnnxCastLike,
     OnnxDiv,
     OnnxGatherElements,
     OnnxEyeLike,
