@@ -173,7 +173,7 @@ d_in, d_out, N = X.shape[1], 1, X.shape[0]
 model_torch = MLPNet(d_in, d_out)
 try:
     model_ort = ORTModule(MLPNet(d_in, d_out))
-except Excpetion as e:
+except Exception as e:
     model_ort = None
     print("ERROR: installation of torch extension for onnxruntime "
           "probably failed due to: ", e)
@@ -238,7 +238,7 @@ d_in, d_out, N = X.shape[1], 1, X.shape[0]
 model_torch = LinearRegressionNet(d_in, d_out)
 try:
     model_ort = ORTModule(LinearRegressionNet(d_in, d_out))
-except Excpetion as e:
+except Exception as e:
     model_ort = None
     print("ERROR: installation of torch extension for onnxruntime "
           "probably failed due to: ", e)
