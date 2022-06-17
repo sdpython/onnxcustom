@@ -51,6 +51,7 @@ intermediate results. This is how it looks like.
     from onnx.helper import (
         make_model, make_node, set_model_props, make_tensor,
         make_graph, make_tensor_value_info)
+    from onnx.checker import check_model
     from mlprodict.plotting.text_plot import onnx_simple_text_plot
 
     # inputs
@@ -62,7 +63,7 @@ intermediate results. This is how it looks like.
 
     # outputs, the shape is left undefined
 
-    Y = make_tensor_value_info('Y', TensorProto.FLOAT, None)
+    Y = make_tensor_value_info('Y', TensorProto.FLOAT, [None])
 
     # nodes
 
@@ -85,6 +86,11 @@ intermediate results. This is how it looks like.
 
     onnx_model = make_model(graph)
 
+    # Let's check the model is consistent,
+    # this function is described in section
+    # Checker and Shape Inference.
+    check_model(onnx_model)
+
     # the work is done, let's display it...
     print(onnx_simple_text_plot(onnx_model))
 
@@ -103,7 +109,7 @@ intermediate results. This is how it looks like.
     X = make_tensor_value_info('X', TensorProto.FLOAT, [None, None])
     A = make_tensor_value_info('A', TensorProto.FLOAT, [None, None])
     B = make_tensor_value_info('B', TensorProto.FLOAT, [None, None])
-    Y = make_tensor_value_info('Y', TensorProto.FLOAT, None)
+    Y = make_tensor_value_info('Y', TensorProto.FLOAT, [None])
     node1 = make_node('MatMul', ['X', 'A'], ['XA'])
     node2 = make_node('Add', ['XA', 'B'], ['Y'])
     graph = make_graph([node1, node2], 'lr', [X, A, B], [Y])
@@ -123,6 +129,7 @@ of each object of the graph.
     from onnx.helper import (
         make_model, make_node, set_model_props, make_tensor,
         make_graph, make_tensor_value_info)
+    from onnx.checker import check_model
     from mlprodict.plotting.text_plot import onnx_simple_text_plot
 
     def shape2tuple(shape):
@@ -131,11 +138,12 @@ of each object of the graph.
     X = make_tensor_value_info('X', TensorProto.FLOAT, [None, None])
     A = make_tensor_value_info('A', TensorProto.FLOAT, [None, None])
     B = make_tensor_value_info('B', TensorProto.FLOAT, [None, None])
-    Y = make_tensor_value_info('Y', TensorProto.FLOAT, None)
+    Y = make_tensor_value_info('Y', TensorProto.FLOAT, [None])
     node1 = make_node('MatMul', ['X', 'A'], ['XA'])
     node2 = make_node('Add', ['XA', 'B'], ['Y'])
     graph = make_graph([node1, node2], 'lr', [X, A, B], [Y])
     onnx_model = make_model(graph)
+    check_model(onnx_model)
 
     # the list of inputs
     print('** inputs **')
@@ -206,6 +214,7 @@ the case for the whole model.
     from onnx.helper import (
         make_model, make_node, set_model_props, make_tensor,
         make_graph, make_tensor_value_info)
+    from onnx.checker import check_model
     from mlprodict.plotting.text_plot import onnx_simple_text_plot
 
     def shape2tuple(shape):
@@ -214,11 +223,12 @@ the case for the whole model.
     X = make_tensor_value_info('X', TensorProto.FLOAT, [None, None])
     A = make_tensor_value_info('A', TensorProto.FLOAT, [None, None])
     B = make_tensor_value_info('B', TensorProto.FLOAT, [None, None])
-    Y = make_tensor_value_info('Y', TensorProto.FLOAT, None)
+    Y = make_tensor_value_info('Y', TensorProto.FLOAT, [None])
     node1 = make_node('MatMul', ['X', 'A'], ['XA'])
     node2 = make_node('Add', ['XA', 'B'], ['Y'])
     graph = make_graph([node1, node2], 'lr', [X, A, B], [Y])
     onnx_model = make_model(graph)
+    check_model(onnx_model)
 
     # The serialization
     with open("linear_regression.onnx", "wb") as f:
@@ -337,6 +347,7 @@ convert from :epkg:`numpy` into :epkg:`onnx` and the other way around
     from onnx.helper import (
         make_model, make_node, set_model_props, make_tensor, make_graph,
         make_tensor_value_info)
+    from onnx.checker import check_model
     from mlprodict.plotting.text_plot import onnx_simple_text_plot
 
     # initializers
@@ -348,11 +359,12 @@ convert from :epkg:`numpy` into :epkg:`onnx` and the other way around
 
     # the part which does not change
     X = make_tensor_value_info('X', TensorProto.FLOAT, [None, None])
-    Y = make_tensor_value_info('Y', TensorProto.FLOAT, None)
+    Y = make_tensor_value_info('Y', TensorProto.FLOAT, [None])
     node1 = make_node('MatMul', ['X', 'A'], ['AX'])
     node2 = make_node('Add', ['AX', 'C'], ['Y'])
     graph = make_graph([node1, node2], 'lr', [X], [Y], [A, C])
     onnx_model = make_model(graph)
+    check_model(onnx_model)
 
     print(onnx_simple_text_plot(onnx_model))
 
@@ -373,7 +385,7 @@ convert from :epkg:`numpy` into :epkg:`onnx` and the other way around
     value = numpy.array([0.4], dtype=numpy.float32)
     C = numpy_helper.from_array(value, name='C')
     X = make_tensor_value_info('X', TensorProto.FLOAT, [None, None])
-    Y = make_tensor_value_info('Y', TensorProto.FLOAT, None)
+    Y = make_tensor_value_info('Y', TensorProto.FLOAT, [None])
     node1 = make_node('MatMul', ['X', 'A'], ['AX'])
     node2 = make_node('Add', ['AX', 'C'], ['Y'])
     graph = make_graph([node1, node2], 'lr', [X], [Y], [A, C])
@@ -392,6 +404,7 @@ how the initializers look like.
     from onnx.helper import (
         make_model, make_node, set_model_props, make_tensor, make_graph,
         make_tensor_value_info)
+    from onnx.checker import check_model
     from mlprodict.plotting.text_plot import onnx_simple_text_plot
 
     # initializers
@@ -403,11 +416,12 @@ how the initializers look like.
 
     # the part which does not change
     X = make_tensor_value_info('X', TensorProto.FLOAT, [None, None])
-    Y = make_tensor_value_info('Y', TensorProto.FLOAT, None)
+    Y = make_tensor_value_info('Y', TensorProto.FLOAT, [None])
     node1 = make_node('MatMul', ['X', 'A'], ['AX'])
     node2 = make_node('Add', ['AX', 'C'], ['Y'])
     graph = make_graph([node1, node2], 'lr', [X], [Y], [A, C])
     onnx_model = make_model(graph)
+    check_model(onnx_model)
 
     print('** intializer **')
     for init in onnx_model.graph.initializer:
@@ -437,13 +451,14 @@ as a named attribute in function `make_node`.
     from onnx.helper import (
         make_model, make_node, set_model_props, make_tensor,
         make_graph, make_tensor_value_info)
+    from onnx.checker import check_model
     from mlprodict.plotting.text_plot import onnx_simple_text_plot
 
     # unchanged
     X = make_tensor_value_info('X', TensorProto.FLOAT, [None, None])
     A = make_tensor_value_info('A', TensorProto.FLOAT, [None, None])
     B = make_tensor_value_info('B', TensorProto.FLOAT, [None, None])
-    Y = make_tensor_value_info('Y', TensorProto.FLOAT, None)
+    Y = make_tensor_value_info('Y', TensorProto.FLOAT, [None])
 
     # added
     node_transpose = make_node('Transpose', ['A'], ['tA'], perm=[1, 0])
@@ -456,6 +471,7 @@ as a named attribute in function `make_node`.
     graph = make_graph([node_transpose, node1, node2],
                        'lr', [X, A, B], [Y])
     onnx_model = make_model(graph)
+    check_model(onnx_model)
 
     # the work is done, let's display it...
     print(onnx_simple_text_plot(onnx_model))
@@ -469,13 +485,14 @@ as a named attribute in function `make_node`.
     from onnx.helper import (
         make_model, make_node, set_model_props, make_tensor,
         make_graph, make_tensor_value_info)
+    from onnx.checker import check_model
     from mlprodict.onnxrt import OnnxInference
     from mlprodict.plotting.text_plot import onnx_simple_text_plot
 
     X = make_tensor_value_info('X', TensorProto.FLOAT, [None, None])
     A = make_tensor_value_info('A', TensorProto.FLOAT, [None, None])
     B = make_tensor_value_info('B', TensorProto.FLOAT, [None, None])
-    Y = make_tensor_value_info('Y', TensorProto.FLOAT, None)
+    Y = make_tensor_value_info('Y', TensorProto.FLOAT, [None])
     node_transpose = make_node('Transpose', ['A'], ['tA'], perm=[1, 0])
     node1 = make_node('MatMul', ['X', 'tA'], ['XA'])
     node2 = make_node('Add', ['XA', 'B'], ['Y'])
@@ -613,6 +630,7 @@ in a matrix based on the sign, returns 1 or -1.
     from onnx.helper import (
         make_node, make_graph, make_model, make_tensor_value_info)
     from onnx.numpy_helper import from_array
+    from onnx.checker import check_model
     from onnxruntime import InferenceSession
     from mlprodict.plotting.text_plot import onnx_simple_text_plot
 
@@ -621,8 +639,8 @@ in a matrix based on the sign, returns 1 or -1.
     zero = from_array(value, name='zero')
 
     # Same as before, X is the input, Y is the output.
-    X = make_tensor_value_info('X', onnx.TensorProto.FLOAT, None)
-    Y = make_tensor_value_info('Y', onnx.TensorProto.FLOAT, None)
+    X = make_tensor_value_info('X', onnx.TensorProto.FLOAT, [None, None])
+    Y = make_tensor_value_info('Y', onnx.TensorProto.FLOAT, [None])
 
     # The node building the condition. The first one
     # sum over all axes.
@@ -633,7 +651,7 @@ in a matrix based on the sign, returns 1 or -1.
     # Builds the graph is the condition is True.
     # Input for then
     then_out = make_tensor_value_info(
-        'then_out', onnx.TensorProto.FLOAT, [5])
+        'then_out', onnx.TensorProto.FLOAT, None)
     # The constant to return.
     then_cst = from_array(numpy.array([1]).astype(numpy.float32))
 
@@ -645,8 +663,7 @@ in a matrix based on the sign, returns 1 or -1.
 
     # And the graph wrapping these elements.
     then_body = make_graph(
-        [then_const_node], 'then_body',
-        [], [then_out])
+        [then_const_node], 'then_body', [], [then_out])
 
     # Same process for the else branch.
     else_out = make_tensor_value_info(
@@ -664,15 +681,14 @@ in a matrix based on the sign, returns 1 or -1.
 
     # Finally the node If taking both graphs as attributes.
     if_node = onnx.helper.make_node(
-        'If',
-        inputs=['cond'],
-        outputs=['Y'],
+        'If', ['cond'], ['Y'],
         then_branch=then_body,
         else_branch=else_body)
 
     # The final graph.
-    graph = make_graph([if_node, rsum, cond], 'if', [X], [Y], [zero])
+    graph = make_graph([rsum, cond, if_node], 'if', [X], [Y], [zero])
     onnx_model = make_model(graph)
+    check_model(onnx_model)
 
     # Let's freeze the opset.
     del onnx_model.opset_import[:]
@@ -691,7 +707,8 @@ in a matrix based on the sign, returns 1 or -1.
     res = sess.run(None, {'X': x})
 
     # It works.
-    print(res)
+    print("result", res)
+    print()
 
     # Some display.
     print(onnx_simple_text_plot(onnx_model))
@@ -736,6 +753,7 @@ neighbors.
     from onnx.helper import (
         make_model, make_node, set_model_props, make_tensor, make_graph,
         make_tensor_value_info)
+    from onnx.checker import check_model
     from mlprodict.plotting.text_plot import onnx_simple_text_plot
 
     # subgraph
@@ -916,6 +934,7 @@ neighbors.
         op_set.domain = dom
         op_set.version = value
 
+    check_model(onnx_model)
     with open("knnr.onnx", "wb") as f:
         f.write(onnx_model.SerializeToString())
 
@@ -965,6 +984,12 @@ Function `make_function` is used to define a function.
 It works like a graph with less types. It is more like a
 template. This API may evolve. It does not include intializers either.
 
+A function with no attribute
+++++++++++++++++++++++++++++
+
+That's the more simple case. Every input of the function is a dynamic
+object known at execution time.
+
 .. runpython::
     :showcode:
 
@@ -975,6 +1000,7 @@ template. This API may evolve. It does not include intializers either.
         make_model, make_node, set_model_props, make_tensor,
         make_graph, make_tensor_value_info, make_opsetid,
         make_function)
+    from onnx.checker import check_model
     from mlprodict.plotting.text_plot import onnx_simple_text_plot
 
     new_domain = 'custom'
@@ -999,7 +1025,7 @@ template. This API may evolve. It does not include intializers either.
     X = make_tensor_value_info('X', TensorProto.FLOAT, [None, None])
     A = make_tensor_value_info('A', TensorProto.FLOAT, [None, None])
     B = make_tensor_value_info('B', TensorProto.FLOAT, [None, None])
-    Y = make_tensor_value_info('Y', TensorProto.FLOAT, None)
+    Y = make_tensor_value_info('Y', TensorProto.FLOAT, [None])
 
     graph = make_graph(
         [make_node('LinearRegression', ['X', 'A', 'B'], ['Y1'], domain=new_domain),
@@ -1010,9 +1036,16 @@ template. This API may evolve. It does not include intializers either.
     onnx_model = make_model(
         graph, opset_imports=opset_imports,
         functions=[linear_regression])  # functions to add)
+    check_model(onnx_model)
 
     # the work is done, let's display it...
     print(onnx_simple_text_plot(onnx_model))
+
+A function with attributes
+++++++++++++++++++++++++++
+
+Attributes are part of the specifications but cannot
+be used as an input or as an attribute (yet).
 
 Parsing
 =======
@@ -1027,6 +1060,7 @@ pipeline.
     :showcode:
 
     import onnx.parser
+    from onnx.checker import check_model
     from mlprodict.plotting.text_plot import onnx_simple_text_plot
 
     input = '''
@@ -1034,12 +1068,13 @@ pipeline.
             ir_version: 8,
             opset_import: [ "" : 15]
         >
-        agraph (float[I,J] X, float[] A, float[] B) => (float[I] Y) {
+        agraph (float[I,J] X, float[I] A, float[I] B) => (float[I] Y) {
             XA = MatMul(X, A)
             Y = Add(XA, B)
         }
         '''
     onnx_model = onnx.parser.parse_model(input)
+    check_model(onnx_model)
 
     print(onnx_simple_text_plot(onnx_model))
 
@@ -1113,3 +1148,33 @@ Shape inference does not work all the time. For example,
 a Reshape operator. Shape inference only works if the shape is constant.
 If not constant, the shape cannot be easily inferred unless
 the following nodes expect specific shape.
+
+Implementation details
+======================
+
+Python and C++
+++++++++++++++
+
+:epkg:`onnx` relies on :epkg:`protobuf` to define its type.
+You would assume that a python object is just a wrapper around 
+a C pointer on the internal structure. Therefore, it should be
+possible to access internal data from a function receiving a python
+object of type `ModelProto`. But it is not. According to
+`Protobuf 4, changes <https://developers.google.com/protocol-buffers/docs/news/2022-05-06>`_,
+this is no longer possible after version 4 and it is safer to assume the 
+only way to get a hold on the content is to serialize the model
+into bytes, give it the C function, then deserialize it.
+It is inefficient (see :ref:`l-benchmark-onnx-serialize`),
+so it should be avoided. Functions like `check_model` or
+`shape_inference` are calling `SerializeToString` then 
+`ParseFromString` before checking the model with a C code.
+
+Attributes and inputs
++++++++++++++++++++++
+
+There is a clear distinction between the two. Inputs are dynamic and
+may change at every execution. Attributes never changes and an optimizer
+can improve the execution graph assuming it never changes.
+Therefore, it is impossible to turn an input into an attribute.
+And the operator *Constant* is the only operator changing an
+attribute into an input.
