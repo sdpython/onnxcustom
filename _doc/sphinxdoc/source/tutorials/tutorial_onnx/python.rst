@@ -46,6 +46,7 @@ intermediate results. This is how it looks like.
     :warningout: DeprecationWarning
 
     # imports
+
     import numpy
     from onnx import numpy_helper, TensorProto
     from onnx.helper import (
@@ -993,7 +994,6 @@ object known at execution time.
 .. runpython::
     :showcode:
 
-    # imports
     import numpy
     from onnx import numpy_helper, TensorProto
     from onnx.helper import (
@@ -1044,8 +1044,78 @@ object known at execution time.
 A function with attributes
 ++++++++++++++++++++++++++
 
-Attributes are part of the specifications but cannot
-be used as an input or as an attribute (yet).
+.. index:: ref_attr_name
+
+The following functions is equivalent as the previous one except
+one input, *B*, was converted into an argument named *bias*.
+The code is almost the same except the bias is now a constant.
+Inside the function definition, a node *Constant* is created
+to insert the argument as a result. It is linked to the argument
+with the attribute `ref_attr_name`.
+
+.. runpython::
+    :showcode:
+        
+    import numpy
+    from onnx import numpy_helper, TensorProto, AttributeProto
+    from onnx.helper import (
+        make_model, make_node, set_model_props, make_tensor,
+        make_graph, make_tensor_value_info, make_opsetid,
+        make_function)
+    from onnx.checker import check_model
+    from mlprodict.plotting.text_plot import onnx_simple_text_plot
+
+    new_domain = 'custom'
+    opset_imports = [make_opsetid("", 14), make_opsetid(new_domain, 1)]
+
+    # Let's define a function for a linear regression
+    # The first step consists in creating a constant
+    # equal to the input parameter of the function.
+    cst = make_node('Constant',  [], ['B'])
+
+    att = AttributeProto()
+    att.name = "value"
+
+    # This line indicates the value comes from the argument
+    # named 'bias' the function is given.
+    att.ref_attr_name = "bias"
+    att.type = AttributeProto.TENSOR
+    cst.attribute.append(att)
+
+    node1 = make_node('MatMul', ['X', 'A'], ['XA'])
+    node2 = make_node('Add', ['XA', 'B'], ['Y'])
+
+    linear_regression = make_function(
+        new_domain,            # domain name
+        'LinearRegression',     # function name
+        ['X', 'A'],             # input names
+        ['Y'],                  # output names
+        [cst, node1, node2],    # nodes
+        opset_imports,          # opsets
+        ["bias"])               # attribute names
+
+    # Let's use it in a graph.
+
+    X = make_tensor_value_info('X', TensorProto.FLOAT, [None, None])
+    A = make_tensor_value_info('A', TensorProto.FLOAT, [None, None])
+    B = make_tensor_value_info('B', TensorProto.FLOAT, [None, None])
+    Y = make_tensor_value_info('Y', TensorProto.FLOAT, [None])
+
+    graph = make_graph(
+        [make_node('LinearRegression', ['X', 'A'], ['Y1'], domain=new_domain,
+                   # bias is now an argument of the function and defined as a tensor
+                   bias=make_tensor('former_B', TensorProto.FLOAT, [1], [0.67])),
+         make_node('Abs', ['Y1'], ['Y'])],
+        'example',
+        [X, A], [Y])
+
+    onnx_model = make_model(
+        graph, opset_imports=opset_imports,
+        functions=[linear_regression])  # functions to add)
+    check_model(onnx_model)
+
+    # the work is done, let's display it...
+    print(onnx_simple_text_plot(onnx_model))
 
 Parsing
 =======
