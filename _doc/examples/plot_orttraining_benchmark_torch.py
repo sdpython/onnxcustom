@@ -140,11 +140,15 @@ def benchmark(model_torch, model_ort, device, name, verbose=True, max_iter=100):
     print("[benchmark] torch=%r iterations - %r seconds" % (
         length_torch, duration_torch))
 
-    begin = time.perf_counter()
-    losses = train_model_ort(model_ort, device, X_train,
-                             y_train, n_iter=max_iter)
-    duration_ort = time.perf_counter() - begin
-    length_ort = len(losses)
+    if model_ort is None:
+        length_ort = 0
+        duration_ort = 0
+    else:
+        begin = time.perf_counter()
+        losses = train_model_ort(model_ort, device, X_train,
+                                 y_train, n_iter=max_iter)
+        duration_ort = time.perf_counter() - begin
+        length_ort = len(losses)
     print("[benchmark] onxrt=%r iteration - %r seconds" % (
         length_ort, duration_ort))
 
@@ -167,7 +171,12 @@ class MLPNet(torch.nn.Module):
 
 d_in, d_out, N = X.shape[1], 1, X.shape[0]
 model_torch = MLPNet(d_in, d_out)
-model_ort = ORTModule(MLPNet(d_in, d_out))
+try:
+    model_ort = ORTModule(MLPNet(d_in, d_out))
+except Excpetion as e:
+    model_ort = None
+    print("ERROR: installation of torch extension for onnxruntime "
+          "probably failed due to: ", e)
 max_iter = 100
 
 device = torch.device('cpu')
@@ -227,7 +236,12 @@ class LinearRegressionNet(torch.nn.Module):
 
 d_in, d_out, N = X.shape[1], 1, X.shape[0]
 model_torch = LinearRegressionNet(d_in, d_out)
-model_ort = ORTModule(LinearRegressionNet(d_in, d_out))
+try:
+    model_ort = ORTModule(LinearRegressionNet(d_in, d_out))
+except Excpetion as e:
+    model_ort = None
+    print("ERROR: installation of torch extension for onnxruntime "
+          "probably failed due to: ", e)
 
 device = torch.device('cpu')
 benches.append(benchmark(model_torch, model_ort, device, name='LR-CPU',
