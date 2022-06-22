@@ -20,6 +20,7 @@ from cpyquickhelper.numbers.speed_measure import measure_time
 import matplotlib.pyplot as plt
 import pandas
 from tqdm import tqdm
+from onnx.checker import check_model
 from mlprodict.testing.experimental_c_impl.experimental_c import code_optimisation
 from mlprodict.plotting.text_plot import onnx_simple_text_plot
 from mlprodict.npy.xop import loadop
@@ -43,7 +44,8 @@ def build_model(n_nodes, size, opv=15):
                     op_version=opv)
         x = y
     final = OnnxIdentity(x, op_version=opv, output_names=['Y'])
-    return final.to_onnx(numpy.float32, numpy.float32, target_opset=opv)
+    x = numpy.zeros((10, 10), dtype=numpy.float32)
+    return final.to_onnx({'X': x}, {'Y': x}, target_opset=opv)
 
 
 model = build_model(2, 5)
@@ -64,11 +66,12 @@ data = []
 nodes = [5, 10, 20]
 for size in tqdm([10, 100, 1000, 10000, 100000, 200000, 300000]):
     for n_nodes in nodes:
+        repeat = 20 if size < 100000 else 5
         onx = build_model(n_nodes, size)
         serialized = onx.SerializeToString()
         onnx_size = len(serialized)
         obs = measure_time(lambda: onx.SerializeToString(),
-                           div_by_number=True, repeat=20)
+                           div_by_number=True, repeat=repeat)
         obs['size'] = size
         obs['n_nodes'] = n_nodes
         obs['onnx_size'] = onnx_size
@@ -77,11 +80,19 @@ for size in tqdm([10, 100, 1000, 10000, 100000, 200000, 300000]):
 
         parsed = parse(serialized)
         obs = measure_time(lambda: parse(serialized),
-                           div_by_number=True, repeat=20)
+                           div_by_number=True, repeat=repeat)
         obs['size'] = size
         obs['n_nodes'] = n_nodes
         obs['onnx_size'] = onnx_size
         obs['task'] = "ParseFromString"
+        data.append(obs)
+
+        obs = measure_time(lambda: check_model(onx),
+                           div_by_number=True, repeat=repeat)
+        obs['size'] = size
+        obs['n_nodes'] = n_nodes
+        obs['onnx_size'] = onnx_size
+        obs['task'] = "check_model"
         data.append(obs)
 
 
@@ -107,4 +118,4 @@ piv.plot(title="Time processing of serialization functions\n"
 ax.set_xlabel("onnx size")
 ax.set_ylabel("s")
 
-# plt.show()
+plt.show()
