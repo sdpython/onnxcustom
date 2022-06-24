@@ -14,8 +14,10 @@ Startup
 This section creates an ONNX graph if there is not one.
 
 """
+import time
 import numpy
 import onnx
+from pyquickhelper.pycode.profiling import profile, profile2graph
 from cpyquickhelper.numbers.speed_measure import measure_time
 import matplotlib.pyplot as plt
 import pandas
@@ -24,6 +26,10 @@ from onnx.checker import check_model
 from mlprodict.testing.experimental_c_impl.experimental_c import code_optimisation
 from mlprodict.plotting.text_plot import onnx_simple_text_plot
 from mlprodict.npy.xop import loadop
+try:
+    from mlprodict.onnx_tools._onnx_check_model import check_model as check_model_py
+except ImportError:
+    check_model_py = None
 
 
 ############################################
@@ -87,7 +93,7 @@ for size in tqdm([10, 100, 1000, 10000, 100000, 200000, 300000]):
         obs['task'] = "ParseFromString"
         data.append(obs)
 
-        obs = measure_time(lambda: check_model(onx),
+        obs = measure_time(lambda: check_model(onx, full_check=False),
                            div_by_number=True, repeat=repeat)
         obs['size'] = size
         obs['n_nodes'] = n_nodes
@@ -95,16 +101,28 @@ for size in tqdm([10, 100, 1000, 10000, 100000, 200000, 300000]):
         obs['task'] = "check_model"
         data.append(obs)
 
+        if check_model_py is None:
+            continue
 
+        obs = measure_time(lambda: check_model_py(onx),
+                           div_by_number=True, repeat=repeat)
+        obs['size'] = size
+        obs['n_nodes'] = n_nodes
+        obs['onnx_size'] = onnx_size
+        obs['task'] = "check_model_py"
+        data.append(obs)
+
+############################################
+# time
 df = pandas.DataFrame(data).sort_values(
     ['task', 'onnx_size', 'size', 'n_nodes'])
 df[['task', 'onnx_size', 'size', 'n_nodes', 'average']]
-
 
 ###############################################
 # Summary
 # +++++++
 
+df.to_excel("time.xlsx", index=False)
 piv = df.pivot(index='onnx_size', columns='task', values='average')
 piv
 
@@ -117,5 +135,22 @@ piv.plot(title="Time processing of serialization functions\n"
                "lower better", ax=ax)
 ax.set_xlabel("onnx size")
 ax.set_ylabel("s")
+
+###########################################
+# Conclusion
+# ++++++++++
+#
+# This graph shows that implementing check_model in python is much slower
+# than the C++ version. However, protobuf prevents from sharing
+# ModelProto from Python to C++ (see `Python Updates
+# <https://developers.google.com/protocol-buffers/docs/news/2022-05-06>`_)
+# unless the python package is compiled with a specific setting
+# (problably slower). A profiling shows that the code spends quite some time
+# in function :func:`getattr`.
+
+ps = profile(lambda: check_model_py(onx))[0]
+root, nodes = profile2graph(ps, clean_text=lambda x: x.split('/')[-1])
+text = root.to_text()
+print(text)
 
 plt.show()
