@@ -14,7 +14,6 @@ Startup
 This section creates an ONNX graph if there is not one.
 
 """
-import time
 import numpy
 import onnx
 from pyquickhelper.pycode.profiling import profile, profile2graph
