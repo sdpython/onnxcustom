@@ -152,4 +152,4 @@ root, nodes = profile2graph(ps, clean_text=lambda x: x.split('/')[-1])
 text = root.to_text()
 print(text)
 
-plt.show()
+# plt.show()
