@@ -1055,7 +1055,7 @@ with the attribute `ref_attr_name`.
 
 .. runpython::
     :showcode:
-        
+
     import numpy
     from onnx import numpy_helper, TensorProto, AttributeProto
     from onnx.helper import (
@@ -1226,17 +1226,17 @@ Python and C++
 ++++++++++++++
 
 :epkg:`onnx` relies on :epkg:`protobuf` to define its type.
-You would assume that a python object is just a wrapper around 
+You would assume that a python object is just a wrapper around
 a C pointer on the internal structure. Therefore, it should be
 possible to access internal data from a function receiving a python
 object of type `ModelProto`. But it is not. According to
 `Protobuf 4, changes <https://developers.google.com/protocol-buffers/docs/news/2022-05-06>`_,
-this is no longer possible after version 4 and it is safer to assume the 
+this is no longer possible after version 4 and it is safer to assume the
 only way to get a hold on the content is to serialize the model
 into bytes, give it the C function, then deserialize it.
 It is inefficient (see :ref:`l-benchmark-onnx-serialize`),
 so it should be avoided. Functions like `check_model` or
-`shape_inference` are calling `SerializeToString` then 
+`shape_inference` are calling `SerializeToString` then
 `ParseFromString` before checking the model with a C code.
 
 Attributes and inputs
@@ -1269,7 +1269,6 @@ This case is still puzzling.
     from onnx.checker import check_model
     from onnxruntime import InferenceSession
 
-
     def create_model(shapes):
         new_domain = 'custom'
         opset_imports = [make_opsetid("", 14), make_opsetid(new_domain, 1)]
@@ -1285,7 +1284,6 @@ This case is still puzzling.
 
         onnx_model = make_model(graph, opset_imports=opset_imports)
         return onnx_model
-
 
     print("----------- case 1: 2D x 2D -> 2D")
     onnx_model = create_model({'X': [None, None], 'A': [None, None], 'Y': [None, None]})
