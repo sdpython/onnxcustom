@@ -131,14 +131,13 @@ def train_model_ort(model, device, x, y, n_iter=100, learning_rate=1e-5,
 
 def benchmark(model_torch, model_ort, device, name, verbose=True, max_iter=100):
 
-    print("[benchmark] %s" % name)
+    print(f"[benchmark] {name}")
     begin = time.perf_counter()
     losses = train_model_torch(
         model_torch, device, X_train, y_train, n_iter=200)
     duration_torch = time.perf_counter() - begin
     length_torch = len(losses)
-    print("[benchmark] torch=%r iterations - %r seconds" % (
-        length_torch, duration_torch))
+    print(f"[benchmark] torch={length_torch!r} iterations - {duration_torch!r} seconds")
 
     if model_ort is None:
         length_ort = 0
@@ -149,8 +148,7 @@ def benchmark(model_torch, model_ort, device, name, verbose=True, max_iter=100):
                                  y_train, n_iter=max_iter)
         duration_ort = time.perf_counter() - begin
         length_ort = len(losses)
-    print("[benchmark] onxrt=%r iteration - %r seconds" % (
-        length_ort, duration_ort))
+    print(f"[benchmark] onxrt={length_ort!r} iteration - {duration_ort!r} seconds")
 
     return dict(torch=duration_torch, ort=duration_ort, name=name,
                 iter_torch=length_torch, iter_ort=length_ort)

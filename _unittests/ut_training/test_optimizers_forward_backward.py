@@ -1196,7 +1196,7 @@ class TestOptimizersForwardBackward(ExtTestCase):
                             if len(vals) == 1 and vals[0] == 0:
                                 checked.append((k, att))
         if len(checked) != 2:
-            raise AssertionError("Unexpected parameter %r." % checked)
+            raise AssertionError(f"Unexpected parameter {checked!r}.")
         train_session.fit(X, y)
 
         train_session = OrtGradientForwardBackwardOptimizer(

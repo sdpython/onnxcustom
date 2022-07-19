@@ -54,20 +54,18 @@ def benchmark(X, y, skl_model, train_session, name, verbose=True):
     :param name: experiment name
     :param verbose: to debug
     """
-    print("[benchmark] %s" % name)
+    print(f"[benchmark] {name}")
     begin = time.perf_counter()
     skl_model.fit(X, y)
     duration_skl = time.perf_counter() - begin
     length_skl = len(skl_model.loss_curve_)
-    print("[benchmark] skl=%r iterations - %r seconds" % (
-        length_skl, duration_skl))
+    print(f"[benchmark] skl={length_skl!r} iterations - {duration_skl!r} seconds")
 
     begin = time.perf_counter()
     train_session.fit(X, y)
     duration_ort = time.perf_counter() - begin
     length_ort = len(train_session.train_losses_)
-    print("[benchmark] ort=%r iteration - %r seconds" % (
-        length_ort, duration_ort))
+    print(f"[benchmark] ort={length_ort!r} iteration - {duration_ort!r} seconds")
 
     return dict(skl=duration_skl, ort=duration_ort, name=name,
                 iter_skl=length_skl, iter_ort=length_ort,

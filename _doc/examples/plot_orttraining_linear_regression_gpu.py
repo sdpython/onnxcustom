@@ -105,7 +105,7 @@ plot_onnxs(onx_train, title="Graph with Loss")
 
 device = "cuda" if get_device().upper() == 'GPU' else 'cpu'
 
-print("device=%r get_device()=%r" % (device, get_device()))
+print(f"device={device!r} get_device()={get_device()!r}")
 
 #######################################
 # Function creating the training session.
@@ -148,14 +148,14 @@ def create_training_session(
         elif device.device_type() == device.cuda():
             provider = ['CUDAExecutionProvider']
         else:
-            raise ValueError("Unexpected device %r." % device)
+            raise ValueError(f"Unexpected device {device!r}.")
     else:
         if device == 'cpu':
             provider = ['CPUExecutionProvider']
         elif device.startswith("cuda"):
             provider = ['CUDAExecutionProvider']
         else:
-            raise ValueError("Unexpected device %r." % device)
+            raise ValueError(f"Unexpected device {device!r}.")
 
     session = TrainingSession(
         training_onnx.SerializeToString(), ort_parameters, session_options,
@@ -224,7 +224,7 @@ class DataLoaderDevice:
             y = y.reshape((-1, 1))
         if X.shape[0] != y.shape[0]:
             raise ValueError(
-                "Shape mismatch X.shape=%r, y.shape=%r." % (X.shape, y.shape))
+                f"Shape mismatch X.shape={X.shape!r}, y.shape={y.shape!r}.")
         self.X = numpy.ascontiguousarray(X)
         self.y = numpy.ascontiguousarray(y)
         self.batch_size = batch_size
@@ -264,7 +264,7 @@ data_loader = DataLoaderDevice(X_train, y_train, batch_size=2)
 for i, batch in enumerate(data_loader):
     if i >= 2:
         break
-    print("batch %r: %r" % (i, batch))
+    print(f"batch {i!r}: {batch!r}")
 
 ##########################################
 # The training algorithm.
@@ -366,7 +366,7 @@ class CustomTraining:
             loss = self._iteration(data_loader, bind_lr, bind)
             lr = self._update_learning_rate(it, lr)
             if self.verbose > 1:
-                loop.set_description("loss=%1.3g lr=%1.3g" % (loss, lr))
+                loop.set_description(f"loss={loss:1.3g} lr={lr:1.3g}")
             train_losses.append(loss)
         self.train_losses_ = train_losses
         self.trained_coef_ = self.train_session_.get_state()

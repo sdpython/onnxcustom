@@ -74,17 +74,17 @@ class BaseEstimator(BaseOnnxClass):
                 continue  # pragma: no cover
             ov = getattr(self, k)
             if isinstance(ov, BaseLearningOnnx):
-                ps.append("%s=%s" % (k, repr(ov)))
+                ps.append(f"{k}={repr(ov)}")
             elif isinstance(ov, C_OrtDevice):
-                ps.append("%s=%r" % (k, ort_device_to_string(ov)))
+                ps.append(f"{k}={ort_device_to_string(ov)!r}")
             elif v is not inspect._empty or ov != v:
                 ro = repr(ov)
                 if len(ro) > 50 or "\n" in ro:
                     ro = ro[:10].replace("\n", " ") + "..."
-                    ps.append("%s=%r" % (k, ro))
+                    ps.append(f"{k}={ro!r}")
                 else:
-                    ps.append("%s=%r" % (k, ov))
-        return "%s(%s)" % (self.__class__.__name__, ", ".join(ps))
+                    ps.append(f"{k}={ov!r}")
+        return f"{self.__class__.__name__}({', '.join(ps)})"
 
     def __getstate__(self):
         "Removes any non pickable attribute."

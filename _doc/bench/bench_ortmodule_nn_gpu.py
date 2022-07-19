@@ -92,18 +92,18 @@ def benchmark(N=1000, n_features=20, hidden_layer_sizes="26,25", max_iter=1000,
 
     print("N=%d" % N)
     print("n_features=%d" % n_features)
-    print("hidden_layer_sizes=%r" % (hidden_layer_sizes, ))
+    print(f"hidden_layer_sizes={hidden_layer_sizes!r}")
     print("max_iter=%d" % max_iter)
-    print("learning_rate_init=%f" % learning_rate_init)
+    print(f"learning_rate_init={learning_rate_init:f}")
     print("batch_size=%d" % batch_size)
-    print("run_torch=%r" % run_torch)
-    print("opset=%r (unused)" % opset)
-    print("device=%r" % device)
-    print("profile=%r" % profile)
+    print(f"run_torch={run_torch!r}")
+    print(f"opset={opset!r} (unused)")
+    print(f"device={device!r}")
+    print(f"profile={profile!r}")
     device0 = device
     device = torch.device(
         "cuda:0" if device in ('cuda', 'cuda:0', 'gpu') else "cpu")
-    print("fixed device=%r" % device)
+    print(f"fixed device={device!r}")
     print('------------------')
 
     if not isinstance(hidden_layer_sizes, tuple):
@@ -137,8 +137,7 @@ def benchmark(N=1000, n_features=20, hidden_layer_sizes="26,25", max_iter=1000,
         nn.cpu()
     else:
         nn.cuda(device=device)
-    print("n_parameters=%d, n_layers=%d" % (
-        len(list(nn.parameters())), len(nn.hidden)))
+    print(f"n_parameters={len(list(nn.parameters()))}, n_layers={len(nn.hidden)}")
     for i, p in enumerate(nn.parameters()):
         print("  p[%d].shape=%r" % (i, p.shape))
 
@@ -181,7 +180,7 @@ def benchmark(N=1000, n_features=20, hidden_layer_sizes="26,25", max_iter=1000,
             from pyquickhelper.pycode.profiling import profile
             running_loss, prof, _ = profile(train_torch, return_results=True)
             dur_torch = time.perf_counter() - begin
-            name = "%s.%s.tch.prof" % (device0, os.path.split(__file__)[-1])
+            name = f"{device0}.{os.path.split(__file__)[-1]}.tch.prof"
             prof.dump_stats(name)
         elif profile == 'event':
 
@@ -193,7 +192,7 @@ def benchmark(N=1000, n_features=20, hidden_layer_sizes="26,25", max_iter=1000,
                 running_loss = train_torch()
             dur_torch = time.perf_counter() - begin
             df = prof.report
-            name = "%s.%s.tch.csv" % (device0, os.path.split(__file__)[-1])
+            name = f"{device0}.{os.path.split(__file__)[-1]}.tch.csv"
             df.to_csv(name, index=False)
         else:
             running_loss = train_torch()
@@ -202,7 +201,7 @@ def benchmark(N=1000, n_features=20, hidden_layer_sizes="26,25", max_iter=1000,
         dur_torch = time.perf_counter() - begin
 
     if run_torch:
-        print("time_torch=%r, running_loss=%r" % (dur_torch, running_loss))
+        print(f"time_torch={dur_torch!r}, running_loss={running_loss!r}")
         running_loss0 = running_loss
     else:
         running_loss0 = -1
@@ -252,7 +251,7 @@ def benchmark(N=1000, n_features=20, hidden_layer_sizes="26,25", max_iter=1000,
         from pyquickhelper.pycode.profiling import profile
         running_loss, prof, _ = profile(train_ort, return_results=True)
         dur_ort = time.perf_counter() - begin
-        name = "%s.%s.ort.prof" % (device0, os.path.split(__file__)[-1])
+        name = f"{device0}.{os.path.split(__file__)[-1]}.ort.prof"
         prof.dump_stats(name)
     elif profile == 'event':
 
@@ -264,14 +263,14 @@ def benchmark(N=1000, n_features=20, hidden_layer_sizes="26,25", max_iter=1000,
             running_loss = train_ort()
         dur_ort = time.perf_counter() - begin
         df = prof.report
-        name = "%s.%s.ort.csv" % (device0, os.path.split(__file__)[-1])
+        name = f"{device0}.{os.path.split(__file__)[-1]}.ort.csv"
         df.to_csv(name, index=False)
     else:
         running_loss = train_ort()
         dur_ort = time.perf_counter() - begin
 
-    print("time_torch=%r, running_loss=%r" % (dur_torch, running_loss0))
-    print("time_ort=%r, last_trained_error=%r" % (dur_ort, running_loss))
+    print(f"time_torch={dur_torch!r}, running_loss={running_loss0!r}")
+    print(f"time_ort={dur_ort!r}, last_trained_error={running_loss!r}")
 
 
 if __name__ == "__main__":

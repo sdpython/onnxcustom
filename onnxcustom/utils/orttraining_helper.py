@@ -148,8 +148,7 @@ def _loss_log(existing_names, elem, shape,
     """
     if output_name == 'output_label':
         raise RuntimeError(  # pragma: no cover
-            "output_name=%r, log loss does not work on labels."
-            "" % output_name)
+            f"output_name={output_name!r}, log loss does not work on labels.")
     dtype = TENSOR_TYPE_TO_NP_TYPE[elem]
     one_name = _unique_name(existing_names, "one_name")
     eps_name = _unique_name(existing_names, "eps_name")
@@ -226,8 +225,8 @@ def penalty_loss_onnx(name, dtype, l1=None, l2=None, existing_names=None):
     :return: initializer, nodes
     """
     suffix = name
-    cst_shape = _unique_name(existing_names, "shape_%s" % suffix)
-    new_name = _unique_name(existing_names, "reshaped_%s" % suffix)
+    cst_shape = _unique_name(existing_names, f"shape_{suffix}")
+    new_name = _unique_name(existing_names, f"reshaped_{suffix}")
     inits = [from_array(
              numpy.array([-1], dtype=numpy.int64), name=cst_shape)]
     nodes = [make_node('Reshape', [name, cst_shape], [new_name])]
@@ -236,14 +235,13 @@ def penalty_loss_onnx(name, dtype, l1=None, l2=None, existing_names=None):
     if l1 is None or l1 == 0:
         if l2 is None or l2 == 0:
             raise ValueError(  # pragma: no cover
-                "l1 and l2 cannot be null or None at the same time, "
-                "name=%r." % name)
-        l2_name = _unique_name(existing_names, "l2_weight_%s" % suffix)
+                f"l1 and l2 cannot be null or None at the same time, name={name!r}.")
+        l2_name = _unique_name(existing_names, f"l2_weight_{suffix}")
         inits.extend([from_array(
             numpy.array([l2], dtype=dtype), name=l2_name)])
-        mul_name = _unique_name(existing_names, "reduced0_%s" % suffix)
-        red_name = _unique_name(existing_names, "reduced_%s" % suffix)
-        pen_name = _unique_name(existing_names, "penalty_%s" % suffix)
+        mul_name = _unique_name(existing_names, f"reduced0_{suffix}")
+        red_name = _unique_name(existing_names, f"reduced_{suffix}")
+        pen_name = _unique_name(existing_names, f"penalty_{suffix}")
         nodes.extend([
             make_node('Mul', [name, name], [mul_name]),
             make_node('ReduceSum', [mul_name], [red_name]),
@@ -251,31 +249,31 @@ def penalty_loss_onnx(name, dtype, l1=None, l2=None, existing_names=None):
         return inits, nodes
 
     if l2 is None or l2 == 0:
-        l1_name = _unique_name(existing_names, "l1_weight_%s" % suffix)
+        l1_name = _unique_name(existing_names, f"l1_weight_{suffix}")
         inits.extend([from_array(
             numpy.array([l1], dtype=dtype), name=l1_name)])
-        red_name = _unique_name(existing_names, "reduced_%s" % suffix)
-        abs_name = _unique_name(existing_names, "absolute_%s" % suffix)
-        pen_name = _unique_name(existing_names, "penalty_%s" % suffix)
+        red_name = _unique_name(existing_names, f"reduced_{suffix}")
+        abs_name = _unique_name(existing_names, f"absolute_{suffix}")
+        pen_name = _unique_name(existing_names, f"penalty_{suffix}")
         nodes.extend([
             make_node('Abs', [name], [abs_name]),
             make_node('ReduceSum', [abs_name], [red_name]),
             make_node('Mul', [red_name, l1_name], [pen_name])])
         return inits, nodes
 
-    l1_name = _unique_name(existing_names, "l1_weight_%s" % suffix)
-    l2_name = _unique_name(existing_names, "l2_weight_%s" % suffix)
+    l1_name = _unique_name(existing_names, f"l1_weight_{suffix}")
+    l2_name = _unique_name(existing_names, f"l2_weight_{suffix}")
     inits.extend([
         from_array(numpy.array([l1], dtype=dtype), name=l1_name),
         from_array(numpy.array([l2], dtype=dtype), name=l2_name)])
 
-    red_name1 = _unique_name(existing_names, "reduced1_%s" % suffix)
-    mul_name = _unique_name(existing_names, "reducedm_%s" % suffix)
-    red_name2 = _unique_name(existing_names, "reduced2_%s" % suffix)
-    abs_name = _unique_name(existing_names, "absolute_%s" % suffix)
-    pen_name1 = _unique_name(existing_names, "penalty1_%s" % suffix)
-    pen_name2 = _unique_name(existing_names, "penalty2_%s" % suffix)
-    pen_name = _unique_name(existing_names, "penalty_%s" % suffix)
+    red_name1 = _unique_name(existing_names, f"reduced1_{suffix}")
+    mul_name = _unique_name(existing_names, f"reducedm_{suffix}")
+    red_name2 = _unique_name(existing_names, f"reduced2_{suffix}")
+    abs_name = _unique_name(existing_names, f"absolute_{suffix}")
+    pen_name1 = _unique_name(existing_names, f"penalty1_{suffix}")
+    pen_name2 = _unique_name(existing_names, f"penalty2_{suffix}")
+    pen_name = _unique_name(existing_names, f"penalty_{suffix}")
     nodes.extend([
         make_node('Mul', [name, name], [mul_name]),
         make_node('ReduceSum', [mul_name], [red_name2]),
@@ -484,8 +482,7 @@ def add_loss_output(onx, score_name='squared_error',
         outputs = [outputs[0][1]]
     else:
         raise TypeError(  # pragma: no cover
-            "output_index must be an integer or a str not %r."
-            "" % type(output_index))
+            f"output_index must be an integer or a str not {type(output_index)!r}.")
 
     existing_names = []
     for node in onx.graph.node:
@@ -498,8 +495,7 @@ def add_loss_output(onx, score_name='squared_error',
     elem = output_onx.type.tensor_type.elem_type
     if elem == 0:
         raise TypeError(  # pragma: no cover
-            "Unable to guess input tensor type from %r."
-            "" % output_onx)
+            f"Unable to guess input tensor type from {output_onx!r}.")
     shape = []
     for d in output_onx.type.tensor_type.shape.dim:
         shape.append(d.dim_value if d.dim_value > 0 else None)
@@ -523,7 +519,7 @@ def add_loss_output(onx, score_name='squared_error',
             weight_name, loss_name, **kwargs)
     else:
         raise NotImplementedError(  # pragma: no cover
-            "Unexpected %r value for score_name." % score_name)
+            f"Unexpected {score_name!r} value for score_name.")
 
     if penalty is not None:
         final_name = nodes[-1].output[0]

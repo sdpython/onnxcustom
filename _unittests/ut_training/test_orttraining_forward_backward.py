@@ -300,12 +300,12 @@ class TestOrtTrainingForwardBackward(ExtTestCase):
             onx, debug=True, enable_logging=True)
         if debug:
             n = model.__class__.__name__
-            temp = get_temp_folder(__file__, "temp_forward_training_%s" % n)
-            with open(os.path.join(temp, "model_%s.onnx" % n), "wb") as f:
+            temp = get_temp_folder(__file__, f"temp_forward_training_{n}")
+            with open(os.path.join(temp, f"model_{n}.onnx"), "wb") as f:
                 f.write(onx.SerializeToString())
-            with open(os.path.join(temp, "fw_train_%s.onnx" % n), "wb") as f:
+            with open(os.path.join(temp, f"fw_train_{n}.onnx"), "wb") as f:
                 f.write(forback.cls_type_._trained_onnx.SerializeToString())
-            with open(os.path.join(temp, "fw_pre_%s.onnx" % n), "wb") as f:
+            with open(os.path.join(temp, f"fw_pre_{n}.onnx"), "wb") as f:
                 gr = forback.cls_type_._optimized_pre_grad_model
                 f.write(gr.SerializeToString())
 

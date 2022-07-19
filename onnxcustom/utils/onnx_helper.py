@@ -29,7 +29,7 @@ def onnx_rename_weights(onx):
 
     init = [init.name for init in onx.graph.initializer]
     ninit = max(1, int(math.log(len(init)) / math.log(10) + 1))
-    fmt = "I%0{}d_%s".format(ninit)
+    fmt = f"I%0{ninit}d_%s"
     new_names = [fmt % (i, name) for i, name in enumerate(init)]
     repl = dict(zip(init, new_names))
     return onnx_rename_names(onx, recursive=False, replace=repl)
@@ -47,7 +47,7 @@ def get_onnx_opset(onx, domain=''):
         if opset.domain == domain:
             return opset.version
     raise ValueError(
-        "Unable to find opset for domain=%r." % domain)
+        f"Unable to find opset for domain={domain!r}.")
 
 
 def proto_type_to_dtype(proto_type):
@@ -67,8 +67,7 @@ def proto_type_to_dtype(proto_type):
     if proto_type == 'tensor(double)':
         return numpy.float64
     raise ValueError(
-        "Unexpected value proto_type=%r (type=%r)." % (
-            proto_type, type(proto_type)))
+        f"Unexpected value proto_type={proto_type!r} (type={type(proto_type)!r}).")
 
 
 def dtype_to_var_type(dtype):
@@ -87,7 +86,7 @@ def dtype_to_var_type(dtype):
     if dtype == numpy.int32:
         return Int32TensorType
     raise ValueError(
-        "Unexpected value dtype=%r." % dtype)
+        f"Unexpected value dtype={dtype!r}.")
 
 
 def _finalize_new_onnx(graph, onx):
@@ -122,8 +121,7 @@ def add_initializer(model, name, value):
     inits = set(i.name for i in model.graph.initializer)
     if name in inits:
         raise ValueError(  # pragma: no cover
-            "Name %r is already taken among %r." % (
-                name, inits))
+            f"Name {name!r} is already taken among {inits!r}.")
     list_inits = list(model.graph.initializer)
     list_inits.append(
         numpy_helper.from_array(value, name=name))
@@ -157,8 +155,7 @@ def replace_initializers_into_onnx(model, results):
             inits[inits_dict[k]] = v
         else:
             raise RuntimeError(  # pragma: no cover
-                "Unable to find initializer %r in "
-                "%r." % (k, inits_dict))
+                f"Unable to find initializer {k!r} in {inits_dict!r}.")
 
     graph = helper.make_graph(
         list(model.graph.node), model.graph.name, inputs,

@@ -44,13 +44,13 @@ class TestGradHelper(ExtTestCase):
                 n += 1
         if n == 0:
             raise AssertionError(
-                "No input with more than 5 rows: %r." % feeds)
+                f"No input with more than 5 rows: {feeds!r}.")
         sess = InferenceSession(onx.SerializeToString(),
                                 providers=['CPUExecutionProvider'])
         try:
             got = sess.run(None, feeds)
         except OrtFail as e:
-            with open("fail_%s.onnx" % name, "wb") as f:
+            with open(f"fail_{name}.onnx", "wb") as f:
                 f.write(onx.SerializeToString())
             raise AssertionError(
                 "Unable to run onnx graph %r." % ("fail_%s.onnx" % name)) from e
@@ -64,7 +64,7 @@ class TestGradHelper(ExtTestCase):
             print("%s - input=%r output=%r" % (
                 name, [o.name for o in onx.graph.input],
                 [o.name for o in onx.graph.output]))
-            with open("verbose_%s.onnx" % name, "wb") as f:
+            with open(f"verbose_{name}.onnx", "wb") as f:
                 f.write(onx.SerializeToString())
 
     @classmethod
@@ -87,7 +87,7 @@ class TestGradHelper(ExtTestCase):
         types = set(
             n.op_type for n in new_onx.graph.node)
         self.assertIn('YieldOp', types)
-        with open("verbose_%s.onnx" % 'yield', "wb") as f:
+        with open(f"verbose_{'yield'}.onnx", "wb") as f:
             f.write(new_onx.SerializeToString())
 
     @unittest.skipIf(TrainingSession is None, reason="not training")

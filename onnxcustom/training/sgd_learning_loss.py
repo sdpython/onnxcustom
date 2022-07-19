@@ -269,7 +269,7 @@ class NegLogLearningLoss(BaseLearningLoss):
         so.log_severity_level = 4
 
         # loss_grad
-        fct_name = "grad_%s_neg_log_loss_error" % self.probability_function
+        fct_name = f"grad_{self.probability_function}_neg_log_loss_error"
         self.loss_grad_onnx_ = function_onnx_graph(
             fct_name, target_opset=opset,
             weight_name=weight_name, eps=self.eps)

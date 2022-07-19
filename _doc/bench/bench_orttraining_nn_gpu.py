@@ -66,13 +66,13 @@ def benchmark(N=1000, n_features=100, hidden_layer_sizes="50,10", max_iter=1000,
 
     print("N=%d" % N)
     print("n_features=%d" % n_features)
-    print("hidden_layer_sizes=%r" % (hidden_layer_sizes, ))
+    print(f"hidden_layer_sizes={hidden_layer_sizes!r}")
     print("max_iter=%d" % max_iter)
-    print("learning_rate_init=%f" % learning_rate_init)
+    print(f"learning_rate_init={learning_rate_init:f}")
     print("batch_size=%d" % batch_size)
-    print("run_skl=%r" % run_skl)
-    print("opset=%r" % opset)
-    print("device=%r" % device)
+    print(f"run_skl={run_skl!r}")
+    print(f"opset={opset!r}")
+    print(f"device={device!r}")
     print('------------------')
 
     if not isinstance(hidden_layer_sizes, tuple):
@@ -107,7 +107,7 @@ def benchmark(N=1000, n_features=100, hidden_layer_sizes="50,10", max_iter=1000,
     print('weights:', list(sorted(weights)))
 
     # training
-    print("device=%r get_device()=%r" % (device, get_device()))
+    print(f"device={device!r} get_device()={get_device()!r}")
 
     #######################################
     # The training session.

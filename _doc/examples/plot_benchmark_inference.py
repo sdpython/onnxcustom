@@ -184,7 +184,7 @@ def plot_rf_models(dfr):
     def autolabel(ax, rects):
         for rect in rects:
             height = rect.get_height()
-            ax.annotate('%1.1fx' % height,
+            ax.annotate(f'{height:1.1f}x',
                         xy=(rect.get_x() + rect.get_width() / 2, height),
                         xytext=(0, 3),  # 3 points vertical offset
                         textcoords="offset points",
@@ -194,7 +194,7 @@ def plot_rf_models(dfr):
     engines = [_.split('_')[-1] for _ in dfr.columns if _.startswith("time_")]
     engines = [_ for _ in engines if _ != 'skl']
     for engine in engines:
-        dfr["speedup_%s" % engine] = dfr["time_skl"] / dfr["time_%s" % engine]
+        dfr[f"speedup_{engine}"] = dfr["time_skl"] / dfr[f"time_{engine}"]
     print(dfr.tail().T)
 
     ncols = 2
@@ -204,13 +204,13 @@ def plot_rf_models(dfr):
     row = 0
     for row, engine in enumerate(engines):
         pos = 0
-        name = "LinearRegression - %s" % engine
+        name = f"LinearRegression - {engine}"
         for nf in sorted(set(dfr.nfeat)):
             for n_jobs in sorted(set(dfr.n_jobs)):
                 sub = dfr[(dfr.nfeat == nf) & (dfr.n_jobs == n_jobs)]
                 ax = axs[row, pos]
                 labels = sub.n_obs
-                means = sub["speedup_%s" % engine]
+                means = sub[f"speedup_{engine}"]
 
                 x = numpy.arange(len(labels))
                 width = 0.90
@@ -218,7 +218,7 @@ def plot_rf_models(dfr):
                 rects1 = ax.bar(x, means, width, label='Speedup')
                 if pos == 0:
                     # ax.set_yscale('log')
-                    ax.set_ylim([0.1, max(dfr["speedup_%s" % engine])])
+                    ax.set_ylim([0.1, max(dfr[f"speedup_{engine}"])])
 
                 if pos == 0:
                     ax.set_ylabel('Speedup')
@@ -277,5 +277,5 @@ df
 # +++++
 
 fig, ax = plot_rf_models(df)
-fig.savefig("%s.png" % name)
+fig.savefig(f"{name}.png")
 # plt.show()

@@ -160,8 +160,7 @@ def onnx_derivative(onx, weights=None, inputs=None,
     """
     if not isinstance(options, DerivativeOptions):
         raise TypeError(
-            "Options must be from type DerivativeOptions not %r."
-            "" % type(options))
+            f"Options must be from type DerivativeOptions not {type(options)!r}.")
 
     if options == DerivativeOptions.Loss:
         return _onnx_derivative_loss(onx, weights=weights, inputs=inputs,
@@ -241,11 +240,10 @@ def _onnx_derivative_fw(onx, weights, inputs, options):
     for index, yn in yields_op:
         if len(yn.input) != 1 or len(yn.output) != 1:
             raise NotImplementedError(  # pragma: no cover
-                "Unexpected configuration for YieldOp node %r." % yn)
+                f"Unexpected configuration for YieldOp node {yn!r}.")
         if yn.input[0] not in map_out:
             raise RuntimeError(  # pragma: no cover
-                "Unable to find output %r in %r." % (
-                    yn.input[0], list(map_out)))
+                f"Unable to find output {yn.input[0]!r} in {list(map_out)!r}.")
         if not(options & DerivativeOptions.FillGrad):  # pylint: disable=C0325
             out = map_out[yn.input[0]]
             new_input = onnx.ValueInfoProto()
@@ -257,7 +255,7 @@ def _onnx_derivative_fw(onx, weights, inputs, options):
             if not(options & DerivativeOptions.KeepOutputs):  # pylint: disable=C0325
                 raise ValueError(  # pragma: no cover
                     "FillGrad should be set with KeepOutputs.")
-            name = "%s_shape" % yn.input[0]
+            name = f"{yn.input[0]}_shape"
             node = make_node('Shape', [yn.input[0]], [name])
             other_nodes.append((index + 0.1, node))
             out = map_out[yn.input[0]]

@@ -48,7 +48,7 @@ def plot_onnxs(*onx, ax=None, dpi=300, temp_dot=None, temp_img=None,
         fig = None
     if ax.shape[0] != len(onx):
         raise ValueError(
-            "ax must be an array of shape (%d, )." % len(onx))
+            f"ax must be an array of shape ({len(onx)}, ).")
     for i, ox in enumerate(onx):
         plot_onnx(ox, ax=ax[i], dpi=dpi, temp_dot=temp_dot,
                   temp_img=temp_img)

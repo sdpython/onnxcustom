@@ -86,7 +86,7 @@ def benchmark(name, onx, fct_numpy, *args,
     out_names = [o.name for o in sess.get_outputs()]
     if len(names) != len(args):
         raise RuntimeError(
-            "Size mismatch %d != %d." % (len(names), len(args)))
+            f"Size mismatch {len(names)} != {len(args)}.")
 
     rows = []
     for dim in tqdm(dims):

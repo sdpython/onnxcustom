@@ -50,7 +50,7 @@ filename = "onnx_to_profile.onnx"
 
 
 if not os.path.exists(filename):
-    print("Generate a graph for %r." % filename)
+    print(f"Generate a graph for {filename!r}.")
     X = numpy.random.randn(1000, 10).astype(numpy.float64)
     y = X.sum(axis=1).reshape((-1, 1))
 
@@ -75,7 +75,7 @@ def random_input(typ, shape, batch):
         dtype = numpy.float32
     else:
         raise NotImplementedError(
-            "Unable to guess dtype from %r." % typ)
+            f"Unable to guess dtype from {typ!r}.")
 
     if len(shape) <= 1:
         new_shape = shape
@@ -121,7 +121,7 @@ else:
         C_OrtDevice.cpu(), C_OrtDevice.default_memory(), 0)
     provider = 'CPUExecutionProvider'
 
-print("provider = %r" % provider)
+print(f"provider = {provider!r}")
 
 ####################################
 # We load the graph.

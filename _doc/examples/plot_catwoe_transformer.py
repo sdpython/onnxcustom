@@ -174,10 +174,10 @@ def woe_encoder_parser(
         scope, model, inputs, custom_parsers=None):
     if len(inputs) != 1:
         raise RuntimeError(
-            "Unexpected number of inputs: %d != 1." % len(inputs))
+            f"Unexpected number of inputs: {len(inputs)} != 1.")
     if inputs[0].type is None:
         raise RuntimeError(
-            "Unexpected type: %r." % (inputs[0], ))
+            f"Unexpected type: {inputs[0]!r}.")
     alias = get_model_alias(type(model))
     this_operator = scope.declare_local_operator(alias, model)
     this_operator.inputs.append(inputs[0])

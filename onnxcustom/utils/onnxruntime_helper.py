@@ -24,7 +24,7 @@ def provider_to_device(provider_name):
     if provider_name == 'CUDAExecutionProvider':
         return 'cuda'
     raise ValueError(
-        "Unexpected value for provider_name=%r." % provider_name)
+        f"Unexpected value for provider_name={provider_name!r}.")
 
 
 def get_ort_device_type(device):
@@ -40,16 +40,16 @@ def get_ort_device_type(device):
         if device == 'cpu':
             return C_OrtDevice.cpu()
         raise ValueError(  # pragma: no cover
-            'Unsupported device type: %r.' % device)
+            f'Unsupported device type: {device!r}.')
     if not hasattr(device, 'device_type'):
-        raise TypeError('Unsupported device type: %r.' % type(device))
+        raise TypeError(f'Unsupported device type: {type(device)!r}.')
     device_type = device.device_type()
     if device_type in ('cuda', 1):
         return C_OrtDevice.cuda()
     if device_type in ('cpu', 0):
         return C_OrtDevice.cpu()
     raise ValueError(  # pragma: no cover
-        'Unsupported device type: %r.' % device_type)
+        f'Unsupported device type: {device_type!r}.')
 
 
 def get_ort_device(device):
@@ -86,10 +86,9 @@ def get_ort_device(device):
             return C_OrtDevice(
                 C_OrtDevice.cuda(), C_OrtDevice.default_memory(), idx)
         raise ValueError(
-            "Unable to interpret string %r as a device." % device)
+            f"Unable to interpret string {device!r} as a device.")
     raise TypeError(  # pragma: no cover
-        "Unable to interpret type %r, (%r) as de device." % (
-            type(device), device))
+        f"Unable to interpret type {type(device)!r}, ({device!r}) as de device.")
 
 
 def ort_device_to_string(device):
@@ -102,7 +101,7 @@ def ort_device_to_string(device):
     """
     if not isinstance(device, C_OrtDevice):
         raise TypeError(
-            "device must be of type C_OrtDevice not %r." % type(device))
+            f"device must be of type C_OrtDevice not {type(device)!r}.")
     ty = device.device_type()
     if ty == C_OrtDevice.cpu():
         sty = 'cpu'
@@ -110,7 +109,7 @@ def ort_device_to_string(device):
         sty = 'cuda'
     else:
         raise NotImplementedError(  # pragma: no cover
-            "Unable to guess device for %r and type=%r." % (device, ty))
+            f"Unable to guess device for {device!r} and type={ty!r}.")
     idx = device.device_id()
     if idx == 0:
         return sty
@@ -144,4 +143,4 @@ def device_to_providers(device):
     if device.device_type() == device.cuda():
         return ['CUDAExecutionProvider']
     raise ValueError(  # pragma: no cover
-        "Unexpected device %r." % device)
+        f"Unexpected device {device!r}.")

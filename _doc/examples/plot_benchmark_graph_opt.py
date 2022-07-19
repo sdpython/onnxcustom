@@ -46,7 +46,7 @@ print(code_optimisation())
 filename = "onnx_to_profile.onnx"
 
 if not os.path.exists(filename):
-    print("Generate a graph for %r." % filename)
+    print(f"Generate a graph for {filename!r}.")
     X = numpy.random.randn(1000, 10).astype(numpy.float64)
     y = X.sum(axis=1).reshape((-1, 1))
 
@@ -71,7 +71,7 @@ def random_input(typ, shape, batch):
         dtype = numpy.float32
     else:
         raise NotImplementedError(
-            "Unable to guess dtype from %r." % typ)
+            f"Unable to guess dtype from {typ!r}.")
 
     if len(shape) <= 1:
         new_shape = shape
@@ -131,7 +131,7 @@ else:
     ort_device = C_OrtDevice(
         C_OrtDevice.cpu(), C_OrtDevice.default_memory(), 0)
     provider = 'CPUExecutionProvider'
-print("provider = %r" % provider)
+print(f"provider = {provider!r}")
 
 ####################################
 # We load the graph.
@@ -154,7 +154,7 @@ for graph_opt, name_opt in tqdm([
     so = SessionOptions()
     so.graph_optimization_level = graph_opt
     so.optimized_model_filepath = (
-        os.path.split(filename)[-1] + ".optimized.%s.onnx" % name_opt)
+        os.path.split(filename)[-1] + f".optimized.{name_opt}.onnx")
     files.append(so.optimized_model_filepath)
     legend.append(name_opt)
     sess = InferenceSession(onx.SerializeToString(), so,

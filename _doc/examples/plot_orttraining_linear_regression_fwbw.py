@@ -108,7 +108,7 @@ pprint(list((k, v[0].shape) for k, v in weights.items()))
 # ++++++++++++++++++++++++++++++++
 
 device = "cuda" if get_device().upper() == 'GPU' else 'cpu'
-print("device=%r get_device()=%r" % (device, get_device()))
+print(f"device={device!r} get_device()={get_device()!r}")
 
 #######################################
 # Stochastic Gradient Descent

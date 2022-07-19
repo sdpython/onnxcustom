@@ -19,7 +19,7 @@ def callback_begin():
     source = os.path.abspath(os.path.join(
         os.path.dirname(__file__), "..", "..", "examples", "images"))
     if not os.path.exists(source):
-        raise FileNotFoundError("Folder %r not found." % source)
+        raise FileNotFoundError(f"Folder {source!r} not found.")
     dest = os.path.abspath(os.path.join(
         os.path.dirname(__file__), "gyexamples", "images"))
     if not os.path.exists(dest):
@@ -106,7 +106,7 @@ intersphinx_mapping.update({
     'pyquickhelper':
         ('http://www.xavierdupre.fr/app/pyquickhelper/helpsphinx/', None),
     'python': (
-        'https://docs.python.org/{.major}'.format(sys.version_info),
+        f'https://docs.python.org/{sys.version_info.major}',
         None),
     'scikit-learn': ('https://scikit-learn.org/stable/', None),
     'scipy': ('https://docs.scipy.org/doc/scipy/reference', None),

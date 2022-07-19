@@ -35,7 +35,7 @@ sess = InferenceSession(onx.SerializeToString(),
                         providers=['CPUExecutionProvider'])
 input_names = [i.name for i in sess.get_inputs()]
 output_names = [o.name for o in sess.get_outputs()]
-print("inputs=%r, outputs=%r" % (input_names, output_names))
+print(f"inputs={input_names!r}, outputs={output_names!r}")
 print(sess.run(None, {input_names[0]: X_test[:2]}))
 
 
@@ -54,7 +54,7 @@ sess = InferenceSession(onx.SerializeToString(),
                         providers=['CPUExecutionProvider'])
 input_names = [i.name for i in sess.get_inputs()]
 output_names = [o.name for o in sess.get_outputs()]
-print("inputs=%r, outputs=%r" % (input_names, output_names))
+print(f"inputs={input_names!r}, outputs={output_names!r}")
 print(sess.run(None, {input_names[0]: X_test[:2]}))
 
 
@@ -73,7 +73,7 @@ sess = InferenceSession(onx.SerializeToString(),
                         providers=['CPUExecutionProvider'])
 input_names = [i.name for i in sess.get_inputs()]
 output_names = [o.name for o in sess.get_outputs()]
-print("inputs=%r, outputs=%r" % (input_names, output_names))
+print(f"inputs={input_names!r}, outputs={output_names!r}")
 print(sess.run(None, {input_names[0]: X_test[:2]}))
 
 ####################################
@@ -89,7 +89,7 @@ def rename_results(proposed_name, existing_names):
     result = "_" + proposed_name.upper()
     while result in existing_names:
         result += "A"
-    print("changed %r into %r." % (proposed_name, result))
+    print(f"changed {proposed_name!r} into {result!r}.")
     return result
 
 
@@ -100,5 +100,5 @@ sess = InferenceSession(onx.SerializeToString(),
                         providers=['CPUExecutionProvider'])
 input_names = [i.name for i in sess.get_inputs()]
 output_names = [o.name for o in sess.get_outputs()]
-print("inputs=%r, outputs=%r" % (input_names, output_names))
+print(f"inputs={input_names!r}, outputs={output_names!r}")
 print(sess.run(None, {input_names[0]: X_test[:2]}))

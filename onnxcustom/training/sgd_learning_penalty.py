@@ -155,8 +155,7 @@ class ElasticLearningPenalty(BaseLearningPenalty):
                 "missing. Method 'build_onnx_function' has not been called.")
         if len(self.names_) != len(inputs):
             raise RuntimeError(  # pragma: no cover
-                "Mismatched number of inputs: %d != %d." % (
-                    len(self.names_), len(inputs)))
+                f"Mismatched number of inputs: {len(self.names_)} != {len(inputs)}.")
 
         for name, inp in zip(self.names_, inputs):
             self._bind_input_ortvalue(
