@@ -97,9 +97,8 @@ class BaseLearningOnnx(BaseOnnxClass):
             ov = getattr(self, k)
             if v is not inspect._empty or ov != v:
                 ro = repr(ov)
-                ps.append("%s=%s" % (k, ro))
-        return "%s(%s)%s" % (
-            self.__class__.__name__, ", ".join(ps), self.__repr_extended__())
+                ps.append(f"{k}={ro}")
+        return f"{self.__class__.__name__}({', '.join(ps)}){self.__repr_extended__()}"
 
     def build_onnx_function(self, opset, device, *args):
         """
@@ -180,8 +179,7 @@ class BaseLearningOnnx(BaseOnnxClass):
         elif isinstance(c_ortvalue, numpy.ndarray):
             if self.device_type() != device.cpu():  # pylint: disable=E1101
                 raise ProviderError(  # pragma: no cover
-                    "device=%s is not CPU." % ort_device_to_string(
-                        device))
+                    f"device={ort_device_to_string(device)} is not CPU.")
             if cache and self._bio_cache(
                     self.cache_in_, name, bind, c_ortvalue,
                     c_ortvalue.__array_interface__['data'][0]):
@@ -191,8 +189,7 @@ class BaseLearningOnnx(BaseOnnxClass):
                 c_ortvalue.__array_interface__['data'][0])
         else:
             raise TypeError(  # pragma: no cover
-                "Unable to bind type %r for name %r." % (
-                    type(c_ortvalue), name))
+                f"Unable to bind type {type(c_ortvalue)!r} for name {name!r}.")
 
     @staticmethod
     def _bio_do_bind_out(name, bind, c_ortvalue):
@@ -221,5 +218,4 @@ class BaseLearningOnnx(BaseOnnxClass):
             self._bio_do_bind_out(name, bind, c_ortvalue)
         else:
             raise TypeError(  # pragma: no cover
-                "Unable to bind type %r for name %r." % (
-                    type(c_ortvalue), name))
+                f"Unable to bind type {type(c_ortvalue)!r} for name {name!r}.")

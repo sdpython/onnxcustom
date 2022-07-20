@@ -94,7 +94,7 @@ for mv in tqdm(min_values):
             y *= 0.6
             lab = "x0.6"
         else:
-            raise AssertionError("Unknown runtime %r." % rt)
+            raise AssertionError(f"Unknown runtime {rt!r}.")
         value = y[0]
         graph.append(dict(rt=rt + lab, x=mv, y=value))
 
@@ -132,7 +132,7 @@ for mv in tqdm(min_values):
         elif rt == 'taylor20':
             y = taylor_sigmoid(data, 20)
         else:
-            raise AssertionError("Unknown runtime %r." % rt)
+            raise AssertionError(f"Unknown runtime {rt!r}.")
         duration = time.perf_counter() - begin
         graph.append(dict(rt=rt, x=mv, y=duration))
 

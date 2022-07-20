@@ -194,8 +194,7 @@ class DataLoader:
             self.y = self.y.reshape((-1, 1))
         if self.X.shape[0] != self.y.shape[0]:
             raise ValueError(
-                "Shape mismatch X.shape=%r, y.shape=%r." % (
-                    self.X.shape, self.y.shape))
+                f"Shape mismatch X.shape={self.X.shape!r}, y.shape={self.y.shape!r}.")
 
     def __len__(self):
         "Returns the number of observations."
@@ -226,7 +225,7 @@ data_loader = DataLoader(X_train, y_train, batch_size=2)
 for i, batch in enumerate(data_loader):
     if i >= 2:
         break
-    print("batch %r: %r" % (i, batch))
+    print(f"batch {i!r}: {batch!r}")
 
 
 #########################################
@@ -280,9 +279,9 @@ print(train_session)
 # Let's look into the expected inputs and outputs.
 
 for i in train_session.get_inputs():
-    print("+input: %s (%s%s)" % (i.name, i.type, i.shape))
+    print(f"+input: {i.name} ({i.type}{i.shape})")
 for o in train_session.get_outputs():
-    print("output: %s (%s%s)" % (o.name, o.type, o.shape))
+    print(f"output: {o.name} ({o.type}{o.shape})")
 
 ######################################
 # A third parameter `Learning_Rate` was automatically added.
@@ -414,7 +413,7 @@ class CustomTraining:
             loss = self._iteration(data_loader, lr)
             lr = self._update_learning_rate(it, lr)
             if self.verbose > 1:
-                loop.set_description("loss=%1.3g lr=%1.3g" % (loss, lr))
+                loop.set_description(f"loss={loss:1.3g} lr={lr:1.3g}")
             train_losses.append(loss)
         self.train_losses_ = train_losses
         self.trained_coef_ = self.train_session_.get_state()

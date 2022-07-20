@@ -113,19 +113,18 @@ class BaseOnnxClass:
             suffix = ''
         if isinstance(folder, str) and not os.path.exists(folder):
             raise FileNotFoundError(  # pragma: no cover
-                "Folder %r does not exist." % folder)
+                f"Folder {folder!r} does not exist.")
         saved = {}
         for k, v in self.__dict__.items():
             if hasattr(v, "SerializeToString"):
                 if isinstance(folder, str):
-                    name = "%s%s%s.%s.onnx" % (
-                        prefix, self.__class__.__name__, suffix, k)
+                    name = f"{prefix}{self.__class__.__name__}{suffix}.{k}.onnx"
                     for a, b in repls.items():
                         name = name.replace(a, b)
                     filename = os.path.join(folder, name)
                     if os.path.exists(filename):
                         warnings.warn(  # pragma: no cover
-                            "Filename %r already exists." % filename)
+                            f"Filename {filename!r} already exists.")
                     with open(filename, "wb") as f:
                         f.write(v.SerializeToString())
                     saved[k] = filename
@@ -133,5 +132,5 @@ class BaseOnnxClass:
                     saved[k] = v.SerializeToString()
             elif hasattr(v, "save_onnx_graph"):
                 saved[k] = v.save_onnx_graph(
-                    folder, prefix=prefix, suffix="%s.%s" % (suffix, k))
+                    folder, prefix=prefix, suffix=f"{suffix}.{k}")
         return saved

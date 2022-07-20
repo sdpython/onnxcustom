@@ -25,7 +25,7 @@ class TestDocumentationExampleShow(ExtTestCase):
                     content = f.read()
                 if "plt.show()" in content and "# plt.show()" not in content:
                     raise AssertionError(
-                        "plt.show() not found in %r." % name)
+                        f"plt.show() not found in {name!r}.")
                 tested += 1
         if tested == 0:
             raise RuntimeError("No example was tested.")

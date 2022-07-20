@@ -66,7 +66,7 @@ print(onx)
 
 domains = onx.opset_import
 for dom in domains:
-    print("domain: %r, version: %r" % (dom.domain, dom.version))
+    print(f"domain: {dom.domain!r}, version: {dom.version!r}")
 
 ###################################
 # There are two opsets, one for standard operators,
@@ -91,7 +91,7 @@ for opset in range(1, onnx_opset_version() + 1):
     try:
         onx = to_onnx(model, X[:1].astype(numpy.float32), target_opset=opset)
     except RuntimeError as e:
-        print('target: %r error: %r' % (opset, e))
+        print(f'target: {opset!r} error: {e!r}')
         continue
     nodes = len(onx.graph.node)
     print('target: %r --> %s %d' % (opset, get_domain_opset(onx), nodes))
@@ -116,7 +116,7 @@ for opset in range(9, onnx_opset_version() + 1):
             onx = to_onnx(
                 model, X[:1].astype(numpy.float32), target_opset=tops)
         except RuntimeError as e:
-            print('target: %r error: %r' % (opset, e))
+            print(f'target: {opset!r} error: {e!r}')
             continue
         nodes = len(onx.graph.node)
         print('target: %r --> %s %d' % (opset, get_domain_opset(onx), nodes))

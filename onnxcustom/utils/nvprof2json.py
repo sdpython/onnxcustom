@@ -52,13 +52,12 @@ def convert_trace_to_json(filename, output=None, temporary_file=None,
         else:
             if verbose > 0 and fLOG is not None:
                 fLOG(  # pragma: no cover
-                    "[convert_trace_to_json] unzipping to file %r"
-                    "." % temporary_file)
+                    f"[convert_trace_to_json] unzipping to file {temporary_file!r}.")
             zipf = zipfile.ZipFile(filename)
             names = zipf.namelist()
             if len(names) != 1:
                 raise RuntimeError(  # pragma: no cover
-                    "More than one file is stored in zip file %r." % filename)
+                    f"More than one file is stored in zip file {filename!r}.")
             stream = zipf.open(names[0], "r")
             with open(temporary_file, "wb") as f:
                 while True:
@@ -96,15 +95,15 @@ def convert_trace_to_json(filename, output=None, temporary_file=None,
         except ValueError:  # pragma: no cover
             cbid = str(row["cbid"])
             if verbose > 0 and fLOG is None:
-                fLOG("[convert_trace_to_json] unrecognized cbid %r." % cbid)
+                fLOG(f"[convert_trace_to_json] unrecognized cbid {cbid!r}.")
         event = {
             "name": cbid,
             "ph": "X",  # Complete Event (Begin + End event)
             "cat": "cuda",
             "ts": _munge_time(row["start"]),
             "dur": _munge_time(row["end"] - row["start"]),
-            "tid": "Thread {}: Runtime API".format(row["threadId"]),
-            "pid": "[{}] Process".format(row["processId"]),
+            "tid": f"Thread {row['threadId']}: Runtime API",
+            "pid": f"[{row['processId']}] Process",
             "args": {
                 # ...
             },
@@ -206,15 +205,14 @@ def convert_trace_to_json(filename, output=None, temporary_file=None,
         else:
             flags = str(row["flags"])
         event = {
-            "name": "Memcpy {} [{}]".format(copyKind, flags),
+            "name": f"Memcpy {copyKind} [{flags}]",
             "ph": "X",  # Complete Event (Begin + End event)
             "cat": "cuda",
             "ts": _munge_time(row["start"]),
             "dur": _munge_time(row["end"] - row["start"]),
-            "tid": "MemCpy ({})".format(copyKind),
+            "tid": f"MemCpy ({copyKind})",
             # lookup GPU name.  This is tored in CUPTI_ACTIVITY_KIND_DEVICE
-            "pid": "[{}:{}] Overview".format(
-                row["deviceId"], row["contextId"]),
+            "pid": f"[{row['deviceId']}:{row['contextId']}] Overview",
             "args": {
                 "Size": _sizeof_fmt(row["bytes"]),
             },
@@ -264,27 +262,22 @@ def convert_trace_to_json(filename, output=None, temporary_file=None,
             "dur": _munge_time(row["end"] - row["start"]),
             "tid": "Compute",
             # lookup GPU name?
-            "pid": "[{}:{}] Overview".format(
-                row["deviceId"], row["contextId"]),
+            "pid": f"[{row['deviceId']}:{row['contextId']}] Overview",
             "args": {
-                "Grid size": "[ {}, {}, {} ]".format(
-                    row["gridX"], row["gridY"], row["gridZ"]),
-                "Block size": "[ {}, {}, {} ]".format(
-                    row["blockX"], row["blockY"], row["blockZ"]),
+                "Grid size": f"[ {row['gridX']}, {row['gridY']}, {row['gridZ']} ]",
+                "Block size": f"[ {row['blockX']}, {row['blockY']}, {row['blockZ']} ]",
                 # ...
             },
         }
         alt_event = copy.deepcopy(event)
         alt_event["tid"] = alt_event["name"]
-        alt_event["pid"] = "[{}:{}] Compute".format(
-            row["deviceId"], row["contextId"])
+        alt_event["pid"] = f"[{row['deviceId']}:{row['contextId']}] Compute"
         traceEvents.append(event)
         traceEvents.append(alt_event)
 
     if output not in (None, ''):
         if verbose > 0 and fLOG is not None:
-            fLOG("[convert_trace_to_json] converting into json in %r"
-                 "." % output)
+            fLOG(f"[convert_trace_to_json] converting into json in {output!r}.")
         with open(output, "w", encoding="utf-8") as f:
             json.dump(traceEvents, f, separators=(',\n', ':'))
             f.write('\n')
@@ -665,9 +658,9 @@ def _sizeof_fmt(num, suffix='B'):
     """Format size with metric units (like nvvp)"""
     for unit in ['', 'K', 'M', 'G', 'T', 'P', 'E', 'Z']:
         if abs(num) < 1000.0:
-            return "%3.1f%s%s" % (num, unit, suffix)
+            return f"{num:3.1f}{unit}{suffix}"
         num /= 1000.0  # pragma: no cover
-    return "%.1f%s%s" % (num, 'Y', suffix)  # pragma: no cover
+    return f"{num:.1f}{'Y'}{suffix}"  # pragma: no cover
 
 
 def json_to_dataframe(js):

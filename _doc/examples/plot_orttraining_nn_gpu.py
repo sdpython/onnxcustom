@@ -50,7 +50,7 @@ with warnings.catch_warnings():
 #################################
 # Score:
 
-print("mean_squared_error=%r" % mean_squared_error(y_test, nn.predict(X_test)))
+print(f"mean_squared_error={mean_squared_error(y_test, nn.predict(X_test))!r}")
 
 
 #######################################
@@ -79,7 +79,7 @@ plot_onnxs(onx_train)
 sess = InferenceSession(onx_train.SerializeToString(),
                         providers=['CPUExecutionProvider'])
 res = sess.run(None, {'X': X_test, 'label': y_test.reshape((-1, 1))})
-print("onnx loss=%r" % (res[0][0, 0] / X_test.shape[0]))
+print(f"onnx loss={res[0][0, 0] / X_test.shape[0]!r}")
 
 #####################################
 # Let's retrieve the constant, the weight to optimize.
@@ -99,7 +99,7 @@ pprint(list((k, v[0].shape) for k, v in weights.items()))
 
 device = "cuda" if get_device().upper() == 'GPU' else 'cpu'
 
-print("device=%r get_device()=%r" % (device, get_device()))
+print(f"device={device!r} get_device()={get_device()!r}")
 
 #######################################
 # The training session.

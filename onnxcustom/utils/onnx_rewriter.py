@@ -221,7 +221,7 @@ def unreduced_onnx_loss(onx, output_name='score'):
         new_nodes.append(new_node)
     else:
         raise RuntimeError(  # pragma: no cover
-            "Unable to unreduce node %r." % node.op_type)
+            f"Unable to unreduce node {node.op_type!r}.")
 
     graph = make_graph(
         new_nodes, graph.name, inputs, new_output, inits)

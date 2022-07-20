@@ -168,7 +168,7 @@ class OrtGradientOptimizer(BaseEstimator):
         """
         if not isinstance(bind, C_IOBinding):
             raise TypeError(  # pragma: no cover
-                "Unexpected type %r." % type(bind))
+                f"Unexpected type {type(bind)!r}.")
         if isinstance(c_ortvalue, C_OrtValue):
             bind.bind_ortvalue_input(name, c_ortvalue)
         elif isinstance(c_ortvalue, numpy.ndarray):
@@ -178,8 +178,7 @@ class OrtGradientOptimizer(BaseEstimator):
                 c_ortvalue.__array_interface__['data'][0])
         else:
             raise TypeError(  # pragma: no cover
-                "Unable to bind type %r for name %r." % (
-                    type(c_ortvalue), name))
+                f"Unable to bind type {type(c_ortvalue)!r} for name {name!r}.")
 
     def _iteration(self, data_loader, ort_lr, bind, use_numpy, sample_weight):
         actual_losses = []
@@ -257,8 +256,7 @@ class OrtGradientOptimizer(BaseEstimator):
             outputs = bind.copy_outputs_to_cpu()
             if numpy.isinf(outputs[0]) or numpy.isnan(outputs[0]):
                 raise EvaluationError(  # pragma: no cover
-                    "Loss is nan or infinite (%r), "
-                    "evaluation has failed." % outputs[0])
+                    f"Loss is nan or infinite ({outputs[0]!r}), evaluation has failed.")
             actual_losses.append(outputs[0])
             total += batch_size
         return numpy.array(actual_losses).sum() / max(total, 1)

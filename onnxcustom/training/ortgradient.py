@@ -94,8 +94,7 @@ class OrtGradientForwardBackward:
             self.output_names = [obj.name
                                  for obj in self.onnx_model.graph.output]
         if self.class_name is None:
-            self.class_name = "TorchOrtFunction_%r" % id(
-                self)  # pragma: no cover
+            self.class_name = f"TorchOrtFunction_{id(self)!r}"  # pragma: no cover
         if hasattr(self.providers, 'type'):
             if self.providers.type != 'cpu':
                 self.device_index = self.providers.index
@@ -120,7 +119,7 @@ class OrtGradientForwardBackward:
         set_weights = set(self.weights_to_train)
         if len(set_weights) != len(self.weights_to_train):
             raise ValueError(  # pragma: no cover
-                "One weight is not unique in %r." % self.weights_to_train)
+                f"One weight is not unique in {self.weights_to_train!r}.")
         found = []
         for i in self.onnx_model.graph.initializer:
             if i.name not in set_weights:
@@ -144,8 +143,7 @@ class OrtGradientForwardBackward:
                                        'CUDAExecutionProvider'],
                    self.providers)):
             raise ValueError(
-                "Unexpected providers %r (providers=%r)." % (
-                    self.providers, providers))
+                f"Unexpected providers {self.providers!r} (providers={providers!r}).")
 
         # complete initialisation
         self._init_next()
@@ -234,7 +232,7 @@ class OrtGradientForwardBackward:
 
     def __repr__(self):
         "usual"
-        return "%s(...)" % self.__class__.__name__
+        return f"{self.__class__.__name__}(...)"
 
     @staticmethod
     def _repr_helper_(obj, indent=0):
@@ -249,10 +247,10 @@ class OrtGradientForwardBackward:
                 value = getattr(obj, c)
             except AttributeError:  # pragma: no cover
                 continue
-            rows.append("%s=%r" % (c, value))
+            rows.append(f"{c}={value!r}")
 
         if indent == 0:
-            return "%s(%s)" % (obj.__class__.__name__, ", ".join(rows))
+            return f"{obj.__class__.__name__}({', '.join(rows)})"
         return "%s(\n    %s)" % (
             obj.__class__.__name__,
             "\n    ".join(rows))
@@ -264,7 +262,7 @@ class OrtGradientForwardBackward:
         if provider_name == 'CUDAExecutionProvider':  # pragma: no cover
             return OrtDevice.cuda()
         raise ValueError(  # pragma: no cover
-            'Unexpected provider name %r.' % provider_name)
+            f'Unexpected provider name {provider_name!r}.')
 
     def get_initializer(self, name, exc=True):
         """
@@ -414,12 +412,23 @@ class OrtGradientForwardBackward:
                 OrtDevice.default_memory(), self.device_index)
             for i in self.output_names]
 
-        training_agent = TrainingAgent(
-            sess._sess,
-            grad_input_names,
-            fw_outputs_device_info,
-            bw_fetches_names,
-            bw_outputs_device_info)
+        try:
+            # onnxruntime>=1.12
+            training_agent = TrainingAgent(
+                sess._sess,
+                grad_input_names,
+                fw_outputs_device_info,
+                bw_fetches_names,
+                bw_outputs_device_info,
+                0)
+        except TypeError:
+            # onnxruntime<=1.11
+            training_agent = TrainingAgent(
+                sess._sess,
+                grad_input_names,
+                fw_outputs_device_info,
+                bw_fetches_names,
+                bw_outputs_device_info)
 
         if logger is not None:
             logger.info(
@@ -512,17 +521,16 @@ class OrtGradientForwardBackwardFunction:
             suffix = ''  # pragma: no cover
         if isinstance(folder, str) and not os.path.exists(folder):
             raise FileNotFoundError(  # pragma: no cover
-                "Folder %r does not exist." % folder)
+                f"Folder {folder!r} does not exist.")
         saved = {}
         for k, v in cls.__dict__.items():
             if hasattr(v, "SerializeToString"):
                 if isinstance(folder, str):
-                    name = "%s%s%s.%s.onnx" % (
-                        prefix, cls.__name__, suffix, k)
+                    name = f"{prefix}{cls.__name__}{suffix}.{k}.onnx"
                     filename = os.path.join(folder, name)
                     if os.path.exists(filename):
                         warnings.warn(  # pragma: no cover
-                            "Filename %r already exists." % filename)
+                            f"Filename {filename!r} already exists.")
                     with open(filename, "wb") as f:
                         f.write(v.SerializeToString())
                     saved[k] = filename
@@ -530,7 +538,7 @@ class OrtGradientForwardBackwardFunction:
                     saved[k] = v.SerializeToString()
             elif hasattr(v, "save_onnx_graph"):
                 saved[k] = v.save_onnx_graph(
-                    folder, prefix=prefix, suffix="%s.%s" % (suffix, k))
+                    folder, prefix=prefix, suffix=f"{suffix}.{k}")
         return saved
 
     @staticmethod
@@ -546,7 +554,7 @@ class OrtGradientForwardBackwardFunction:
         if device.device_type() == OrtDevice.cuda():  # pragma: no cover
             return 'Gpu'
         raise RuntimeError(  # pragma: no cover
-            "Unexpected value for device type %r." % device.device_type())
+            f"Unexpected value for device type {device.device_type()!r}.")
 
     @staticmethod
     def input_to_ort(tensors, devices, debug):

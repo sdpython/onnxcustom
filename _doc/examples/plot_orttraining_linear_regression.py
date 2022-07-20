@@ -97,7 +97,7 @@ plot_onnxs(onx, onx_train,
 sess = InferenceSession(onx_train.SerializeToString(),
                         providers=['CPUExecutionProvider'])
 res = sess.run(None, {'X': X_test, 'label': y_test.reshape((-1, 1))})
-print("onnx loss=%r" % (res[0][0, 0] / X_test.shape[0]))
+print(f"onnx loss={res[0][0, 0] / X_test.shape[0]!r}")
 
 #####################################
 # Weights
@@ -118,7 +118,7 @@ pprint(list((k, v[0].shape) for k, v in weights.items()))
 # ++++++++++++++++++++++++++++++++
 
 device = "cuda" if get_device().upper() == 'GPU' else 'cpu'
-print("device=%r get_device()=%r" % (device, get_device()))
+print(f"device={device!r} get_device()={get_device()!r}")
 
 #######################################
 # Stochastic Gradient Descent

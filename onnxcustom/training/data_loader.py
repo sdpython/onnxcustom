@@ -29,7 +29,7 @@ class OrtDataLoader:
             y = y.reshape((-1, 1))
         if X.shape[0] != y.shape[0]:
             raise ValueError(  # pragma: no cover
-                "Shape mismatch X.shape=%r, y.shape=%r." % (X.shape, y.shape))
+                f"Shape mismatch X.shape={X.shape!r}, y.shape={y.shape!r}.")
 
         self.batch_size = batch_size
         self.device = get_ort_device(device)

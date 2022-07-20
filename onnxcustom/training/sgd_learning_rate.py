@@ -53,7 +53,7 @@ class BaseLearningRate(BaseLearningOnnx):
 
     def __repr_extended__(self):
         return (
-            ', value=%r' % self.value
+            f', value={self.value!r}'
             if hasattr(self, 'value_') and self.value_ is not None  # pylint: disable=E1101
             else '')
 
@@ -150,7 +150,7 @@ class LearningRateSGD(BaseLearningRate):
         BaseLearningRate.__init__(self)
         if learning_rate not in ('invscaling', 'optimal', 'constant'):
             raise ValueError(
-                "Unxepected value for learning_rate=%r." % learning_rate)
+                f"Unxepected value for learning_rate={learning_rate!r}.")
         self.eta0 = eta0
         self.alpha = alpha
         self.power_t = power_t

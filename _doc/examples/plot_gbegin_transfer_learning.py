@@ -43,18 +43,17 @@ import urllib.request
 
 def download_file(url, name, min_size):
     if not os.path.exists(name):
-        print("download '%s'" % url)
+        print(f"download '{url}'")
         with urllib.request.urlopen(url) as u:
             content = u.read()
         if len(content) < min_size:
             raise RuntimeError(
-                "Unable to download '{}' due to\n{}".format(
-                    url, content))
-        print("downloaded %d bytes." % len(content))
+                f"Unable to download '{url}' due to\n{content}")
+        print(f"downloaded {len(content)} bytes.")
         with open(name, "wb") as f:
             f.write(content)
     else:
-        print("'%s' already downloaded" % name)
+        print(f"'{name}' already downloaded")
 
 
 model_name = "squeezenet1.1-7.onnx"
@@ -140,7 +139,7 @@ def classify(imgs):
 
 climgs = classify(imgs)
 for angle, res in climgs:
-    print("angle={} - {}".format(angle, res[:5]))
+    print(f"angle={angle} - {res[:5]}")
 
 
 plot_gallery_images([img[1] for img in imgs],
@@ -178,7 +177,7 @@ print(proj)
 fig, ax = plt.subplots(1, 1, figsize=(5, 5))
 ax.plot(proj[:, 0], proj[:, 1], 'o')
 ax.set_title("Projection of classification probabilities")
-text = ["%1.0f-%s" % (el[0], el[1][0][1]) for el in climgs]
+text = [f"{el[0]:1.0f}-{el[1][0][1]}" for el in climgs]
 for label, x, y in zip(text, proj[:, 0], proj[:, 1]):
     ax.annotate(
         label, xy=(x, y), xytext=(-10, 10), fontsize=8,
@@ -240,7 +239,7 @@ proj2 = pipe2.transform(X_train)
 fig, ax = plt.subplots(1, 1, figsize=(5, 5))
 ax.plot(proj2[:, 0], proj2[:, 1], 'o')
 ax.set_title("Second projection of classification probabilities")
-text = ["%1.0f-%s" % (el[0], el[1][0][1]) for el in climgs]
+text = [f"{el[0]:1.0f}-{el[1][0][1]}" for el in climgs]
 for label, x, y in zip(text, proj2[:, 0], proj2[:, 1]):
     ax.annotate(
         label, xy=(x, y), xytext=(-10, 10), fontsize=8,

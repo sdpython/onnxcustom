@@ -234,18 +234,16 @@ def benchmark_op(repeat=10, number=10, name="Slice", shape_slice_fct=None,
     rs = piv.copy()
     for c in ['numpy', 'ort', 'ort_gpu']:
         if c in rs.columns:
-            rs["numpy/%s" % c] = rs['numpy'] / rs[c]
+            rs[f"numpy/{c}"] = rs['numpy'] / rs[c]
     rs = rs[[c for c in rs.columns if "/numpy" not in c]].copy()
 
     # Graphs.
     fig, ax = plt.subplots(1, 2, figsize=(12, 4))
     piv.plot(logx=True, logy=True, ax=ax[0],
-             title="%s benchmark\n%r"
-                   " lower better" % (name, shape_name))
+             title=f"{name} benchmark\n{shape_name!r} lower better")
     ax[0].legend(prop={"size": 9})
     rs.plot(logx=True, logy=True, ax=ax[1],
-            title="%s Speedup, baseline=numpy\n%r"
-                  " higher better" % (name, shape_name))
+            title=f"{name} Speedup, baseline=numpy\n{shape_name!r} higher better")
     ax[1].plot([min(rs.index), max(rs.index)], [0.5, 0.5], 'g--')
     ax[1].plot([min(rs.index), max(rs.index)], [2., 2.], 'g--')
     ax[1].legend(prop={"size": 9})

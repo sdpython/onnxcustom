@@ -152,7 +152,7 @@ class TestOnnxFunction(ExtTestCase):
         oinf = OnnxInference(onx)
         run_params = dict(verbose=verbose, fLOG=print) if verbose > 0 else {}
         if verbose > 0:
-            print("\n+++++ name(1)=%r" % name)
+            print(f"\n+++++ name(1)={name!r}")
         if weight_name is None:
             got = oinf.run({'X1': x1, 'X2': x2}, **run_params)
         else:
@@ -188,13 +188,13 @@ class TestOnnxFunction(ExtTestCase):
         if 'grad' in name:
             rew = unreduced_onnx_loss(onx)
             if 'ReduceSum' in str(rew):
-                raise AssertionError("Isse with:\n%r" % rew)
+                raise AssertionError(f"Isse with:\n{rew!r}")
             if verbose > 0:
                 with open(name + ".unreduced.onnx", "wb") as f:
                     f.write(rew.SerializeToString())
 
             if verbose > 0:
-                print("\n+++++ name(2)=%r" % name)
+                print(f"\n+++++ name(2)={name!r}")
             oinf = OnnxInference(rew)
             if weight_name is None:
                 got = oinf.run({'X1': x1, 'X2': x2}, **run_params)

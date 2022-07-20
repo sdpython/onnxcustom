@@ -51,7 +51,7 @@ print(nn.loss_curve_)
 #################################
 # Score:
 
-print("mean_squared_error=%r" % mean_squared_error(y_test, nn.predict(X_test)))
+print(f"mean_squared_error={mean_squared_error(y_test, nn.predict(X_test))!r}")
 
 
 #######################################
@@ -73,7 +73,7 @@ print(weights)
 #
 device = "cuda" if get_device().upper() == 'GPU' else 'cpu'
 
-print("device=%r get_device()=%r" % (device, get_device()))
+print(f"device={device!r} get_device()={get_device()!r}")
 
 #######################################
 # The training session. The first instructions fails

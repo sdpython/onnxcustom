@@ -132,7 +132,7 @@ class OrtGradientForwardBackwardOptimizer(BaseEstimator):
                 self.set_state(v, check_trained=False, kind='grad')
             else:
                 raise ValueError(  # pragma: no cover
-                    "Unexpected key state %r." % k)
+                    f"Unexpected key state {k!r}.")
         self.build_onnx_function()
         return self
 
@@ -142,7 +142,7 @@ class OrtGradientForwardBackwardOptimizer(BaseEstimator):
         if kind == 'grad':
             return 'train_grad_state_'
         raise ValueError(  # pragma: no cover
-            "Unexpected kind=%r." % kind)
+            f"Unexpected kind={kind!r}.")
 
     def get_full_state(self, kind='weight'):
         """
@@ -165,7 +165,7 @@ class OrtGradientForwardBackwardOptimizer(BaseEstimator):
             raise AttributeError("Method fit must be called before.")
         if getattr(self, att, None) is None:
             raise RuntimeError(  # pragma: no cover
-                "No attribute %r available (None)." % att)
+                f"No attribute {att!r} available (None).")
         if self.weights_to_train is None:
             raise RuntimeError(  # pragma: no cover
                 "Unexpected self.weights_to_train (None).")
@@ -221,8 +221,7 @@ class OrtGradientForwardBackwardOptimizer(BaseEstimator):
                 state_numpy_.append(None)
             else:
                 raise TypeError(  # pragma: no cover
-                    "Unexpected type %r for state %r." % (
-                        type(v), i))
+                    f"Unexpected type {type(v)!r} for state {i!r}.")
         att = self._get_att_state(kind)
         setattr(self, att, state_)
         setattr(self, att + "numpy_", state_numpy_)
@@ -320,8 +319,7 @@ class OrtGradientForwardBackwardOptimizer(BaseEstimator):
             state = self.get_full_state()
             if len(state) != len(self.input_names_):
                 raise RuntimeError(  # pragma: no cover
-                    "Length mismatch %r != %r." % (
-                        len(state), len(self.input_names_)))
+                    f"Length mismatch {len(state)!r} != {len(self.input_names_)!r}.")
             new_state = []
             for iv, v in enumerate(state):
                 if v is None:

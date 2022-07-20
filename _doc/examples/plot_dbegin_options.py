@@ -273,7 +273,7 @@ for k, v in sorted(_converter_pool.items()):
     if not isinstance(opts, dict):
         continue
     name = k.replace('Sklearn', '')
-    print('%s%s %r' % (name, " " * (30 - len(name)), opts))
+    print(f"{name}{' ' * (30 - len(name))} {opts!r}")
     for o in opts:
         all_opts.add(o)
 

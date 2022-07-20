@@ -141,8 +141,7 @@ class PreprocessDataframeTransformer(TransformerMixin, BaseEstimator):
                 self.args_.append((i, col, dt, oo))
             else:
                 raise RuntimeError(
-                    "Unable to transform column '{}' type: '{}'.".format(
-                        col, dt))
+                    f"Unable to transform column '{col}' type: '{dt}'.")
         return self
 
     def transform(self, X):
@@ -152,12 +151,10 @@ class PreprocessDataframeTransformer(TransformerMixin, BaseEstimator):
         for i, col, dt, arg in self.args_:
             if X.columns[i] != col:
                 raise RuntimeError(
-                    "Unexpected column name '{}' at position {}.".format(
-                        col, i))
+                    f"Unexpected column name '{col}' at position {i}.")
             if X.dtypes[i] != dt:
                 raise RuntimeError(
-                    "Unexpected column type '{}' at position {}.".format(
-                        col, i))
+                    f"Unexpected column type '{col}' at position {i}.")
             values = X[col].values
             if dt in (numpy.float32, numpy.float64):
                 out = arg.transform(values)
@@ -199,8 +196,7 @@ def preprocess_dataframe_transformer_parser(
         scope, model, inputs, custom_parsers=None):
     if len(inputs) != len(model.args_):
         raise RuntimeError(
-            "Converter expects {} inputs but got {}.".format(
-                len(model.args_), len(inputs)))
+            f"Converter expects {len(model.args_)} inputs but got {len(inputs)}.")
     transformed_result_names = []
     for i, col, dt, arg in model.args_:
         if dt in (numpy.float32, numpy.float64):
@@ -208,7 +204,7 @@ def preprocess_dataframe_transformer_parser(
             op.inputs = [inputs[i]]
             op.raw_operator = arg
             op_var = scope.declare_local_variable(
-                'output{}'.format(i), Int64TensorType())
+                f'output{i}', Int64TensorType())
             op.outputs.append(op_var)
             transformed_result_names.append(op.outputs[0])
         elif dt == 'category':
