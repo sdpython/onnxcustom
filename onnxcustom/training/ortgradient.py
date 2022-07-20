@@ -412,12 +412,23 @@ class OrtGradientForwardBackward:
                 OrtDevice.default_memory(), self.device_index)
             for i in self.output_names]
 
-        training_agent = TrainingAgent(
-            sess._sess,
-            grad_input_names,
-            fw_outputs_device_info,
-            bw_fetches_names,
-            bw_outputs_device_info)
+        try:
+            # onnxruntime>=1.12
+            training_agent = TrainingAgent(
+                sess._sess,
+                grad_input_names,
+                fw_outputs_device_info,
+                bw_fetches_names,
+                bw_outputs_device_info,
+                0)
+        except TypeError:
+            # onnxruntime<=1.11
+            training_agent = TrainingAgent(
+                sess._sess,
+                grad_input_names,
+                fw_outputs_device_info,
+                bw_fetches_names,
+                bw_outputs_device_info)
 
         if logger is not None:
             logger.info(
