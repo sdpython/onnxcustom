@@ -143,7 +143,7 @@ def model_to_onnx(pipe, options):
     return model_onnx
 
 
-def print_status(pipe, model_onnx, pred_onx, diff, verbose):
+def print_status(obs, inputs, pipe, model_onnx, pred_onx, diff, verbose):
     if verbose:
         def td(a):
             if hasattr(a, 'todense'):
@@ -160,6 +160,7 @@ def print_status(pipe, model_onnx, pred_onx, diff, verbose):
         diff2 = numpy.abs(
             pred_onx2['probabilities'].ravel() -
             pipe.predict_proba(df).ravel()).sum()
+        obs['discrepency2'] = diff2
 
     if diff > 0.1:
         for i, (l1, l2) in enumerate(
@@ -217,13 +218,10 @@ def make_pipelines(df_train, y_train, models=None,
             pred_onx['probabilities'].ravel() -
             pipe.predict_proba(df).ravel()).sum()
 
-        print_status(pipe, model_onnx, pred_onx, diff, verbose)
-
         obs = dict(model=model.__name__,
                    discrepencies=diff,
                    model_onnx=model_onnx, pipe=pipe)
-        if verbose:
-            obs['discrepency2'] = diff2
+        print_status(obs, inputs, pipe, model_onnx, pred_onx, diff, verbose)
         pipes.append(obs)
 
     return pipes
