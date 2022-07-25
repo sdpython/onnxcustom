@@ -73,7 +73,7 @@ strings = numpy.array([
     """=")_~-('&]@^\\`|[{#")""",
     "c79857654",
     "https://complex-url.com/;76543u3456?g=hhh&amp;h=23",
-    "01-03-05T11:12:13",
+    "This is a kind of timestamp 01-03-05T11:12:13",
     "https://complex-url.com/;dd76543u3456?g=ddhhh&amp;h=23",
 ]).reshape((-1, 1))
 
@@ -85,7 +85,7 @@ pprint.pprint(strings)
 
 tfidf = Pipeline([
     ('pre', ColumnTransformer([
-        ('tfidf', TfidfVectorizer(), 0)
+        ('tfidf', TfidfVectorizer(ngram_range=(1, 2)), 0)
     ]))
 ])
 
@@ -96,7 +96,7 @@ tfidf.fit(strings[:-2])
 tr = tfidf.transform(strings)
 tfidf_step = tfidf.steps[0][1].transformers_[0][1]
 # print(f"output columns: {tfidf_step.get_feature_names_out()}")
-print("rendered outputs")
+print(f"rendered outputs, shape={tr.shape!r}")
 print(print_sparse_matrix(tr))
 
 #############################################
@@ -114,5 +114,5 @@ print(onnx_simple_text_plot(onx))
 for rt in ['python', 'onnxruntime1']:
     oinf = OnnxInference(onx, runtime=rt)
     got = oinf.run({'X': strings})['variable']
-    print(f"runtime={rt!r}, differences={diff(tr, got):g}")
+    print(f"runtime={rt!r}, shape={got.shape!r}, differences={diff(tr, got):g}")
     print(print_sparse_matrix(got))
