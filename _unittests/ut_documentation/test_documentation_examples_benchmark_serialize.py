@@ -1,5 +1,5 @@
 """
-@brief      test log(time=96s)
+@brief      test log(time=73s)
 """
 import unittest
 import os
@@ -30,7 +30,7 @@ def import_source(module_file_path, module_name):
     return module_spec.loader.exec_module(module)
 
 
-class TestDocumentationExampleBenchmark(ExtTestCase):
+class TestDocumentationExampleBenchmarkSerialize(ExtTestCase):
 
     @unittest.skipIf(
         compare_module_version(mlp_version, "0.7.1642") <= 0,
@@ -55,20 +55,16 @@ class TestDocumentationExampleBenchmark(ExtTestCase):
         for name in sorted(found):
             if 'benchmark' not in name:
                 continue
-            if 'benchmark_op' in name:
-                continue
-            if 'orttraining' in name:
-                continue
-            if 'serialize' in name:
+            if 'serialize' not in name:
                 continue
             if not name.startswith("plot_") or not name.endswith(".py"):
                 continue
 
             with self.subTest(name=name):
                 if __name__ == "__main__" or "-v" in sys.argv:
-                    print("%s: run/%d %r" % (
+                    print("%s: run %r" % (
                         datetime.now().strftime("%d-%m-%y %H:%M:%S"),
-                        len(found), name))
+                        name))
                 sys.path.insert(0, fold)
                 try:
                     mod = import_source(fold, os.path.splitext(name)[0])

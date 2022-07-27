@@ -1,5 +1,5 @@
 """
-@brief      test log(time=96s)
+@brief      test log(time=83s)
 """
 import unittest
 import os
@@ -30,7 +30,7 @@ def import_source(module_file_path, module_name):
     return module_spec.loader.exec_module(module)
 
 
-class TestDocumentationExampleBenchmark(ExtTestCase):
+class TestDocumentationExampleBenchmarkOp(ExtTestCase):
 
     @unittest.skipIf(
         compare_module_version(mlp_version, "0.7.1642") <= 0,
@@ -55,11 +55,7 @@ class TestDocumentationExampleBenchmark(ExtTestCase):
         for name in sorted(found):
             if 'benchmark' not in name:
                 continue
-            if 'benchmark_op' in name:
-                continue
-            if 'orttraining' in name:
-                continue
-            if 'serialize' in name:
+            if 'benchmark_op' not in name:
                 continue
             if not name.startswith("plot_") or not name.endswith(".py"):
                 continue
