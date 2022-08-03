@@ -244,7 +244,7 @@ def _onnx_derivative_fw(onx, weights, inputs, options):
         if yn.input[0] not in map_out:
             raise RuntimeError(  # pragma: no cover
                 f"Unable to find output {yn.input[0]!r} in {list(map_out)!r}.")
-        if not(options & DerivativeOptions.FillGrad):  # pylint: disable=C0325
+        if not (options & DerivativeOptions.FillGrad):  # pylint: disable=C0325
             out = map_out[yn.input[0]]
             new_input = onnx.ValueInfoProto()
             new_input.name = yn.output[0]
@@ -252,7 +252,7 @@ def _onnx_derivative_fw(onx, weights, inputs, options):
             new_input.type.CopyFrom(out.type)
             inputs.append(new_input)
         else:
-            if not(options & DerivativeOptions.KeepOutputs):  # pylint: disable=C0325
+            if not (options & DerivativeOptions.KeepOutputs):  # pylint: disable=C0325
                 raise ValueError(  # pragma: no cover
                     "FillGrad should be set with KeepOutputs.")
             name = f"{yn.input[0]}_shape"
