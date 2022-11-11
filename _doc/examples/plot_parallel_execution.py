@@ -103,6 +103,7 @@ sesss = [InferenceSession(model_name, providers=["CPUExecutionProvider"])
 ################################
 # First: sequence
 
+
 def sequence(N=1):
     res = []
     for sess, img in zip(sesss, imgs):
@@ -110,10 +111,12 @@ def sequence(N=1):
             res.append(sess.run(None, {input_name: img})[0])
     return res
 
+
 print(measure_time(sequence, div_by_number=True, repeat=2, number=2))
 
 #################################
 # Second: multitheading
+
 
 class MyThread(threading.Thread):
 
@@ -140,6 +143,7 @@ def parallel(N=1):
         res.extend(t.q)
     return res
 
+
 print(measure_time(parallel, div_by_number=True, repeat=2, number=2))
 
 ###################################
@@ -149,7 +153,7 @@ r_seq = sequence(4)
 if len(r_seq) != n_threads * 4:
     raise ValueError(
         f"Unexpected number of results {len(r_seq)} != {n_threads * 4}.")
-r_par = parallel(4) 
+r_par = parallel(4)
 if len(r_par) != n_threads * 4:
     raise ValueError(
         f"Unexpected number of results {len(r_par)} != {n_threads * 4}.")
@@ -196,4 +200,3 @@ ax.set_ylabel("s")
 
 # import matplotlib.pyplot as plt
 # plt.show()
-
