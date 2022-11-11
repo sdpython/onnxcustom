@@ -760,7 +760,14 @@ def _onnx_grad_sigmoid_neg_log_loss_error(target_opset=None,
 
         print("DOT-SECTION", oinf.to_dot())
     """
-    from onnx.helper import np_dtype_to_tensor_dtype
+    try:
+        from onnx.helper import np_dtype_to_tensor_dtype
+    except ImportError:
+        from onnx.mapping import NP_TYPE_TO_TENSOR_TYPE
+        
+        def np_dtype_to_tensor_dtype(dtype):
+            return NP_TYPE_TO_TENSOR_TYPE[dtype]
+        
     from skl2onnx.algebra.onnx_ops import (
         OnnxSub, OnnxMul, OnnxSigmoid, OnnxLog, OnnxNeg,
         OnnxReduceSum, OnnxReshape, OnnxAdd, OnnxCast, OnnxClip)
