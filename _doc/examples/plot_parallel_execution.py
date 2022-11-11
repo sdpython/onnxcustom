@@ -31,6 +31,8 @@ import numpy
 import pandas
 from cpyquickhelper.numbers import measure_time
 from onnxruntime import InferenceSession
+from onnxruntime.capi._pybind_state import (  # pylint: disable=E0611
+    SessionIOBinding, OrtDevice as C_OrtDevice)
 
 
 def download_file(url, name, min_size):
@@ -66,21 +68,24 @@ download_file(url_name, model_name, 100000)
 #
 # Let's create a random image.
 
-sess = InferenceSession(model_name, providers=["CPUExecutionProvider"])
-for i in sess.get_inputs():
+sess1 = InferenceSession(model_name, providers=["CPUExecutionProvider"])
+for i in sess1.get_inputs():
     print(f"input {i}, name={i.name!r}, type={i.type}, shape={i.shape}")
     input_name = i.name
     input_shape = list(i.shape)
-    if input_shape[0] in [None, "batch_size"]:
+    if input_shape[0] in [None, "batch_size", "N"]:
         input_shape[0] = 1
+for i in sess1.get_outputs():
+    print(f"output {i}, name={i.name!r}, type={i.type}, shape={i.shape}")
+    output_name = i.name
 
 
 rnd_img = numpy.random.rand(*input_shape).astype(numpy.float32)
 
-res = sess.run(None, {input_name: rnd_img})
+res = sess1.run(None, {input_name: rnd_img})
 print(f"output: type={res[0].dtype}, shape={res[0].shape}")
 
-print(measure_time(lambda: sess.run(None, {input_name: rnd_img}),
+print(measure_time(lambda: sess1.run(None, {input_name: rnd_img}),
                    div_by_number=True, repeat=10, number=10))
 
 #############################################
@@ -128,7 +133,7 @@ class MyThread(threading.Thread):
 
     def run(self):
         for img in self.imgs:
-            r = sess.run(None, {input_name: img})[0]
+            r = self.sess.run(None, {input_name: img})[0]
             self.q.append(r)
 
 
@@ -165,15 +170,19 @@ print(measure_time(lambda: parallel(4), div_by_number=True, repeat=2, number=2))
 # Let's increase again.
 
 data = []
-for N in tqdm.tqdm(range(1, 21)):
+rep = 2
+maxN = 18
+for N in tqdm.tqdm(range(1, maxN, 2)):
     begin = time.perf_counter()
-    res1 = sequence(N)
-    end = time.perf_counter() - begin
+    for i in range(rep):
+        res1 = sequence(N)
+    end = (time.perf_counter() - begin) / rep
     obs = dict(N=N, n_imgs_seq=len(res1), time_seq=end)
 
     begin = time.perf_counter()
-    res2 = parallel(N)
-    end = time.perf_counter() - begin
+    for i in range(rep):
+        res2 = parallel(N)
+    end = (time.perf_counter() - begin) / rep
     obs.update(dict(n_imgs_par=len(res2), time_par=end))
 
     data.append(obs)
@@ -194,9 +203,84 @@ ax.set_xlabel("batch size")
 ax.set_ylabel("s")
 
 #######################################
-# It improves but not as much as expected. The number of interactions
+# It does not really improve. The number of interactions
 # with python is still too high. The bigger the model is, the better it
 # should be.
 
-# import matplotlib.pyplot as plt
-# plt.show()
+###################################################
+# With another API
+# ++++++++++++++++
+
+
+class MyThreadBind(threading.Thread):
+
+    def __init__(self, sess, imgs):
+        threading.Thread.__init__(self)
+        self.sess = sess
+        self.imgs = imgs
+        self.q = []
+        self.bind = SessionIOBinding(self.sess._sess)
+        self.ort_device = C_OrtDevice(
+            C_OrtDevice.cpu(), C_OrtDevice.default_memory(), 0)
+
+    def run(self):
+        bind = self.bind
+        ort_device = self.ort_device
+        bind.bind_output(output_name, ort_device)
+        sess = self.sess._sess
+        q = self.q
+        for img in self.imgs:
+            bind.bind_input(input_name, ort_device,
+                            img.dtype, img.shape,
+                            img.__array_interface__['data'][0])
+            sess.run_with_iobinding(bind, None)
+            ortvalues = bind.get_outputs()
+            q.append(ortvalues)
+
+
+def parallel_bind(N=1):
+    threads = [MyThreadBind(sess, [img] * N)
+               for sess, img in zip(sesss, imgs)]
+    for t in threads:
+        t.start()
+    res = []
+    for t in threads:
+        t.join()
+        res.extend(t.q)
+    return res
+
+
+data = []
+for N in tqdm.tqdm(range(1, maxN, 2)):
+    begin = time.perf_counter()
+    for i in range(rep):
+        res1 = sequence(N)
+    end = (time.perf_counter() - begin) / rep
+    obs = dict(N=N, n_imgs_seq=len(res1), time_seq=end)
+
+    begin = time.perf_counter()
+    for i in range(rep):
+        res2 = parallel_bind(N)
+    end = (time.perf_counter() - begin) / rep
+    obs.update(dict(n_imgs_par=len(res2), time_par=end))
+
+    data.append(obs)
+
+df = pandas.DataFrame(data)
+df
+
+############################
+# Plots
+# +++++
+
+
+df["time_seq_img"] = df["time_seq"] / df["n_imgs_seq"]
+df["time_par_img"] = df["time_par"] / df["n_imgs_par"]
+
+ax = df[["n_imgs_seq", "time_seq_img", "time_par_img"]].set_index("n_imgs_seq").plot(
+    title="Time per image / batch size\nrun_with_iobinding")
+ax.set_xlabel("batch size")
+ax.set_ylabel("s")
+
+import matplotlib.pyplot as plt
+plt.show()
