@@ -33,8 +33,6 @@ from sklearn.datasets import load_iris
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
 from sklearn.feature_extraction.text import CountVectorizer, TfidfTransformer
-from sklearn.experimental import (  # noqa
-    enable_hist_gradient_boosting)  # noqa
 from sklearn.ensemble import (
     RandomForestClassifier, HistGradientBoostingClassifier)
 from xgboost import XGBClassifier
@@ -92,6 +90,96 @@ y = y[ind].copy()
 # sparse matrices to be converted into dense matrices.
 
 
+def make_pipeline(model, insert_replace, sparse_threshold):
+    if model == HistGradientBoostingClassifier:
+        kwargs = dict(max_iter=5)
+    elif model == XGBClassifier:
+        kwargs = dict(n_estimators=5, use_label_encoder=False)
+    else:
+        kwargs = dict(n_estimators=5)
+
+    if insert_replace:
+        pipe = Pipeline([
+            ('union', ColumnTransformer([
+                ('scale1', StandardScaler(), [0, 1]),
+                ('subject',
+                 Pipeline([
+                     ('count', CountVectorizer()),
+                     ('tfidf', TfidfTransformer()),
+                     ('repl', ReplaceTransformer()),  # added transformer
+                 ]), "text"),
+            ], sparse_threshold=sparse_threshold)),
+            ('cast', CastTransformer()),
+            ('cls', model(max_depth=3, **kwargs)),
+        ])
+    else:
+        pipe = Pipeline([
+            ('union', ColumnTransformer([
+                ('scale1', StandardScaler(), [0, 1]),
+                ('subject',
+                 Pipeline([
+                     ('count', CountVectorizer()),
+                     ('tfidf', TfidfTransformer())
+                 ]), "text"),
+            ], sparse_threshold=sparse_threshold)),
+            ('cast', CastTransformer()),
+            ('cls', model(max_depth=3, **kwargs)),
+        ])
+    return pipe
+
+
+def model_to_onnx(pipe, options):
+    with warnings.catch_warnings(record=False):
+        warnings.simplefilter("ignore", (FutureWarning, UserWarning))
+        model_onnx = to_onnx(
+            pipe,
+            initial_types=[('input', FloatTensorType([None, 2])),
+                           ('text', StringTensorType([None, 1]))],
+            target_opset={'': 14, 'ai.onnx.ml': 2},
+            options=options)
+
+    with open('model.onnx', 'wb') as f:
+        f.write(model_onnx.SerializeToString())
+    return model_onnx
+
+
+def print_status(obs, inputs, pipe, model_onnx, pred_onx, diff, verbose):
+    if verbose:
+        def td(a):
+            if hasattr(a, 'todense'):
+                b = a.todense()
+                ind = set(a.indices)
+                for i in range(b.shape[1]):
+                    if i not in ind:
+                        b[0, i] = numpy.nan
+                return b
+            return a
+
+        oinf = OnnxInference(model_onnx)
+        pred_onx2 = oinf.run(inputs)
+        diff2 = numpy.abs(
+            pred_onx2['probabilities'].ravel() -
+            pipe.predict_proba(df).ravel()).sum()
+        obs['discrepency2'] = diff2
+
+    if diff > 0.1:
+        for i, (l1, l2) in enumerate(
+                zip(pipe.predict_proba(df),
+                    pred_onx['probabilities'])):
+            d = numpy.abs(l1 - l2).sum()
+            if verbose and d > 0.1:
+                print("\nDISCREPENCY DETAILS")
+                print(d, i, l1, l2)
+                pre = pipe.steps[0][-1].transform(df)
+                print("idf", pre[i].dtype, td(pre[i]))
+                pre2 = pipe.steps[1][-1].transform(pre)
+                print("cas", pre2[i].dtype, td(pre2[i]))
+                inter = oinf.run(inputs, intermediate=True)
+                onx = inter['tfidftr_norm']
+                print("onx", onx.dtype, onx[i])
+                onx = inter['variable3']
+
+
 def make_pipelines(df_train, y_train, models=None,
                    sparse_threshold=1., replace_nan=False,
                    insert_replace=False, verbose=False):
@@ -104,42 +192,7 @@ def make_pipelines(df_train, y_train, models=None,
 
     pipes = []
     for model in tqdm(models):
-
-        if model == HistGradientBoostingClassifier:
-            kwargs = dict(max_iter=5)
-        elif model == XGBClassifier:
-            kwargs = dict(n_estimators=5, use_label_encoder=False)
-        else:
-            kwargs = dict(n_estimators=5)
-
-        if insert_replace:
-            pipe = Pipeline([
-                ('union', ColumnTransformer([
-                    ('scale1', StandardScaler(), [0, 1]),
-                    ('subject',
-                     Pipeline([
-                         ('count', CountVectorizer()),
-                         ('tfidf', TfidfTransformer()),
-                         ('repl', ReplaceTransformer()),
-                     ]), "text"),
-                ], sparse_threshold=sparse_threshold)),
-                ('cast', CastTransformer()),
-                ('cls', model(max_depth=3, **kwargs)),
-            ])
-        else:
-            pipe = Pipeline([
-                ('union', ColumnTransformer([
-                    ('scale1', StandardScaler(), [0, 1]),
-                    ('subject',
-                     Pipeline([
-                         ('count', CountVectorizer()),
-                         ('tfidf', TfidfTransformer())
-                     ]), "text"),
-                ], sparse_threshold=sparse_threshold)),
-                ('cast', CastTransformer()),
-                ('cls', model(max_depth=3, **kwargs)),
-            ])
-
+        pipe = make_pipeline(model, insert_replace, sparse_threshold)
         try:
             pipe.fit(df_train, y_train)
         except TypeError as e:
@@ -150,68 +203,25 @@ def make_pipelines(df_train, y_train, models=None,
         options = {model: {'zipmap': False}}
         if replace_nan:
             options[TfidfTransformer] = {'nan': True}
+        model_onnx = model_to_onnx(pipe, options)
 
         # convert
-        with warnings.catch_warnings(record=False):
-            warnings.simplefilter("ignore", (FutureWarning, UserWarning))
-            model_onnx = to_onnx(
-                pipe,
-                initial_types=[('input', FloatTensorType([None, 2])),
-                               ('text', StringTensorType([None, 1]))],
-                target_opset={'': 14, 'ai.onnx.ml': 2},
-                options=options)
-
-        with open('model.onnx', 'wb') as f:
-            f.write(model_onnx.SerializeToString())
 
         oinf = OnnxInference(model_onnx)
         inputs = {"input": df[[0, 1]].values.astype(numpy.float32),
                   "text": df[["text"]].values}
         pred_onx = oinf.run(inputs)
 
+        # check
+
         diff = numpy.abs(
             pred_onx['probabilities'].ravel() -
             pipe.predict_proba(df).ravel()).sum()
 
-        if verbose:
-            def td(a):
-                if hasattr(a, 'todense'):
-                    b = a.todense()
-                    ind = set(a.indices)
-                    for i in range(b.shape[1]):
-                        if i not in ind:
-                            b[0, i] = numpy.nan
-                    return b
-                return a
-
-            oinf = OnnxInference(model_onnx)
-            pred_onx2 = oinf.run(inputs)
-            diff2 = numpy.abs(
-                pred_onx2['probabilities'].ravel() -
-                pipe.predict_proba(df).ravel()).sum()
-
-        if diff > 0.1:
-            for i, (l1, l2) in enumerate(
-                    zip(pipe.predict_proba(df),
-                        pred_onx['probabilities'])):
-                d = numpy.abs(l1 - l2).sum()
-                if verbose and d > 0.1:
-                    print("\nDISCREPENCY DETAILS")
-                    print(d, i, l1, l2)
-                    pre = pipe.steps[0][-1].transform(df)
-                    print("idf", pre[i].dtype, td(pre[i]))
-                    pre2 = pipe.steps[1][-1].transform(pre)
-                    print("cas", pre2[i].dtype, td(pre2[i]))
-                    inter = oinf.run(inputs, intermediate=True)
-                    onx = inter['tfidftr_norm']
-                    print("onx", onx.dtype, onx[i])
-                    onx = inter['variable3']
-
         obs = dict(model=model.__name__,
                    discrepencies=diff,
                    model_onnx=model_onnx, pipe=pipe)
-        if verbose:
-            obs['discrepency2'] = diff2
+        print_status(obs, inputs, pipe, model_onnx, pred_onx, diff, verbose)
         pipes.append(obs)
 
     return pipes
