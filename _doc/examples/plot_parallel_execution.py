@@ -21,9 +21,15 @@ A model
 
 Let's retrieve a not so big model.
 """
+import multiprocessing
 import os
 import urllib.request
+import threading
+import time
+import tqdm
 import numpy
+import pandas
+from cpyquickhelper.numbers import measure_time
 from onnxruntime import InferenceSession
 
 
@@ -42,9 +48,15 @@ def download_file(url, name, min_size):
         print(f"'{name}' already downloaded")
 
 
-model_name = "squeezenet1.1-7.onnx"
-url_name = ("https://github.com/onnx/models/raw/main/vision/"
-            "classification/squeezenet/model")
+small = True
+if small:
+    model_name = "mobilenetv2-10.onnx"
+    url_name = ("https://github.com/onnx/models/raw/main/vision/"
+                "classification/mobilenet/model")
+else:
+    model_name = "resnet18-v1-7.onnx"
+    url_name = ("https://github.com/onnx/models/raw/main/vision/"
+                "classification/resnet/model")
 url_name += "/" + model_name
 download_file(url_name, model_name, 100000)
 
@@ -54,9 +66,133 @@ download_file(url_name, model_name, 100000)
 #
 # Let's create a random image.
 
-sess = InferenceSession(model_name)
+sess = InferenceSession(model_name, providers=["CPUExecutionProvider"])
 for i in sess.get_inputs():
     print(f"input {i}, name={i.name!r}, type={i.type}, shape={i.shape}")
+    input_name = i.name
+    input_shape = list(i.shape)
+    if input_shape[0] in [None, "batch_size"]:
+        input_shape[0] = 1
 
 
-rnd_img = numpy.random.rand((1, 3, 224, 224)).astype(numpy.float32)
+rnd_img = numpy.random.rand(*input_shape).astype(numpy.float32)
+
+res = sess.run(None, {input_name: rnd_img})
+print(f"output: type={res[0].dtype}, shape={res[0].shape}")
+
+print(measure_time(lambda: sess.run(None, {input_name: rnd_img}),
+                   div_by_number=True, repeat=10, number=10))
+
+#############################################
+# Parallelization
+# +++++++++++++++
+#
+# We define the number of threads as the number of cores divided by 2.
+# This is a dummy value. It should let a core to handle the main program.
+
+n_threads = multiprocessing.cpu_count() - 1
+print(f"n_threads={n_threads}")
+
+
+imgs = [numpy.random.rand(*input_shape).astype(numpy.float32)
+        for i in range(n_threads)]
+
+sesss = [InferenceSession(model_name, providers=["CPUExecutionProvider"])
+         for i in range(n_threads)]
+
+################################
+# First: sequence
+
+def sequence(N=1):
+    res = []
+    for sess, img in zip(sesss, imgs):
+        for i in range(N):
+            res.append(sess.run(None, {input_name: img})[0])
+    return res
+
+print(measure_time(sequence, div_by_number=True, repeat=2, number=2))
+
+#################################
+# Second: multitheading
+
+class MyThread(threading.Thread):
+
+    def __init__(self, sess, imgs):
+        threading.Thread.__init__(self)
+        self.sess = sess
+        self.imgs = imgs
+        self.q = []
+
+    def run(self):
+        for img in self.imgs:
+            r = sess.run(None, {input_name: img})[0]
+            self.q.append(r)
+
+
+def parallel(N=1):
+    threads = [MyThread(sess, [img] * N)
+               for sess, img in zip(sesss, imgs)]
+    for t in threads:
+        t.start()
+    res = []
+    for t in threads:
+        t.join()
+        res.extend(t.q)
+    return res
+
+print(measure_time(parallel, div_by_number=True, repeat=2, number=2))
+
+###################################
+# It is worse for one image. Let's increase the number of images to parallelize.
+
+r_seq = sequence(4)
+if len(r_seq) != n_threads * 4:
+    raise ValueError(
+        f"Unexpected number of results {len(r_seq)} != {n_threads * 4}.")
+r_par = parallel(4) 
+if len(r_par) != n_threads * 4:
+    raise ValueError(
+        f"Unexpected number of results {len(r_par)} != {n_threads * 4}.")
+
+print(measure_time(lambda: sequence(4), div_by_number=True, repeat=2, number=2))
+print(measure_time(lambda: parallel(4), div_by_number=True, repeat=2, number=2))
+
+####################################
+# Let's increase again.
+
+data = []
+for N in tqdm.tqdm(range(1, 21)):
+    begin = time.perf_counter()
+    res1 = sequence(N)
+    end = time.perf_counter() - begin
+    obs = dict(N=N, n_imgs_seq=len(res1), time_seq=end)
+
+    begin = time.perf_counter()
+    res2 = parallel(N)
+    end = time.perf_counter() - begin
+    obs.update(dict(n_imgs_par=len(res2), time_par=end))
+
+    data.append(obs)
+
+df = pandas.DataFrame(data)
+df
+
+##########################################
+# Plotting
+# ++++++++
+
+df["time_seq_img"] = df["time_seq"] / df["n_imgs_seq"]
+df["time_par_img"] = df["time_par"] / df["n_imgs_par"]
+
+ax = df[["n_imgs_seq", "time_seq_img", "time_par_img"]].set_index("n_imgs_seq").plot(
+    title="Time per image / batch size")
+ax.set_xlabel("batch size")
+ax.set_ylabel("s")
+
+#######################################
+# It improves but not as much as expected. The number of interactions
+# with python is still too high.
+
+# import matplotlib.pyplot as plt
+# plt.show()
+
