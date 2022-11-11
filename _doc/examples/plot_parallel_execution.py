@@ -191,7 +191,8 @@ ax.set_ylabel("s")
 
 #######################################
 # It improves but not as much as expected. The number of interactions
-# with python is still too high.
+# with python is still too high. The bigger the model is, the better it
+# should be.
 
 # import matplotlib.pyplot as plt
 # plt.show()
