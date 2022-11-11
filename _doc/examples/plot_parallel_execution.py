@@ -232,7 +232,7 @@ class MyThreadBind(threading.Thread):
         for img in self.imgs:
             bind.bind_input(input_name, ort_device,
                             img.dtype, img.shape,
-                            img.__array_interface__['data'][0])            
+                            img.__array_interface__['data'][0])
             sess.run_with_iobinding(bind, None)
             ortvalues = bind.get_outputs()
             q.append(ortvalues)
