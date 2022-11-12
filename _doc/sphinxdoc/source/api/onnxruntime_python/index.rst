@@ -4,7 +4,7 @@ Summary of onnxruntime and onnxruntime-training API
 
 Module :epkg:`onnxcustom` leverages :epkg:`onnxruntime-training` to train models.
 Next sections exposes frequent functions uses to run inference
-and training with :epkg:`onnxruntime` and :epkg:`onnxruntume-training`.
+and training with :epkg:`onnxruntime` and :epkg:`onnxruntime-training`.
 
 Most of the code in :epkg:`onnxruntime` is written in C++ and exposed
 in Python using :epkg:`pybind11`. For inference, the main class

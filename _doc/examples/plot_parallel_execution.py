@@ -1,6 +1,7 @@
 """
 .. _l-plot-parallel-execution:
 
+===============================
 Multithreading with onnxruntime
 ===============================
 
@@ -11,13 +12,16 @@ Python implements multithreading but it is not in practice due to the GIL
 python object, this option becomes more interesting than creating several processes
 trying to exchange data through sockets. :epkg:`onnxruntime` falls into that category.
 For a big model such as a deeplearning model, this might be interesting.
-This example verifies this scenario.
+However, :epkg:`onnxruntime` already parallelize the computation of
+every operator (Gemm, MatMul) using all the CPU it can get so this approach
+should show significant result when used on different processors (CPU, GPU)
+in parallel.
 
 .. contents::
     :local:
 
 A model
-+++++++
+=======
 
 Let's retrieve a not so big model.
 """
@@ -30,7 +34,8 @@ import tqdm
 import numpy
 import pandas
 from cpyquickhelper.numbers import measure_time
-from onnxruntime import InferenceSession
+import torch.cuda
+from onnxruntime import InferenceSession, get_all_providers
 from onnxruntime.capi._pybind_state import (  # pylint: disable=E0611
     SessionIOBinding, OrtDevice as C_OrtDevice)
 
@@ -63,8 +68,11 @@ url_name += "/" + model_name
 download_file(url_name, model_name, 100000)
 
 #############################################
-# Measuring inference time
-# ++++++++++++++++++++++++
+# Measuring inference time when parallelizing on CPU
+# ==================================================
+#
+# Sequence
+# ++++++++
 #
 # Let's create a random image.
 
@@ -106,10 +114,10 @@ sesss = [InferenceSession(model_name, providers=["CPUExecutionProvider"])
          for i in range(n_threads)]
 
 ################################
-# First: sequence
+# Let's measure the time for a sequence of images.
 
 
-def sequence(N=1):
+def sequence(sesss, imgs, N=1):
     res = []
     for sess, img in zip(sesss, imgs):
         for i in range(N):
@@ -117,10 +125,11 @@ def sequence(N=1):
     return res
 
 
-print(measure_time(sequence, div_by_number=True, repeat=2, number=2))
+print(measure_time(lambda: sequence(sesss, imgs),
+                   div_by_number=True, repeat=2, number=2))
 
 #################################
-# Second: multitheading
+# And then with multithreading.
 
 
 class MyThread(threading.Thread):
@@ -137,7 +146,7 @@ class MyThread(threading.Thread):
             self.q.append(r)
 
 
-def parallel(N=1):
+def parallel(sesss, imgs, N=1):
     threads = [MyThread(sess, [img] * N)
                for sess, img in zip(sesss, imgs)]
     for t in threads:
@@ -149,25 +158,12 @@ def parallel(N=1):
     return res
 
 
-print(measure_time(parallel, div_by_number=True, repeat=2, number=2))
+print(measure_time(lambda: parallel(sesss, imgs),
+                   div_by_number=True, repeat=2, number=2))
 
 ###################################
-# It is worse for one image. Let's increase the number of images to parallelize.
-
-r_seq = sequence(4)
-if len(r_seq) != n_threads * 4:
-    raise ValueError(
-        f"Unexpected number of results {len(r_seq)} != {n_threads * 4}.")
-r_par = parallel(4)
-if len(r_par) != n_threads * 4:
-    raise ValueError(
-        f"Unexpected number of results {len(r_par)} != {n_threads * 4}.")
-
-print(measure_time(lambda: sequence(4), div_by_number=True, repeat=2, number=2))
-print(measure_time(lambda: parallel(4), div_by_number=True, repeat=2, number=2))
-
-####################################
-# Let's increase again.
+# It is worse for one image. It is expected as mentioned in the introduction.
+# Let's check for different number of images to parallelize.
 
 data = []
 rep = 2
@@ -175,13 +171,13 @@ maxN = 18
 for N in tqdm.tqdm(range(1, maxN, 2)):
     begin = time.perf_counter()
     for i in range(rep):
-        res1 = sequence(N)
+        res1 = sequence(sesss, imgs, N)
     end = (time.perf_counter() - begin) / rep
     obs = dict(N=N, n_imgs_seq=len(res1), time_seq=end)
 
     begin = time.perf_counter()
     for i in range(rep):
-        res2 = parallel(N)
+        res2 = parallel(sesss, imgs, N)
     end = (time.perf_counter() - begin) / rep
     obs.update(dict(n_imgs_par=len(res2), time_par=end))
 
@@ -191,37 +187,44 @@ df = pandas.DataFrame(data)
 df
 
 ##########################################
-# Plotting
-# ++++++++
+# Plots
+# +++++
 
-df["time_seq_img"] = df["time_seq"] / df["n_imgs_seq"]
-df["time_par_img"] = df["time_par"] / df["n_imgs_par"]
 
-ax = df[["n_imgs_seq", "time_seq_img", "time_par_img"]].set_index("n_imgs_seq").plot(
-    title="Time per image / batch size")
-ax.set_xlabel("batch size")
-ax.set_ylabel("s")
+def make_plot(df, title):
+    df["time_seq_img"] = df["time_seq"] / df["n_imgs_seq"]
+    df["time_par_img"] = df["time_par"] / df["n_imgs_par"]
+
+    ax = df[["n_imgs_seq", "time_seq_img", "time_par_img"]].set_index("n_imgs_seq").plot(
+        title=title)
+    ax.set_xlabel("batch size")
+    ax.set_ylabel("s")
+    return ax
+
+
+make_plot(df, "Time per image / batch size")
 
 #######################################
-# It does not really improve. The number of interactions
-# with python is still too high. The bigger the model is, the better it
-# should be.
+# As expected, it does not really improve. It is like parallezing using
+# both strategies, per kernel and per image, both trying to access all
+# the process cores.
 
 ###################################################
-# With another API
-# ++++++++++++++++
+# Same with another API based on OrtValue
+# +++++++++++++++++++++++++++++++++++++++
+#
+# See :epkg:`l-ortvalue-doc`.
 
 
 class MyThreadBind(threading.Thread):
 
-    def __init__(self, sess, imgs):
+    def __init__(self, sess, imgs, ort_device):
         threading.Thread.__init__(self)
         self.sess = sess
         self.imgs = imgs
         self.q = []
         self.bind = SessionIOBinding(self.sess._sess)
-        self.ort_device = C_OrtDevice(
-            C_OrtDevice.cpu(), C_OrtDevice.default_memory(), 0)
+        self.ort_device = ort_device
 
     def run(self):
         bind = self.bind
@@ -238,8 +241,10 @@ class MyThreadBind(threading.Thread):
             q.append(ortvalues)
 
 
-def parallel_bind(N=1):
-    threads = [MyThreadBind(sess, [img] * N)
+def parallel_bind(sesss, imgs, N=1):
+    ort_device = C_OrtDevice(
+        C_OrtDevice.cpu(), C_OrtDevice.default_memory(), 0)
+    threads = [MyThreadBind(sess, [img] * N, ort_device)
                for sess, img in zip(sesss, imgs)]
     for t in threads:
         t.start()
@@ -254,13 +259,13 @@ data = []
 for N in tqdm.tqdm(range(1, maxN, 2)):
     begin = time.perf_counter()
     for i in range(rep):
-        res1 = sequence(N)
+        res1 = sequence(sesss, imgs, N)
     end = (time.perf_counter() - begin) / rep
     obs = dict(N=N, n_imgs_seq=len(res1), time_seq=end)
 
     begin = time.perf_counter()
     for i in range(rep):
-        res2 = parallel_bind(N)
+        res2 = parallel_bind(sesss, imgs, N)
     end = (time.perf_counter() - begin) / rep
     obs.update(dict(n_imgs_par=len(res2), time_par=end))
 
@@ -270,17 +275,121 @@ df = pandas.DataFrame(data)
 df
 
 ############################
-# Plots
-# +++++
+# Plots.
+
+make_plot(df, "Time per image / batch size\nrun_with_iobinding")
+
+########################################
+# GPU
+# ===
+#
+# Let's check first it is possible.
+
+has_cuda = "CUDAExecutionProvider" in get_all_providers()
+if not has_cuda:
+    print(f"No CUDA provider was detected in {get_all_providers()}.")
+
+#########################################
+# Parallelization GPU + CPU
+# +++++++++++++++++++++++++
+
+if has_cuda:
+    n_threads = 2
+    sesss = [InferenceSession(model_name, providers=["CPUExecutionProvider"]),
+             InferenceSession(model_name, providers=["CUDAExecutionProvider",
+                                                     "CPUExecutionProvider"])]
+    imgs = [numpy.random.rand(*input_shape).astype(numpy.float32)
+            for i in range(n_threads)]
+
+    data = []
+    for N in tqdm.tqdm(range(1, maxN, 2)):
+        begin = time.perf_counter()
+        for i in range(rep):
+            res1 = sequence(sesss, imgs, N)
+        end = (time.perf_counter() - begin) / rep
+        obs = dict(N=N, n_imgs_seq=len(res1), time_seq=end)
+
+        begin = time.perf_counter()
+        for i in range(rep):
+            res2 = parallel_bind(sesss, imgs, N)
+        end = (time.perf_counter() - begin) / rep
+        obs.update(dict(n_imgs_par=len(res2), time_par=end))
+
+        data.append(obs)
+
+    df = pandas.DataFrame(data)
+    df.to_csv("ort_cpu_gpu.csv", index=False)
+else:
+    df = None
+
+df
+
+####################################
+# Plots.
+
+if has_cuda:
+    ax = make_plot(df, "Time per image / batch size\nCPU + GPU")
+else:
+    ax = None
+
+ax
+
+#########################################
+# Parallelization on multiple GPUs
+# ++++++++++++++++++++++++++++++++
+
+n_gpus = torch.cuda.device_count() if has_cuda else 0
+if n_gpus == 0:
+    print("No GPU or one GPU was detected.")
+elif n_gpus == 1:
+    print("1 GPU was detected.")
+else:
+    print(f"{n_gpus} were detected.")
 
 
-df["time_seq_img"] = df["time_seq"] / df["n_imgs_seq"]
-df["time_par_img"] = df["time_par"] / df["n_imgs_par"]
+if n_gpus > 1:
+    n_threads = 2
+    sesss = [InferenceSession(model_name, providers=["CUDAExecutionProvider",
+                                                     "CPUExecutionProvider"],
+                              provider_options={"device_id": i})
+             for i in range(n_gpus)]
+    imgs = [numpy.random.rand(*input_shape).astype(numpy.float32)
+            for i in range(n_threads)]
 
-ax = df[["n_imgs_seq", "time_seq_img", "time_par_img"]].set_index("n_imgs_seq").plot(
-    title="Time per image / batch size\nrun_with_iobinding")
-ax.set_xlabel("batch size")
-ax.set_ylabel("s")
+    data = []
+    for N in tqdm.tqdm(range(1, maxN, 2)):
+        begin = time.perf_counter()
+        for i in range(rep):
+            res1 = sequence(sesss, imgs, N)
+        end = (time.perf_counter() - begin) / rep
+        obs = dict(N=N, n_imgs_seq=len(res1), time_seq=end)
+
+        begin = time.perf_counter()
+        for i in range(rep):
+            res2 = parallel_bind(sesss, imgs, N)
+        end = (time.perf_counter() - begin) / rep
+        obs.update(dict(n_imgs_par=len(res2), time_par=end))
+
+        data.append(obs)
+
+    df = pandas.DataFrame(data)
+    df.to_csv("ort_gpus.csv", index=False)
+else:
+    df = None
+
+df
+
+
+####################################
+# Plots.
+
+if n_gpus > 1:
+    ax = make_plot(df, "Time per image / batch size\nCPU + GPU")
+else:
+    ax = None
+
+ax
+
 
 # import matplotlib.pyplot as plt
 # plt.show()
