@@ -339,7 +339,7 @@ if has_cuda:
     df.reset_index(drop=False).to_csv("ort_cpu_gpu.csv", index=False)
 else:
     print("No GPU is available but it should show something like the following.")
-    df = pandas.read_csv("data/ort_cpu_gpu.csv")
+    df = pandas.read_csv("data/ort_cpu_gpu.csv").set_index("N")
 
 df
 
@@ -406,7 +406,7 @@ if n_gpus > 1:
     df.reset_index(drop=False).to_csv("ort_gpus.csv", index=False)
 else:
     print("No GPU is available but it should show something like the following.")
-    df = pandas.read_csv("data/ort_gpus.csv")
+    df = pandas.read_csv("data/ort_gpus.csv").set_index("N")
 
 df
 
