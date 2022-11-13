@@ -25,6 +25,7 @@ A model
 
 Let's retrieve a not so big model.
 """
+import gc
 import multiprocessing
 import os
 import urllib.request
@@ -103,7 +104,7 @@ print(measure_time(lambda: sess1.run(None, {input_name: rnd_img}),
 # We define the number of threads as the number of cores divided by 2.
 # This is a dummy value. It should let a core to handle the main program.
 
-n_threads = multiprocessing.cpu_count() - 1
+n_threads = min(8, multiprocessing.cpu_count() - 1)
 print(f"n_threads={n_threads}")
 
 
@@ -161,13 +162,15 @@ def parallel(sesss, imgs, N=1):
 print(measure_time(lambda: parallel(sesss, imgs),
                    div_by_number=True, repeat=2, number=2))
 
+
 ###################################
 # It is worse for one image. It is expected as mentioned in the introduction.
 # Let's check for different number of images to parallelize.
 
+print("ORT // CPU")
 data = []
 rep = 2
-maxN = 18
+maxN = 21
 for N in tqdm.tqdm(range(1, maxN, 2)):
     begin = time.perf_counter()
     for i in range(rep):
@@ -184,7 +187,14 @@ for N in tqdm.tqdm(range(1, maxN, 2)):
     data.append(obs)
 
 df = pandas.DataFrame(data)
+df.to_csv("ort_cpu.csv", index=False)
 df
+
+#####################################
+# Let's free the memory.
+
+del sesss[:]
+gc.collect()
 
 ##########################################
 # Plots
@@ -255,6 +265,7 @@ def parallel_bind(sesss, imgs, N=1):
     return res
 
 
+print("ORT (bind) // CPU")
 data = []
 for N in tqdm.tqdm(range(1, maxN, 2)):
     begin = time.perf_counter()
@@ -271,8 +282,12 @@ for N in tqdm.tqdm(range(1, maxN, 2)):
 
     data.append(obs)
 
+del sesss[:]
+gc.collect()
 df = pandas.DataFrame(data)
+df.to_csv("ort_cpu_bind.csv", index=False)
 df
+
 
 ############################
 # Plots.
@@ -301,6 +316,7 @@ if has_cuda:
     imgs = [numpy.random.rand(*input_shape).astype(numpy.float32)
             for i in range(n_threads)]
 
+    print("ORT // CPU + GPU")
     data = []
     for N in tqdm.tqdm(range(1, maxN, 2)):
         begin = time.perf_counter()
@@ -317,10 +333,13 @@ if has_cuda:
 
         data.append(obs)
 
+    del sesss[:]
+    gc.collect()
     df = pandas.DataFrame(data)
     df.to_csv("ort_cpu_gpu.csv", index=False)
 else:
-    df = None
+    print("No GPU is available but it should show something like the following.")
+    df = pandas.read_csv("data/ort_cpu_gpu.csv")
 
 df
 
@@ -334,6 +353,11 @@ else:
 
 ax
 
+####################################
+# The parallelization on mulitple CPU + GPUs is not really
+# working with this simple setting. GPU should take more
+# images as it is faster.
+
 #########################################
 # Parallelization on multiple GPUs
 # ++++++++++++++++++++++++++++++++
@@ -344,18 +368,22 @@ if n_gpus == 0:
 elif n_gpus == 1:
     print("1 GPU was detected.")
 else:
-    print(f"{n_gpus} were detected.")
+    print(f"{n_gpus} GPUs were detected.")
 
 
 if n_gpus > 1:
     n_threads = 2
-    sesss = [InferenceSession(model_name, providers=["CUDAExecutionProvider",
-                                                     "CPUExecutionProvider"],
-                              provider_options={"device_id": i})
-             for i in range(n_gpus)]
+    sesss = []
+    for i in range(n_gpus):
+        print(f"Initialize device {i}")
+        sesss.append(
+            InferenceSession(model_name, providers=["CUDAExecutionProvider",
+                                                    "CPUExecutionProvider"],
+                             provider_options=[{"device_id": i}, {}]))
     imgs = [numpy.random.rand(*input_shape).astype(numpy.float32)
             for i in range(n_threads)]
 
+    print("ORT // GPUs")
     data = []
     for N in tqdm.tqdm(range(1, maxN, 2)):
         begin = time.perf_counter()
@@ -372,10 +400,13 @@ if n_gpus > 1:
 
         data.append(obs)
 
+    del sesss[:]
+    gc.collect()
     df = pandas.DataFrame(data)
     df.to_csv("ort_gpus.csv", index=False)
 else:
-    df = None
+    print("No GPU is available but it should show something like the following.")
+    df = pandas.read_csv("data/ort_gpus.csv")
 
 df
 
@@ -390,6 +421,8 @@ else:
 
 ax
 
+####################################
+# The parallelization on mulitple GPUs did work.
 
 # import matplotlib.pyplot as plt
 # plt.show()
