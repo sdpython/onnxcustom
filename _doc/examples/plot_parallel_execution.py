@@ -187,7 +187,7 @@ for N in tqdm.tqdm(range(1, maxN, 2)):
     data.append(obs)
 
 df = pandas.DataFrame(data)
-df.to_csv("ort_cpu.csv", index=False)
+df.reset_index(drop=False).to_csv("ort_cpu.csv", index=False)
 df
 
 #####################################
@@ -285,7 +285,7 @@ for N in tqdm.tqdm(range(1, maxN, 2)):
 del sesss[:]
 gc.collect()
 df = pandas.DataFrame(data)
-df.to_csv("ort_cpu_bind.csv", index=False)
+df.reset_index(drop=False).to_csv("ort_cpu_bind.csv", index=False)
 df
 
 
@@ -336,7 +336,7 @@ if has_cuda:
     del sesss[:]
     gc.collect()
     df = pandas.DataFrame(data)
-    df.to_csv("ort_cpu_gpu.csv", index=False)
+    df.reset_index(drop=False).to_csv("ort_cpu_gpu.csv", index=False)
 else:
     print("No GPU is available but it should show something like the following.")
     df = pandas.read_csv("data/ort_cpu_gpu.csv")
@@ -403,7 +403,7 @@ if n_gpus > 1:
     del sesss[:]
     gc.collect()
     df = pandas.DataFrame(data)
-    df.to_csv("ort_gpus.csv", index=False)
+    df.reset_index(drop=False).to_csv("ort_gpus.csv", index=False)
 else:
     print("No GPU is available but it should show something like the following.")
     df = pandas.read_csv("data/ort_gpus.csv")
