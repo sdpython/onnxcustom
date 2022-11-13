@@ -190,12 +190,6 @@ df = pandas.DataFrame(data)
 df.reset_index(drop=False).to_csv("ort_cpu.csv", index=False)
 df
 
-#####################################
-# Let's free the memory.
-
-del sesss[:]
-gc.collect()
-
 ##########################################
 # Plots
 # +++++
@@ -206,7 +200,7 @@ def make_plot(df, title):
     df["time_par_img"] = df["time_par"] / df["n_imgs_par"]
 
     ax = df[["n_imgs_seq", "time_seq_img", "time_par_img"]].set_index("n_imgs_seq").plot(
-        title=title)
+        title=title, logy=True)
     ax.set_xlabel("batch size")
     ax.set_ylabel("s")
     return ax
@@ -282,12 +276,15 @@ for N in tqdm.tqdm(range(1, maxN, 2)):
 
     data.append(obs)
 
-del sesss[:]
-gc.collect()
 df = pandas.DataFrame(data)
 df.reset_index(drop=False).to_csv("ort_cpu_bind.csv", index=False)
 df
 
+#####################################
+# Let's free the memory.
+
+del sesss[:]
+gc.collect()
 
 ############################
 # Plots.
@@ -303,12 +300,21 @@ make_plot(df, "Time per image / batch size\nrun_with_iobinding")
 has_cuda = "CUDAExecutionProvider" in get_all_providers()
 if not has_cuda:
     print(f"No CUDA provider was detected in {get_all_providers()}.")
+    
+n_gpus = torch.cuda.device_count() if has_cuda else 0
+if n_gpus == 0:
+    print("No GPU or one GPU was detected.")
+elif n_gpus == 1:
+    print("1 GPU was detected.")
+else:
+    print(f"{n_gpus} GPUs were detected.")
+
 
 #########################################
 # Parallelization GPU + CPU
 # +++++++++++++++++++++++++
 
-if has_cuda:
+if has_cuda and n_gpus > 0:
     n_threads = 2
     sesss = [InferenceSession(model_name, providers=["CPUExecutionProvider"]),
              InferenceSession(model_name, providers=["CUDAExecutionProvider",
@@ -338,7 +344,7 @@ if has_cuda:
     df = pandas.DataFrame(data)
     df.reset_index(drop=False).to_csv("ort_cpu_gpu.csv", index=False)
 else:
-    print("No GPU is available but it should show something like the following.")
+    print("No GPU is available but data should be like the following.")
     df = pandas.read_csv("data/ort_cpu_gpu.csv").set_index("N")
 
 df
@@ -346,11 +352,7 @@ df
 ####################################
 # Plots.
 
-if has_cuda:
-    ax = make_plot(df, "Time per image / batch size\nCPU + GPU")
-else:
-    ax = None
-
+ax = make_plot(df, "Time per image / batch size\nCPU + GPU")
 ax
 
 ####################################
@@ -361,15 +363,6 @@ ax
 #########################################
 # Parallelization on multiple GPUs
 # ++++++++++++++++++++++++++++++++
-
-n_gpus = torch.cuda.device_count() if has_cuda else 0
-if n_gpus == 0:
-    print("No GPU or one GPU was detected.")
-elif n_gpus == 1:
-    print("1 GPU was detected.")
-else:
-    print(f"{n_gpus} GPUs were detected.")
-
 
 if n_gpus > 1:
     n_threads = 2
@@ -405,7 +398,7 @@ if n_gpus > 1:
     df = pandas.DataFrame(data)
     df.reset_index(drop=False).to_csv("ort_gpus.csv", index=False)
 else:
-    print("No GPU is available but it should show something like the following.")
+    print("No GPU is available but data should be like the following.")
     df = pandas.read_csv("data/ort_gpus.csv").set_index("N")
 
 df
@@ -414,15 +407,11 @@ df
 ####################################
 # Plots.
 
-if n_gpus > 1:
-    ax = make_plot(df, "Time per image / batch size\nCPU + GPU")
-else:
-    ax = None
-
+ax = make_plot(df, f"Time per image / batch size\n{n_gpus} GPUs")
 ax
 
 ####################################
 # The parallelization on mulitple GPUs did work.
 
-# import matplotlib.pyplot as plt
-# plt.show()
+import matplotlib.pyplot as plt
+plt.show()
