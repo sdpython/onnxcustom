@@ -61,3 +61,6 @@ _unittests/ut_documentation/summary.csv
 _unittests/ut_documentation/_test_example.txt
 _unittests/ut_documentation/_test_example.txt
 something
+_doc/examples/ort_cpu_bind.csv
+_doc/examples/ort_cpu_gpu.csv
+_doc/examples/ort_cpu.csv

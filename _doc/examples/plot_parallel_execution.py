@@ -57,7 +57,10 @@ def download_file(url, name, min_size):
 
 
 small = True
-if small:
+if small == "custom":
+    model_name = "custom.onnx"
+    url_name = None
+elif small:
     model_name = "mobilenetv2-10.onnx"
     url_name = ("https://github.com/onnx/models/raw/main/vision/"
                 "classification/mobilenet/model")
@@ -205,7 +208,8 @@ def make_plot(df, title):
         df["time_seq_img_cpu"] = df["time_seq_cpu"] / df["n_imgs_seq_cpu"]
         df["time_seq_img_gpu"] = df["time_seq_gpu"] / df["n_imgs_seq_gpu"]
         df["time_par_img"] = df["time_par"] / df["n_imgs_par"]
-        columns = ["n_imgs_seq_cpu", "time_seq_img_cpu", "time_seq_img_gpu", "time_par_img"]
+        columns = ["n_imgs_seq_cpu", "time_seq_img_cpu",
+                   "time_seq_img_gpu", "time_par_img"]
 
     ax = df[columns].set_index(columns[0]).plot(**kwargs)
     ax.set_xlabel("batch size")
@@ -313,7 +317,7 @@ make_plot(df, "Time per image / batch size\nrun_with_iobinding")
 has_cuda = "CUDAExecutionProvider" in get_all_providers()
 if not has_cuda:
     print(f"No CUDA provider was detected in {get_all_providers()}.")
-    
+
 n_gpus = torch.cuda.device_count() if has_cuda else 0
 if n_gpus == 0:
     print("No GPU or one GPU was detected.")
