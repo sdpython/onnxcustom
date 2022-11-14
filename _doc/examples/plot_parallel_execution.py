@@ -56,8 +56,10 @@ def download_file(url, name, min_size):
         print(f"'{name}' already downloaded")
 
 
-small = True
-if small:
+small = "custom"
+if small = "custom":
+
+elif small:
     model_name = "mobilenetv2-10.onnx"
     url_name = ("https://github.com/onnx/models/raw/main/vision/"
                 "classification/mobilenet/model")
