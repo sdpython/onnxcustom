@@ -28,6 +28,7 @@ Let's retrieve a not so big model.
 import gc
 import multiprocessing
 import os
+import pickle
 import urllib.request
 import threading
 import time
@@ -57,8 +58,9 @@ def download_file(url, name, min_size):
 
 
 small = "custom"
-if small = "custom":
-
+if small == "custom":
+    model_name = "gpt2.onnx"
+    url_name = None
 elif small:
     model_name = "mobilenetv2-10.onnx"
     url_name = ("https://github.com/onnx/models/raw/main/vision/"
@@ -67,8 +69,10 @@ else:
     model_name = "resnet18-v1-7.onnx"
     url_name = ("https://github.com/onnx/models/raw/main/vision/"
                 "classification/resnet/model")
-url_name += "/" + model_name
-download_file(url_name, model_name, 100000)
+
+if url_name is not None:
+    url_name += "/" + model_name
+    download_file(url_name, model_name, 100000)
 
 #############################################
 # Measuring inference time when parallelizing on CPU
@@ -90,14 +94,18 @@ for i in sess1.get_outputs():
     print(f"output {i}, name={i.name!r}, type={i.type}, shape={i.shape}")
     output_name = i.name
 
-
-rnd_img = numpy.random.rand(*input_shape).astype(numpy.float32)
+if model_name == "gpt2.onnx":
+    with open("encoded_tensors-gpt2.pkl", "rb") as f:
+        [encoded_tensors, labels] = pickle.load(f)
+    rnd_img = encoded_tensors[0]["input_ids"].numpy()
+else:
+    rnd_img = numpy.random.rand(*input_shape).astype(numpy.float32)
 
 res = sess1.run(None, {input_name: rnd_img})
 print(f"output: type={res[0].dtype}, shape={res[0].shape}")
 
 print(measure_time(lambda: sess1.run(None, {input_name: rnd_img}),
-                   div_by_number=True, repeat=10, number=10))
+                   div_by_number=True, repeat=3, number=3))
 
 #############################################
 # Parallelization
@@ -109,8 +117,11 @@ n_threads = min(8, multiprocessing.cpu_count() - 1)
 print(f"n_threads={n_threads}")
 
 
-imgs = [numpy.random.rand(*input_shape).astype(numpy.float32)
-        for i in range(n_threads)]
+if model_name == "gpt2.onnx":
+    imgs = [x["input_ids"].numpy() for x in encoded_tensors[:n_threads]]
+else:
+    imgs = [numpy.random.rand(*input_shape).astype(numpy.float32)
+            for i in range(n_threads)]
 
 sesss = [InferenceSession(model_name, providers=["CPUExecutionProvider"])
          for i in range(n_threads)]
@@ -168,11 +179,13 @@ print(measure_time(lambda: parallel(sesss, imgs),
 # It is worse for one image. It is expected as mentioned in the introduction.
 # Let's check for different number of images to parallelize.
 
+maxN = 5 if model_name == "gpt2.onnx" else 21
+stepN = 1 if model_name == "gpt2.onnx" else 2
+
 print("ORT // CPU")
 data = []
 rep = 2
-maxN = 21
-for N in tqdm.tqdm(range(1, maxN, 2)):
+for N in tqdm.tqdm(range(1, maxN, stepN)):
     begin = time.perf_counter()
     for i in range(rep):
         res1 = sequence(sesss[0], imgs, N)
@@ -271,7 +284,7 @@ def parallel_bind(sesss, imgs, N=1):
 
 print("ORT (bind) // CPU")
 data = []
-for N in tqdm.tqdm(range(1, maxN, 2)):
+for N in tqdm.tqdm(range(1, maxN, stepN)):
     begin = time.perf_counter()
     for i in range(rep):
         res1 = sequence(sesss[0], imgs, N)
@@ -334,12 +347,15 @@ if has_cuda and n_gpus > 0:
     sesss = [InferenceSession(model_name, providers=["CPUExecutionProvider"]),
              InferenceSession(model_name, providers=["CUDAExecutionProvider",
                                                      "CPUExecutionProvider"])]
-    imgs = [numpy.random.rand(*input_shape).astype(numpy.float32)
-            for i in range(n_threads)]
+    if model_name == "gpt2.onnx":
+        imgs = [x["input_ids"].numpy() for x in encoded_tensors[:n_threads]]
+    else:
+        imgs = [numpy.random.rand(*input_shape).astype(numpy.float32)
+                for i in range(n_threads)]
 
     print("ORT // CPU + GPU")
     data = []
-    for N in tqdm.tqdm(range(1, maxN, 2)):
+    for N in tqdm.tqdm(range(1, maxN, stepN)):
         begin = time.perf_counter()
         for i in range(rep):
             res1 = sequence(sesss[0], imgs, N)
@@ -395,12 +411,15 @@ if n_gpus > 1:
             InferenceSession(model_name, providers=["CUDAExecutionProvider",
                                                     "CPUExecutionProvider"],
                              provider_options=[{"device_id": i}, {}]))
-    imgs = [numpy.random.rand(*input_shape).astype(numpy.float32)
-            for i in range(n_threads)]
+    if model_name == "gpt2.onnx":
+        imgs = [x["input_ids"].numpy() for x in encoded_tensors[:n_threads]]
+    else:
+        imgs = [numpy.random.rand(*input_shape).astype(numpy.float32)
+                for i in range(n_threads)]
 
     print("ORT // GPUs")
     data = []
-    for N in tqdm.tqdm(range(1, maxN, 2)):
+    for N in tqdm.tqdm(range(1, maxN, stepN)):
         begin = time.perf_counter()
         for i in range(rep):
             res1 = sequence(sess1, imgs, N)
