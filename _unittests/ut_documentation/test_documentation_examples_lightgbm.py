@@ -2,7 +2,6 @@
 @brief      test log(time=60s)
 """
 import unittest
-from distutils.version import StrictVersion
 import os
 import sys
 import importlib
@@ -10,6 +9,7 @@ import subprocess
 from datetime import datetime
 import onnxruntime
 from pyquickhelper.pycode import ExtTestCase, skipif_appveyor
+from pyquickhelper.texthelper.version_helper import compare_module_version
 
 
 def import_source(module_file_path, module_name):
@@ -60,8 +60,8 @@ class TestDocumentationExampleLightgbm(ExtTestCase):
                             name))
                     continue
             if (name == "plot_pipeline_lightgbm.py" and
-                    StrictVersion(onnxruntime.__version__) <
-                        StrictVersion('1.0.0')):
+                    compare_module_version(
+                        onnxruntime.__version__, '1.0.0') < 0):
                 continue
             if not name.startswith("plot_") or not name.endswith(".py"):
                 continue

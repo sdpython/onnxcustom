@@ -129,6 +129,7 @@ epkg_dictionary.update({
     'DLPack': 'https://github.com/dmlc/dlpack',
     'docker': 'https://en.wikipedia.org/wiki/Docker_(software)',
     'DOT': 'https://www.graphviz.org/doc/info/lang.html',
+    'Le GIL': 'http://www.xavierdupre.fr/app/teachpyx/helpsphinx/notebooks/gil_example.html',
     'ImageNet': 'http://www.image-net.org/',
     'LightGBM': 'https://lightgbm.readthedocs.io/en/latest/',
     'lightgbm': 'https://lightgbm.readthedocs.io/en/latest/',
