@@ -32,6 +32,7 @@ import pickle
 import urllib.request
 import threading
 import time
+import sys
 import tqdm
 import numpy
 import pandas
@@ -57,7 +58,7 @@ def download_file(url, name, min_size):
         print(f"'{name}' already downloaded")
 
 
-small = "small"
+small = "custom" if "custom" in sys.argv else "small"
 if small == "custom":
     model_name = "gpt2.onnx"
     url_name = None
@@ -425,7 +426,7 @@ if has_cuda and n_gpus > 0:
         obs.update(dict(n_imgs_par=len(res3), time_par=end))
         if len(res1) != len(res3):
             raise RuntimeError(f"Cannot compare experiments len(res1)={len(res1)} "
-                               f"!= {len(res2)}=len(res2), obs={obs}")
+                               f"!= {len(res3)}=len(res3), obs={obs}")
         data.append(obs)
 
     del sesss[:]
@@ -496,7 +497,7 @@ if n_gpus > 1:
         obs.update(dict(n_imgs_par=len(res3), time_par=end))
         if len(res1) != len(res3):
             raise RuntimeError(f"Cannot compare experiments len(res1)={len(res1)} "
-                               f"!= {len(res2)}=len(res2), obs={obs}")
+                               f"!= {len(res3)}=len(res3), obs={obs}")
 
         data.append(obs)
 
@@ -524,7 +525,6 @@ ax
 
 data = pandas.read_csv("data/ort_gpus_gpt2.csv")
 df = pandas.DataFrame(data)
-df.reset_index(drop=False).to_csv("ort_gpus.csv", index=False)
 ax = make_plot(df, f"Time per image / batch size\n{n_gpus} GPUs - GPT2")
 ax
 
