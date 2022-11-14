@@ -277,7 +277,8 @@ def convert_trace_to_json(filename, output=None, temporary_file=None,
 
     if output not in (None, ''):
         if verbose > 0 and fLOG is not None:
-            fLOG(f"[convert_trace_to_json] converting into json in {output!r}.")
+            fLOG(
+                f"[convert_trace_to_json] converting into json in {output!r}.")
         with open(output, "w", encoding="utf-8") as f:
             json.dump(traceEvents, f, separators=(',\n', ':'))
             f.write('\n')

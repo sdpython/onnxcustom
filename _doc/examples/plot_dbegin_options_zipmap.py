@@ -89,7 +89,8 @@ sess3 = rt.InferenceSession(onx3.SerializeToString(),
                             providers=['CPUExecutionProvider'])
 res3 = sess3.run(None, {'X': X_test})
 for i, out in enumerate(sess3.get_outputs()):
-    print(f"output: '{out.name}' shape={res3[i].shape} values={res3[i][:2]}...")
+    print(
+        f"output: '{out.name}' shape={res3[i].shape} values={res3[i][:2]}...")
 
 
 ###################################

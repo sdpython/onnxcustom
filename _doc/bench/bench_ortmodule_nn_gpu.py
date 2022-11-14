@@ -137,7 +137,8 @@ def benchmark(N=1000, n_features=20, hidden_layer_sizes="26,25", max_iter=1000,
         nn.cpu()
     else:
         nn.cuda(device=device)
-    print(f"n_parameters={len(list(nn.parameters()))}, n_layers={len(nn.hidden)}")
+    print(
+        f"n_parameters={len(list(nn.parameters()))}, n_layers={len(nn.hidden)}")
     for i, p in enumerate(nn.parameters()):
         print("  p[%d].shape=%r" % (i, p.shape))
 
