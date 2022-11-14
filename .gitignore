@@ -64,5 +64,8 @@ something
 _doc/examples/ort_cpu_bind.csv
 _doc/examples/ort_cpu_gpu.csv
 _doc/examples/ort_cpu.csv
+<<<<<<< HEAD
 _doc/examples/ort_gpus.csv
 _doc/examples/ort_cpu_ortvalue.csv
+=======
+>>>>>>> 18ba3ebe8d9b7ec8c520909ca737824d5b845d41

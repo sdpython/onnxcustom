@@ -146,15 +146,15 @@ sesss = [InferenceSession(model_name, providers=["CPUExecutionProvider"])
 # Let's measure the time for a sequence of images.
 
 
-def sequence(sess, imgs, N=1):
+def sequence(sess, imgs, n_threads, N):
     res = []
-    for i in range(N):
-        for img in imgs:
+    for i in range(n_threads):
+        for img in imgs[:N]:
             res.append(sess.run(None, {input_name: img})[0])
     return res
 
 
-print(measure_time(lambda: sequence(sesss[0], imgs),
+print(measure_time(lambda: sequence(sesss[0], imgs, n_threads, 1),
                    div_by_number=True, repeat=2, number=2))
 
 #################################
@@ -175,9 +175,9 @@ class MyThread(threading.Thread):
             self.q.append(r)
 
 
-def parallel(sesss, imgs, N=1):
+def parallel(sesss, imgs, N):
     if len(imgs) < N:
-        raise RuntimeError(f"N={N} must be <= {len(imgs)}=len(imgs)")
+        raise RuntimeError(f"N={N} must be >= {len(imgs)}=len(imgs)")
     threads = [MyThread(sess, imgs[:N]) for sess in sesss]
     for t in threads:
         t.start()
@@ -188,7 +188,7 @@ def parallel(sesss, imgs, N=1):
     return res
 
 
-print(measure_time(lambda: parallel(sesss, imgs),
+print(measure_time(lambda: parallel(sesss, imgs, 1),
                    div_by_number=True, repeat=2, number=2))
 
 
@@ -201,7 +201,7 @@ if not big_model:
     data = []
     for N in tqdm.tqdm(range(1, maxN, stepN)):
         for i in range(repN):
-            res1 = sequence(sesss[0], imgs, N)
+            res1 = sequence(sesss[0], imgs, len(sesss), N)
             if i == 0:
                 # let's get rid of the first iteration sometimes
                 # used to initialize internal objects.
@@ -216,7 +216,11 @@ if not big_model:
         end = (time.perf_counter() - begin) / (repN - 1)
         obs.update(dict(n_imgs_par=len(res2), time_par=end))
 
+        if len(res1) != len(res2):
+            raise RuntimeError(f"Cannot compare experiments len(res1)={len(res1)} "
+                               f"!= {len(res2)}=len(res2), obs={obs}")
         data.append(obs)
+
     df = pandas.DataFrame(data)
     df.reset_index(drop=False).to_csv("ort_cpu.csv", index=False)
 else:
@@ -264,12 +268,12 @@ make_plot(df, "Time per image / batch size") if df is not None else None
 # See :epkg:`l-ortvalue-doc`.
 
 
-def sequence_ort_value(sess, imgs, N=1):
+def sequence_ort_value(sess, imgs, n_threads, N):
     ort_device = C_OrtDevice(
         C_OrtDevice.cpu(), C_OrtDevice.default_memory(), 0)
     res = []
-    for i in range(N):
-        for img in imgs:
+    for i in range(n_threads):
+        for img in imgs[:N]:
             ov = C_OrtValue.ortvalue_from_numpy(img, ort_device)
             out = sess._sess.run_with_ort_values(
                 {input_name: ov}, [output_name], None)[0]
@@ -317,7 +321,7 @@ if not big_model:
     data = []
     for N in tqdm.tqdm(range(1, maxN, stepN)):
         for i in range(repN):
-            res1 = sequence_ort_value(sesss[0], imgs, N)
+            res1 = sequence_ort_value(sesss[0], imgs, len(sesss), N)
             if i == 0:
                 begin = time.perf_counter()
         end = (time.perf_counter() - begin) / (repN - 1)
@@ -330,6 +334,9 @@ if not big_model:
         end = (time.perf_counter() - begin) / (repN - 1)
         obs.update(dict(n_imgs_par=len(res2), time_par=end))
 
+        if len(res1) != len(res2):
+            raise RuntimeError(f"Cannot compare experiments len(res1)={len(res1)} "
+                               f"!= {len(res2)}=len(res2), obs={obs}")
         data.append(obs)
 
     df = pandas.DataFrame(data)
@@ -380,7 +387,6 @@ else:
 # +++++++++++++++++++++++++
 
 if has_cuda and n_gpus > 0:
-    n_threads = 2
     repN = 4
     sesss = [InferenceSession(model_name, providers=["CPUExecutionProvider"]),
              InferenceSession(model_name, providers=["CUDAExecutionProvider",
@@ -395,18 +401,21 @@ if has_cuda and n_gpus > 0:
     data = []
     for N in tqdm.tqdm(range(1, maxN, stepN)):
         for i in range(repN):
-            res1 = sequence_ort_value(sesss[0], imgs, N)
+            res1 = sequence_ort_value(sesss[0], imgs, len(sesss), N)
             if i == 0:
                 begin = time.perf_counter()
         end = (time.perf_counter() - begin) / (repN - 1)
         obs = dict(N=N, n_imgs_seq_cpu=len(res1), time_seq_cpu=end)
 
         for i in range(repN):
-            res2 = sequence_ort_value(sesss[1], imgs, N)
+            res2 = sequence_ort_value(sesss[1], len(sesss), N)
             if i == 0:
                 begin = time.perf_counter()
         end = (time.perf_counter() - begin) / (repN - 1)
         obs.update(dict(n_imgs_seq_gpu=len(res2), time_seq_gpu=end))
+        if len(res1) != len(res2):
+            raise RuntimeError(f"Cannot compare experiments len(res1)={len(res1)} "
+                               f"!= {len(res2)}=len(res2), obs={obs}")
 
         for i in range(repN):
             res3 = parallel_ort_value(sesss, imgs, N)
@@ -414,7 +423,9 @@ if has_cuda and n_gpus > 0:
                 begin = time.perf_counter()
         end = (time.perf_counter() - begin) / (repN - 1)
         obs.update(dict(n_imgs_par=len(res3), time_par=end))
-
+        if len(res1) != len(res3):
+            raise RuntimeError(f"Cannot compare experiments len(res1)={len(res1)} "
+                               f"!= {len(res2)}=len(res2), obs={obs}")
         data.append(obs)
 
     del sesss[:]
@@ -444,7 +455,6 @@ ax
 # This is the only case for which it should work as every GPU is indenpendent.
 
 if n_gpus > 1:
-    n_threads = 2
     sesss = []
     for i in range(n_gpus):
         print(f"Initialize device {i}")
@@ -462,18 +472,21 @@ if n_gpus > 1:
     data = []
     for N in tqdm.tqdm(range(1, maxN, stepN)):
         for i in range(repN):
-            res1 = sequence_ort_value(sess1, imgs, N)
+            res1 = sequence_ort_value(sess1, imgs, len(sesss), N)
             if i == 0:
                 begin = time.perf_counter()
         end = (time.perf_counter() - begin) / (repN - 1)
         obs = dict(N=N, n_imgs_seq_cpu=len(res1), time_seq_cpu=end)
 
         for i in range(repN):
-            res2 = sequence_ort_value(sesss[0], imgs, N)
+            res2 = sequence_ort_value(sesss[0], imgs, len(sesss), N)
             if i == 0:
                 begin = time.perf_counter()
         end = (time.perf_counter() - begin) / (repN - 1)
         obs.update(dict(n_imgs_seq_gpu=len(res2), time_seq_gpu=end))
+        if len(res1) != len(res2):
+            raise RuntimeError(f"Cannot compare experiments len(res1)={len(res1)} "
+                               f"!= {len(res2)}=len(res2), obs={obs}")
 
         for i in range(repN):
             res3 = parallel_ort_value(sesss, imgs, N)
@@ -481,6 +494,9 @@ if n_gpus > 1:
                 begin = time.perf_counter()
         end = (time.perf_counter() - begin) / (repN - 1)
         obs.update(dict(n_imgs_par=len(res3), time_par=end))
+        if len(res1) != len(res3):
+            raise RuntimeError(f"Cannot compare experiments len(res1)={len(res1)} "
+                               f"!= {len(res2)}=len(res2), obs={obs}")
 
         data.append(obs)
 
