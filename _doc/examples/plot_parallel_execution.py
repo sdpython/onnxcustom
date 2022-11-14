@@ -57,7 +57,7 @@ def download_file(url, name, min_size):
         print(f"'{name}' already downloaded")
 
 
-small = "custom"
+small = "small"
 if small == "custom":
     model_name = "gpt2.onnx"
     url_name = None
@@ -134,10 +134,10 @@ print(f"n_threads={n_threads}")
 
 
 if model_name == "gpt2.onnx":
-    imgs = [x["input_ids"].numpy() for x in encoded_tensors[:n_threads]]
+    imgs = [x["input_ids"].numpy() for x in encoded_tensors[:maxN]]
 else:
     imgs = [numpy.random.rand(*input_shape).astype(numpy.float32)
-            for i in range(n_threads)]
+            for i in range(maxN)]
 
 sesss = [InferenceSession(model_name, providers=["CPUExecutionProvider"])
          for i in range(n_threads)]
@@ -177,7 +177,7 @@ class MyThread(threading.Thread):
 
 def parallel(sesss, imgs, N=1):
     if len(imgs) < N:
-        raise RuntimeError(f"N={N} must be >= {len(imgs)}=len(imgs)")
+        raise RuntimeError(f"N={N} must be <= {len(imgs)}=len(imgs)")
     threads = [MyThread(sess, imgs[:N]) for sess in sesss]
     for t in threads:
         t.start()
@@ -240,7 +240,8 @@ def make_plot(df, title):
         df["time_seq_img_cpu"] = df["time_seq_cpu"] / df["n_imgs_seq_cpu"]
         df["time_seq_img_gpu"] = df["time_seq_gpu"] / df["n_imgs_seq_gpu"]
         df["time_par_img"] = df["time_par"] / df["n_imgs_par"]
-        columns = ["n_imgs_seq_cpu", "time_seq_img_cpu", "time_seq_img_gpu", "time_par_img"]
+        columns = ["n_imgs_seq_cpu", "time_seq_img_cpu",
+                   "time_seq_img_gpu", "time_par_img"]
 
     ax = df[columns].set_index(columns[0]).plot(**kwargs)
     ax.set_xlabel("batch size")
@@ -262,6 +263,7 @@ make_plot(df, "Time per image / batch size") if df is not None else None
 #
 # See :epkg:`l-ortvalue-doc`.
 
+
 def sequence_ort_value(sess, imgs, N=1):
     ort_device = C_OrtDevice(
         C_OrtDevice.cpu(), C_OrtDevice.default_memory(), 0)
@@ -269,7 +271,8 @@ def sequence_ort_value(sess, imgs, N=1):
     for i in range(N):
         for img in imgs:
             ov = C_OrtValue.ortvalue_from_numpy(img, ort_device)
-            out = sess._sess.run_with_ort_values({input_name: ov}, [output_name], None)[0]
+            out = sess._sess.run_with_ort_values(
+                {input_name: ov}, [output_name], None)[0]
             res.append(out.numpy())
     return res
 
@@ -289,7 +292,8 @@ class MyThreadOrtValue(threading.Thread):
         q = self.q
         for img in self.imgs:
             ov = C_OrtValue.ortvalue_from_numpy(img, ort_device)
-            out = sess.run_with_ort_values({input_name: ov}, [output_name], None)[0]
+            out = sess.run_with_ort_values(
+                {input_name: ov}, [output_name], None)[0]
             q.append(out.numpy())
 
 
@@ -344,7 +348,8 @@ gc.collect()
 ############################
 # Plots.
 
-make_plot(df, "Time per image / batch size\nrun_with_ort_values") if df is not None else None
+make_plot(
+    df, "Time per image / batch size\nrun_with_ort_values") if df is not None else None
 
 ########################################
 # It leads to the same conclusion. It is no use to parallelize
@@ -498,6 +503,15 @@ ax
 
 ####################################
 # The parallelization on multiple GPUs did work.
+# With a model `GPT2 <https://huggingface.co/gpt2?text=My+name+is+Mariama%2C+my+favorite>`_,
+# it would give the following results.
+
+data = pandas.read_csv("data/ort_gpus_gpt2.csv")
+df = pandas.DataFrame(data)
+df.reset_index(drop=False).to_csv("ort_gpus.csv", index=False)
+ax = make_plot(df, f"Time per image / batch size\n{n_gpus} GPUs - GPT2")
+ax
+
 
 # import matplotlib.pyplot as plt
 # plt.show()
