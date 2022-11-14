@@ -9,6 +9,7 @@ data/*
 *.jpg
 *.onnx
 *.pt
+*.pkl
 *.err
 *.out
 *.prof

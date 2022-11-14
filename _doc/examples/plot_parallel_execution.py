@@ -408,7 +408,7 @@ if has_cuda and n_gpus > 0:
         obs = dict(N=N, n_imgs_seq_cpu=len(res1), time_seq_cpu=end)
 
         for i in range(repN):
-            res2 = sequence_ort_value(sesss[1], len(sesss), N)
+            res2 = sequence_ort_value(sesss[1], imgs, len(sesss), N)
             if i == 0:
                 begin = time.perf_counter()
         end = (time.perf_counter() - begin) / (repN - 1)
