@@ -39,7 +39,7 @@ from cpyquickhelper.numbers import measure_time
 import torch.cuda
 from onnxruntime import InferenceSession, get_all_providers
 from onnxruntime.capi._pybind_state import (  # pylint: disable=E0611
-    SessionIOBinding, OrtDevice as C_OrtDevice)
+    OrtDevice as C_OrtDevice, OrtValue as C_OrtValue)
 
 
 def download_file(url, name, min_size):
@@ -61,14 +61,26 @@ small = "custom"
 if small == "custom":
     model_name = "gpt2.onnx"
     url_name = None
+    maxN = 5
+    stepN = 1
+    repN = 4
+    big_model = True
 elif small:
     model_name = "mobilenetv2-10.onnx"
     url_name = ("https://github.com/onnx/models/raw/main/vision/"
                 "classification/mobilenet/model")
+    maxN = 21
+    stepN = 2
+    repN = 4
+    big_model = False
 else:
     model_name = "resnet18-v1-7.onnx"
     url_name = ("https://github.com/onnx/models/raw/main/vision/"
                 "classification/resnet/model")
+    maxN = 21
+    stepN = 2
+    repN = 4
+    big_model = False
 
 if url_name is not None:
     url_name += "/" + model_name
@@ -90,9 +102,13 @@ for i in sess1.get_inputs():
     input_shape = list(i.shape)
     if input_shape[0] in [None, "batch_size", "N"]:
         input_shape[0] = 1
+output_name = None
 for i in sess1.get_outputs():
     print(f"output {i}, name={i.name!r}, type={i.type}, shape={i.shape}")
-    output_name = i.name
+    if output_name is None:
+        output_name = i.name
+
+print(f"input_name={input_name!r}, output_name={output_name!r}")
 
 if model_name == "gpt2.onnx":
     with open("encoded_tensors-gpt2.pkl", "rb") as f:
@@ -101,8 +117,8 @@ if model_name == "gpt2.onnx":
 else:
     rnd_img = numpy.random.rand(*input_shape).astype(numpy.float32)
 
-res = sess1.run(None, {input_name: rnd_img})
-print(f"output: type={res[0].dtype}, shape={res[0].shape}")
+results = sess1.run(None, {input_name: rnd_img})
+print(f"output: type={results[0].dtype}, shape={results[0].shape}")
 
 print(measure_time(lambda: sess1.run(None, {input_name: rnd_img}),
                    div_by_number=True, repeat=3, number=3))
@@ -113,7 +129,7 @@ print(measure_time(lambda: sess1.run(None, {input_name: rnd_img}),
 #
 # We define a number of threads lower than the number of cores.
 
-n_threads = min(8, multiprocessing.cpu_count() - 1)
+n_threads = min(4, multiprocessing.cpu_count() - 1)
 print(f"n_threads={n_threads}")
 
 
@@ -132,8 +148,8 @@ sesss = [InferenceSession(model_name, providers=["CPUExecutionProvider"])
 
 def sequence(sess, imgs, N=1):
     res = []
-    for img in imgs:
-        for i in range(N):
+    for i in range(N):
+        for img in imgs:
             res.append(sess.run(None, {input_name: img})[0])
     return res
 
@@ -160,8 +176,9 @@ class MyThread(threading.Thread):
 
 
 def parallel(sesss, imgs, N=1):
-    threads = [MyThread(sess, [img] * N)
-               for sess, img in zip(sesss, imgs)]
+    if len(imgs) < N:
+        raise RuntimeError(f"N={N} must be >= {len(imgs)}=len(imgs)")
+    threads = [MyThread(sess, imgs[:N]) for sess in sesss]
     for t in threads:
         t.start()
     res = []
@@ -179,29 +196,32 @@ print(measure_time(lambda: parallel(sesss, imgs),
 # It is worse for one image. It is expected as mentioned in the introduction.
 # Let's check for different number of images to parallelize.
 
-maxN = 5 if model_name == "gpt2.onnx" else 21
-stepN = 1 if model_name == "gpt2.onnx" else 2
+if not big_model:
+    print("ORT // CPU")
+    data = []
+    for N in tqdm.tqdm(range(1, maxN, stepN)):
+        for i in range(repN):
+            res1 = sequence(sesss[0], imgs, N)
+            if i == 0:
+                # let's get rid of the first iteration sometimes
+                # used to initialize internal objects.
+                begin = time.perf_counter()
+        end = (time.perf_counter() - begin) / (repN - 1)
+        obs = dict(N=N, n_imgs_seq=len(res1), time_seq=end)
 
-print("ORT // CPU")
-data = []
-rep = 2
-for N in tqdm.tqdm(range(1, maxN, stepN)):
-    begin = time.perf_counter()
-    for i in range(rep):
-        res1 = sequence(sesss[0], imgs, N)
-    end = (time.perf_counter() - begin) / rep
-    obs = dict(N=N, n_imgs_seq=len(res1), time_seq=end)
+        for i in range(repN):
+            res2 = parallel(sesss, imgs, N)
+            if i == 0:
+                begin = time.perf_counter()
+        end = (time.perf_counter() - begin) / (repN - 1)
+        obs.update(dict(n_imgs_par=len(res2), time_par=end))
 
-    begin = time.perf_counter()
-    for i in range(rep):
-        res2 = parallel(sesss, imgs, N)
-    end = (time.perf_counter() - begin) / rep
-    obs.update(dict(n_imgs_par=len(res2), time_par=end))
-
-    data.append(obs)
-
-df = pandas.DataFrame(data)
-df.reset_index(drop=False).to_csv("ort_cpu.csv", index=False)
+        data.append(obs)
+    df = pandas.DataFrame(data)
+    df.reset_index(drop=False).to_csv("ort_cpu.csv", index=False)
+else:
+    print("ORT // CPU skipped for a big model.")
+    df = None
 df
 
 ##########################################
@@ -228,7 +248,7 @@ def make_plot(df, title):
     return ax
 
 
-make_plot(df, "Time per image / batch size")
+make_plot(df, "Time per image / batch size") if df is not None else None
 
 #######################################
 # As expected, it does not improve. It is like parallezing using
@@ -242,37 +262,43 @@ make_plot(df, "Time per image / batch size")
 #
 # See :epkg:`l-ortvalue-doc`.
 
+def sequence_ort_value(sess, imgs, N=1):
+    ort_device = C_OrtDevice(
+        C_OrtDevice.cpu(), C_OrtDevice.default_memory(), 0)
+    res = []
+    for i in range(N):
+        for img in imgs:
+            ov = C_OrtValue.ortvalue_from_numpy(img, ort_device)
+            out = sess._sess.run_with_ort_values({input_name: ov}, [output_name], None)[0]
+            res.append(out.numpy())
+    return res
 
-class MyThreadBind(threading.Thread):
+
+class MyThreadOrtValue(threading.Thread):
 
     def __init__(self, sess, imgs, ort_device):
         threading.Thread.__init__(self)
         self.sess = sess
         self.imgs = imgs
         self.q = []
-        self.bind = SessionIOBinding(self.sess._sess)
         self.ort_device = ort_device
 
     def run(self):
-        bind = self.bind
         ort_device = self.ort_device
-        bind.bind_output(output_name, ort_device)
         sess = self.sess._sess
         q = self.q
         for img in self.imgs:
-            bind.bind_input(input_name, ort_device,
-                            img.dtype, img.shape,
-                            img.__array_interface__['data'][0])
-            sess.run_with_iobinding(bind, None)
-            ortvalues = bind.get_outputs()
-            q.append(ortvalues)
+            ov = C_OrtValue.ortvalue_from_numpy(img, ort_device)
+            out = sess.run_with_ort_values({input_name: ov}, [output_name], None)[0]
+            q.append(out.numpy())
 
 
-def parallel_bind(sesss, imgs, N=1):
+def parallel_ort_value(sess, imgs, N=1):
+    if len(imgs) < N:
+        raise RuntimeError(f"N={N} must be >= {len(imgs)}=len(imgs)")
     ort_device = C_OrtDevice(
         C_OrtDevice.cpu(), C_OrtDevice.default_memory(), 0)
-    threads = [MyThreadBind(sess, [img] * N, ort_device)
-               for sess, img in zip(sesss, imgs)]
+    threads = [MyThreadOrtValue(sess, imgs[:N], ort_device) for sess in sesss]
     for t in threads:
         t.start()
     res = []
@@ -282,25 +308,31 @@ def parallel_bind(sesss, imgs, N=1):
     return res
 
 
-print("ORT (bind) // CPU")
-data = []
-for N in tqdm.tqdm(range(1, maxN, stepN)):
-    begin = time.perf_counter()
-    for i in range(rep):
-        res1 = sequence(sesss[0], imgs, N)
-    end = (time.perf_counter() - begin) / rep
-    obs = dict(N=N, n_imgs_seq=len(res1), time_seq=end)
+if not big_model:
+    print("ORT (OrtValue) // CPU")
+    data = []
+    for N in tqdm.tqdm(range(1, maxN, stepN)):
+        for i in range(repN):
+            res1 = sequence_ort_value(sesss[0], imgs, N)
+            if i == 0:
+                begin = time.perf_counter()
+        end = (time.perf_counter() - begin) / (repN - 1)
+        obs = dict(N=N, n_imgs_seq=len(res1), time_seq=end)
 
-    begin = time.perf_counter()
-    for i in range(rep):
-        res2 = parallel_bind(sesss, imgs, N)
-    end = (time.perf_counter() - begin) / rep
-    obs.update(dict(n_imgs_par=len(res2), time_par=end))
+        for i in range(repN):
+            res2 = parallel_ort_value(sesss, imgs, N)
+            if i == 0:
+                begin = time.perf_counter()
+        end = (time.perf_counter() - begin) / (repN - 1)
+        obs.update(dict(n_imgs_par=len(res2), time_par=end))
 
-    data.append(obs)
+        data.append(obs)
 
-df = pandas.DataFrame(data)
-df.reset_index(drop=False).to_csv("ort_cpu_bind.csv", index=False)
+    df = pandas.DataFrame(data)
+    df.reset_index(drop=False).to_csv("ort_cpu_ortvalue.csv", index=False)
+else:
+    df = None
+    print("ORT (OrtValue) // CPU skipped for a long model")
 df
 
 #####################################
@@ -312,7 +344,7 @@ gc.collect()
 ############################
 # Plots.
 
-make_plot(df, "Time per image / batch size\nrun_with_iobinding")
+make_plot(df, "Time per image / batch size\nrun_with_ort_values") if df is not None else None
 
 ########################################
 # It leads to the same conclusion. It is no use to parallelize
@@ -328,7 +360,7 @@ make_plot(df, "Time per image / batch size\nrun_with_iobinding")
 has_cuda = "CUDAExecutionProvider" in get_all_providers()
 if not has_cuda:
     print(f"No CUDA provider was detected in {get_all_providers()}.")
-    
+
 n_gpus = torch.cuda.device_count() if has_cuda else 0
 if n_gpus == 0:
     print("No GPU or one GPU was detected.")
@@ -344,35 +376,39 @@ else:
 
 if has_cuda and n_gpus > 0:
     n_threads = 2
+    repN = 4
     sesss = [InferenceSession(model_name, providers=["CPUExecutionProvider"]),
              InferenceSession(model_name, providers=["CUDAExecutionProvider",
                                                      "CPUExecutionProvider"])]
     if model_name == "gpt2.onnx":
-        imgs = [x["input_ids"].numpy() for x in encoded_tensors[:n_threads]]
+        imgs = [x["input_ids"].numpy() for x in encoded_tensors[:maxN]]
     else:
         imgs = [numpy.random.rand(*input_shape).astype(numpy.float32)
-                for i in range(n_threads)]
+                for i in range(maxN)]
 
     print("ORT // CPU + GPU")
     data = []
     for N in tqdm.tqdm(range(1, maxN, stepN)):
-        begin = time.perf_counter()
-        for i in range(rep):
-            res1 = sequence(sesss[0], imgs, N)
-        end = (time.perf_counter() - begin) / rep
+        for i in range(repN):
+            res1 = sequence_ort_value(sesss[0], imgs, N)
+            if i == 0:
+                begin = time.perf_counter()
+        end = (time.perf_counter() - begin) / (repN - 1)
         obs = dict(N=N, n_imgs_seq_cpu=len(res1), time_seq_cpu=end)
 
-        begin = time.perf_counter()
-        for i in range(rep):
-            res2 = sequence(sesss[1], imgs, N)
-        end = (time.perf_counter() - begin) / rep
+        for i in range(repN):
+            res2 = sequence_ort_value(sesss[1], imgs, N)
+            if i == 0:
+                begin = time.perf_counter()
+        end = (time.perf_counter() - begin) / (repN - 1)
         obs.update(dict(n_imgs_seq_gpu=len(res2), time_seq_gpu=end))
 
-        begin = time.perf_counter()
-        for i in range(rep):
-            res2 = parallel_bind(sesss, imgs, N)
-        end = (time.perf_counter() - begin) / rep
-        obs.update(dict(n_imgs_par=len(res2), time_par=end))
+        for i in range(repN):
+            res3 = parallel_ort_value(sesss, imgs, N)
+            if i == 0:
+                begin = time.perf_counter()
+        end = (time.perf_counter() - begin) / (repN - 1)
+        obs.update(dict(n_imgs_par=len(res3), time_par=end))
 
         data.append(obs)
 
@@ -412,31 +448,34 @@ if n_gpus > 1:
                                                     "CPUExecutionProvider"],
                              provider_options=[{"device_id": i}, {}]))
     if model_name == "gpt2.onnx":
-        imgs = [x["input_ids"].numpy() for x in encoded_tensors[:n_threads]]
+        imgs = [x["input_ids"].numpy() for x in encoded_tensors[:maxN]]
     else:
         imgs = [numpy.random.rand(*input_shape).astype(numpy.float32)
-                for i in range(n_threads)]
+                for i in range(maxN)]
 
     print("ORT // GPUs")
     data = []
     for N in tqdm.tqdm(range(1, maxN, stepN)):
-        begin = time.perf_counter()
-        for i in range(rep):
-            res1 = sequence(sess1, imgs, N)
-        end = (time.perf_counter() - begin) / rep
+        for i in range(repN):
+            res1 = sequence_ort_value(sess1, imgs, N)
+            if i == 0:
+                begin = time.perf_counter()
+        end = (time.perf_counter() - begin) / (repN - 1)
         obs = dict(N=N, n_imgs_seq_cpu=len(res1), time_seq_cpu=end)
 
-        begin = time.perf_counter()
-        for i in range(rep):
-            res2 = sequence(sesss[0], imgs, N)
-        end = (time.perf_counter() - begin) / rep
+        for i in range(repN):
+            res2 = sequence_ort_value(sesss[0], imgs, N)
+            if i == 0:
+                begin = time.perf_counter()
+        end = (time.perf_counter() - begin) / (repN - 1)
         obs.update(dict(n_imgs_seq_gpu=len(res2), time_seq_gpu=end))
 
-        begin = time.perf_counter()
-        for i in range(rep):
-            res2 = parallel_bind(sesss, imgs, N)
-        end = (time.perf_counter() - begin) / rep
-        obs.update(dict(n_imgs_par=len(res2), time_par=end))
+        for i in range(repN):
+            res3 = parallel_ort_value(sesss, imgs, N)
+            if i == 0:
+                begin = time.perf_counter()
+        end = (time.perf_counter() - begin) / (repN - 1)
+        obs.update(dict(n_imgs_par=len(res3), time_par=end))
 
         data.append(obs)
 
