@@ -14,7 +14,7 @@ trying to exchange data through sockets. :epkg:`onnxruntime` falls into that cat
 For a big model such as a deeplearning model, this might be interesting.
 However, :epkg:`onnxruntime` already parallelize the computation of
 every operator (Gemm, MatMul) using all the CPU it can get so this approach
-should show significant result when used on different processors (CPU, GPU)
+should show significant results when used on different processors (CPU, GPU)
 in parallel.
 
 .. contents::
@@ -101,8 +101,7 @@ print(measure_time(lambda: sess1.run(None, {input_name: rnd_img}),
 # Parallelization
 # +++++++++++++++
 #
-# We define the number of threads as the number of cores divided by 2.
-# This is a dummy value. It should let a core to handle the main program.
+# We define a number of threads lower than the number of cores.
 
 n_threads = min(8, multiprocessing.cpu_count() - 1)
 print(f"n_threads={n_threads}")
@@ -118,15 +117,15 @@ sesss = [InferenceSession(model_name, providers=["CPUExecutionProvider"])
 # Let's measure the time for a sequence of images.
 
 
-def sequence(sesss, imgs, N=1):
+def sequence(sess, imgs, N=1):
     res = []
-    for sess, img in zip(sesss, imgs):
+    for img in imgs:
         for i in range(N):
             res.append(sess.run(None, {input_name: img})[0])
     return res
 
 
-print(measure_time(lambda: sequence(sesss, imgs),
+print(measure_time(lambda: sequence(sesss[0], imgs),
                    div_by_number=True, repeat=2, number=2))
 
 #################################
@@ -174,7 +173,7 @@ maxN = 21
 for N in tqdm.tqdm(range(1, maxN, 2)):
     begin = time.perf_counter()
     for i in range(rep):
-        res1 = sequence(sesss, imgs, N)
+        res1 = sequence(sesss[0], imgs, N)
     end = (time.perf_counter() - begin) / rep
     obs = dict(N=N, n_imgs_seq=len(res1), time_seq=end)
 
@@ -196,11 +195,19 @@ df
 
 
 def make_plot(df, title):
-    df["time_seq_img"] = df["time_seq"] / df["n_imgs_seq"]
-    df["time_par_img"] = df["time_par"] / df["n_imgs_par"]
 
-    ax = df[["n_imgs_seq", "time_seq_img", "time_par_img"]].set_index("n_imgs_seq").plot(
-        title=title, logy=True)
+    kwargs = dict(title=title, logy=True)
+    if "time_seq" in df.columns:
+        df["time_seq_img"] = df["time_seq"] / df["n_imgs_seq"]
+        df["time_par_img"] = df["time_par"] / df["n_imgs_par"]
+        columns = ["n_imgs_seq", "time_seq_img", "time_par_img"]
+    else:
+        df["time_seq_img_cpu"] = df["time_seq_cpu"] / df["n_imgs_seq_cpu"]
+        df["time_seq_img_gpu"] = df["time_seq_gpu"] / df["n_imgs_seq_gpu"]
+        df["time_par_img"] = df["time_par"] / df["n_imgs_par"]
+        columns = ["n_imgs_seq_cpu", "time_seq_img_cpu", "time_seq_img_gpu", "time_par_img"]
+
+    ax = df[columns].set_index(columns[0]).plot(**kwargs)
     ax.set_xlabel("batch size")
     ax.set_ylabel("s")
     return ax
@@ -209,9 +216,10 @@ def make_plot(df, title):
 make_plot(df, "Time per image / batch size")
 
 #######################################
-# As expected, it does not really improve. It is like parallezing using
-# both strategies, per kernel and per image, both trying to access all
-# the process cores.
+# As expected, it does not improve. It is like parallezing using
+# two strategies, per kernel and per image, both trying to access all
+# the process cores at the same time. The time spent to synchronize
+# is significant.
 
 ###################################################
 # Same with another API based on OrtValue
@@ -264,7 +272,7 @@ data = []
 for N in tqdm.tqdm(range(1, maxN, 2)):
     begin = time.perf_counter()
     for i in range(rep):
-        res1 = sequence(sesss, imgs, N)
+        res1 = sequence(sesss[0], imgs, N)
     end = (time.perf_counter() - begin) / rep
     obs = dict(N=N, n_imgs_seq=len(res1), time_seq=end)
 
@@ -292,10 +300,15 @@ gc.collect()
 make_plot(df, "Time per image / batch size\nrun_with_iobinding")
 
 ########################################
+# It leads to the same conclusion. It is no use to parallelize
+# on CPU as onnxruntime is already doing that per kernel.
+
+
+########################################
 # GPU
 # ===
 #
-# Let's check first it is possible.
+# Let's check first if it is possible.
 
 has_cuda = "CUDAExecutionProvider" in get_all_providers()
 if not has_cuda:
@@ -327,9 +340,15 @@ if has_cuda and n_gpus > 0:
     for N in tqdm.tqdm(range(1, maxN, 2)):
         begin = time.perf_counter()
         for i in range(rep):
-            res1 = sequence(sesss, imgs, N)
+            res1 = sequence(sesss[0], imgs, N)
         end = (time.perf_counter() - begin) / rep
-        obs = dict(N=N, n_imgs_seq=len(res1), time_seq=end)
+        obs = dict(N=N, n_imgs_seq_cpu=len(res1), time_seq_cpu=end)
+
+        begin = time.perf_counter()
+        for i in range(rep):
+            res2 = sequence(sesss[1], imgs, N)
+        end = (time.perf_counter() - begin) / rep
+        obs.update(dict(n_imgs_seq_gpu=len(res2), time_seq_gpu=end))
 
         begin = time.perf_counter()
         for i in range(rep):
@@ -356,13 +375,14 @@ ax = make_plot(df, "Time per image / batch size\nCPU + GPU")
 ax
 
 ####################################
-# The parallelization on mulitple CPU + GPUs is not really
-# working with this simple setting. GPU should take more
-# images as it is faster.
+# The parallelization on mulitple CPU + GPUs is working, it is faster than CPU
+# but it is still slower than using a single GPU in that case.
 
 #########################################
 # Parallelization on multiple GPUs
 # ++++++++++++++++++++++++++++++++
+#
+# This is the only case for which it should work as every GPU is indenpendent.
 
 if n_gpus > 1:
     n_threads = 2
@@ -381,9 +401,15 @@ if n_gpus > 1:
     for N in tqdm.tqdm(range(1, maxN, 2)):
         begin = time.perf_counter()
         for i in range(rep):
-            res1 = sequence(sesss, imgs, N)
+            res1 = sequence(sess1, imgs, N)
         end = (time.perf_counter() - begin) / rep
-        obs = dict(N=N, n_imgs_seq=len(res1), time_seq=end)
+        obs = dict(N=N, n_imgs_seq_cpu=len(res1), time_seq_cpu=end)
+
+        begin = time.perf_counter()
+        for i in range(rep):
+            res2 = sequence(sesss[0], imgs, N)
+        end = (time.perf_counter() - begin) / rep
+        obs.update(dict(n_imgs_seq_gpu=len(res2), time_seq_gpu=end))
 
         begin = time.perf_counter()
         for i in range(rep):
@@ -411,7 +437,7 @@ ax = make_plot(df, f"Time per image / batch size\n{n_gpus} GPUs")
 ax
 
 ####################################
-# The parallelization on mulitple GPUs did work.
+# The parallelization on multiple GPUs did work.
 
-import matplotlib.pyplot as plt
-plt.show()
+# import matplotlib.pyplot as plt
+# plt.show()
