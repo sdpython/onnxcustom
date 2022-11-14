@@ -137,7 +137,8 @@ def benchmark(model_torch, model_ort, device, name, verbose=True, max_iter=100):
         model_torch, device, X_train, y_train, n_iter=200)
     duration_torch = time.perf_counter() - begin
     length_torch = len(losses)
-    print(f"[benchmark] torch={length_torch!r} iterations - {duration_torch!r} seconds")
+    print(
+        f"[benchmark] torch={length_torch!r} iterations - {duration_torch!r} seconds")
 
     if model_ort is None:
         length_ort = 0
@@ -148,7 +149,8 @@ def benchmark(model_torch, model_ort, device, name, verbose=True, max_iter=100):
                                  y_train, n_iter=max_iter)
         duration_ort = time.perf_counter() - begin
         length_ort = len(losses)
-    print(f"[benchmark] onxrt={length_ort!r} iteration - {duration_ort!r} seconds")
+    print(
+        f"[benchmark] onxrt={length_ort!r} iteration - {duration_ort!r} seconds")
 
     return dict(torch=duration_torch, ort=duration_ort, name=name,
                 iter_torch=length_torch, iter_ort=length_ort)

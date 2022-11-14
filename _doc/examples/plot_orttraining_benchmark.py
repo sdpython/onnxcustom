@@ -55,13 +55,15 @@ def benchmark(skl_model, train_session, name, verbose=True):
     skl_model.fit(X, y)
     duration_skl = time.perf_counter() - begin
     length_skl = len(skl_model.loss_curve_)
-    print(f"[benchmark] skl={length_skl!r} iterations - {duration_skl!r} seconds")
+    print(
+        f"[benchmark] skl={length_skl!r} iterations - {duration_skl!r} seconds")
 
     begin = time.perf_counter()
     train_session.fit(X, y)
     duration_ort = time.perf_counter() - begin
     length_ort = len(train_session.train_losses_)
-    print(f"[benchmark] ort={length_ort!r} iterations - {duration_ort!r} seconds")
+    print(
+        f"[benchmark] ort={length_ort!r} iterations - {duration_ort!r} seconds")
 
     return dict(skl=duration_skl, ort=duration_ort, name=name,
                 iter_skl=length_skl, iter_ort=length_ort,
