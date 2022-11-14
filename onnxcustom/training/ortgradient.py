@@ -361,9 +361,9 @@ class OrtGradientForwardBackward:
             logger.info(
                 "[OrtGradientForwardBackward] OrtModuleGraphBuilder.get_model")
 
-        train_onnx_model_serialized = builder.get_model()
+        train_onnx_model_serialized = builder.get_gradient_model()
 
-        optimized_pre_grad_model = builder.get_inference_optimized_model()
+        optimized_pre_grad_model = builder.get_forward_model()
         graph_info = builder.get_graph_info()
 
         if logger is not None:
