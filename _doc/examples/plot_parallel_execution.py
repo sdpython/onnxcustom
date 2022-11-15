@@ -90,6 +90,7 @@ if url_name is not None:
     url_name += "/" + model_name
     download_file(url_name, model_name, 100000)
 
+
 #############################################
 # Measuring inference time when parallelizing on CPU
 # ==================================================
@@ -154,7 +155,7 @@ print(f"n_threads={n_threads}")
 
 
 if model_name == "gpt2.onnx":
-    imgs = [x["input_ids"].numpy() for x in encoded_tensors[:maxN]]
+    imgs = [x["input_ids"].numpy() for x in encoded_tensors[:maxN * n_threads]]
 else:
     imgs = [numpy.random.rand(*input_shape).astype(numpy.float32)
             for i in range(maxN * n_threads)]
@@ -411,10 +412,10 @@ if has_cuda and n_gpus > 0:
              InferenceSession(model_name, providers=["CUDAExecutionProvider",
                                                      "CPUExecutionProvider"])]
     if model_name == "gpt2.onnx":
-        imgs = [x["input_ids"].numpy() for x in encoded_tensors[:maxN]]
+        imgs = [x["input_ids"].numpy() for x in encoded_tensors[:maxN * len(sesss)]]
     else:
         imgs = [numpy.random.rand(*input_shape).astype(numpy.float32)
-                for i in range(maxN)]
+                for i in range(maxN * len(sesss))]
 
     df = benchmark(sesss=sesss, imgs=imgs, stepN=stepN, repN=repN,
                    fcts=[('seq_cpu', sequence_ort_value, 0),
@@ -456,10 +457,10 @@ if n_gpus > 1:
                                                     "CPUExecutionProvider"],
                              provider_options=[{"device_id": i}, {}]))
     if model_name == "gpt2.onnx":
-        imgs = [x["input_ids"].numpy() for x in encoded_tensors[:maxN]]
+        imgs = [x["input_ids"].numpy() for x in encoded_tensors[:maxN * len(sesss)]]
     else:
         imgs = [numpy.random.rand(*input_shape).astype(numpy.float32)
-                for i in range(maxN)]
+                for i in range(maxN * len(sesss))]
 
     df = benchmark(sesss=sesss, imgs=imgs, stepN=stepN, repN=repN,
                    fcts=[('sequence', sequence_ort_value, 0),
