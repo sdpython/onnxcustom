@@ -9,6 +9,7 @@ data/*
 *.jpg
 *.onnx
 *.pt
+*.pkl
 *.err
 *.out
 *.prof
@@ -64,3 +65,5 @@ something
 _doc/examples/ort_cpu_bind.csv
 _doc/examples/ort_cpu_gpu.csv
 _doc/examples/ort_cpu.csv
+_doc/examples/ort_gpus.csv
+_doc/examples/ort_cpu_ortvalue.csv
