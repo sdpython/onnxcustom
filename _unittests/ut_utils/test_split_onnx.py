@@ -24,11 +24,7 @@ from onnxcustom.utils.onnx_split import split_onnx
 
 class TestSplitOnnx(ExtTestCase):
 
-    @unittest.skipIf(TrainingSession is None, reason="not training")
-    @ignore_warnings(ConvergenceWarning)
     def test_split_onnx(self):
-        from onnxcustom.training.optimizers_partial import (
-            OrtGradientForwardBackwardOptimizer)
         X = numpy.arange(30).reshape((-1, 3)).astype(numpy.float32) / 100
         y = numpy.arange(X.shape[0]).astype(numpy.float32)
         y = y.reshape((-1, 1))
@@ -40,12 +36,8 @@ class TestSplitOnnx(ExtTestCase):
 
         onx = to_onnx(reg, X, target_opset=opset)
         print(onnx_simple_text_plot(onx))
-        split = split_onnx(onx, 2)
+        split = split_onnx(onx, 3)
 
 
 if __name__ == "__main__":
-    # import logging
-    # logger = logging.getLogger('onnxcustom')
-    # logger.setLevel(logging.DEBUG)
-    # logging.basicConfig(level=logging.DEBUG)
     unittest.main(verbosity=2)
