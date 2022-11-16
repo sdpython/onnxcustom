@@ -1,18 +1,20 @@
 """
 @brief      test log(time=11s)
 """
+# pylint: disable=C0200,E1101,W0212
 import unittest
 import numpy
 from pyquickhelper.pycode import ExtTestCase, ignore_warnings
-from onnx import ModelProto, TensorProto
+from onnx import ModelProto, TensorProto, numpy_helper
 from onnx.helper import (
     make_model, make_node, set_model_props, make_tensor,
-    make_graph, make_tensor_value_info)
+    make_graph, make_tensor_value_info, make_opsetid)
 from onnx.checker import check_model
 from sklearn.exceptions import ConvergenceWarning
 from sklearn.neural_network import MLPRegressor
 from onnxruntime import InferenceSession
 from mlprodict.onnx_conv import to_onnx
+from mlprodict.plotting.text_plot import onnx_simple_text_plot
 from onnxcustom import __max_supported_opset__ as opset
 from onnxcustom.utils.onnx_split import split_onnx, OnnxSplitting
 
@@ -76,28 +78,229 @@ class TestSplitOnnx(ExtTestCase):
         X = make_tensor_value_info('X', TensorProto.FLOAT, [None, None])
         Y = make_tensor_value_info('Y', TensorProto.FLOAT, [None, None])
         Z = make_tensor_value_info('Z', TensorProto.FLOAT, [None, None])
+        T = make_tensor_value_info('T', TensorProto.FLOAT, [None, None])
         nodes = [make_node('Sub', ['X', 'Y'], ['diff']),
                  make_node('Mul', ['diff', 'diff'], ['abs']),
-                 make_node('Add', ['abs', 'X'], ['dx']),
-                 make_node('Add', ['abs', 'Y'], ['dy']),
-                 make_node('Mul', ['dx', 'dy'], ['Z'])]
+                 make_node('Add', ['abs', 'Z'], ['dz1']),
+                 make_node('Sub', ['abs', 'Z'], ['dz2']),
+                 make_node('Mul', ['dz1', 'dz2'], ['T'])]
 
-        graph = make_graph(nodes, "dummy", [X, Y], [Z])
+        graph = make_graph(nodes, "dummy", [X, Y, Z], [T])
         onx = make_model(graph)
         check_model(onx)
 
         split = OnnxSplitting(onx)
-        print(split.cutting_points)
         self.assertNotIn("dx", split.cutting_points)
         self.assertNotIn("dy", split.cutting_points)
-        segs = split.segments
-        
-        for seg in segs:
-            print(seg)
+        self.assertIn("diff", split.cutting_points)
+        parts = split_onnx(onx, 2)
 
+        ids = set(n.SerializeToString() for n in onx.graph.node)
+        total = 0
+        for p in parts:
+            keys = [n.SerializeToString() for n in p.graph.node]
+            for k in keys:
+                if k not in ids:
+                    raise AssertionError("node not found")
+            total += len(keys)
+        self.assertEqual(len(onx.graph.node), total)
 
+        for i in range(len(split.segments)):
+            ox = split._make_onnx(i, i + 1)
+            self.assertNotEmpty(ox.graph.input)
+            self.assertNotEmpty(ox.graph.output)
+
+    @staticmethod
+    def create_model():
+        initializers = []
+        nodes = []
+        inputs = []
+        outputs = []
+        functions = []
+
+        opsets = {'': 10}
+        target_opset = 10
+
+        value = numpy.random.randn(96, 16, 1, 1).astype(numpy.float32)
+        tensor = numpy_helper.from_array(value, name='I1')
+        initializers.append(tensor)
+
+        value = numpy.random.randn(96).astype(numpy.float32)
+        tensor = numpy_helper.from_array(value, name='I2')
+        initializers.append(tensor)
+
+        value = numpy.random.randn(96, 1, 3, 3).astype(numpy.float32)
+        tensor = numpy_helper.from_array(value, name='I3')
+        initializers.append(tensor)
+
+        value = numpy.random.randn(96).astype(numpy.float32)
+        tensor = numpy_helper.from_array(value, name='I4')
+        initializers.append(tensor)
+
+        value = numpy.random.randn(32, 96, 1, 1).astype(numpy.float32)
+        tensor = numpy_helper.from_array(value, name='I5')
+        initializers.append(tensor)
+
+        value = numpy.random.randn(32).astype(numpy.float32)
+        tensor = numpy_helper.from_array(value, name='I6')
+        initializers.append(tensor)
+
+        value = numpy.random.randn(128, 32, 1, 1).astype(numpy.float32)
+        tensor = numpy_helper.from_array(value, name='I7')
+        initializers.append(tensor)
+
+        value = numpy.random.randn(128).astype(numpy.float32)
+        tensor = numpy_helper.from_array(value, name='I8')
+        initializers.append(tensor)
+
+        tensor = numpy_helper.from_array(
+            numpy.array([-1], dtype=numpy.int64), name='I9')
+        initializers.append(tensor)
+
+        value = numpy.random.randn(100).astype(numpy.float32)
+        tensor = numpy_helper.from_array(value, name='II1')
+
+        initializers.append(tensor)
+
+        value = numpy.random.randn(100, 128).astype(numpy.float32)
+        tensor = numpy_helper.from_array(value, name='II2')
+
+        initializers.append(tensor)
+
+        inputs.append(make_tensor_value_info(
+            'input', 1, ['batch_size', 3, 224, 224]))
+        outputs.append(make_tensor_value_info(
+            'output', 1, ['batch_size', 1000]))
+
+        node = make_node(
+            'Conv', ['input', 'I1', 'I2'], ['R1'],
+            name='Conv_90', dilations=[1, 1], group=1, kernel_shape=[1, 1], pads=[0, 0, 0, 0], strides=[1, 1])
+        nodes.append(node)
+
+        node = make_node(
+            'Clip', ['R1'], ['R2'],
+            name='Clip_91', max=6.0, min=0.0, domain='')
+        nodes.append(node)
+
+        node = make_node(
+            'Conv', ['R2', 'I3', 'I4'], ['R3'],
+            name='Conv_92', dilations=[1, 1], group=960, kernel_shape=[3, 3], pads=[1, 1, 1, 1], strides=[1, 1], domain='')
+        nodes.append(node)
+
+        node = make_node(
+            'Clip', ['R3'], ['R4'],
+            name='Clip_93', max=6.0, min=0.0, domain='')
+        nodes.append(node)
+
+        node = make_node(
+            'Conv', ['R4', 'I5', 'I6'], ['R5'],
+            name='Conv_94', dilations=[1, 1], group=1, kernel_shape=[1, 1], pads=[0, 0, 0, 0], strides=[1, 1], domain='')
+        nodes.append(node)
+
+        node = make_node(
+            'Conv', ['R5', 'I7', 'I8'], ['R6'],
+            name='Conv_95', dilations=[1, 1], group=1, kernel_shape=[1, 1], pads=[0, 0, 0, 0], strides=[1, 1], domain='')
+        nodes.append(node)
+
+        node = make_node(
+            'Clip', ['R6'], ['R7'],
+            name='Clip_96', max=6.0, min=0.0, domain='')
+        nodes.append(node)
+
+        node = make_node(
+            'GlobalAveragePool', ['R7'], ['R8'],
+            name='GlobalAveragePool_97', domain='')
+        nodes.append(node)
+
+        node = make_node(
+            'Shape', ['R7'], ['R9'],
+            name='Shape_98', domain='')
+        nodes.append(node)
+
+        node = make_node(
+            'Constant', [], ['R10'],
+            name='Constant_99', value=make_tensor("value", TensorProto.INT64, dims=[1], vals=[0]), domain='')
+        nodes.append(node)
+
+        node = make_node(
+            'Gather', ['R9', 'R10'], ['R11'],
+            name='Gather_100', axis=0, domain='')
+        nodes.append(node)
+
+        node = make_node(
+            'Unsqueeze', ['R11'], ['R12'],
+            name='Unsqueeze_101', axes=[0], domain='')
+        nodes.append(node)
+
+        node = make_node(
+            'Concat', ['R12', 'I9'], ['R13'],
+            name='Concat_102', axis=0, domain='')
+        nodes.append(node)
+
+        node = make_node(
+            'Reshape', ['R8', 'R13'], ['R14'],
+            name='Reshape_103', domain='')
+        nodes.append(node)
+
+        node = make_node(
+            'Gemm', ['R14', 'II2', 'II1'], ['output'],
+            name='Gemm_104', alpha=1.0, beta=1.0, transB=1, domain='')
+        nodes.append(node)
+
+        opset_imports = [make_opsetid(domain, 1 if version is None else version)
+                         for domain, version in opsets.items()]
+
+        graph = make_graph(nodes, 'torch-jit-export',
+                           inputs, outputs, initializers)
+
+        onnx_model = make_model(
+            graph, opset_imports=opset_imports, functions=functions)
+        onnx_model.ir_version = 6
+        onnx_model.producer_name = 'pytorch'
+        onnx_model.producer_version = ''
+        onnx_model.domain = ''
+        onnx_model.model_version = 0
+        onnx_model.doc_string = ''
+        set_model_props(onnx_model, {})
+        check_model(onnx_model)
+        return onnx_model
+
+    def test_split_big_model(self):
+        onx = self.create_model()
+        with open("test.onnx", "wb") as f:
+            f.write(onx.SerializeToString())
+
+        split = OnnxSplitting(onx)
+        for seg in split.segments:
+            print(seg.size, seg)
+        for i in range(len(split.segments)):
+            ox = split._make_onnx(i, i + 1)
+            self.assertNotEmpty(ox.graph.input)
+            self.assertNotEmpty(ox.graph.output)
+            if i > 0:
+                self.assertEqual(
+                    split.segments[i].begin, ox.graph.input[0].name)
+            if i < len(split.segments) - 1:
+                self.assertEqual(
+                    split.segments[i].end, ox.graph.output[0].name)
+            if ox.graph.input[0].name == 'R10' and ox.graph.node[0].op_type != 'Shape':
+                raise AssertionError(
+                    f"Unexpected segment {i}\n{split.segments[i]!r}"
+                    f"\n{onnx_simple_text_plot(ox)}")
+
+        parts = split_onnx(onx, 2, verbose=1)
+
+        ids = set(n.SerializeToString() for n in onx.graph.node)
+        total = 0
+        for p in parts:
+            keys = [n.SerializeToString() for n in p.graph.node]
+            for k in keys:
+                if k not in ids:
+                    raise AssertionError("node not found")
+            total += len(keys)
+        self.assertEqual(len(onx.graph.node), total)
 
 
 if __name__ == "__main__":
-    TestSplitOnnx().test_split_onnx_branch()
+    TestSplitOnnx().test_split_big_model()
     unittest.main(verbosity=2)

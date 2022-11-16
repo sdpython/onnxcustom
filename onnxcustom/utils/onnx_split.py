@@ -60,7 +60,7 @@ class OnnxSplitting:
 
     @staticmethod
     def _key(idn, node):
-        return f"{node.name}-{idn}"
+        return f"{node.op_type}-{node.name}-{idn}"
 
     def _init(self):
         onnx_model = self.onnx_model
@@ -88,19 +88,20 @@ class OnnxSplitting:
                     f"is not supported yet.")
 
         # cut points: results breaking the connexity of the graph
-        self.cutting_points = self.get_cutting_points(node_list)
+        self.cutting_points = self._get_cutting_points(node_list)
 
         if self.verbose:
-            self.fLOG(f"[OnnxSplitting] # cuttings points: {len(self.cutting_points)}")
+            self.fLOG(
+                f"[OnnxSplitting] # cuttings points: {len(self.cutting_points)}")
 
         # segments
         segments = []
-        for i in range(len(cutting_points)):  # pylint: disable=C0200
+        for i in range(len(self.cutting_points)):  # pylint: disable=C0200
             segments.append(
                 self._make_segment(
-                    None if i == 0 else cutting_points[i - 1],
-                    cutting_points[i]))
-        segments.append(self._make_segment(cutting_points[i], None))
+                    None if i == 0 else self.cutting_points[i - 1],
+                    self.cutting_points[i]))
+        segments.append(self._make_segment(self.cutting_points[i], None))
         self.segments = segments
         self.shapes = shape_inference.infer_shapes(onnx_model)
 
@@ -108,6 +109,64 @@ class OnnxSplitting:
             sizes = [seg.size for seg in self.segments]
             self.fLOG(f"[OnnxSplitting] # segments = {len(sizes)}, "
                       f"min,avg,max size=[{min(sizes)}, {sum(sizes) / len(sizes)}, {max(sizes)}]")
+
+    @staticmethod
+    def _connex_components(vertices, adja):
+        vert = {v: i for i, v in enumerate(vertices)}
+        more = True
+        while more:
+            more = False
+            for k, v in adja.items():
+                if v == 0:
+                    continue
+                a, b = k
+                if vert[a] == vert[b]:
+                    continue
+                more = True
+                if vert[a] < vert[b]:
+                    vert[b] = vert[a]
+                else:
+                    vert[a] = vert[b]
+        return vert
+
+    def _get_cutting_points(self, node_list):
+        # adjacency matrix
+        adja = {}
+        vertices = set()
+        ordered_names = []
+        for idn, node in node_list:
+            key = self._key(idn, node)
+            if len(node.output) == 1:
+                ordered_names.extend(node.output)
+            vertices.add(key)
+            vertices |= set(node.input)
+            vertices |= set(node.output)
+            for i in node.input:
+                adja[i, key] = 1
+            for o in node.output:
+                adja[key, o] = 1
+
+        # checking the connexity
+        cutting_points = []
+        for name in ordered_names:
+            keys = []
+            for a, b in adja:
+                if b == name:
+                    keys.append((a, b))
+
+            # remove the links
+            for a, b in keys:
+                adja[a, b] = 0
+
+            connex = self._connex_components(vertices, adja)
+            if len(set(connex.values())) == 2:
+                cutting_points.append(name)
+
+            # put back the links
+            for a, b in keys:
+                adja[a, b] = 1
+
+        return cutting_points
 
     def _make_segment(self, name1, name2):
         nodes = []
@@ -200,15 +259,27 @@ class OnnxSplitting:
             a, b = extremities[i - 1:i + 1]
             onx = self._make_onnx(a, b, i - 1)
             res.append(onx)
+            if self.verbose > 0:
+                n_nodes = len(self.onnx_model.graph.node)
+                total = sum(s.size for s in self.segments)
+                size = sum(self.segments[i].size for i in range(a, b))
+                self.fLOG(f"[OnnxSplitting] part {i}: "
+                          f"#nodes={len(onx.graph.node)}/{n_nodes}, "
+                          f"size={size}/{total}={size/total:1.2f}")
         return res
 
-    def _make_onnx(self, a, b, index):
+    def _make_onnx(self, a, b, index=None):
         """
         Builds one onnx subpart including segments from a to b (excluded).
         """
+        if index is None:
+            index = a
+
         # common parts
-        value_info = {info.name: info
-                      for info in self.shapes.graph.value_info}  # pylint: disable=E1101
+        value_info = {o.name: o for o in self.onnx_model.graph.output}
+        value_info.update({
+            info.name: info
+            for info in self.shapes.graph.value_info})  # pylint: disable=E1101
 
         segs = self.segments[a:b]
         involved = set()

@@ -133,6 +133,10 @@ else:
 
 with open(model_name, "rb") as f:
     model = onnx.load(f)
-    
+
 n_parts = max(n_gpus, 2)
 pieces = split_onnx(model, n_parts, verbose=1)
+
+for i, piece in enumerate(pieces):
+    with open(f"piece-{os.path.splitext(model_name)[0]}-{i}.onnx", "wb") as f:
+        f.write(piece.SerializeToString())
