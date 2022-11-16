@@ -5,7 +5,7 @@
 Multithreading with onnxruntime
 ===============================
 
-.. index:: thread, parallel
+.. index:: thread, parallel, onnxruntime
 
 Python implements multithreading but it is not working in practice due to the GIL
 (see :epkg:`Le GIL`). However, if most of the parallelized code is not creating

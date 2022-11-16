@@ -48,10 +48,14 @@ class OnnxSplitting:
     equivalent pieces.
 
     :param onnx_model: onnx_model
+    :param verbose: displays information during the split
+    :param fLOG: logging function
     """
 
-    def __init__(self, onnx_model):
+    def __init__(self, onnx_model, verbose=0, fLOG=None):
         self.onnx_model = onnx_model
+        self.verbose = verbose
+        self.fLOG = fLOG or print
         self._init()
 
     @staticmethod
@@ -98,7 +102,12 @@ class OnnxSplitting:
             out = node.output[0]
             if consumed[out] == 1:
                 cutting_points.append(out)
+        import pprint
+        pprint.pprint(consumed)
         self.cutting_points = cutting_points
+
+        if self.verbose:
+            self.fLOG(f"[OnnxSplitting] # cuttings points: {len(self.cutting_points)}")
 
         # segments
         segments = []
@@ -110,6 +119,11 @@ class OnnxSplitting:
         segments.append(self._make_segment(cutting_points[i], None))
         self.segments = segments
         self.shapes = shape_inference.infer_shapes(onnx_model)
+
+        if self.verbose > 0:
+            sizes = [seg.size for seg in self.segments]
+            self.fLOG(f"[OnnxSplitting] # segments = {len(sizes)}, "
+                      f"min,avg,max size=[{min(sizes)}, {sum(sizes) / len(sizes)}, {max(sizes)}]")
 
     def _make_segment(self, name1, name2):
         nodes = []
@@ -259,24 +273,29 @@ class OnnxSplitting:
         return new_model
 
 
-def split_onnx(onnx_model, n_parts):
+def split_onnx(onnx_model, n_parts, verbose=0, fLOG=None):
     """
     Splits an ONNX model into *n_parts* consecutive subgraphs.
     Chained altogether, they are equivalent to the given model.
 
     :param onnx_model: onnx model
     :param n_parts: number of subgraphs
+    :param verbose: display information related to the split
+    :param fLOG: logging function
     :return: list of onnx model
     """
     if len(onnx_model.functions) > 0:
         raise NotImplementedError(
             f"The function does not work if the model contains function: "
             f"{f.name for f in onnx_model.functions}.")
-    spl_onnx = OnnxSplitting(onnx_model)
+    spl_onnx = OnnxSplitting(onnx_model, verbose=verbose, fLOG=fLOG or print)
     if len(spl_onnx.cutting_points) < n_parts:
         raise RuntimeError(  # pragma: no cover
             f"Unable to split the onnn model, there are less cutting points "
             f"{len(spl_onnx.cutting_points)} than the number of requested "
             f"splits ({n_parts}).")
     exts = spl_onnx.split_segment(n_parts)
+    if verbose > 0:
+        names = [spl_onnx.segments[i].end for i in exts[1:-1]]
+        (fLOG or print)(f"[split_onnx] splits: {exts}, names={names}")
     return spl_onnx.make_onnx(exts)

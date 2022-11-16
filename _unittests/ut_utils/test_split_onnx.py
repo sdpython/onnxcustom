@@ -4,7 +4,11 @@
 import unittest
 import numpy
 from pyquickhelper.pycode import ExtTestCase, ignore_warnings
-from onnx import ModelProto
+from onnx import ModelProto, TensorProto
+from onnx.helper import (
+    make_model, make_node, set_model_props, make_tensor,
+    make_graph, make_tensor_value_info)
+from onnx.checker import check_model
 from sklearn.exceptions import ConvergenceWarning
 from sklearn.neural_network import MLPRegressor
 from onnxruntime import InferenceSession
@@ -31,14 +35,19 @@ class TestSplitOnnx(ExtTestCase):
         segs = split.segments
         self.assertGreater(len(segs), 3)
         self.assertIn("OnnxSegment(", repr(segs[0]))
+        size0 = len(onx.SerializeToString())
         total = 0
         for seg in split.segments:
+            self.assertLess(seg.size, size0)
             total += seg.size
-        self.assertLess(len(onx.SerializeToString()), total)
+        self.assertLess(size0, total)
+
+        def myprint(*args):
+            pass
 
         for n_parts in [2, 4]:
             with self.subTest(n_parts=n_parts):
-                parts = split_onnx(onx, n_parts)
+                parts = split_onnx(onx, n_parts, verbose=1, fLOG=myprint)
                 self.assertEqual(len(parts), n_parts)
                 for i, p in enumerate(parts):
                     if len(p.graph.input) == 0:
@@ -63,6 +72,32 @@ class TestSplitOnnx(ExtTestCase):
                     feeds = {n: out}
                 self.assertEqualArray(expected, numpy.squeeze(out))
 
+    def test_split_onnx_branch(self):
+        X = make_tensor_value_info('X', TensorProto.FLOAT, [None, None])
+        Y = make_tensor_value_info('Y', TensorProto.FLOAT, [None, None])
+        Z = make_tensor_value_info('Z', TensorProto.FLOAT, [None, None])
+        nodes = [make_node('Sub', ['X', 'Y'], ['diff']),
+                 make_node('Mul', ['diff', 'diff'], ['abs']),
+                 make_node('Add', ['abs', 'X'], ['dx']),
+                 make_node('Add', ['abs', 'Y'], ['dy']),
+                 make_node('Mul', ['dx', 'dy'], ['Z'])]
+
+        graph = make_graph(nodes, "dummy", [X, Y], [Z])
+        onx = make_model(graph)
+        check_model(onx)
+
+        split = OnnxSplitting(onx)
+        print(split.cutting_points)
+        self.assertNotIn("dx", split.cutting_points)
+        self.assertNotIn("dy", split.cutting_points)
+        segs = split.segments
+        
+        for seg in segs:
+            print(seg)
+
+
+
 
 if __name__ == "__main__":
+    TestSplitOnnx().test_split_onnx_branch()
     unittest.main(verbosity=2)
