@@ -412,7 +412,8 @@ if has_cuda and n_gpus > 0:
              InferenceSession(model_name, providers=["CUDAExecutionProvider",
                                                      "CPUExecutionProvider"])]
     if model_name == "gpt2.onnx":
-        imgs = [x["input_ids"].numpy() for x in encoded_tensors[:maxN * len(sesss)]]
+        imgs = [x["input_ids"].numpy()
+                for x in encoded_tensors[:maxN * len(sesss)]]
     else:
         imgs = [numpy.random.rand(*input_shape).astype(numpy.float32)
                 for i in range(maxN * len(sesss))]
@@ -457,7 +458,8 @@ if n_gpus > 1:
                                                     "CPUExecutionProvider"],
                              provider_options=[{"device_id": i}, {}]))
     if model_name == "gpt2.onnx":
-        imgs = [x["input_ids"].numpy() for x in encoded_tensors[:maxN * len(sesss)]]
+        imgs = [x["input_ids"].numpy()
+                for x in encoded_tensors[:maxN * len(sesss)]]
     else:
         imgs = [numpy.random.rand(*input_shape).astype(numpy.float32)
                 for i in range(maxN * len(sesss))]

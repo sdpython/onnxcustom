@@ -210,7 +210,11 @@ def _onnx_derivative_fw(onx, weights, inputs, options):
 
     builder.initialize(onx.SerializeToString(), config)
     builder.build()
-    train_onnx_model_serialized = builder.get_model()
+    try:
+        train_onnx_model_serialized = builder.get_gradient_model()
+    except AttributeError:
+        train_onnx_model_serialized = builder.get_model()
+
     # optimized_pre_grad_model = builder.get_inference_optimized_model()
     grad_yield = onnx.load(BytesIO(train_onnx_model_serialized))
     if options & DerivativeOptions.KeepYieldOp:

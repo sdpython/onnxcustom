@@ -19,6 +19,11 @@ Labelling
 
 .. autosignature:: onnxcustom.utils.imagenet_classes.get_class_names
 
+Splitting
++++++++++
+
+.. autosignature:: onnxcustom.utils.onnx_split.split_onnx
+
 Time
 ++++
 
