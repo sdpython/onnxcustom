@@ -127,7 +127,7 @@ else:
 #
 # It is an ONNX graph. There is no notion of layers.
 # The function :func:`split_onnx <onnxcustom.utils.onnx_split.split_onnx>`
-# first detects possible cutting points.
+# first detects possible cutting points (breaking the connexity of the graph)
 # Then it is just finding the best cutting points to split the model into
 # pieces of roughly the same size.
 

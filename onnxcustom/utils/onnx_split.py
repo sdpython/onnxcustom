@@ -80,31 +80,15 @@ class OnnxSplitting:
             sizes[self._key(idn, node)] = len(node.SerializeToString())
         self.sizes = sizes
 
-        # output needs once
-        consumed = {}
+        # only working for standard domain (supporting shape inference)
         for node in onnx_model.graph.node:
             if node.domain not in {'', 'ai.onnx', 'ai.onnx.ml'}:
                 raise NotImplementedError(
                     f"Node {node.op_type!r} from domain {node.domain!r} "
                     f"is not supported yet.")
-            for i in node.input:
-                if i not in consumed:
-                    consumed[i] = 0
-                consumed[i] += 1
-            for o in node.output:
-                consumed[o] = 0
 
-        # cut points: unique output consumed by only one node
-        cutting_points = []
-        for idn, node in node_list:
-            if len(node.output) != 1:
-                continue
-            out = node.output[0]
-            if consumed[out] == 1:
-                cutting_points.append(out)
-        import pprint
-        pprint.pprint(consumed)
-        self.cutting_points = cutting_points
+        # cut points: results breaking the connexity of the graph
+        self.cutting_points = self.get_cutting_points(node_list)
 
         if self.verbose:
             self.fLOG(f"[OnnxSplitting] # cuttings points: {len(self.cutting_points)}")
