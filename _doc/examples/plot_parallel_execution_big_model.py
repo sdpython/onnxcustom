@@ -340,7 +340,8 @@ def parallel_ort_value(sesss, imgs, wait_time=1e-4):
     order = list(sorted(indices)) == indices
     res.sort()
     res = [r[1] for r in res]
-    times = {"wait":[], "wait0": [], "copy1": [], "copy2": [], "run": [], "ttime": [], "wtime": []}
+    times = {"wait": [], "wait0": [], "copy1": [],
+             "copy2": [], "run": [], "ttime": [], "wtime": []}
     waiting_time = []
     for t in threads:
         times["wait"].append(t.waiting_time)
@@ -388,13 +389,19 @@ def benchmark(fcts, model_name, piece_names, imgs, stepN=1, repN=4):
             obs.update({f"n_imgs": len(r), f"time": end})
             obs['order'] = order
             if len(times) > 0:
-                obs.update({f"wait0_{i}": t for i, t in enumerate(times["wait0"])})
-                obs.update({f"wait_{i}": t for i, t in enumerate(times["wait"])})
-                obs.update({f"copy1_{i}": t for i, t in enumerate(times["copy1"])})
-                obs.update({f"copy2_{i}": t for i, t in enumerate(times["copy2"])})
+                obs.update(
+                    {f"wait0_{i}": t for i, t in enumerate(times["wait0"])})
+                obs.update(
+                    {f"wait_{i}": t for i, t in enumerate(times["wait"])})
+                obs.update(
+                    {f"copy1_{i}": t for i, t in enumerate(times["copy1"])})
+                obs.update(
+                    {f"copy2_{i}": t for i, t in enumerate(times["copy2"])})
                 obs.update({f"run_{i}": t for i, t in enumerate(times["run"])})
-                obs.update({f"ttime_{i}": t for i, t in enumerate(times["ttime"])})
-                obs.update({f"wtime_{i}": t for i, t in enumerate(times["wtime"])})
+                obs.update(
+                    {f"ttime_{i}": t for i, t in enumerate(times["ttime"])})
+                obs.update(
+                    {f"wtime_{i}": t for i, t in enumerate(times["wtime"])})
             ns_name[name].append(len(r))
             results[name].append((r, obs))
             data.append(obs)
@@ -485,7 +492,8 @@ def make_plot(df, title):
     a = ax[1, 0]
     wait0 = df[["n_imgs"] + wcol0].set_index("n_imgs")
     wait0.plot(ax=a)
-    a.set_title("Time waiting for the first image per thread", fontsize="x-small")
+    a.set_title("Time waiting for the first image per thread",
+                fontsize="x-small")
     a.legend(fontsize="x-small")
     a.set_ylabel("seconds", fontsize="x-small")
 
@@ -503,7 +511,8 @@ def make_plot(df, title):
     for c in wait.columns:
         wait[c] /= div.values
     wait.plot(ax=a)
-    a.set_title("Total time waiting per thread\ndivided by batch size", fontsize="x-small")
+    a.set_title(
+        "Total time waiting per thread\ndivided by batch size", fontsize="x-small")
     a.legend()
     a.set_ylim([0, None])
     a.set_ylabel("seconds", fontsize="x-small")
@@ -521,7 +530,7 @@ def make_plot(df, title):
     a.set_title("Total time\ndivided by batch size", fontsize="x-small")
     a.set_ylabel("seconds", fontsize="x-small")
     a.set_xlabel("batch size", fontsize="x-small")
-    
+
     a = ax[1, 3]
     run = [c for c in df.columns if c.startswith('run_')]
     sub = df.loc[~df.run_0.isnull(), ["n_imgs", "time"] + run].copy()
@@ -529,14 +538,15 @@ def make_plot(df, title):
         sub[c] /= sub["time"]
     sub["time"] = 1
     sub.set_index("n_imgs").plot(ax=a)
-    a.set_title("Running time per thread / total time\ndivided by batch size", fontsize="x-small")
+    a.set_title(
+        "Running time per thread / total time\ndivided by batch size", fontsize="x-small")
     a.set_ylabel("seconds", fontsize="x-small")
     a.set_xlabel("batch size", fontsize="x-small")
     a.legend(fontsize="x-small")
-    
+
     # other time
     pos = [2, 0]
-    
+
     cols = ['wtime', 'copy1', 'run', 'copy2', 'ttime']
     for nth in range(n_threads):
         a = ax[tuple(pos)]
@@ -548,7 +558,7 @@ def make_plot(df, title):
         a.set_title(f"Part {nth + 1}/{n_threads}", fontsize="x-small")
         a.set_xlabel("batch size", fontsize="x-small")
         a.legend(fontsize="x-small")
-        
+
         pos[1] += 1
         if pos[1] >= ax.shape[1]:
             pos[1] = 0
