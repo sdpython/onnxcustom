@@ -388,6 +388,8 @@ def split_onnx(onnx_model, n_parts, verbose=0, fLOG=None):
         raise NotImplementedError(
             f"The function does not work if the model contains function: "
             f"{f.name for f in onnx_model.functions}.")
+    if verbose > 0:
+        (fLOG or print)(f"[split_onnx] starts splitting in {n_parts} parts.")
     spl_onnx = OnnxSplitting(onnx_model, verbose=verbose, fLOG=fLOG or print)
     if len(spl_onnx.cutting_points) < n_parts:
         raise RuntimeError(  # pragma: no cover

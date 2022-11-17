@@ -50,6 +50,7 @@ import time
 import sys
 import tqdm
 import numpy
+from numpy.testing import assert_allclose
 import pandas
 import onnx
 import torch.cuda
@@ -57,6 +58,7 @@ from onnxruntime import InferenceSession, get_all_providers
 from onnxruntime.capi._pybind_state import (  # pylint: disable=E0611
     OrtDevice as C_OrtDevice, OrtValue as C_OrtValue)
 from onnxcustom.utils.onnx_split import split_onnx
+from onnxcustom.utils.onnxruntime_helper import get_ort_device_from_session
 
 
 def download_file(url, name, min_size):
@@ -84,13 +86,13 @@ elif small:
     model_name = "mobilenetv2-10.onnx"
     url_name = ("https://github.com/onnx/models/raw/main/vision/"
                 "classification/mobilenet/model")
-    maxN, stepN, repN = 41, 2, 4
+    maxN, stepN, repN = 81, 2, 4
     big_model = False
 else:
     model_name = "resnet18-v1-7.onnx"
     url_name = ("https://github.com/onnx/models/raw/main/vision/"
                 "classification/resnet/model")
-    maxN, stepN, repN = 41, 2, 4
+    maxN, stepN, repN = 81, 2, 4
     big_model = False
 
 if url_name is not None:
@@ -213,38 +215,17 @@ print(f"Max difference: {diff}")
 # First the implementation of a sequence.
 
 
-def get_ort_device(sess):
-    providers = sess.get_providers()
-    if providers == ["CPUExecutionProvider"]:
-        return C_OrtDevice(C_OrtDevice.cpu(), C_OrtDevice.default_memory(), 0)
-    if providers[0] == "CUDAExecutionProvider":
-        options = sess.get_provider_options()
-        if len(options) == 0:
-            return C_OrtDevice(C_OrtDevice.cuda(), C_OrtDevice.default_memory(), 0)
-        if "CUDAExecutionProvider" not in options:
-            raise NotImplementedError(
-                f"Unable to guess 'device_id' in {options}.")
-        cuda = options["CUDAExecutionProvider"]
-        if "device_id" not in cuda:
-            raise NotImplementedError(
-                f"Unable to guess 'device_id' in {options}.")
-        device_id = int(cuda["device_id"])
-        return C_OrtDevice(C_OrtDevice.cuda(), C_OrtDevice.default_memory(), device_id)
-    raise NotImplementedError(
-        f"Not able to guess the model device from {providers}.")
-
-
 def sequence_ort_value(sesss, imgs):
     assert len(sesss) == 1
     sess = sesss[0]
-    ort_device = get_ort_device(sess)
+    ort_device = get_ort_device_from_session(sess)
     res = []
     for img in imgs:
         ov = C_OrtValue.ortvalue_from_numpy(img, ort_device)
         out = sess._sess.run_with_ort_values(
             {input_name: ov}, [output_name], None)[0]
         res.append(out.numpy())
-    return res
+    return res, [(0, 0)], True
 
 
 ##################################
@@ -252,70 +233,87 @@ def sequence_ort_value(sesss, imgs):
 
 class MyThreadOrtValue(threading.Thread):
 
-    def __init__(self, sess, n_imgs, next_thread=None, wait_time=1e-2):
+    def __init__(self, sess, batch_size, next_thread=None, wait_time=1e-4):
         threading.Thread.__init__(self)
+        if batch_size <= 0:
+            raise ValueError(f"batch_size={batch_size} must be positive.")
         self.sess = sess
-        self.imgs = [None for i in range(n_imgs)]
-        self.pos = 0
-        self.q = []
-        self.ort_device = ort_device
         self.wait_time = wait_time
-        self.waiting_time = 0
-        self.ort_device = get_ort_device(self.sess)
+        self.ort_device = get_ort_device_from_session(self.sess)
         self.next_thread = next_thread
+        self.input_name = self.sess.get_inputs()[0].name
+        self.output_name = self.sess.get_outputs()[0].name
+        self.batch_size = batch_size
 
-    def append(self, img):
+        # for the execution
+        self.waiting_time0 = 0
+        self.waiting_time = 0
+        self.inputs = []
+        self.outputs = []
+
+    def append(self, pos, img):
         if not isinstance(img, numpy.ndarray):
             raise TypeError(f"numpy array expected not {type(img)}.")
-        if self.pos >= len(self.n_imgs):
+        if pos >= self.batch_size or pos < 0:
             raise RuntimeError(
-                f"Cannot append an image, {self.pos} were processed. "
+                f"Cannot append an image, pos={pos} no in [0, {self.batch_size}[. "
                 f"The thread should be finished.")
-        self.imgs[self.pos] = img
-        self.pos += 1
+        self.inputs.append((pos, img))
 
     def run(self):
         ort_device = self.ort_device
         sess = self.sess._sess
+        processed = 0
 
-        while len(self.q) < len(self.imgs):
+        while processed < self.batch_size:
 
             # wait for an image
-            while len(self.q) == self.pos:
+            while processed >= len(self.inputs):
                 self.waiting_time += self.wait_time
+                if len(self.inputs) == 0:
+                    self.waiting_time0 += self.wait_time
                 time.sleep(self.wait_time)
 
-            ov = C_OrtValue.ortvalue_from_numpy(
-                self.imgs[self.pos], ort_device)
+            pos, img = self.inputs[processed]
+            ov = C_OrtValue.ortvalue_from_numpy(img, ort_device)
             out = sess.run_with_ort_values(
-                {input_name: ov}, [output_name], None)[0]
+                {self.input_name: ov}, [self.output_name], None)[0]
+            self.inputs[processed] = None  # deletion
             cpu_res = out.numpy()
-            q.append(cpu_res)
+            self.outputs.append((pos, cpu_res))
+            processed += 1
 
             # sent the result to the next part
             if self.next_thread is not None:
-                self.next_thread.append(cpu_res)
+                self.next_thread.append(pos, cpu_res)
 
 
-def parallel_ort_value(sesss, imgs, wait_time=1e-2):
+def parallel_ort_value(sesss, imgs, wait_time=1e-4):
     n_parts = len(sesss)
     threads = []
     for i in range(len(sesss)):
         sess = sesss[-i - 1]
-        next_thread == threads[-1] if i > 0 else None
-        th = MyThreadOrtValue(sess, next_thread, wait_time=wait_time)
+        next_thread = threads[-1] if i > 0 else None
+        th = MyThreadOrtValue(sess, len(imgs), next_thread, wait_time=wait_time)
         threads.append(th)
     threads = list(reversed(threads))
 
-    for img in imgs:
-        threads[0].append(img)
+    for i, img in enumerate(imgs):
+        threads[0].append(i, img)
     for t in threads:
         t.start()
     res = []
+    th = threads[-1]
+    th.join()
+    res.extend(th.outputs)
+    indices = [r[0] for r in res]
+    order = list(sorted(indices)) == indices
+    res.sort()
+    res = [r[1] for r in res]
+    waiting_time = []
     for t in threads:
-        t.join()
-        res.extend(t.q)
-    return res
+        waiting_time.append((t.waiting_time0, t.waiting_time))
+    return res, waiting_time, order
 
 ###############################
 # Functions
@@ -331,14 +329,16 @@ def parallel_ort_value(sesss, imgs, wait_time=1e-2):
 
 def benchmark(fcts, model_name, piece_names, imgs, stepN=1, repN=4):
     data = []
-    Ns = [1] + list(range(nth, len(imgs), stepN * nth))
+    Ns = list(range(1, len(imgs), stepN))
     ns_name = {}
-    for name, build_fct, fct, index in fcts:
+    results = {}
+    for name, build_fct, fct in fcts:
         ns_name[name] = []
+        results[name] = []
         sesss = build_fct()
         for N in tqdm.tqdm(Ns):
             for i in range(repN):
-                r = fct(sesss, imgs[:N])
+                r, wt, order = fct(sesss, imgs[:N])
                 if i == 0:
                     # let's get rid of the first iteration sometimes
                     # used to initialize internal objects.
@@ -346,14 +346,19 @@ def benchmark(fcts, model_name, piece_names, imgs, stepN=1, repN=4):
             end = (time.perf_counter() - begin) / (repN - 1)
             obs = {'n_imgs': len(imgs), 'maxN': maxN,
                    'stepN': stepN, 'repN': repN,
-                   'batch_size': N, 'n_threads': len(sesss)}
-            obs.update({f"n_imgs_{name}": len(r), f"time_{name}": end})
+                   'batch_size': N, 'n_threads': len(sesss),
+                   'name': name}
+            obs.update({f"n_imgs": len(r), f"time": end})
+            obs.update({f"wait0_{i}": t[0] for i, t in enumerate(wt)})
+            obs.update({f"wait_{i}": t[1] for i, t in enumerate(wt)})
+            obs['order'] = order
             ns_name[name].append(len(r))
+            results[name].append((r, obs))
+            data.append(obs)
 
         del sesss
         gc.collect()
 
-        data.append(obs)
 
     names = list(ns_name)
     baseline = ns_name[names[0]]
@@ -362,6 +367,21 @@ def benchmark(fcts, model_name, piece_names, imgs, stepN=1, repN=4):
             raise RuntimeError(
                 f"Cannot compare experiments as it returns differents number of results, "
                 f"ns_name={ns_name}, obs={obs}.")
+    baseline = results[names[0]]
+    for name in names[1:]:
+        if len(results[name]) != len(baseline):
+            raise RuntimeError("Cannot compare.")
+        for i1, ((b, o1), (r, o2)) in enumerate(zip(baseline, results[name])):
+            if len(b) != len(r):
+                raise RuntimeError(f"Cannot compare: len(b)={len(b)} != len(r)={len(r)}.")
+            for i2, (x, y) in enumerate(zip(b, r)):
+                try:
+                    assert_allclose(x, y, atol=1e-3)
+                except AssertionError as e:
+                    raise AssertionError(
+                            f"Issue with baseline={names[0]!r} and {name!r}, "
+                            f"i1={i1}/{len(baseline)}, i2={i2}/{len(b)}\n"
+                            f"o1={o1}\no2{o2}") from e
 
     return pandas.DataFrame(data)
 
@@ -369,14 +389,6 @@ def benchmark(fcts, model_name, piece_names, imgs, stepN=1, repN=4):
 def make_plot(df, title):
     if df is None:
         return None
-    if "n_threads" in df.columns:
-        n_threads = list(set(df.n_threads))
-        if len(n_threads) != 1:
-            raise RuntimeError(f"n_threads={n_threads} must be unique.")
-        index = "batch_size"
-    else:
-        n_threads = "?"
-        index = "n_imgs_seq_cpu"
     kwargs = dict(title=f"{title}\nn_threads={n_threads}", logy=True)
     columns = [index] + [c for c in df.columns if c.startswith("time")]
     ax = df[columns].set_index(columns[0]).plot(**kwargs)
@@ -394,23 +406,30 @@ def make_plot(df, title):
 # Initialization
 #
 
+def build_sequence():
+    return [InferenceSession(model_name, providers=["CUDAExecutionProvider",
+                                                     "CPUExecutionProvider"])]
+
+def build_parellel_pieces():
+    sesss = []
+    for i in range(len(piece_names)):
+        print(f"Initialize device {i} with {piece_names[i]!r}")
+        sesss.append(
+            InferenceSession(
+                piece_names[i],
+                providers=["CUDAExecutionProvider", "CPUExecutionProvider"],
+                provider_options=[{"device_id": i}, {}]))
+    return sesss
+
+
 if n_gpus > 1:
     print("ORT // GPUs")
-    if model_name == "gpt2.onnx":
-        imgs = [x["input_ids"].numpy()
-                for x in encoded_tensors[:maxN * len(sesss)]]
-    else:
-        imgs = [numpy.random.rand(*input_shape).astype(numpy.float32)
-                for i in range(maxN * len(sesss))]
 
     df = benchmark(model_name=model_name, piece_names=piece_names,
                    imgs=imgs, stepN=stepN, repN=repN,
-                   fcts=[('sequence', sequence_ort_value, 0),
-                         ('parallel', parallel_ort_value, None)])
+                   fcts=[('sequence', build_sequence, sequence_ort_value),
+                         ('parallel', build_parellel_pieces, parallel_ort_value)])
     df.reset_index(drop=False).to_csv("ort_gpus_piece.csv", index=False)
-
-    del sesss[:]
-    gc.collect()
 else:
     print("No GPU is available but data should be like the following.")
     df = pandas.read_csv("data/ort_gpus_piece.csv").set_index("N")
