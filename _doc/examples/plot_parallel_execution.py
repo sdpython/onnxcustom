@@ -65,25 +65,19 @@ small = "custom" if "custom" in sys.argv else "small"
 if small == "custom":
     model_name = "gpt2.onnx"
     url_name = None
-    maxN = 5
-    stepN = 1
-    repN = 4
+    maxN, stepN, repN = 5, 1, 4
     big_model = True
 elif small:
     model_name = "mobilenetv2-10.onnx"
     url_name = ("https://github.com/onnx/models/raw/main/vision/"
                 "classification/mobilenet/model")
-    maxN = 21
-    stepN = 2
-    repN = 4
+    maxN, stepN, repN = 21, 2, 4
     big_model = False
 else:
     model_name = "resnet18-v1-7.onnx"
     url_name = ("https://github.com/onnx/models/raw/main/vision/"
                 "classification/resnet/model")
-    maxN = 21
-    stepN = 2
-    repN = 4
+    maxN, stepN, repN = 21, 2, 4
     big_model = False
 
 if url_name is not None:
@@ -310,9 +304,22 @@ make_plot(df, "Time per image / batch size")
 # See :epkg:`l-ortvalue-doc`.
 
 
+def get_ort_device(sess):
+    providers = sess.get_providers()
+    if providers == ["CPUExecutionProvider"]:
+        return C_OrtDevice(C_OrtDevice.cpu(), C_OrtDevice.default_memory(), 0)
+    if providers[0] == ["CUDAExecutionProvider"]:
+        options = sess.get_provider_options()
+        if len(options) == 0:
+            return C_OrtDevice(C_OrtDevice.cuda(), C_OrtDevice.default_memory(), 0)
+        device_id = options["device_id"]
+        return C_OrtDevice(C_OrtDevice.cuda(), C_OrtDevice.default_memory(), device_id)
+    raise NotImplementedError(
+        f"Not able to guess the model device from {providers}.")
+
+
 def sequence_ort_value(sess, imgs):
-    ort_device = C_OrtDevice(
-        C_OrtDevice.cpu(), C_OrtDevice.default_memory(), 0)
+    ort_device = get_ort_device(sess)
     res = []
     for img in imgs:
         ov = C_OrtValue.ortvalue_from_numpy(img, ort_device)
@@ -324,12 +331,12 @@ def sequence_ort_value(sess, imgs):
 
 class MyThreadOrtValue(threading.Thread):
 
-    def __init__(self, sess, imgs, ort_device):
+    def __init__(self, sess, imgs):
         threading.Thread.__init__(self)
         self.sess = sess
         self.imgs = imgs
         self.q = []
-        self.ort_device = ort_device
+        self.ort_device = get_ort_device(self.sess)
 
     def run(self):
         ort_device = self.ort_device
@@ -343,10 +350,8 @@ class MyThreadOrtValue(threading.Thread):
 
 
 def parallel_ort_value(sess, imgs):
-    ort_device = C_OrtDevice(
-        C_OrtDevice.cpu(), C_OrtDevice.default_memory(), 0)
     n_threads = len(sesss)
-    threads = [MyThreadOrtValue(sess, imgs[i::n_threads], ort_device)
+    threads = [MyThreadOrtValue(sess, imgs[i::n_threads])
                for i, sess in enumerate(sesss)]
     for t in threads:
         t.start()

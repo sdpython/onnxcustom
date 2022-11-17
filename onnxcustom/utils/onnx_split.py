@@ -131,9 +131,15 @@ class OnnxSplitting:
 
     @staticmethod
     def is_small(tensor):
+        """
+        Tells if a tensor is small. In that case, all edges to this
+        constant are ignored when looking for cutting points.
+        The algorithm assumes it can be duplicated in multiple parts.
+        It is usually single float constant or shapes.
+        """
         if tensor.HasField("segment"):
             raise ValueError("Currently not supporting loading segments.")
-        if tensor.data_type == TensorProto.UNDEFINED:
+        if tensor.data_type == TensorProto.UNDEFINED:  # pylint: disable=E1101
             raise TypeError(
                 "The element type in the input tensor is not defined.")
 
@@ -302,7 +308,7 @@ class OnnxSplitting:
                 total = sum(s.size for s in self.segments)
                 size = sum(self.segments[i].size for i in range(a, b))
                 self.fLOG(f"[OnnxSplitting] part {i}: "
-                          f"#nodes={len(onx.graph.node)}/{n_nodes}, "
+                          f"#nodes={len(onx.graph.node)}/{n_nodes}, "  # pylint: disable=E1101
                           f"size={size}/{total}={size/total:1.2f}")
         return res
 

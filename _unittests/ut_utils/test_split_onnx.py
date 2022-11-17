@@ -119,7 +119,6 @@ class TestSplitOnnx(ExtTestCase):
         functions = []
 
         opsets = {'': 10}
-        target_opset = 10
 
         if add == 1:
             value = numpy.array([1e-5], dtype=numpy.float32)
