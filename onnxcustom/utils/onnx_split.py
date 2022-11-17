@@ -4,7 +4,7 @@
 """
 import textwrap
 import numpy
-from onnx import ModelProto, shape_inference
+from onnx import ModelProto, shape_inference, TensorProto
 from onnx.helper import make_graph, make_model
 
 
@@ -129,21 +129,58 @@ class OnnxSplitting:
                     vert[a] = vert[b]
         return vert
 
+    @staticmethod
+    def is_small(tensor):
+        if tensor.HasField("segment"):
+            raise ValueError("Currently not supporting loading segments.")
+        if tensor.data_type == TensorProto.UNDEFINED:
+            raise TypeError(
+                "The element type in the input tensor is not defined.")
+
+        dims = tensor.dims
+        total = numpy.prod(dims)
+        if total < 32:
+            # Covers small constants, reshaping...
+            return True
+        return False
+
     def _get_cutting_points(self, node_list):
+        # let's avoid adding small constant
+        inits = {i.name: self.is_small(i)
+                 for i in self.onnx_model.graph.initializer}
+        inits.update({i.name: self.is_small(i)
+                     for i in self.onnx_model.graph.sparse_initializer})
+        set_small = set(k for k, v in inits.items() if v)
+        for idn, node in node_list:
+            if len(node.input) == 0 and len(node.SerializeToString()) < 128:
+                key = self._key(idn, node)
+                set_small.add(key)
+                set_small |= set(node.output)
+
         # adjacency matrix
+        constant_type = {'Constant', 'ConstantOfShape'}
         adja = {}
         vertices = set()
         ordered_names = []
         for idn, node in node_list:
             key = self._key(idn, node)
-            if len(node.output) == 1:
+            if key in set_small:
+                continue
+            if (node.op_type not in constant_type and
+                    len(node.output) == 1 and
+                    len(node.input) > 0):
+                # only single output can be cutting points
                 ordered_names.extend(node.output)
             vertices.add(key)
-            vertices |= set(node.input)
-            vertices |= set(node.output)
+            vertices |= set(i for i in node.input if i not in set_small)
+            vertices |= set(o for o in node.output if o not in set_small)
             for i in node.input:
+                if i in set_small:
+                    continue
                 adja[i, key] = 1
             for o in node.output:
+                if o in set_small:
+                    continue
                 adja[key, o] = 1
 
         # checking the connexity
@@ -159,7 +196,8 @@ class OnnxSplitting:
                 adja[a, b] = 0
 
             connex = self._connex_components(vertices, adja)
-            if len(set(connex.values())) == 2:
+            connex_id = set(connex.values())
+            if len(connex_id) == 2:
                 cutting_points.append(name)
 
             # put back the links

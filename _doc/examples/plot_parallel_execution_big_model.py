@@ -28,6 +28,7 @@ Their inference can decomposed the following way:
 
 This works if the copy accross GPU does not take too much time.
 The improvment should be even better for a longer batch.
+This example uses the same models as in :ref:`l-plot-parallel-execution`.
 
 .. contents::
     :local:
@@ -137,6 +138,248 @@ with open(model_name, "rb") as f:
 n_parts = max(n_gpus, 2)
 pieces = split_onnx(model, n_parts, verbose=1)
 
+###########################################
+# Pieces are roughly of the same size.
+# Let's save them on disk.
+
+piece_names = []
 for i, piece in enumerate(pieces):
-    with open(f"piece-{os.path.splitext(model_name)[0]}-{i}.onnx", "wb") as f:
+    name = f"piece-{os.path.splitext(model_name)[0]}-{i}.onnx"
+    piece_names.append(name)
+    with open(name, "wb") as f:
         f.write(piece.SerializeToString())
+
+###########################################
+# Discrepancies?
+# ==============
+#
+# We need to make sure the split model is equivalent to
+# the original one. Some data first.
+
+sess_full = InferenceSession(model_name, providers=["CPUExecutionProvider"])
+
+#############################
+# inputs.
+
+for i in sess_full.get_inputs():
+    print(f"input {i}, name={i.name!r}, type={i.type}, shape={i.shape}")
+    input_name = i.name
+    input_shape = list(i.shape)
+    if input_shape[0] in [None, "batch_size", "N"]:
+        input_shape[0] = 1
+
+#############################
+# outputs.
+
+output_name = None
+for i in sess_full.get_outputs():
+    print(f"output {i}, name={i.name!r}, type={i.type}, shape={i.shape}")
+    if output_name is None:
+        output_name = i.name
+
+print(f"input_name={input_name!r}, output_name={output_name!r}")
+
+#############################
+# data
+
+if model_name == "gpt2.onnx":
+    imgs = [x["input_ids"].numpy()
+            for x in encoded_tensors[:maxN * n_parts]]
+else:
+    imgs = [numpy.random.rand(*input_shape).astype(numpy.float32)
+            for i in range(maxN * n_parts)]
+
+
+###########################################
+# The split model.
+
+sess_split = [InferenceSession(name, providers=["CPUExecutionProvider"])
+              for name in piece_names]
+input_names = [sess.get_inputs()[0].name for sess in sess_split]
+
+##########################################
+# We are ready to compute the outputs from both models.
+
+expected = sess_full.run(None, {input_name: imgs[0]})[0]
+
+x = imgs[0]
+for sess, name in zip(sess_split, input_names):
+    feeds = {name: x}
+    x = sess.run(None, feeds)[0]
+
+diff = numpy.abs(expected - x).max()
+print(f"Max difference: {diff}")
+
+##########################################
+# Everything works.
+#
+# Parallelization on GPU
+# ======================
+#
+# First the implementation of a sequence.
+
+
+def sequence_ort_value(sess, imgs):
+    ort_device = C_OrtDevice(
+        C_OrtDevice.cpu(), C_OrtDevice.default_memory(), 0)
+    res = []
+    for img in imgs:
+        ov = C_OrtValue.ortvalue_from_numpy(img, ort_device)
+        out = sess._sess.run_with_ort_values(
+            {input_name: ov}, [output_name], None)[0]
+        res.append(out.numpy())
+    return res
+
+
+##################################
+# And the parallel execution.
+
+class MyThreadOrtValue(threading.Thread):
+
+    def __init__(self, sess, imgs, ort_device):
+        threading.Thread.__init__(self)
+        self.sess = sess
+        self.imgs = imgs
+        self.q = []
+        self.ort_device = ort_device
+
+    def run(self):
+        ort_device = self.ort_device
+        sess = self.sess._sess
+        q = self.q
+        for img in self.imgs:
+            ov = C_OrtValue.ortvalue_from_numpy(img, ort_device)
+            out = sess.run_with_ort_values(
+                {input_name: ov}, [output_name], None)[0]
+            q.append(out.numpy())
+
+
+def parallel_ort_value(sess, imgs):
+    ort_device = C_OrtDevice(
+        C_OrtDevice.cpu(), C_OrtDevice.default_memory(), 0)
+    n_threads = len(sesss)
+    threads = [MyThreadOrtValue(sess, imgs[i::n_threads], ort_device)
+               for i, sess in enumerate(sesss)]
+    for t in threads:
+        t.start()
+    res = []
+    for t in threads:
+        t.join()
+        res.extend(t.q)
+    return res
+
+###############################
+# Functions
+# =========
+#
+# Both functions `benchmark` and `make_plot` are adapted
+# from example :ref:`l-plot-parallel-execution`.
+# They produce the same figures. The main difference
+# is the model used to compute the figures has to be
+# deleted before running the other benchmark to free
+# the GPU memory.
+
+
+def benchmark(fcts, model_name, piece_names, imgs, stepN=1, repN=4):
+    data = []
+    nth = len(sesss)
+    Ns = [1] + list(range(nth, len(imgs), stepN * nth))
+    for N in tqdm.tqdm(Ns):
+        obs = {'n_imgs': len(imgs), 'maxN': maxN,
+               'stepN': stepN, 'repN': repN,
+               'batch_size': N, 'n_threads': len(sesss)}
+        ns = []
+        for name, fct, index in fcts:
+            for i in range(repN):
+                if index is None:
+                    r = fct(sesss, imgs[:N])
+                else:
+                    r = fct(sesss[index], imgs[:N])
+                if i == 0:
+                    # let's get rid of the first iteration sometimes
+                    # used to initialize internal objects.
+                    begin = time.perf_counter()
+            end = (time.perf_counter() - begin) / (repN - 1)
+            obs.update({f"n_imgs_{name}": len(r), f"time_{name}": end})
+            ns.append(len(r))
+
+        if len(set(ns)) != 1:
+            raise RuntimeError(
+                f"Cannot compare experiments as it returns differents number of "
+                f"results ns={ns}, obs={obs}.")
+        data.append(obs)
+
+    return pandas.DataFrame(data)
+
+
+def make_plot(df, title):
+    if df is None:
+        return None
+    if "n_threads" in df.columns:
+        n_threads = list(set(df.n_threads))
+        if len(n_threads) != 1:
+            raise RuntimeError(f"n_threads={n_threads} must be unique.")
+        index = "batch_size"
+    else:
+        n_threads = "?"
+        index = "n_imgs_seq_cpu"
+    kwargs = dict(title=f"{title}\nn_threads={n_threads}", logy=True)
+    columns = [index] + [c for c in df.columns if c.startswith("time")]
+    ax = df[columns].set_index(columns[0]).plot(**kwargs)
+    ax.set_xlabel("batch size")
+    ax.set_ylabel("seconds")
+    return ax
+
+
+###########################################
+# Benchmark
+# =========
+#
+
+###################################################
+# Initialization
+#
+
+if n_gpus > 1:
+    print("ORT // GPUs")
+    if model_name == "gpt2.onnx":
+        imgs = [x["input_ids"].numpy()
+                for x in encoded_tensors[:maxN * len(sesss)]]
+    else:
+        imgs = [numpy.random.rand(*input_shape).astype(numpy.float32)
+                for i in range(maxN * len(sesss))]
+
+    df = benchmark(model_name=model_name, piece_names=piece_names,
+                   imgs=imgs, stepN=stepN, repN=repN,
+                   fcts=[('sequence', sequence_ort_value, 0),
+                         ('parallel', parallel_ort_value, None)])
+    df.reset_index(drop=False).to_csv("ort_gpus_piece.csv", index=False)
+
+    del sesss[:]
+    gc.collect()
+else:
+    print("No GPU is available but data should be like the following.")
+    df = pandas.read_csv("data/ort_gpus_piece.csv").set_index("N")
+
+df
+
+
+####################################
+# Plots.
+
+ax = make_plot(df, f"Time per image / batch size\n{n_gpus} GPUs")
+ax
+
+####################################
+# The parallelization on multiple GPUs did work.
+# With a model `GPT2 <https://huggingface.co/gpt2?text=My+name+is+Mariama%2C+my+favorite>`_,
+# it would give the following results.
+
+data = pandas.read_csv("data/ort_gpus_piece_gpt2.csv")
+df = pandas.DataFrame(data)
+ax = make_plot(df, f"Time per image / batch size\n{n_gpus} GPUs - GPT2")
+ax
+
+
+# import matplotlib.pyplot as plt
+# plt.show()
