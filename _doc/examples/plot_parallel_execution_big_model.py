@@ -217,11 +217,16 @@ def get_ort_device(sess):
     providers = sess.get_providers()
     if providers == ["CPUExecutionProvider"]:
         return C_OrtDevice(C_OrtDevice.cpu(), C_OrtDevice.default_memory(), 0)
-    if providers[0] == ["CUDAExecutionProvider"]:
+    if providers[0] == "CUDAExecutionProvider":
         options = sess.get_provider_options()
         if len(options) == 0:
             return C_OrtDevice(C_OrtDevice.cuda(), C_OrtDevice.default_memory(), 0)
-        device_id = options["device_id"]
+        if "CUDAExecutionProvider" not in options:
+            raise NotImplementedError(f"Unable to guess 'device_id' in {options}.")
+        cuda = options["CUDAExecutionProvider"]
+        if "device_id" not in cuda:
+            raise NotImplementedError(f"Unable to guess 'device_id' in {options}.")
+        device_id = int(cuda["device_id"])
         return C_OrtDevice(C_OrtDevice.cuda(), C_OrtDevice.default_memory(), device_id)
     raise NotImplementedError(
         f"Not able to guess the model device from {providers}.")

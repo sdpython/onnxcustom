@@ -144,3 +144,28 @@ def device_to_providers(device):
         return ['CUDAExecutionProvider']
     raise ValueError(  # pragma: no cover
         f"Unexpected device {device!r}.")
+
+
+def get_ort_device_from_session(sess):
+    """
+    Retrieves the device from an object :epkg:`InferenceSession`.
+
+    :param sess: :epkg:`InferenceSession`
+    :return: :epkg:`C_OrtDevice`
+    """
+    providers = sess.get_providers()
+    if providers == ["CPUExecutionProvider"]:
+        return C_OrtDevice(C_OrtDevice.cpu(), C_OrtDevice.default_memory(), 0)
+    if providers[0] == "CUDAExecutionProvider":
+        options = sess.get_provider_options()
+        if len(options) == 0:
+            return C_OrtDevice(C_OrtDevice.cuda(), C_OrtDevice.default_memory(), 0)
+        if "CUDAExecutionProvider" not in options:
+            raise NotImplementedError(f"Unable to guess 'device_id' in {options}.")
+        cuda = options["CUDAExecutionProvider"]
+        if "device_id" not in cuda:
+            raise NotImplementedError(f"Unable to guess 'device_id' in {options}.")
+        device_id = int(cuda["device_id"])
+        return C_OrtDevice(C_OrtDevice.cuda(), C_OrtDevice.default_memory(), device_id)
+    raise NotImplementedError(
+        f"Not able to guess the model device from {providers}.")

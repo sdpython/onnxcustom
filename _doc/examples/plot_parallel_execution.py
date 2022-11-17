@@ -39,11 +39,12 @@ import sys
 import tqdm
 import numpy
 import pandas
-from cpyquickhelper.numbers import measure_time
+from onnxcustom.utils.benchmark import measure_time
 import torch.cuda
 from onnxruntime import InferenceSession, get_all_providers
 from onnxruntime.capi._pybind_state import (  # pylint: disable=E0611
     OrtDevice as C_OrtDevice, OrtValue as C_OrtValue)
+from onnxcustom.utils.onnxruntime_helper import get_ort_device_from_session
 
 
 def download_file(url, name, min_size):
@@ -304,22 +305,8 @@ make_plot(df, "Time per image / batch size")
 # See :epkg:`l-ortvalue-doc`.
 
 
-def get_ort_device(sess):
-    providers = sess.get_providers()
-    if providers == ["CPUExecutionProvider"]:
-        return C_OrtDevice(C_OrtDevice.cpu(), C_OrtDevice.default_memory(), 0)
-    if providers[0] == ["CUDAExecutionProvider"]:
-        options = sess.get_provider_options()
-        if len(options) == 0:
-            return C_OrtDevice(C_OrtDevice.cuda(), C_OrtDevice.default_memory(), 0)
-        device_id = options["device_id"]
-        return C_OrtDevice(C_OrtDevice.cuda(), C_OrtDevice.default_memory(), device_id)
-    raise NotImplementedError(
-        f"Not able to guess the model device from {providers}.")
-
-
 def sequence_ort_value(sess, imgs):
-    ort_device = get_ort_device(sess)
+    ort_device = get_ort_device_from_session(sess)
     res = []
     for img in imgs:
         ov = C_OrtValue.ortvalue_from_numpy(img, ort_device)
@@ -336,7 +323,7 @@ class MyThreadOrtValue(threading.Thread):
         self.sess = sess
         self.imgs = imgs
         self.q = []
-        self.ort_device = get_ort_device(self.sess)
+        self.ort_device = get_ort_device_from_session(self.sess)
 
     def run(self):
         ort_device = self.ort_device
