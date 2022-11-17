@@ -72,14 +72,14 @@ class TestOnnxRuntimeHelper(ExtTestCase):
         self.assertIsInstance(res, C_OrtValue)
 
     def test_get_ort_device_from_session(self):
-        X = make_tensor_value_info('X', TensorProto.FLOAT, [
-                                   None, None])  # pylint: disable=E1101
-        Y = make_tensor_value_info('Y', TensorProto.FLOAT, [
-                                   None, None])  # pylint: disable=E1101
-        Z = make_tensor_value_info('Z', TensorProto.FLOAT, [
-                                   None, None])  # pylint: disable=E1101
-        T = make_tensor_value_info('T', TensorProto.FLOAT, [
-                                   None, None])  # pylint: disable=E1101
+        X = make_tensor_value_info(
+            'X', TensorProto.FLOAT, [None, None])  # pylint: disable=E1101
+        Y = make_tensor_value_info(
+            'Y', TensorProto.FLOAT, [None, None])  # pylint: disable=E1101
+        Z = make_tensor_value_info(
+            'Z', TensorProto.FLOAT, [None, None])  # pylint: disable=E1101
+        T = make_tensor_value_info(
+            'T', TensorProto.FLOAT, [None, None])  # pylint: disable=E1101
         nodes = [make_node('Sub', ['X', 'Y'], ['diff']),
                  make_node('Mul', ['diff', 'diff'], ['abs']),
                  make_node('Add', ['abs', 'Z'], ['dz1']),

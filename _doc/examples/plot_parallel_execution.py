@@ -473,7 +473,7 @@ df
 ####################################
 # Plots.
 
-ax = make_plot(df, f"Time per image / batch size\n{n_gpus} GPUs")
+ax = make_plot(df, "Time per image / batch size\n4 GPUs")
 ax
 
 ####################################
@@ -483,7 +483,7 @@ ax
 
 data = pandas.read_csv("data/ort_gpus_gpt2.csv")
 df = pandas.DataFrame(data)
-ax = make_plot(df, f"Time per image / batch size\n{n_gpus} GPUs - GPT2")
+ax = make_plot(df, "Time per image / batch size\n4 GPUs - GPT2")
 ax
 
 

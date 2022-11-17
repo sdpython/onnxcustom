@@ -29,7 +29,9 @@ class OnnxSegment:
         if end is not None and not isinstance(end, str):
             raise ValueError(f"end={end!r} must be a string or None.")
         if begin is None and end is None:
-            raise ValueError(f"A segment cannot contain this whole model.")
+            raise ValueError(
+                "A segment cannot contain this whole model, "
+                "begin and end are both None.")
         self.parent = parent
         self.begin = begin
         self.end = end

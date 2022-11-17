@@ -53,6 +53,7 @@ import numpy
 from numpy.testing import assert_allclose
 import pandas
 import onnx
+import matplotlib.pyplot as plt
 import torch.cuda
 from onnxruntime import InferenceSession, get_all_providers
 from onnxruntime.capi.onnxruntime_pybind11_state import InvalidArgument
@@ -328,12 +329,9 @@ def parallel_ort_value(sesss, imgs, wait_time=1e-4):
 # Functions
 # =========
 #
-# Both functions `benchmark` and `make_plot` are adapted
-# from example :ref:`l-plot-parallel-execution`.
-# They produce the same figures. The main difference
-# is the model used to compute the figures has to be
-# deleted before running the other benchmark to free
-# the GPU memory.
+# The benchmark runs one function on all batch sizes then
+# deleted the model before going to the next function
+# in order to free the GPU memory.
 
 
 def benchmark(fcts, model_name, piece_names, imgs, stepN=1, repN=4):
@@ -368,6 +366,8 @@ def benchmark(fcts, model_name, piece_names, imgs, stepN=1, repN=4):
         del sesss
         gc.collect()
 
+    # Let's maje sure again that the outputs are the same when the inference
+    # is parallelized.
     names = list(ns_name)
     baseline = ns_name[names[0]]
     for name in names[1:]:
@@ -398,21 +398,75 @@ def benchmark(fcts, model_name, piece_names, imgs, stepN=1, repN=4):
 def make_plot(df, title):
     if df is None:
         return None
-    kwargs = dict(title=f"{title}\nn_threads={n_threads}", logy=True)
-    columns = [index] + [c for c in df.columns if c.startswith("time")]
-    ax = df[columns].set_index(columns[0]).plot(**kwargs)
-    ax.set_xlabel("batch size")
-    ax.set_ylabel("seconds")
+    fig, ax = plt.subplots(2, 3, figsize=(12, 8), sharex=True)
+    fig.suptitle(title)
+
+    a = ax[0, 0]
+    perf = df.pivot("n_imgs", "name", "time")
+    num = perf["parallel"].copy()
+    div = perf.index.values
+    perf.plot(logy=True, ax=a, title="time(s)")
+    a.legend()
+    a.set_ylabel("seconds")
+
+    a = ax[1, 0]
+    for c in perf.columns:
+        perf[c] /= div
+    perf.plot(ax=a, title="time(s) / batch_size")
+    a.legend()
+    a.set_ylim([0, None])
+    a.set_ylabel("seconds")
+    a.set_xlabel("batch size")
+
+    a = ax[1, 1]
+    perf["perf gain"] = perf["sequence"] / perf["parallel"]
+    cs = []
+    for i in range(0, 4):
+        c = f"wait_{i}"
+        p = df.pivot("n_imgs", "name", c)
+        perf[f"%wait_{i}"] = p["parallel"].values / num
+        cs.append(f"%wait_{i}")
+
+    perf["wait"] = perf[cs].sum(axis=1)
+    perf[["perf gain", "wait"] + cs].plot(ax=a, title="gain / batch_size")
+    a.legend()
+    a.set_ylim([0, None])
+    a.set_ylabel("%")
+    a.set_xlabel("batch size")
+
+    a = ax[0, 1]
+    wait0 = df[["n_imgs", "wait0_1", "wait0_1",
+                "wait0_2", "wait0_3"]].set_index("n_imgs")
+    wait0.plot(ax=a, title="Time waiting for the first image per thread")
+    a.legend()
+    a.set_ylabel("seconds")
+
+    a = ax[0, 2]
+    wait = df[["n_imgs", "wait_0", "wait_1",
+               "wait_2", "wait_3"]].set_index("n_imgs")
+    wait.plot(ax=a, title="Total time waiting per thread")
+    a.legend()
+    a.set_ylabel("seconds")
+
+    a = ax[1, 2]
+    wait = df[["n_imgs", "wait_0", "wait_1", "wait_2", "wait_3"]]
+    div = wait["n_imgs"]
+    wait = wait.set_index("n_imgs")
+    for c in wait.columns:
+        wait[c] /= div.values
+    wait.plot(ax=a, title="Total time waiting per thread\ndivided by batch size")
+    a.legend()
+    a.set_ylim([0, None])
+    a.set_ylabel("seconds")
+    a.set_xlabel("batch size")
+    a.set_xlabel("batch size")
+
     return ax
 
 
 ###########################################
 # Benchmark
 # =========
-#
-
-###################################################
-# Initialization
 #
 
 def build_sequence():
@@ -442,7 +496,7 @@ if n_gpus > 1:
     df.reset_index(drop=False).to_csv("ort_gpus_piece.csv", index=False)
 else:
     print("No GPU is available but data should be like the following.")
-    df = pandas.read_csv("data/ort_gpus_piece.csv").set_index("N")
+    df = pandas.read_csv("data/ort_gpus_piece.csv")
 
 df
 
@@ -454,13 +508,24 @@ ax = make_plot(df, f"Time per image / batch size\n{n_gpus} GPUs")
 ax
 
 ####################################
+# Recorded results
+# ================
+#
 # The parallelization on multiple GPUs did work.
-# With a model `GPT2 <https://huggingface.co/gpt2?text=My+name+is+Mariama%2C+my+favorite>`_,
-# it would give the following results.
+# With a model resnet18.
+
+data = pandas.read_csv("data/ort_gpus_piece_resnet18.csv")
+df = pandas.DataFrame(data)
+ax = make_plot(df, "Time per image / batch size\n4 GPUs - resnet 18")
+ax
+
+
+#######################################
+# With `GPT2 <https://huggingface.co/gpt2?text=My+name+is+Mariama%2C+my+favorite>`_
 
 data = pandas.read_csv("data/ort_gpus_piece_gpt2.csv")
 df = pandas.DataFrame(data)
-ax = make_plot(df, f"Time per image / batch size\n{n_gpus} GPUs - GPT2")
+ax = make_plot(df, "Time per image / batch size\n4 GPUs - GPT2")
 ax
 
 
