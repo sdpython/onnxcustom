@@ -234,7 +234,7 @@ def sequence_ort_value(sesss, imgs):
         out = sess._sess.run_with_ort_values(
             {input_name: ov}, [output_name], None)[0]
         res.append(out.numpy())
-    return res, [(0, 0)], True
+    return res, {}, True
 
 
 ##################################
@@ -255,10 +255,15 @@ class MyThreadOrtValue(threading.Thread):
         self.batch_size = batch_size
 
         # for the execution
-        self.waiting_time0 = 0
-        self.waiting_time = 0
         self.inputs = []
         self.outputs = []
+        self.waiting_time0 = 0
+        self.waiting_time = 0
+        self.run_time = 0
+        self.copy_time_1 = 0
+        self.copy_time_2 = 0
+        self.twait_time = 0
+        self.total_time = 0
 
     def append(self, pos, img):
         if not isinstance(img, numpy.ndarray):
@@ -277,6 +282,8 @@ class MyThreadOrtValue(threading.Thread):
         while processed < self.batch_size:
 
             # wait for an image
+            tw = time.perf_counter()
+
             while processed >= len(self.inputs):
                 self.waiting_time += self.wait_time
                 if len(self.inputs) == 0:
@@ -284,17 +291,30 @@ class MyThreadOrtValue(threading.Thread):
                 time.sleep(self.wait_time)
 
             pos, img = self.inputs[processed]
+            t0 = time.perf_counter()
             ov = C_OrtValue.ortvalue_from_numpy(img, ort_device)
-            out = sess.run_with_ort_values(
-                {self.input_name: ov}, [self.output_name], None)[0]
-            self.inputs[processed] = None  # deletion
+            t1 = time.perf_counter()
+            out = sess.run_with_ort_values({self.input_name: ov},
+                                           [self.output_name], None)[0]
+            t2 = time.perf_counter()
             cpu_res = out.numpy()
+            t3 = time.perf_counter()
+
             self.outputs.append((pos, cpu_res))
-            processed += 1
 
             # sent the result to the next part
             if self.next_thread is not None:
                 self.next_thread.append(pos, cpu_res)
+            self.inputs[processed] = None  # deletion
+            processed += 1
+
+            t4 = time.perf_counter()
+
+            self.copy_time_1 += t1 - t0
+            self.run_time += t2 - t1
+            self.copy_time_2 += t3 - t2
+            self.twait_time += t0 - tw
+            self.total_time += t4 - tw
 
 
 def parallel_ort_value(sesss, imgs, wait_time=1e-4):
@@ -320,10 +340,17 @@ def parallel_ort_value(sesss, imgs, wait_time=1e-4):
     order = list(sorted(indices)) == indices
     res.sort()
     res = [r[1] for r in res]
+    times = {"wait":[], "wait0": [], "copy1": [], "copy2": [], "run": [], "ttime": [], "wtime": []}
     waiting_time = []
     for t in threads:
-        waiting_time.append((t.waiting_time0, t.waiting_time))
-    return res, waiting_time, order
+        times["wait"].append(t.waiting_time)
+        times["wait0"].append(t.waiting_time0)
+        times["copy1"].append(t.copy_time_1)
+        times["copy2"].append(t.copy_time_2)
+        times["run"].append(t.run_time)
+        times["ttime"].append(t.total_time)
+        times["wtime"].append(t.twait_time)
+    return res, times, order
 
 ###############################
 # Functions
@@ -343,22 +370,31 @@ def benchmark(fcts, model_name, piece_names, imgs, stepN=1, repN=4):
         ns_name[name] = []
         results[name] = []
         sesss = build_fct()
+        fct(sesss, imgs[:2])
         for N in tqdm.tqdm(Ns):
+            all_times = []
+            begin = time.perf_counter()
             for i in range(repN):
-                r, wt, order = fct(sesss, imgs[:N])
-                if i == 0:
-                    # let's get rid of the first iteration sometimes
-                    # used to initialize internal objects.
-                    begin = time.perf_counter()
-            end = (time.perf_counter() - begin) / (repN - 1)
+                r, times, order = fct(sesss, imgs[:N])
+                all_times.append(times)
+            end = (time.perf_counter() - begin) / repN
+            times = {}
+            for key in all_times[0].keys():
+                times[key] = sum(numpy.array(t[key]) for t in all_times) / repN
             obs = {'n_imgs': len(imgs), 'maxN': maxN,
                    'stepN': stepN, 'repN': repN,
                    'batch_size': N, 'n_threads': len(sesss),
                    'name': name}
             obs.update({f"n_imgs": len(r), f"time": end})
-            obs.update({f"wait0_{i}": t[0] for i, t in enumerate(wt)})
-            obs.update({f"wait_{i}": t[1] for i, t in enumerate(wt)})
             obs['order'] = order
+            if len(times) > 0:
+                obs.update({f"wait0_{i}": t for i, t in enumerate(times["wait0"])})
+                obs.update({f"wait_{i}": t for i, t in enumerate(times["wait"])})
+                obs.update({f"copy1_{i}": t for i, t in enumerate(times["copy1"])})
+                obs.update({f"copy2_{i}": t for i, t in enumerate(times["copy2"])})
+                obs.update({f"run_{i}": t for i, t in enumerate(times["run"])})
+                obs.update({f"ttime_{i}": t for i, t in enumerate(times["ttime"])})
+                obs.update({f"wtime_{i}": t for i, t in enumerate(times["wtime"])})
             ns_name[name].append(len(r))
             results[name].append((r, obs))
             data.append(obs)
@@ -398,68 +434,125 @@ def benchmark(fcts, model_name, piece_names, imgs, stepN=1, repN=4):
 def make_plot(df, title):
     if df is None:
         return None
-    fig, ax = plt.subplots(2, 3, figsize=(12, 8), sharex=True)
+    fig, ax = plt.subplots(3, 4, figsize=(12, 9), sharex=True)
     fig.suptitle(title)
+    print(ax.shape)
 
+    # perf
     a = ax[0, 0]
     perf = df.pivot("n_imgs", "name", "time")
     num = perf["parallel"].copy()
     div = perf.index.values
-    perf.plot(logy=True, ax=a, title="time(s)")
-    a.legend()
-    a.set_ylabel("seconds")
+    perf.plot(logy=True, ax=a)
+    a.set_title("time(s)", fontsize="x-small")
+    a.legend(fontsize="x-small")
+    a.set_ylabel("seconds", fontsize="x-small")
 
-    a = ax[1, 0]
+    a = ax[0, 1]
     for c in perf.columns:
         perf[c] /= div
-    perf.plot(ax=a, title="time(s) / batch_size")
-    a.legend()
+    perf.plot(ax=a)
+    a.set_title("time(s) / batch_size", fontsize="x-small")
+    a.legend(fontsize="x-small")
     a.set_ylim([0, None])
-    a.set_ylabel("seconds")
-    a.set_xlabel("batch size")
+    a.set_ylabel("seconds", fontsize="x-small")
+    a.set_xlabel("batch size", fontsize="x-small")
 
-    a = ax[1, 1]
+    a = ax[0, 2]
     perf["perf gain"] = perf["sequence"] / perf["parallel"]
+    wcol = []
+    wcol0 = []
     cs = []
     for i in range(0, 4):
         c = f"wait_{i}"
+        if c not in df.columns:
+            break
+        wcol.append(c)
+        wcol0.append(f"wait0_{i}")
         p = df.pivot("n_imgs", "name", c)
-        perf[f"%wait_{i}"] = p["parallel"].values / num
-        cs.append(f"%wait_{i}")
+        perf[f"wait_{i}"] = p["parallel"].values / num
+        cs.append(f"wait_{i}")
 
     perf["wait"] = perf[cs].sum(axis=1)
-    perf[["perf gain", "wait"] + cs].plot(ax=a, title="gain / batch_size")
-    a.legend()
+    perf[["perf gain", "wait"] + cs].plot(ax=a)
+    a.set_title("gain / batch_size", fontsize="x-small")
+    a.legend(fontsize="x-small")
     a.set_ylim([0, None])
-    a.set_ylabel("%")
-    a.set_xlabel("batch size")
+    a.set_ylabel("%", fontsize="x-small")
+    a.set_xlabel("batch size", fontsize="x-small")
 
-    a = ax[0, 1]
-    wait0 = df[["n_imgs", "wait0_1", "wait0_1",
-                "wait0_2", "wait0_3"]].set_index("n_imgs")
-    wait0.plot(ax=a, title="Time waiting for the first image per thread")
-    a.legend()
-    a.set_ylabel("seconds")
+    # wait
+    a = ax[1, 0]
+    wait0 = df[["n_imgs"] + wcol0].set_index("n_imgs")
+    wait0.plot(ax=a)
+    a.set_title("Time waiting for the first image per thread", fontsize="x-small")
+    a.legend(fontsize="x-small")
+    a.set_ylabel("seconds", fontsize="x-small")
 
-    a = ax[0, 2]
-    wait = df[["n_imgs", "wait_0", "wait_1",
-               "wait_2", "wait_3"]].set_index("n_imgs")
-    wait.plot(ax=a, title="Total time waiting per thread")
-    a.legend()
-    a.set_ylabel("seconds")
+    a = ax[1, 1]
+    wait = df[["n_imgs"] + wcol].set_index("n_imgs")
+    wait.plot(ax=a)
+    a.set_title("Total time waiting per thread", fontsize="x-small")
+    a.legend(fontsize="x-small")
+    a.set_ylabel("seconds", fontsize="x-small")
 
     a = ax[1, 2]
-    wait = df[["n_imgs", "wait_0", "wait_1", "wait_2", "wait_3"]]
+    wait = df[["n_imgs"] + wcol]
     div = wait["n_imgs"]
     wait = wait.set_index("n_imgs")
     for c in wait.columns:
         wait[c] /= div.values
-    wait.plot(ax=a, title="Total time waiting per thread\ndivided by batch size")
+    wait.plot(ax=a)
+    a.set_title("Total time waiting per thread\ndivided by batch size", fontsize="x-small")
     a.legend()
     a.set_ylim([0, None])
-    a.set_ylabel("seconds")
-    a.set_xlabel("batch size")
-    a.set_xlabel("batch size")
+    a.set_ylabel("seconds", fontsize="x-small")
+    a.set_xlabel("batch size", fontsize="x-small")
+    a.set_xlabel("batch size", fontsize="x-small")
+
+    # ttime
+    a = ax[0, 3]
+    ttimes = [c for c in df.columns if c.startswith('ttime_')]
+    n_threads = len(ttimes)
+    sub = df.loc[~df.run_0.isnull(), ["n_imgs", "time"] + ttimes].copy()
+    for c in sub.columns[1:]:
+        sub[c] /= sub["n_imgs"]
+    sub.set_index("n_imgs").plot(ax=a, logy=True)
+    a.set_title("Total time\ndivided by batch size", fontsize="x-small")
+    a.set_ylabel("seconds", fontsize="x-small")
+    a.set_xlabel("batch size", fontsize="x-small")
+    
+    a = ax[1, 3]
+    run = [c for c in df.columns if c.startswith('run_')]
+    sub = df.loc[~df.run_0.isnull(), ["n_imgs", "time"] + run].copy()
+    for c in sub.columns[2:]:
+        sub[c] /= sub["time"]
+    sub["time"] = 1
+    sub.set_index("n_imgs").plot(ax=a)
+    a.set_title("Running time per thread / total time\ndivided by batch size", fontsize="x-small")
+    a.set_ylabel("seconds", fontsize="x-small")
+    a.set_xlabel("batch size", fontsize="x-small")
+    a.legend(fontsize="x-small")
+    
+    # other time
+    pos = [2, 0]
+    
+    cols = ['wtime', 'copy1', 'run', 'copy2', 'ttime']
+    for nth in range(n_threads):
+        a = ax[tuple(pos)]
+        cs = [f"{c}_{nth}" for c in cols]
+        sub = df.loc[~df.run_0.isnull(), ["n_imgs", "time"] + cs].copy()
+        for c in cs:
+            sub[c] /= sub[f"ttime_{nth}"]
+        sub.set_index("n_imgs")[cs[:-1]].plot.area(ax=a)
+        a.set_title(f"Part {nth + 1}/{n_threads}", fontsize="x-small")
+        a.set_xlabel("batch size", fontsize="x-small")
+        a.legend(fontsize="x-small")
+        
+        pos[1] += 1
+        if pos[1] >= ax.shape[1]:
+            pos[1] = 0
+            pos[0] += 1
 
     return ax
 
