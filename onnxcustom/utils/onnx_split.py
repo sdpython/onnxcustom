@@ -28,6 +28,8 @@ class OnnxSegment:
             raise ValueError(f"begin={begin!r} must be a string or None.")
         if end is not None and not isinstance(end, str):
             raise ValueError(f"end={end!r} must be a string or None.")
+        if begin is None and end is None:
+            raise ValueError(f"A segment cannot contain this whole model.")
         self.parent = parent
         self.begin = begin
         self.end = end
@@ -389,7 +391,9 @@ def split_onnx(onnx_model, n_parts, verbose=0, fLOG=None):
             f"The function does not work if the model contains function: "
             f"{f.name for f in onnx_model.functions}.")
     if verbose > 0:
-        (fLOG or print)(f"[split_onnx] starts splitting in {n_parts} parts.")
+        (fLOG or print)(
+                f"[split_onnx] starts splitting "
+                f"{len(onnx_model.graph.node)} nodes in {n_parts} parts.")
     spl_onnx = OnnxSplitting(onnx_model, verbose=verbose, fLOG=fLOG or print)
     if len(spl_onnx.cutting_points) < n_parts:
         raise RuntimeError(  # pragma: no cover

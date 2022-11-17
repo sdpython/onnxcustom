@@ -55,6 +55,7 @@ import pandas
 import onnx
 import torch.cuda
 from onnxruntime import InferenceSession, get_all_providers
+from onnxruntime.capi.onnxruntime_pybind11_state import InvalidArgument
 from onnxruntime.capi._pybind_state import (  # pylint: disable=E0611
     OrtDevice as C_OrtDevice, OrtValue as C_OrtValue)
 from onnxcustom.utils.onnx_split import split_onnx
@@ -76,7 +77,7 @@ def download_file(url, name, min_size):
         print(f"'{name}' already downloaded")
 
 
-small = "custom" if "custom" in sys.argv else "small"
+small = "custom" if "custom" in sys.argv else "big" not in sys.argv
 if small == "custom":
     model_name = "gpt2.onnx"
     url_name = None
@@ -179,6 +180,8 @@ print(f"input_name={input_name!r}, output_name={output_name!r}")
 # data
 
 if model_name == "gpt2.onnx":
+    with open("encoded_tensors-gpt2.pkl", "rb") as f:
+        [encoded_tensors, labels] = pickle.load(f)
     imgs = [x["input_ids"].numpy()
             for x in encoded_tensors[:maxN]]
 else:
@@ -189,8 +192,12 @@ else:
 ###########################################
 # The split model.
 
-sess_split = [InferenceSession(name, providers=["CPUExecutionProvider"])
-              for name in piece_names]
+sess_split = []
+for name in piece_names:
+    try:
+        sess_split.append(InferenceSession(name, providers=["CPUExecutionProvider"]))
+    except InvalidArgument as e:
+        raise RuntimeError(f"Part {name!r} cannot be loaded.") from e
 input_names = [sess.get_inputs()[0].name for sess in sess_split]
 
 ##########################################
