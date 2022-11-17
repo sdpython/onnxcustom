@@ -222,10 +222,12 @@ def get_ort_device(sess):
         if len(options) == 0:
             return C_OrtDevice(C_OrtDevice.cuda(), C_OrtDevice.default_memory(), 0)
         if "CUDAExecutionProvider" not in options:
-            raise NotImplementedError(f"Unable to guess 'device_id' in {options}.")
+            raise NotImplementedError(
+                f"Unable to guess 'device_id' in {options}.")
         cuda = options["CUDAExecutionProvider"]
         if "device_id" not in cuda:
-            raise NotImplementedError(f"Unable to guess 'device_id' in {options}.")
+            raise NotImplementedError(
+                f"Unable to guess 'device_id' in {options}.")
         device_id = int(cuda["device_id"])
         return C_OrtDevice(C_OrtDevice.cuda(), C_OrtDevice.default_memory(), device_id)
     raise NotImplementedError(

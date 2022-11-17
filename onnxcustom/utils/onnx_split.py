@@ -108,7 +108,8 @@ class OnnxSplitting:
         if self.verbose > 0:
             sizes = [seg.size for seg in self.segments]
             self.fLOG(f"[OnnxSplitting] # segments = {len(sizes)}, "
-                      f"min,avg,max size=[{min(sizes)}, {sum(sizes) / len(sizes)}, {max(sizes)}]")
+                      f"min,avg,max size=[{min(sizes)}, "
+                      f"{sum(sizes) / len(sizes)}, {max(sizes)}]")
 
     @staticmethod
     def _connex_components(vertices, adja):
@@ -308,8 +309,8 @@ class OnnxSplitting:
                 total = sum(s.size for s in self.segments)
                 size = sum(self.segments[i].size for i in range(a, b))
                 self.fLOG(f"[OnnxSplitting] part {i}: "
-                          f"#nodes={len(onx.graph.node)}/{n_nodes}, "  # pylint: disable=E1101
-                          f"size={size}/{total}={size/total:1.2f}")
+                          f"#nodes={len(onx.graph.node)}"  # pylint: disable=E1101
+                          f"/{n_nodes}, size={size}/{total}={size/total:1.2f}")
         return res
 
     def _make_onnx(self, a, b, index=None):

@@ -6,8 +6,8 @@ import numpy
 from pyquickhelper.pycode import ExtTestCase
 from onnx import TensorProto
 from onnx.helper import (
-    make_model, make_node, set_model_props, make_tensor,
-    make_graph, make_tensor_value_info, make_opsetid)
+    make_model, make_node,
+    make_graph, make_tensor_value_info)
 from onnxruntime import InferenceSession
 from onnxruntime.capi._pybind_state import (  # pylint: disable=E0611
     OrtValue as C_OrtValue)
@@ -72,10 +72,10 @@ class TestOnnxRuntimeHelper(ExtTestCase):
         self.assertIsInstance(res, C_OrtValue)
 
     def test_get_ort_device_from_session(self):
-        X = make_tensor_value_info('X', TensorProto.FLOAT, [None, None])
-        Y = make_tensor_value_info('Y', TensorProto.FLOAT, [None, None])
-        Z = make_tensor_value_info('Z', TensorProto.FLOAT, [None, None])
-        T = make_tensor_value_info('T', TensorProto.FLOAT, [None, None])
+        X = make_tensor_value_info('X', TensorProto.FLOAT, [None, None])  # pylint: disable=E1101
+        Y = make_tensor_value_info('Y', TensorProto.FLOAT, [None, None])  # pylint: disable=E1101
+        Z = make_tensor_value_info('Z', TensorProto.FLOAT, [None, None])  # pylint: disable=E1101
+        T = make_tensor_value_info('T', TensorProto.FLOAT, [None, None])  # pylint: disable=E1101
         nodes = [make_node('Sub', ['X', 'Y'], ['diff']),
                  make_node('Mul', ['diff', 'diff'], ['abs']),
                  make_node('Add', ['abs', 'Z'], ['dz1']),
@@ -84,13 +84,14 @@ class TestOnnxRuntimeHelper(ExtTestCase):
 
         graph = make_graph(nodes, "dummy", [X, Y, Z], [T])
         onx = make_model(graph)
-        sess = InferenceSession(onx.SerializeToString(), providers=["CPUExecutionProvider"])
+        sess = InferenceSession(onx.SerializeToString(), providers=[
+                                "CPUExecutionProvider"])
 
         dev = get_ort_device_from_session(sess)
         self.assertEqual(dev.device_type(), dev.cpu())
         self.assertEqual(dev.device_id(), 0)
 
-        dev = get_ort_device_from_session(sess._sess)
+        dev = get_ort_device_from_session(sess._sess)  # pylint: disable=W0212
         self.assertEqual(dev.device_type(), dev.cpu())
         self.assertEqual(dev.device_id(), 0)
 
