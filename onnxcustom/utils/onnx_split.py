@@ -392,8 +392,8 @@ def split_onnx(onnx_model, n_parts, verbose=0, fLOG=None):
             f"{f.name for f in onnx_model.functions}.")
     if verbose > 0:
         (fLOG or print)(
-                f"[split_onnx] starts splitting "
-                f"{len(onnx_model.graph.node)} nodes in {n_parts} parts.")
+            f"[split_onnx] starts splitting "
+            f"{len(onnx_model.graph.node)} nodes in {n_parts} parts.")
     spl_onnx = OnnxSplitting(onnx_model, verbose=verbose, fLOG=fLOG or print)
     if len(spl_onnx.cutting_points) < n_parts:
         raise RuntimeError(  # pragma: no cover

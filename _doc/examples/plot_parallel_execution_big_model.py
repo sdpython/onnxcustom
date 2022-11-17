@@ -195,7 +195,8 @@ else:
 sess_split = []
 for name in piece_names:
     try:
-        sess_split.append(InferenceSession(name, providers=["CPUExecutionProvider"]))
+        sess_split.append(InferenceSession(
+            name, providers=["CPUExecutionProvider"]))
     except InvalidArgument as e:
         raise RuntimeError(f"Part {name!r} cannot be loaded.") from e
 input_names = [sess.get_inputs()[0].name for sess in sess_split]
@@ -301,7 +302,8 @@ def parallel_ort_value(sesss, imgs, wait_time=1e-4):
     for i in range(len(sesss)):
         sess = sesss[-i - 1]
         next_thread = threads[-1] if i > 0 else None
-        th = MyThreadOrtValue(sess, len(imgs), next_thread, wait_time=wait_time)
+        th = MyThreadOrtValue(
+            sess, len(imgs), next_thread, wait_time=wait_time)
         threads.append(th)
     threads = list(reversed(threads))
 
@@ -366,7 +368,6 @@ def benchmark(fcts, model_name, piece_names, imgs, stepN=1, repN=4):
         del sesss
         gc.collect()
 
-
     names = list(ns_name)
     baseline = ns_name[names[0]]
     for name in names[1:]:
@@ -380,15 +381,16 @@ def benchmark(fcts, model_name, piece_names, imgs, stepN=1, repN=4):
             raise RuntimeError("Cannot compare.")
         for i1, ((b, o1), (r, o2)) in enumerate(zip(baseline, results[name])):
             if len(b) != len(r):
-                raise RuntimeError(f"Cannot compare: len(b)={len(b)} != len(r)={len(r)}.")
+                raise RuntimeError(
+                    f"Cannot compare: len(b)={len(b)} != len(r)={len(r)}.")
             for i2, (x, y) in enumerate(zip(b, r)):
                 try:
                     assert_allclose(x, y, atol=1e-3)
                 except AssertionError as e:
                     raise AssertionError(
-                            f"Issue with baseline={names[0]!r} and {name!r}, "
-                            f"i1={i1}/{len(baseline)}, i2={i2}/{len(b)}\n"
-                            f"o1={o1}\no2{o2}") from e
+                        f"Issue with baseline={names[0]!r} and {name!r}, "
+                        f"i1={i1}/{len(baseline)}, i2={i2}/{len(b)}\n"
+                        f"o1={o1}\no2{o2}") from e
 
     return pandas.DataFrame(data)
 
@@ -415,7 +417,8 @@ def make_plot(df, title):
 
 def build_sequence():
     return [InferenceSession(model_name, providers=["CUDAExecutionProvider",
-                                                     "CPUExecutionProvider"])]
+                                                    "CPUExecutionProvider"])]
+
 
 def build_parellel_pieces():
     sesss = []
