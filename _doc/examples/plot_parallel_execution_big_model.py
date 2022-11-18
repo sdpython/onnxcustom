@@ -132,7 +132,12 @@ with open(model_name, "rb") as f:
     model = onnx.load(f)
 
 n_parts = max(n_gpus, 2)
-pieces = split_onnx(model, n_parts, verbose=2)
+if model_name == "resnet18-v1-7.onnx":
+    # best cutting point to parallelize on 2 GPUs
+    cut_points = ["resnetv15_stage3_activation0"]
+    n_parts = None
+pieces = split_onnx(model, n_parts=n_parts,
+                    cut_points=cut_points, verbose=2)
 
 ###########################################
 # Pieces are roughly of the same size.
@@ -438,7 +443,6 @@ def make_plot(df, title):
     if df is None:
         return None
     fig, ax = plt.subplots(3, 4, figsize=(12, 9), sharex=True)
-    fig.suptitle(title)
 
     # perf
     a = ax[0, 0]
@@ -461,7 +465,7 @@ def make_plot(df, title):
     a.set_xlabel("batch size", fontsize="x-small")
 
     a = ax[0, 2]
-    perf["perf gain"] = perf["sequence"] / perf["parallel"]
+    perf["perf gain"] = (perf["sequence"] - perf["parallel"]) / perf["sequence"]
     wcol = []
     wcol0 = []
     cs = []
@@ -474,10 +478,12 @@ def make_plot(df, title):
         p = df.pivot(index="n_imgs", columns="name", values=c)
         perf[f"wait_{i}"] = p["parallel"].values / num
         cs.append(f"wait_{i}")
+    n_parts = len(cs)
 
     perf["wait"] = perf[cs].sum(axis=1)
     perf[["perf gain", "wait"] + cs].plot(ax=a)
-    a.set_title("gain / batch_size", fontsize="x-small")
+    a.set_title("gain / batch_size\n((baseline - parallel) / baseline",
+                fontsize="x-small")
     a.legend(fontsize="x-small")
     a.set_ylim([0, None])
     a.set_ylabel("%", fontsize="x-small")
@@ -534,7 +540,7 @@ def make_plot(df, title):
     sub["time"] = 1
     sub.set_index("n_imgs").plot(ax=a)
     a.set_title(
-        "Running time per thread / total time\ndivided by batch size", fontsize="x-small")
+        "Ratio running time per thread / total time\ndivided by batch size", fontsize="x-small")
     a.set_ylabel("seconds", fontsize="x-small")
     a.set_xlabel("batch size", fontsize="x-small")
     a.legend(fontsize="x-small")
@@ -559,7 +565,8 @@ def make_plot(df, title):
             pos[1] = 0
             pos[0] += 1
 
-    fig.savefig(title.replace(" ", "_") + ".png", dpi=200)
+    fig.suptitle(f"{title} - {n_parts} splits")
+    fig.savefig(f"img-{n_parts}-splits-{title.replace(' ', '_')}.png", dpi=200)
     return ax
 
 
@@ -615,7 +622,7 @@ ax
 
 data = pandas.read_csv("data/ort_gpus_piece_resnet18.csv")
 df = pandas.DataFrame(data)
-ax = make_plot(df, "4 splits - resnet 18")
+ax = make_plot(df, f"Saved resnet 18")
 ax
 
 
@@ -625,7 +632,7 @@ ax
 if os.path.exists("data/ort_gpus_piece_gpt2.csv"):
     data = pandas.read_csv("data/ort_gpus_piece_gpt2.csv")
     df = pandas.DataFrame(data)
-    ax = make_plot(df, "4 splits - GPT2")
+    ax = make_plot(df, "Saved GPT2")
 else:
     print("No result yet.")
     ax = None

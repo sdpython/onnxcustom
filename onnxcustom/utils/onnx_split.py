@@ -482,7 +482,7 @@ def split_onnx(onnx_model, n_parts=None, cut_points=None,
             f"{len(onnx_model.graph.node)} nodes in {n_parts} parts.")
     exts = spl_onnx.split_segment(n_parts, cut_points=cut_points)
     if verbose > 0:
-        names = [spl_onnx.segments[i].end for i in exts[1:-1]]
+        names = [spl_onnx.segments[i].begin for i in exts[1:-1]]
         (fLOG or print)(f"[split_onnx] splits: {exts}, names={names}")
     res = spl_onnx.make_onnx(exts)
     if stats:
