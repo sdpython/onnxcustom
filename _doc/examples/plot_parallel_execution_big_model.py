@@ -528,7 +528,7 @@ def make_plot(df, title):
     for c in sub.columns[1:]:
         sub[c] /= sub["n_imgs"]
     sub.set_index("n_imgs").plot(ax=a, logy=True)
-    a.set_title("Total time\ndivided by batch size", fontsize="x-small")
+    a.set_title("Total time (parallel)\ndivided by batch size", fontsize="x-small")
     a.set_ylabel("seconds", fontsize="x-small")
     a.set_xlabel("batch size", fontsize="x-small")
 
@@ -600,9 +600,11 @@ if n_gpus > 1:
                    fcts=[('sequence', build_sequence, sequence_ort_value),
                          ('parallel', build_parellel_pieces, parallel_ort_value)])
     df.reset_index(drop=False).to_csv("ort_gpus_piece.csv", index=False)
+    title = os.path.splitext(model_name)[0]
 else:
     print("No GPU is available but data should be like the following.")
     df = pandas.read_csv("data/ort_gpus_piece.csv")
+    title = "Saved mobilenet"
 
 df
 
@@ -610,7 +612,7 @@ df
 ####################################
 # Plots.
 
-ax = make_plot(df, f"{n_gpus} splits - {model_name.split('.')[0]}")
+ax = make_plot(df, title)
 ax
 
 ####################################
