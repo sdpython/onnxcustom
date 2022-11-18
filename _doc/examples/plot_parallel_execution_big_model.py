@@ -132,7 +132,7 @@ with open(model_name, "rb") as f:
     model = onnx.load(f)
 
 n_parts = max(n_gpus, 2)
-pieces = split_onnx(model, n_parts, verbose=1)
+pieces = split_onnx(model, n_parts, verbose=2)
 
 ###########################################
 # Pieces are roughly of the same size.
@@ -559,6 +559,7 @@ def make_plot(df, title):
             pos[1] = 0
             pos[0] += 1
 
+    fig.savefig(title.replace(" ", "_") + ".png", dpi=200)
     return ax
 
 
@@ -602,7 +603,7 @@ df
 ####################################
 # Plots.
 
-ax = make_plot(df, f"Time per image / batch size\n{n_gpus} GPUs")
+ax = make_plot(df, f"{n_gpus} splits - {model_name.split('.')[0]}")
 ax
 
 ####################################
@@ -623,7 +624,7 @@ ax
 
 data = pandas.read_csv("data/ort_gpus_piece_gpt2.csv")
 df = pandas.DataFrame(data)
-ax = make_plot(df, "Time per image / batch size\n4 GPUs - GPT2")
+ax = make_plot(df, "4 splits - GPT2")
 ax
 
 

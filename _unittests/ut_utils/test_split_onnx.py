@@ -65,8 +65,11 @@ class TestSplitOnnx(ExtTestCase):
                         raise AssertionError(f"No node in part {i}\n{p}")
                     self.assertIsInstance(p, ModelProto)
 
-                main = InferenceSession(onx.SerializeToString())
-                rtp = [InferenceSession(p.SerializeToString()) for p in parts]
+                main = InferenceSession(onx.SerializeToString(),
+                                        providers=["CPUExecutionProvider"])
+                rtp = [InferenceSession(p.SerializeToString(),
+                                        providers=["CPUExecutionProvider"])
+                       for p in parts]
 
                 expected = reg.predict(X)
                 got = main.run(None, {'X': X})[0]

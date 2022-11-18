@@ -96,6 +96,10 @@ class OnnxSplitting:
                     f"is not supported yet.")
 
         # cut points: results breaking the connexity of the graph
+        if self.verbose > 0:
+            self.fLOG(
+                f"[OnnxSplitting] look for cutting points in {len(node_list)} nodes.")
+
         self.cutting_points = self._get_cutting_points(node_list)
 
         if self.verbose:
@@ -103,14 +107,22 @@ class OnnxSplitting:
                 f"[OnnxSplitting] # cuttings points: {len(self.cutting_points)}")
 
         # segments
+        if self.verbose > 1:
+            import tqdm  # pylint: disable=C0415
+            loop = tqdm.tqdm(range(len(self.cutting_points)))
+        else:
+            loop = range(len(self.cutting_points))
         segments = []
-        for i in range(len(self.cutting_points)):  # pylint: disable=C0200
+        for i in loop:  # pylint: disable=C0200
             segments.append(
                 self._make_segment(
                     None if i == 0 else self.cutting_points[i - 1],
                     self.cutting_points[i]))
-        segments.append(self._make_segment(self.cutting_points[i], None))
+        segments.append(self._make_segment(self.cutting_points[-1], None))
         self.segments = segments
+        if self.verbose > 0:
+            self.fLOG(f"[OnnxSplitting] # segments = {len(sizes)}")
+            self.fLOG("[OnnxSplitting] run shape_inference")
         self.shapes = shape_inference.infer_shapes(onnx_model)
 
         if self.verbose > 0:
@@ -204,8 +216,13 @@ class OnnxSplitting:
                 adja[key, o] = 1
 
         # checking the connexity
+        if self.verbose > 1:
+            import tqdm  # pylint: disable=C0415
+            loop = tqdm.tqdm(ordered_names)
+        else:
+            loop = ordered_names
         cutting_points = []
-        for name in ordered_names:
+        for name in loop:
             keys = []
             for a, b in adja:
                 if b == name:
@@ -289,6 +306,10 @@ class OnnxSplitting:
         :param n_parts: number of parts to get
         :return: list of segments indices
         """
+        if self.verbose > 10:
+            self.fLOG("[OnnxSplitting] cutting points")
+            self.fLOG("\n".join(textwrap.wrap(
+                ", ".join(map(str, self.cutting_points)))))
         extremities = [0, len(self.segments)]
         n = n_parts
         while n > 1:
@@ -298,7 +319,18 @@ class OnnxSplitting:
             new_ext = [extremities[0]]
             for i in range(1, len(extremities)):
                 a, b = extremities[i - 1:i + 1]
+                if self.verbose > 1:
+                    size = sum(s.size for s in self.segments[a:b])
+                    names = self.segments[a].begin, self.segments[b - 1].end
+                    self.fLOG(f"[OnnxSplitting] split into n={n}, from a={a} to b={b}, "
+                              f"size={size}, {names[0]!r} -> {names[1]!r}")
                 pos = self._split_2(a, b)
+                if self.verbose > 1:
+                    size_a = sum(s.size for s in self.segments[a:pos])
+                    size_b = sum(s.size for s in self.segments[pos:b])
+                    self.fLOG(f"[OnnxSplitting] found pos={pos}, size_1={size_a}, "
+                              f"size_2={size_b}={size_b/size:1.2f}, "
+                              f"split={self.segments[pos].begin!r}")
                 new_ext.extend([pos, b])
             extremities = new_ext
             n = n // 2
@@ -407,7 +439,7 @@ def split_onnx(onnx_model, n_parts, verbose=0, stats=False, fLOG=None):
             f"{f.name for f in onnx_model.functions}.")
     if verbose > 0:
         (fLOG or print)(
-            f"[split_onnx] starts splitting "
+            f"[split_onnx] prepare splitting "
             f"{len(onnx_model.graph.node)} nodes in {n_parts} parts.")
     spl_onnx = OnnxSplitting(onnx_model, verbose=verbose, fLOG=fLOG or print)
     if len(spl_onnx.cutting_points) < n_parts:
@@ -415,6 +447,10 @@ def split_onnx(onnx_model, n_parts, verbose=0, stats=False, fLOG=None):
             f"Unable to split the onnn model, there are less cutting points "
             f"{len(spl_onnx.cutting_points)} than the number of requested "
             f"splits ({n_parts}).")
+    if verbose > 0:
+        (fLOG or print)(
+            f"[split_onnx] starts splitting "
+            f"{len(onnx_model.graph.node)} nodes in {n_parts} parts.")
     exts = spl_onnx.split_segment(n_parts)
     if verbose > 0:
         names = [spl_onnx.segments[i].end for i in exts[1:-1]]
