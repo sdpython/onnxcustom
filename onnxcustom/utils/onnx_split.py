@@ -299,13 +299,34 @@ class OnnxSplitting:
             pos = b - 1
         return pos
 
-    def split_segment(self, n_parts):
+    def split_segment(self, n_parts=None, cut_points=None):
         """
         Splits the segments into `n_parts` segments
 
         :param n_parts: number of parts to get
+        :param cut_points: uses this particular cut points
         :return: list of segments indices
         """
+        if n_parts is None and cut_points is None:
+            raise ValueError("n_parts or cut_points must be specified.")
+        if n_parts is not None and cut_points is not None:
+            raise ValueError("n_parts and cut_points cannot "
+                             "be specified at the same time.")
+        if cut_points is not None:
+            possible = set(self.cutting_points)
+            for name in cut_points:
+                if name not in possible:
+                    text = "\n".join(textwrap.wrap(str(self.cutting_points)))
+                    raise ValueError(
+                        f"Cut point {name!r} is not considered as a cutting "
+                        f"points. Possible canditates:\n{text}")
+            memo = {s.begin: i for i, s in enumerate(self.segments) if s.begin is not None}
+            extremities = [0]
+            for name in cut_points:
+                extremities.append(memo[name])
+            extremities.append(len(self.segments))
+            return extremities
+
         if self.verbose > 10:
             self.fLOG("[OnnxSplitting] cutting points")
             self.fLOG("\n".join(textwrap.wrap(
@@ -420,13 +441,17 @@ class OnnxSplitting:
         return new_model
 
 
-def split_onnx(onnx_model, n_parts, verbose=0, stats=False, fLOG=None):
+def split_onnx(onnx_model, n_parts=None, cut_points=None,
+               verbose=0, stats=False, fLOG=None):
     """
     Splits an ONNX model into *n_parts* consecutive subgraphs.
     Chained altogether, they are equivalent to the given model.
 
     :param onnx_model: onnx model
     :param n_parts: number of subgraphs
+    :param cut_points: use different cutting points that the ones
+        the algorithm can found, it must be in the available set
+        of cutting points
     :param verbose: display information related to the split
     :param stats: returns statistics as well, return of the
         function is a tuple
@@ -437,12 +462,16 @@ def split_onnx(onnx_model, n_parts, verbose=0, stats=False, fLOG=None):
         raise NotImplementedError(
             f"The function does not work if the model contains function: "
             f"{f.name for f in onnx_model.functions}.")
+    if n_parts is not None and not isinstance(n_parts, int):
+        raise TypeError(f"n_parts must be None or an interger not {type(n_parts)}.")
+    if cut_points is not None and not isinstance(cut_points, (list, tuple)):
+        raise TypeError(f"cut_points must be None or a list not {type(n_parts)}.")
     if verbose > 0:
         (fLOG or print)(
             f"[split_onnx] prepare splitting "
             f"{len(onnx_model.graph.node)} nodes in {n_parts} parts.")
     spl_onnx = OnnxSplitting(onnx_model, verbose=verbose, fLOG=fLOG or print)
-    if len(spl_onnx.cutting_points) < n_parts:
+    if n_parts is not None and len(spl_onnx.cutting_points) < n_parts:
         raise RuntimeError(  # pragma: no cover
             f"Unable to split the onnn model, there are less cutting points "
             f"{len(spl_onnx.cutting_points)} than the number of requested "
@@ -451,7 +480,7 @@ def split_onnx(onnx_model, n_parts, verbose=0, stats=False, fLOG=None):
         (fLOG or print)(
             f"[split_onnx] starts splitting "
             f"{len(onnx_model.graph.node)} nodes in {n_parts} parts.")
-    exts = spl_onnx.split_segment(n_parts)
+    exts = spl_onnx.split_segment(n_parts, cut_points=cut_points)
     if verbose > 0:
         names = [spl_onnx.segments[i].end for i in exts[1:-1]]
         (fLOG or print)(f"[split_onnx] splits: {exts}, names={names}")
@@ -463,6 +492,6 @@ def split_onnx(onnx_model, n_parts, verbose=0, stats=False, fLOG=None):
                       for s in spl_onnx.segments],
             cutting_points=spl_onnx.cutting_points,
             extremities=exts,
-        )
+            split_points=[spl_onnx.segments[e].begin for e in exts[1:-1]])
         return res, more
     return res
