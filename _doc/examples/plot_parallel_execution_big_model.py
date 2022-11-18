@@ -615,18 +615,20 @@ ax
 
 data = pandas.read_csv("data/ort_gpus_piece_resnet18.csv")
 df = pandas.DataFrame(data)
-ax = make_plot(df, "Time per image / batch size\n4 GPUs - resnet 18")
+ax = make_plot(df, "4 splits - resnet 18")
 ax
 
 
 #######################################
 # With `GPT2 <https://huggingface.co/gpt2?text=My+name+is+Mariama%2C+my+favorite>`_
 
-data = pandas.read_csv("data/ort_gpus_piece_gpt2.csv")
-df = pandas.DataFrame(data)
-ax = make_plot(df, "4 splits - GPT2")
+if os.path.exists("data/ort_gpus_piece_gpt2.csv"):
+    data = pandas.read_csv("data/ort_gpus_piece_gpt2.csv")
+    df = pandas.DataFrame(data)
+    ax = make_plot(df, "4 splits - GPT2")
+else:
+    print("No result yet.")
+    ax = None
 ax
 
-
-# import matplotlib.pyplot as plt
 # plt.show()
