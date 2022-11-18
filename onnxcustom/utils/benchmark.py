@@ -6,7 +6,7 @@ from timeit import Timer
 import numpy
 
 
-def measure_time(stmt, context, repeat=10, number=50, div_by_number=False):
+def measure_time(stmt, context=None, repeat=10, number=50, div_by_number=False):
     """
     Measures a statement and returns the results as a dictionary.
 
@@ -35,7 +35,7 @@ def measure_time(stmt, context, repeat=10, number=50, div_by_number=False):
     The function returns a duration corresponding to
     *number* times the execution of the main statement.
     """
-    tim = Timer(stmt, globals=context)
+    tim = Timer(stmt, globals=context or {})
     res = numpy.array(tim.repeat(repeat=repeat, number=number))
     if div_by_number:
         res /= number

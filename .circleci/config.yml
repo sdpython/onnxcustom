@@ -20,10 +20,10 @@ jobs:
             pip install -r requirements.txt
             pip install -r requirements-dev.txt
 
-      - run:
-          name: install onnxruntime-training
-          command: |
-            pip install onnxruntime-training --extra-index-url https://download.onnxruntime.ai/onnxruntime_nightly_cpu.html
+#      - run:
+#          name: install onnxruntime-training
+#          command: |
+#            pip install onnxruntime-training --extra-index-url https://download.onnxruntime.ai/onnxruntime_nightly_cpu.html
 
       - save_cache:
           paths:

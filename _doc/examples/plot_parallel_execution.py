@@ -5,7 +5,7 @@
 Multithreading with onnxruntime
 ===============================
 
-.. index:: thread, parallel
+.. index:: thread, parallel, onnxruntime
 
 Python implements multithreading but it is not working in practice due to the GIL
 (see :epkg:`Le GIL`). However, if most of the parallelized code is not creating
@@ -39,11 +39,12 @@ import sys
 import tqdm
 import numpy
 import pandas
-from cpyquickhelper.numbers import measure_time
+from onnxcustom.utils.benchmark import measure_time
 import torch.cuda
 from onnxruntime import InferenceSession, get_all_providers
 from onnxruntime.capi._pybind_state import (  # pylint: disable=E0611
-    OrtDevice as C_OrtDevice, OrtValue as C_OrtValue)
+    OrtValue as C_OrtValue)
+from onnxcustom.utils.onnxruntime_helper import get_ort_device_from_session
 
 
 def download_file(url, name, min_size):
@@ -65,25 +66,19 @@ small = "custom" if "custom" in sys.argv else "small"
 if small == "custom":
     model_name = "gpt2.onnx"
     url_name = None
-    maxN = 5
-    stepN = 1
-    repN = 4
+    maxN, stepN, repN = 5, 1, 4
     big_model = True
 elif small:
     model_name = "mobilenetv2-10.onnx"
     url_name = ("https://github.com/onnx/models/raw/main/vision/"
                 "classification/mobilenet/model")
-    maxN = 21
-    stepN = 2
-    repN = 4
+    maxN, stepN, repN = 21, 2, 4
     big_model = False
 else:
     model_name = "resnet18-v1-7.onnx"
     url_name = ("https://github.com/onnx/models/raw/main/vision/"
                 "classification/resnet/model")
-    maxN = 21
-    stepN = 2
-    repN = 4
+    maxN, stepN, repN = 21, 2, 4
     big_model = False
 
 if url_name is not None:
@@ -311,8 +306,7 @@ make_plot(df, "Time per image / batch size")
 
 
 def sequence_ort_value(sess, imgs):
-    ort_device = C_OrtDevice(
-        C_OrtDevice.cpu(), C_OrtDevice.default_memory(), 0)
+    ort_device = get_ort_device_from_session(sess)
     res = []
     for img in imgs:
         ov = C_OrtValue.ortvalue_from_numpy(img, ort_device)
@@ -324,12 +318,12 @@ def sequence_ort_value(sess, imgs):
 
 class MyThreadOrtValue(threading.Thread):
 
-    def __init__(self, sess, imgs, ort_device):
+    def __init__(self, sess, imgs):
         threading.Thread.__init__(self)
         self.sess = sess
         self.imgs = imgs
         self.q = []
-        self.ort_device = ort_device
+        self.ort_device = get_ort_device_from_session(self.sess)
 
     def run(self):
         ort_device = self.ort_device
@@ -343,10 +337,8 @@ class MyThreadOrtValue(threading.Thread):
 
 
 def parallel_ort_value(sess, imgs):
-    ort_device = C_OrtDevice(
-        C_OrtDevice.cpu(), C_OrtDevice.default_memory(), 0)
     n_threads = len(sesss)
-    threads = [MyThreadOrtValue(sess, imgs[i::n_threads], ort_device)
+    threads = [MyThreadOrtValue(sess, imgs[i::n_threads])
                for i, sess in enumerate(sesss)]
     for t in threads:
         t.start()
@@ -412,7 +404,8 @@ if has_cuda and n_gpus > 0:
              InferenceSession(model_name, providers=["CUDAExecutionProvider",
                                                      "CPUExecutionProvider"])]
     if model_name == "gpt2.onnx":
-        imgs = [x["input_ids"].numpy() for x in encoded_tensors[:maxN * len(sesss)]]
+        imgs = [x["input_ids"].numpy()
+                for x in encoded_tensors[:maxN * len(sesss)]]
     else:
         imgs = [numpy.random.rand(*input_shape).astype(numpy.float32)
                 for i in range(maxN * len(sesss))]
@@ -427,7 +420,7 @@ if has_cuda and n_gpus > 0:
     gc.collect()
 else:
     print("No GPU is available but data should be like the following.")
-    df = pandas.read_csv("data/ort_cpu_gpu.csv").set_index("N")
+    df = pandas.read_csv("data/ort_cpu_gpu.csv")
 
 df
 
@@ -457,7 +450,8 @@ if n_gpus > 1:
                                                     "CPUExecutionProvider"],
                              provider_options=[{"device_id": i}, {}]))
     if model_name == "gpt2.onnx":
-        imgs = [x["input_ids"].numpy() for x in encoded_tensors[:maxN * len(sesss)]]
+        imgs = [x["input_ids"].numpy()
+                for x in encoded_tensors[:maxN * len(sesss)]]
     else:
         imgs = [numpy.random.rand(*input_shape).astype(numpy.float32)
                 for i in range(maxN * len(sesss))]
@@ -471,7 +465,7 @@ if n_gpus > 1:
     gc.collect()
 else:
     print("No GPU is available but data should be like the following.")
-    df = pandas.read_csv("data/ort_gpus.csv").set_index("N")
+    df = pandas.read_csv("data/ort_gpus.csv")
 
 df
 
@@ -479,7 +473,7 @@ df
 ####################################
 # Plots.
 
-ax = make_plot(df, f"Time per image / batch size\n{n_gpus} GPUs")
+ax = make_plot(df, "Time per image / batch size\n4 GPUs")
 ax
 
 ####################################
@@ -489,7 +483,7 @@ ax
 
 data = pandas.read_csv("data/ort_gpus_gpt2.csv")
 df = pandas.DataFrame(data)
-ax = make_plot(df, f"Time per image / batch size\n{n_gpus} GPUs - GPT2")
+ax = make_plot(df, "Time per image / batch size\n4 GPUs - GPT2")
 ax
 
 

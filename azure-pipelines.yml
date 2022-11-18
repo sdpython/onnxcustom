@@ -4,8 +4,8 @@ jobs:
     vmImage: 'ubuntu-latest'
   strategy:
     matrix:
-      Python39-Linux:
-        python.version: '3.9'
+      Python310-Linux:
+        python.version: '3.10'
     maxParallel: 3
 
   steps:
@@ -27,7 +27,9 @@ jobs:
     displayName: 'Install Requirements'
   - script: pip install -r requirements-dev.txt
     displayName: 'Install Requirements dev'
-  - script: pip install onnxruntime-training --extra-index-url https://download.onnxruntime.ai/onnxruntime_nightly_cpu.html
+#  - script: pip install onnxruntime-training --extra-index-url https://download.onnxruntime.ai/onnxruntime_nightly_cpu.html
+#    displayName: 'Install onnxruntime-training'
+  - script: pip install onnxruntime-training
     displayName: 'Install onnxruntime-training'
   - script: |
       python -u setup.py build_ext --inplace
