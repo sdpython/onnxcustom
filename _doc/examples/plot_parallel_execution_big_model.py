@@ -40,10 +40,8 @@ Let's retrieve a not so big model. They are taken from the
 `ONNX Model Zoo <https://github.com/onnx/models>`_ or can even be custom.
 """
 import gc
-import multiprocessing
 import os
 import pickle
-from pprint import pprint
 import urllib.request
 import threading
 import time
@@ -58,7 +56,7 @@ import torch.cuda
 from onnxruntime import InferenceSession, get_all_providers
 from onnxruntime.capi.onnxruntime_pybind11_state import InvalidArgument
 from onnxruntime.capi._pybind_state import (  # pylint: disable=E0611
-    OrtDevice as C_OrtDevice, OrtValue as C_OrtValue)
+    OrtDevice as C_OrtDevice)
 from onnxcustom.utils.onnx_split import split_onnx
 from onnxcustom.utils.onnxruntime_helper import get_ort_device_from_session
 
@@ -318,7 +316,6 @@ class MyThreadOrtValue(threading.Thread):
 
 
 def parallel_ort_value(sesss, imgs, wait_time=1e-4):
-    n_parts = len(sesss)
     threads = []
     for i in range(len(sesss)):
         sess = sesss[-i - 1]
@@ -342,7 +339,6 @@ def parallel_ort_value(sesss, imgs, wait_time=1e-4):
     res = [r[1] for r in res]
     times = {"wait": [], "wait0": [], "copy1": [],
              "copy2": [], "run": [], "ttime": [], "wtime": []}
-    waiting_time = []
     for t in threads:
         times["wait"].append(t.waiting_time)
         times["wait0"].append(t.waiting_time0)
@@ -386,7 +382,7 @@ def benchmark(fcts, model_name, piece_names, imgs, stepN=1, repN=4):
                    'stepN': stepN, 'repN': repN,
                    'batch_size': N, 'n_threads': len(sesss),
                    'name': name}
-            obs.update({f"n_imgs": len(r), f"time": end})
+            obs.update({"n_imgs": len(r), "time": end})
             obs['order'] = order
             if len(times) > 0:
                 obs.update(
@@ -443,11 +439,10 @@ def make_plot(df, title):
         return None
     fig, ax = plt.subplots(3, 4, figsize=(12, 9), sharex=True)
     fig.suptitle(title)
-    print(ax.shape)
 
     # perf
     a = ax[0, 0]
-    perf = df.pivot("n_imgs", "name", "time")
+    perf = df.pivot(index="n_imgs", columns="name", values="time")
     num = perf["parallel"].copy()
     div = perf.index.values
     perf.plot(logy=True, ax=a)
@@ -476,7 +471,7 @@ def make_plot(df, title):
             break
         wcol.append(c)
         wcol0.append(f"wait0_{i}")
-        p = df.pivot("n_imgs", "name", c)
+        p = df.pivot(index="n_imgs", columns="name", values=c)
         perf[f"wait_{i}"] = p["parallel"].values / num
         cs.append(f"wait_{i}")
 

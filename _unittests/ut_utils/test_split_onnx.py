@@ -49,7 +49,12 @@ class TestSplitOnnx(ExtTestCase):
 
         for n_parts in [2, 4]:
             with self.subTest(n_parts=n_parts):
-                parts = split_onnx(onx, n_parts, verbose=1, fLOG=myprint)
+                parts, stats = split_onnx(
+                    onx, n_parts, verbose=1, fLOG=myprint, stats=True)
+                self.assertIsInstance(stats, dict)
+                for k in ['cutting_points', 'extremities',
+                          'segments', 'split']:
+                    self.assertIn(k, stats)
                 self.assertEqual(len(parts), n_parts)
                 for i, p in enumerate(parts):
                     if len(p.graph.input) == 0:
@@ -397,5 +402,4 @@ class TestSplitOnnx(ExtTestCase):
 
 
 if __name__ == "__main__":
-    # TestSplitOnnx().test_split_big_model_small_constant()
     unittest.main(verbosity=2)

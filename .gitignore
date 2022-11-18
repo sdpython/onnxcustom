@@ -67,3 +67,5 @@ _doc/examples/ort_cpu_gpu.csv
 _doc/examples/ort_cpu.csv
 _doc/examples/ort_gpus.csv
 _doc/examples/ort_cpu_ortvalue.csv
+_unittests/ut_documentation/data
+_unittests/ut_documentation/ort_*.csv

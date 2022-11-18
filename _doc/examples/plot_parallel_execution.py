@@ -420,7 +420,7 @@ if has_cuda and n_gpus > 0:
     gc.collect()
 else:
     print("No GPU is available but data should be like the following.")
-    df = pandas.read_csv("data/ort_cpu_gpu.csv").set_index("N")
+    df = pandas.read_csv("data/ort_cpu_gpu.csv")
 
 df
 
@@ -465,7 +465,7 @@ if n_gpus > 1:
     gc.collect()
 else:
     print("No GPU is available but data should be like the following.")
-    df = pandas.read_csv("data/ort_gpus.csv").set_index("N")
+    df = pandas.read_csv("data/ort_gpus.csv")
 
 df
 

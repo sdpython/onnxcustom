@@ -32,6 +32,10 @@ class OnnxSegment:
             raise ValueError(
                 "A segment cannot contain this whole model, "
                 "begin and end are both None.")
+        if nodes is not None and len(nodes) == 0:
+            raise ValueError(
+                f"A segment has no node, begin={begin!r}, "
+                f"end={end!r}, involved={involved!r}.")
         self.parent = parent
         self.begin = begin
         self.end = end
@@ -169,6 +173,10 @@ class OnnxSplitting:
                 set_small |= set(node.output)
 
         # adjacency matrix
+        no_cutting = (
+            set(inits) |
+            set(i.name for i in self.onnx_model.graph.input) |
+            set(o.name for o in self.onnx_model.graph.output))
         constant_type = {'Constant', 'ConstantOfShape'}
         adja = {}
         vertices = set()
@@ -181,7 +189,8 @@ class OnnxSplitting:
                     len(node.output) == 1 and
                     len(node.input) > 0):
                 # only single output can be cutting points
-                ordered_names.extend(node.output)
+                ordered_names.extend(
+                    o for o in node.output if o not in no_cutting)
             vertices.add(key)
             vertices |= set(i for i in node.input if i not in set_small)
             vertices |= set(o for o in node.output if o not in set_small)
@@ -261,9 +270,11 @@ class OnnxSplitting:
             return a + 1
         sizes = numpy.array([s.size for s in self.segments[a:b]])
         sizes_for = numpy.cumsum(sizes)
-        sizes_bck = numpy.cumsum(sizes[::-1])[::-1]
+        sizes_bck = numpy.cumsum(sizes[::-1])[::-1].copy()
         diff = numpy.abs(sizes_bck - sizes_for)
         pos = numpy.argmin(diff)
+        # pos is the beginning of the interval
+        pos += 1
         pos += a
         if pos == a:
             pos = a + 1
@@ -377,7 +388,7 @@ class OnnxSplitting:
         return new_model
 
 
-def split_onnx(onnx_model, n_parts, verbose=0, fLOG=None):
+def split_onnx(onnx_model, n_parts, verbose=0, stats=False, fLOG=None):
     """
     Splits an ONNX model into *n_parts* consecutive subgraphs.
     Chained altogether, they are equivalent to the given model.
@@ -385,6 +396,8 @@ def split_onnx(onnx_model, n_parts, verbose=0, fLOG=None):
     :param onnx_model: onnx model
     :param n_parts: number of subgraphs
     :param verbose: display information related to the split
+    :param stats: returns statistics as well, return of the
+        function is a tuple
     :param fLOG: logging function
     :return: list of onnx model
     """
@@ -406,4 +419,14 @@ def split_onnx(onnx_model, n_parts, verbose=0, fLOG=None):
     if verbose > 0:
         names = [spl_onnx.segments[i].end for i in exts[1:-1]]
         (fLOG or print)(f"[split_onnx] splits: {exts}, names={names}")
-    return spl_onnx.make_onnx(exts)
+    res = spl_onnx.make_onnx(exts)
+    if stats:
+        more = dict(
+            split=spl_onnx,
+            segments=[dict(size=s.size, nodes=len(s.nodes))
+                      for s in spl_onnx.segments],
+            cutting_points=spl_onnx.cutting_points,
+            extremities=exts,
+        )
+        return res, more
+    return res
