@@ -43,7 +43,7 @@ from onnxcustom.utils.benchmark import measure_time
 import torch.cuda
 from onnxruntime import InferenceSession, get_all_providers
 from onnxruntime.capi._pybind_state import (  # pylint: disable=E0611
-    OrtDevice as C_OrtDevice, OrtValue as C_OrtValue)
+    OrtValue as C_OrtValue)
 from onnxcustom.utils.onnxruntime_helper import get_ort_device_from_session
 
 

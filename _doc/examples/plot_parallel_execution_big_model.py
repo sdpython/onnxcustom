@@ -56,7 +56,7 @@ import torch.cuda
 from onnxruntime import InferenceSession, get_all_providers
 from onnxruntime.capi.onnxruntime_pybind11_state import InvalidArgument
 from onnxruntime.capi._pybind_state import (  # pylint: disable=E0611
-    OrtDevice as C_OrtDevice)
+    OrtValue as C_OrtValue)
 from onnxcustom.utils.onnx_split import split_onnx
 from onnxcustom.utils.onnxruntime_helper import get_ort_device_from_session
 
