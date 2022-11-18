@@ -320,7 +320,8 @@ class OnnxSplitting:
                     raise ValueError(
                         f"Cut point {name!r} is not considered as a cutting "
                         f"points. Possible canditates:\n{text}")
-            memo = {s.begin: i for i, s in enumerate(self.segments) if s.begin is not None}
+            memo = {s.begin: i for i, s in enumerate(
+                self.segments) if s.begin is not None}
             extremities = [0]
             for name in cut_points:
                 extremities.append(memo[name])
@@ -463,9 +464,11 @@ def split_onnx(onnx_model, n_parts=None, cut_points=None,
             f"The function does not work if the model contains function: "
             f"{f.name for f in onnx_model.functions}.")
     if n_parts is not None and not isinstance(n_parts, int):
-        raise TypeError(f"n_parts must be None or an interger not {type(n_parts)}.")
+        raise TypeError(
+            f"n_parts must be None or an interger not {type(n_parts)}.")
     if cut_points is not None and not isinstance(cut_points, (list, tuple)):
-        raise TypeError(f"cut_points must be None or a list not {type(n_parts)}.")
+        raise TypeError(
+            f"cut_points must be None or a list not {type(n_parts)}.")
     if verbose > 0:
         (fLOG or print)(
             f"[split_onnx] prepare splitting "

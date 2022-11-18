@@ -465,7 +465,8 @@ def make_plot(df, title):
     a.set_xlabel("batch size", fontsize="x-small")
 
     a = ax[0, 2]
-    perf["perf gain"] = (perf["sequence"] - perf["parallel"]) / perf["sequence"]
+    perf["perf gain"] = (perf["sequence"] -
+                         perf["parallel"]) / perf["sequence"]
     wcol = []
     wcol0 = []
     cs = []
@@ -528,7 +529,8 @@ def make_plot(df, title):
     for c in sub.columns[1:]:
         sub[c] /= sub["n_imgs"]
     sub.set_index("n_imgs").plot(ax=a, logy=True)
-    a.set_title("Total time (parallel)\ndivided by batch size", fontsize="x-small")
+    a.set_title("Total time (parallel)\ndivided by batch size",
+                fontsize="x-small")
     a.set_ylabel("seconds", fontsize="x-small")
     a.set_xlabel("batch size", fontsize="x-small")
 
