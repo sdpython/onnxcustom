@@ -626,7 +626,7 @@ ax
 
 data = pandas.read_csv("data/ort_gpus_piece_resnet18.csv")
 df = pandas.DataFrame(data)
-ax = make_plot(df, f"Saved resnet 18")
+ax = make_plot(df, "Saved resnet 18")
 ax
 
 
