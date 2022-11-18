@@ -403,6 +403,33 @@ class TestSplitOnnx(ExtTestCase):
             total += len(keys)
         self.assertEqual(len(onx.graph.node), total - 1)
 
+    def test_split_force(self):
+        X = make_tensor_value_info('X', TensorProto.FLOAT, [None, None])
+        Y = make_tensor_value_info('Y', TensorProto.FLOAT, [None, None])
+        Z = make_tensor_value_info('Z', TensorProto.FLOAT, [None, None])
+        T = make_tensor_value_info('T', TensorProto.FLOAT, [None, None])
+        nodes = [make_node('Sub', ['X', 'Y'], ['diff']),
+                 make_node('Mul', ['diff', 'diff'], ['abs']),
+                 make_node('Neg', ['abs'], ['mabs']),
+                 make_node('Add', ['mabs', 'Z'], ['dz1']),
+                 make_node('Sub', ['mabs', 'Z'], ['dz2']),
+                 make_node('Mul', ['dz1', 'dz2'], ['T'])]
+
+        graph = make_graph(nodes, "dummy", [X, Y, Z], [T])
+        onx = make_model(graph)
+        check_model(onx)
+
+        self.assertRaise(lambda: split_onnx(onx), ValueError)
+        self.assertRaise(lambda: split_onnx(onx, []), TypeError)
+        self.assertRaise(lambda: split_onnx(onx, cut_points=2), TypeError)
+        self.assertRaise(lambda: split_onnx(onx, 2, []), ValueError)
+        parts, stats = split_onnx(onx, 2, stats=True)
+        self.assertEqual(len(parts), 2)
+        self.assertEqual(stats["split_points"], ["mabs"])
+        parts, stats = split_onnx(onx, cut_points=["abs"], stats=True)
+        self.assertEqual(len(parts), 2)
+        self.assertEqual(stats["split_points"], ["abs"])
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)

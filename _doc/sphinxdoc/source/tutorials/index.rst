@@ -23,6 +23,7 @@ and how to train them with :epkg:`onnxruntime-training`.
     tutorial_skl/index
     tutorial_training/index
     tutorial_bench/index
+    tutorial_parallel/index
 
 Readings
 ++++++++
