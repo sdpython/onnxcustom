@@ -6,7 +6,7 @@ import numpy
 from pyquickhelper.pycode import ExtTestCase
 from onnx import TensorProto
 from onnx.helper import (
-    make_model, make_node,
+    make_model, make_node, make_opsetid,
     make_graph, make_tensor_value_info)
 from onnxruntime import InferenceSession
 from onnxruntime.capi._pybind_state import (  # pylint: disable=E0611
@@ -87,7 +87,8 @@ class TestOnnxRuntimeHelper(ExtTestCase):
                  make_node('Mul', ['dz1', 'dz2'], ['T'])]
 
         graph = make_graph(nodes, "dummy", [X, Y, Z], [T])
-        onx = make_model(graph)
+        opset_imports = [make_opsetid('', 16)]
+        onx = make_model(graph, opset_imports=opset_imports)
         sess = InferenceSession(onx.SerializeToString(), providers=[
                                 "CPUExecutionProvider"])
 
