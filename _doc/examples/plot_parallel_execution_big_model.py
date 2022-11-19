@@ -136,6 +136,9 @@ if model_name == "resnet18-v1-7.onnx":
     # best cutting point to parallelize on 2 GPUs
     cut_points = ["resnetv15_stage3_activation0"]
     n_parts = None
+else:
+    cut_points = None
+
 pieces = split_onnx(model, n_parts=n_parts,
                     cut_points=cut_points, verbose=2)
 
