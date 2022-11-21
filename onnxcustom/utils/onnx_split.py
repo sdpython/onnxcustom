@@ -269,6 +269,7 @@ class OnnxSplitting:
                     if i in self.sizes:
                         size += self.sizes[i]
                 names |= set(node.input)
+        subset.sort()  # original order must be kept
         involved = names if name2 is None else names - {name2}
         return OnnxSegment(self, begin=name1, end=name2, involved=involved,
                            size=size, nodes=subset)
@@ -413,15 +414,16 @@ class OnnxSplitting:
                 nodes.append(node)
 
         # inputs, outputs
+        existing_inputs = [i for i in self.onnx_model.graph.input
+                           if i.name in involved]
         if a == 0:
-            new_inputs = [
-                i for i in self.onnx_model.graph.input if i.name in involved]
+            new_inputs = existing_inputs
         else:
-            new_inputs = [value_info[segs[0].begin]]
+            new_inputs = [value_info[segs[0].begin]] + existing_inputs
 
         if b == len(self.segments):
-            new_outputs = [
-                i for i in self.onnx_model.graph.output if i.name in involved]
+            new_outputs = [i for i in self.onnx_model.graph.output
+                           if i.name in involved]
         else:
             new_outputs = [value_info[segs[-1].end]]
 
@@ -491,7 +493,8 @@ def split_onnx(onnx_model, n_parts=None, cut_points=None,
     if stats:
         more = dict(
             split=spl_onnx,
-            segments=[dict(size=s.size, nodes=len(s.nodes))
+            segments=[dict(size=s.size, nodes=len(s.nodes),
+                           involved=s.involved)
                       for s in spl_onnx.segments],
             cutting_points=spl_onnx.cutting_points,
             extremities=exts,
