@@ -73,14 +73,14 @@ class TestSplitOnnx(ExtTestCase):
 
                 expected = reg.predict(X)
                 got = main.run(None, {'X': X})[0]
-                self.assertEqualArray(expected, numpy.squeeze(got))
+                self.assertEqualArray(expected, numpy.squeeze(got), decimal=6)
 
                 feeds = {'X': X}
                 for rt in rtp:
                     out = rt.run(None, feeds)[0]
                     n = rt.get_outputs()[0].name
                     feeds = {n: out}
-                self.assertEqualArray(expected, numpy.squeeze(out))
+                self.assertEqualArray(expected, numpy.squeeze(out), decimal=6)
 
     def test_split_onnx_branch(self):
         X = make_tensor_value_info('X', TensorProto.FLOAT, [None, None])
@@ -430,6 +430,53 @@ class TestSplitOnnx(ExtTestCase):
         self.assertEqual(len(parts), 2)
         self.assertEqual(stats["split_points"], ["abs"])
 
+    def test_split_input_optional(self):
+        X = make_tensor_value_info('X', TensorProto.FLOAT, [None, None])
+        Ic = make_tensor_value_info('I', TensorProto.FLOAT, [None])
+        Y = make_tensor_value_info('Y', TensorProto.FLOAT, [None, None])
+        Z = make_tensor_value_info('Z', TensorProto.FLOAT, [None, None])
+        T = make_tensor_value_info('T', TensorProto.FLOAT, [None, None])
+        nodes = [make_node('Sub', ['X', 'Y'], ['diff']),
+                 make_node('Mul', ['diff', 'diff'], ['muld']),
+                 make_node('Neg', ['muld'], ['oneg']),
+                 make_node('Add', ['oneg', 'Z'], ['dz1']),
+                 make_node('Sub', ['oneg', 'Z'], ['dz2']),
+                 make_node('Add', ['dz1', 'I'], ['dz1I']),
+                 make_node('Mul', ['dz1I', 'dz2'], ['T'])]
+        Idef = numpy_helper.from_array(
+            numpy.array([1], dtype=numpy.float32), name='I')
+
+        graph = make_graph(nodes, "dummy", [X, Y, Z, Ic], [T], [Idef])
+        onx = make_model(graph)
+        check_model(onx)
+        with open("debug.onnx", "wb") as f:
+            f.write(onx.SerializeToString())
+
+        self.assertRaise(lambda: split_onnx(onx), ValueError)
+        self.assertRaise(lambda: split_onnx(onx, []), TypeError)
+        self.assertRaise(lambda: split_onnx(onx, cut_points=2), TypeError)
+        self.assertRaise(lambda: split_onnx(onx, 2, []), ValueError)
+        parts, stats = split_onnx(onx, 2, stats=True)
+        self.assertEqual(len(parts), 2)
+        for i, p in enumerate(parts):
+            with open(f"debug{i}.onnx", "wb") as f:
+                f.write(p.SerializeToString())
+            try:
+                check_model(p)
+            except Exception as e:
+                import pprint
+                pprint.pprint(stats)
+                with open(f"test_split_input_optional_{i}.onnx", "wb") as f:
+                    f.write(p.SerializeToString())
+                raise AssertionError(f"Part {i} is not valid.\n{p}") from e
+        self.assertEqual(len(parts), 2)
+        self.assertEqual(stats["split_points"], ["oneg"])
+        names1 = [i.name for i in parts[0].graph.input]
+        names2 = [i.name for i in parts[1].graph.input]
+        self.assertEqual(["X", "Y"], names1)
+        self.assertEqual(["oneg", "Z", "I"], names2)
+
 
 if __name__ == "__main__":
+    TestSplitOnnx().test_split_input_optional()
     unittest.main(verbosity=2)
