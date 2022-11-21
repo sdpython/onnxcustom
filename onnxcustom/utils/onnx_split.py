@@ -4,7 +4,7 @@
 """
 import textwrap
 import numpy
-from onnx import ModelProto, shape_inference, TensorProto
+from onnx import ModelProto, shape_inference, TensorProto, ValueInfoProto
 from onnx.helper import make_graph, make_model
 
 
@@ -158,13 +158,22 @@ class OnnxSplitting:
         The algorithm assumes it can be duplicated in multiple parts.
         It is usually single float constant or shapes.
         """
-        if tensor.HasField("segment"):
-            raise ValueError("Currently not supporting loading segments.")
-        if tensor.data_type == TensorProto.UNDEFINED:  # pylint: disable=E1101
-            raise TypeError(
-                "The element type in the input tensor is not defined.")
-
-        dims = tensor.dims
+        if isinstance(tensor, TensorProto):
+            if tensor.HasField("segment"):
+                raise ValueError(  # pragma: no cover
+                    "Currently not supporting loading segments.")
+            if tensor.data_type == TensorProto.UNDEFINED:  # pylint: disable=E1101
+                raise TypeError(  # pragma: no cover
+                    "The element type in the input tensor is not defined.")
+            dims = tensor.dims
+        elif isinstance(tensor, ValueInfoProto):
+            dim = tensor.type.tensor_type.shape.dim
+            dims = [d.dim_value for d in dim]
+            if any(map(lambda x: not isinstance(x, int), dims)):
+                return False
+        else:
+            raise TypeError(  # pragma: no cover
+                f"Unexpected type {type(tensor)}.")
         total = numpy.prod(dims)
         if total < 32:
             # Covers small constants, reshaping...
@@ -173,11 +182,16 @@ class OnnxSplitting:
 
     def _get_cutting_points(self, node_list):
         # let's avoid adding small constant
-        inits = {i.name: self.is_small(i)
-                 for i in self.onnx_model.graph.initializer}
-        inits.update({i.name: self.is_small(i)
-                     for i in self.onnx_model.graph.sparse_initializer})
-        set_small = set(k for k, v in inits.items() if v)
+        small_tensors = {
+            i.name: self.is_small(i)
+            for i in self.onnx_model.graph.initializer}
+        small_tensors.update({
+            i.name: self.is_small(i)
+            for i in self.onnx_model.graph.sparse_initializer})
+        small_tensors.update({
+            i.name: self.is_small(i)
+            for i in self.onnx_model.graph.input})
+        set_small = set(k for k, v in small_tensors.items() if v)
         for idn, node in node_list:
             if len(node.input) == 0 and len(node.SerializeToString()) < 128:
                 key = self._key(idn, node)
@@ -186,8 +200,7 @@ class OnnxSplitting:
 
         # adjacency matrix
         no_cutting = (
-            set(inits) |
-            set(i.name for i in self.onnx_model.graph.input) |
+            set(small_tensors) |
             set(o.name for o in self.onnx_model.graph.output))
         constant_type = {'Constant', 'ConstantOfShape'}
         adja = {}
