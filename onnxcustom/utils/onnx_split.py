@@ -167,7 +167,7 @@ class OnnxSplitting:
                 if k not in dist:
                     if k[0] == 1:
                         # node
-                        if node.op_type == "Reshape":
+                        if node.op_type in ("Reshape", "ConstantOfShape"):
                             continue
                     dist[k] = d
                     stack.append(k)
@@ -189,7 +189,7 @@ class OnnxSplitting:
             edges[1, key] = {}
             for o in node.output:
                 edges[1, key][0, o] = node
-            if node.op_type == 'Shape':
+            if node.op_type in ('Shape', 'Size'):
                 shapeops.append((idn, node))
         if len(shapeops) == 0:
             return {}
@@ -382,12 +382,11 @@ class OnnxSplitting:
                     if i in self.sizes:
                         size += self.sizes[i]
                     names.add(i)
-        print("++++", shape_results)
         subset.sort()  # original order must be kept
         involved = names if name2 is None else names - {name2}
         return OnnxSegment(self, begin=name1, end=name2, involved=involved,
                            size=size, nodes=subset,
-                           shape_results=shape_results)
+                           shape_results=set(shape_results))
 
     def _split_2(self, a, b):
         """
@@ -513,8 +512,10 @@ class OnnxSplitting:
 
         segs = self.segments[a:b]
         involved = set()
+        shape_results = set()
         for seg in segs:
             involved |= seg.involved
+            shape_results |= seg.shape_results
 
         # initiliazers
         new_inits = [init for init in self.onnx_model.graph.initializer
@@ -565,7 +566,13 @@ class OnnxSplitting:
         new_model.producer_version = model.producer_version
         new_model.domain = model.domain
         new_model.model_version = model.model_version
-        new_model.doc_string = model.doc_string
+        if self.doc_string:
+            text = (f"segments[{a}:{b}], from {segs[0].begin or ''} "
+                    f"to {segs[-1].end or ''}\n"
+                    f"shapes_results={shape_results}")
+            new_model.doc_string = f"{model.doc_string}\n----\n{text}"
+        else:
+            new_model.doc_string = model.doc_string
         return new_model
 
 
