@@ -20,10 +20,13 @@ class OnnxSegment:
         None for the outputs of the main graph
     :param size: total size of the segment
     :param involved: list of result names involved in this segment
-    :param nodes: involved nodes, list of tuple `(int, NodeProt)`
+    :param nodes: involved nodes, list of tuple `(int, NodeProto)`
+    :param shape_results: name of the shape results, they are not included
+        in the segment but should be added to build the final ONNX
     """
 
-    def __init__(self, parent, begin, end, size=0, involved=None, nodes=None):
+    def __init__(self, parent, begin, end, size=0, involved=None, nodes=None,
+                 shape_results=None):
         if begin is not None and not isinstance(begin, str):
             raise ValueError(f"begin={begin!r} must be a string or None.")
         if end is not None and not isinstance(end, str):
@@ -42,12 +45,15 @@ class OnnxSegment:
         self.involved = involved
         self.size = size
         self.nodes = nodes
+        self.shape_results = shape_results
 
     def __repr__(self):
         return f"{self.__class__.__name__}(...,\n    " + "\n".join(
             textwrap.wrap(
                 f"{self.begin!r}, {self.end!r}, size={self.size!r}, "
-                f"{self.involved!r})", subsequent_indent="    "))
+                f"involved={self.involved!r}, "
+                f"shape_results={self.shape_results})",
+                subsequent_indent="    "))
 
 
 class OnnxSplitting:
@@ -57,12 +63,15 @@ class OnnxSplitting:
 
     :param onnx_model: onnx_model
     :param verbose: displays information during the split
+    :param doc_string: fills node doc_string to add information about
+        the split, no copy is done so it modifies the input nodes as well
     :param fLOG: logging function
     """
 
-    def __init__(self, onnx_model, verbose=0, fLOG=None):
+    def __init__(self, onnx_model, verbose=0, doc_string=False, fLOG=None):
         self.onnx_model = onnx_model
         self.verbose = verbose
+        self.doc_string = doc_string
         self.fLOG = fLOG or print
         self._init()
 
@@ -94,6 +103,21 @@ class OnnxSplitting:
                 raise NotImplementedError(
                     f"Node {node.op_type!r} from domain {node.domain!r} "
                     f"is not supported yet.")
+
+        # tag shape nodes
+        if self.verbose > 0:
+            self.fLOG(
+                f"[OnnxSplitting] mark shape nodes among {len(node_list)} nodes.")
+        shape_obj = self._make_shape_nodes(node_list)
+        self.shape_obj = shape_obj
+        self.shape_results = set(k[1] for k in shape_obj if k[0] == 0)
+        self.shape_nodes = set(k[1] for k in shape_obj if k[0] == 1)
+        if self.verbose > 0:
+            self.fLOG(f"[OnnxSplitting] # shape_results = "
+                      f"{len(self.shape_results)}"
+                      f"- {list(sorted(self.shape_results))[:5]}")
+            self.fLOG(f"[OnnxSplitting] # shape_nodes = "
+                      f"{len(self.shape_nodes)}")
 
         # cut points: results breaking the connexity of the graph
         if self.verbose > 0:
@@ -130,6 +154,62 @@ class OnnxSplitting:
             self.fLOG(f"[OnnxSplitting] # segments = {len(sizes)}, "
                       f"min,avg,max size=[{min(sizes)}, "
                       f"{sum(sizes) / len(sizes)}, {max(sizes)}]")
+
+    @staticmethod
+    def _propagate_shape(key, edges):
+        dist = {(1, key): 0}
+        stack = [(1, key)]
+        while len(stack) > 0:
+            last = stack.pop()
+            d = dist[last] + 1
+            ed = edges[last]
+            for k, node in ed.items():
+                if k not in dist:
+                    if k[0] == 1:
+                        # node
+                        if node.op_type == "Reshape":
+                            continue
+                    dist[k] = d
+                    stack.append(k)
+        return dist
+
+    def _make_shape_nodes(self, node_list):
+        """
+        *shape nodes* are nodes operating on shapes, they are usually
+        small and can be ignored while looking for the cutting points.
+        """
+        shapeops = []
+        edges = {}
+        for idn, node in node_list:
+            key = self._key(idn, node)
+            for i in node.input:
+                if (0, i) not in edges:
+                    edges[0, i] = {}
+                edges[0, i][1, key] = node
+            edges[1, key] = {}
+            for o in node.output:
+                edges[1, key][0, o] = node
+            if node.op_type == 'Shape':
+                shapeops.append((idn, node))
+        if len(shapeops) == 0:
+            return {}
+
+        # There are shapes, let's propagate.
+        if self.verbose > 1:
+            import tqdm  # pylint: disable=C0415
+            loop = tqdm.tqdm(shapeops)
+        else:
+            loop = shapeops
+        marked = {}
+        for idn, shape in loop:
+            key = self._key(idn, shape)
+            marked[1, key] = [shape]
+            prop = self._propagate_shape(key, edges)
+            for k, v in prop.items():
+                if k not in marked:
+                    marked[k] = []
+                marked[k].append((v, shape))
+        return marked
 
     @staticmethod
     def _connex_components(vertices, adja):
@@ -208,7 +288,7 @@ class OnnxSplitting:
         ordered_names = []
         for idn, node in node_list:
             key = self._key(idn, node)
-            if key in set_small:
+            if key in set_small or key in self.shape_nodes:
                 continue
             if (node.op_type not in constant_type and
                     len(node.output) == 1 and
@@ -217,10 +297,14 @@ class OnnxSplitting:
                 ordered_names.extend(
                     o for o in node.output if o not in no_cutting)
             vertices.add(key)
-            vertices |= set(i for i in node.input if i not in set_small)
-            vertices |= set(o for o in node.output if o not in set_small)
+            vertices |= set(i for i in node.input
+                            if i not in set_small and
+                            i not in self.shape_results)
+            vertices |= set(o for o in node.output
+                            if o not in set_small and
+                            o not in self.shape_results)
             for i in node.input:
-                if i in set_small:
+                if i in set_small or i in self.shape_results:
                     continue
                 adja[i, key] = 1
             for o in node.output:
@@ -263,6 +347,14 @@ class OnnxSplitting:
             if name2 is not None and name2 in node.output:
                 break
 
+        if name1 is not None and name1 in self.shape_results:
+            raise RuntimeError(  # pragma: no cover
+                f"Cannot create a segment with a shape result {name1!r} "
+                f"as an input.")
+        if name2 is not None and name2 in self.shape_results:
+            raise RuntimeError(  # pragma: no cover
+                f"Cannot create a segment with a shape result {name2!r} "
+                f"as an output.")
         if name2 is None:
             names = set(i.name for i in self.onnx_model.graph.output)
         else:
@@ -270,22 +362,32 @@ class OnnxSplitting:
 
         size = 0
         subset = []
+        shape_results = {}
         for idn, node in reversed(nodes):
             if set(node.output) & names:
                 size += self.sizes[self._key(idn, node)]
                 if len(node.output) == 1 and node.output[0] == name1:
                     continue
                 subset.append((idn, node))
-                if len(node.input) == 1 and node.input[0] == name1:
+                no_shape = [i for i in node.input if i not in self.shape_results]
+                if len(no_shape) == 1 and no_shape[0] == name1:
+                    for i in node.input:
+                        if i in self.shape_results:
+                            shape_results[i] = node
                     continue
                 for i in node.input:
+                    if i in self.shape_results:
+                        shape_results[i] = node
+                        continue
                     if i in self.sizes:
                         size += self.sizes[i]
-                names |= set(node.input)
+                    names.add(i)
+        print("++++", shape_results)
         subset.sort()  # original order must be kept
         involved = names if name2 is None else names - {name2}
         return OnnxSegment(self, begin=name1, end=name2, involved=involved,
-                           size=size, nodes=subset)
+                           size=size, nodes=subset,
+                           shape_results=shape_results)
 
     def _split_2(self, a, b):
         """
@@ -422,8 +524,18 @@ class OnnxSplitting:
 
         # nodes
         nodes = []
-        for seg in segs:
+        for iseg, seg in enumerate(segs):
+            if self.doc_string:
+                label = (f"seg{iseg + a}-size={seg.size}-"
+                         f"[{seg.begin or ''},{seg.end or ''}]")
+                if seg.shape_results:
+                    label += f"-shape={list(sorted(seg.shape_results))}"
             for _, node in seg.nodes:
+                if self.doc_string:
+                    if node.doc_string:
+                        node.doc_string = f"{node.doc_string}-{label}"
+                    else:
+                        node.doc_string = label
                 nodes.append(node)
 
         # inputs, outputs
@@ -458,7 +570,8 @@ class OnnxSplitting:
 
 
 def split_onnx(onnx_model, n_parts=None, cut_points=None,
-               verbose=0, stats=False, fLOG=None):
+               verbose=0, stats=False, doc_string=False,
+               fLOG=None):
     """
     Splits an ONNX model into *n_parts* consecutive subgraphs.
     Chained altogether, they are equivalent to the given model.
@@ -471,6 +584,8 @@ def split_onnx(onnx_model, n_parts=None, cut_points=None,
     :param verbose: display information related to the split
     :param stats: returns statistics as well, return of the
         function is a tuple
+    :param doc_string: fills node doc_string to add information about
+        the split, no copy is done so it modifies the input nodes as well
     :param fLOG: logging function
     :return: list of onnx model
     """
@@ -488,7 +603,8 @@ def split_onnx(onnx_model, n_parts=None, cut_points=None,
         (fLOG or print)(
             f"[split_onnx] prepare splitting "
             f"{len(onnx_model.graph.node)} nodes in {n_parts} parts.")
-    spl_onnx = OnnxSplitting(onnx_model, verbose=verbose, fLOG=fLOG or print)
+    spl_onnx = OnnxSplitting(onnx_model, verbose=verbose,
+                             doc_string=doc_string, fLOG=fLOG or print)
     if n_parts is not None and len(spl_onnx.cutting_points) < n_parts:
         raise RuntimeError(  # pragma: no cover
             f"Unable to split the onnn model, there are less cutting points "
@@ -511,6 +627,8 @@ def split_onnx(onnx_model, n_parts=None, cut_points=None,
                       for s in spl_onnx.segments],
             cutting_points=spl_onnx.cutting_points,
             extremities=exts,
-            split_points=[spl_onnx.segments[e].begin for e in exts[1:-1]])
+            split_points=[spl_onnx.segments[e].begin for e in exts[1:-1]],
+            shape_nodes=spl_onnx.shape_nodes,
+            shape_results=spl_onnx.shape_results)
         return res, more
     return res

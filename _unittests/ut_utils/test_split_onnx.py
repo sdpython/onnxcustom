@@ -556,6 +556,56 @@ class TestSplitOnnx(ExtTestCase):
         self.assertEqual(["X", "Y", "I"], names1)
         self.assertEqual(["oneg", "Z", "I"], names2)
 
+    def test_split_reshape(self):
+        X = make_tensor_value_info('X', TensorProto.FLOAT, [None, None])
+        Y = make_tensor_value_info('Y', TensorProto.FLOAT, [None, None])
+        Z = make_tensor_value_info('Z', TensorProto.FLOAT, [None, None])
+        T = make_tensor_value_info('T', TensorProto.FLOAT, [None, None])
+        nodes = [make_node('Sub', ['X', 'Y'], ['diff']),
+                 make_node('Mul', ['diff', 'diff'], ['muld']),
+                 make_node('Shape', ['muld'], ['shape']),
+                 make_node('Concat', ['shape', 'I'], ['new_shape'], axis=0),
+                 make_node('Reshape', ['muld', 'new_shape'], ['muldis']),
+                 make_node('Neg', ['muldis'], ['oneg']),
+                 make_node('Add', ['oneg', 'Z'], ['dz1']),
+                 make_node('Sub', ['oneg', 'Z'], ['dz2']),
+                 make_node('Add', ['dz1', 'I'], ['dz1I']),
+                 make_node('Mul', ['dz1I', 'dz2'], ['tt']),
+                 make_node('Reshape', ['tt', 'new_shape'], ['T'])]
+        Idef = numpy_helper.from_array(
+            numpy.array([1], dtype=numpy.float32), name='I')
+
+        graph = make_graph(nodes, "dummy", [X, Y, Z], [T], [Idef])
+        onx = make_model(graph)
+        check_model(onx)
+        with open("debug.onnx", "wb") as f:
+            f.write(onx.SerializeToString())
+
+        parts, stats = split_onnx(onx, 2, stats=True,
+                                  doc_string=True, verbose=2)
+        names = stats["shape_results"]
+        self.assertEqual(names, {'new_shape', 'shape'})
+        self.assertEqual(len(parts), 2)
+        cuts = stats["cutting_points"]
+        self.assertIn("oneg", cuts)
+
+        for i, p in enumerate(parts):
+            with open(f"debug{i}.onnx", "wb") as f:
+                f.write(p.SerializeToString())
+            try:
+                check_model(p)
+            except Exception as e:
+                with open(f"test_split_input_optional_{i}.onnx", "wb") as f:
+                    f.write(p.SerializeToString())
+                raise AssertionError(f"Part {i} is not valid.\n{p}") from e
+        self.assertEqual(len(parts), 2)
+        self.assertEqual(stats["split_points"], ["oneg"])
+        names1 = [i.name for i in parts[0].graph.input]
+        names2 = [i.name for i in parts[1].graph.input]
+        self.assertEqual(["X", "Y", "I"], names1)
+        self.assertEqual(["oneg", "Z", "I"], names2)
+
 
 if __name__ == "__main__":
+    TestSplitOnnx().test_split_reshape()
     unittest.main(verbosity=2)
