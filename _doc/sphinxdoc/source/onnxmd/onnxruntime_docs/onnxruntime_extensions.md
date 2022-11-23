@@ -79,7 +79,7 @@ e2e_graph = helper.make_graph(
 )
 # ...
 ```
-For more usage of ONNX helper, please visit the document [Python API Overview](https://github.com/onnx/onnx/blob/master/docs/PythonAPIOverview.md).
+For more usage of ONNX helper, please visit the document [Python API Overview](https://github.com/onnx/onnx/blob/main/docs/PythonAPIOverview.md).
 
 ### Run E2E Model in Python
 ```python
@@ -96,7 +96,7 @@ sess.run(...)
 ```
 
 ### Run E2E Model in JavaScript
-To run E2E ONNX model in JavaScript, you need to first [prepare ONNX Runtime WebAssembly artifacts](https://github.com/microsoft/onnxruntime/tree/master/js), include the generated `ort.min.js`, and then load and run the model in JS.
+To run E2E ONNX model in JavaScript, you need to first [prepare ONNX Runtime WebAssembly artifacts](https://github.com/microsoft/onnxruntime/blob/main/js), include the generated `ort.min.js`, and then load and run the model in JS.
 ```js
 // use an async context to call onnxruntime functions
 async function main() {
