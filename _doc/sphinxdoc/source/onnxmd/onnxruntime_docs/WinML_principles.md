@@ -26,4 +26,4 @@ Note: minor issues or bugs can be addressed more quickly using the [bug/performa
 
 ## Start your Feature Request
 
-If you'd like to contribute to Windows ML and engage with the community to get feedback, please review to the contributing [process details](https://github.com/microsoft/onnxruntime/blob/master/CONTRIBUTING.md) and submit a new feature request [here](https://github.com/microsoft/onnxruntime/issues/new/choose).
+If you'd like to contribute to Windows ML and engage with the community to get feedback, please review to the contributing [process details](https://github.com/microsoft/onnxruntime/blob/main/CONTRIBUTING.md) and submit a new feature request [here](https://github.com/microsoft/onnxruntime/issues/new/choose).

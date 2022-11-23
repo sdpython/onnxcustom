@@ -80,4 +80,4 @@ Use types that fall into established patterns. For example, we use int64_t for d
 
 ### 9.  Adding a new API
 
-Follow these guidelines and instructions in the source code.  "Rules on how to add a new Ort API version" in [onnxruntime_c_api.cc](https://github.com/microsoft/onnxruntime/blob/master/onnxruntime/core/session/onnxruntime_c_api.cc).
+Follow these guidelines and instructions in the source code.  "Rules on how to add a new Ort API version" in [onnxruntime_c_api.cc](https://github.com/microsoft/onnxruntime/blob/main/onnxruntime/core/session/onnxruntime_c_api.cc).

@@ -11,7 +11,7 @@ The following pages renders the `markdown documentation
 .. contents::
     :local:
 
-Overwiew
+Overview
 ++++++++
 
 .. toctree::
@@ -31,6 +31,7 @@ Versions
     :maxdepth: 1
 
     onnxruntime_docs/Versioning.md
+    onnxruntime_docs/ORT_Format_Update_in_1.13.md
 
 Contributing
 ++++++++++++
@@ -56,6 +57,22 @@ C API
     onnxruntime_docs/cmake_guideline.md
     onnxruntime_docs/onnxruntime_extensions.md
     onnxruntime_docs/ContribOperators.md
+
+Optimization
+++++++++++++
+
+.. toctree::
+    :maxdepth: 1
+
+    onnxruntime_docs/Memory_Optimizer.md
+
+Training
+++++++++
+
+.. toctree::
+    :maxdepth: 1
+
+    onnxruntime_docs/ORTModule_Training_Guidelines.md
 
 Others
 ++++++
