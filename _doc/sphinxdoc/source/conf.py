@@ -26,7 +26,7 @@ def callback_begin():
         os.makedirs(dest)
     for img in os.listdir(source):
         ext = os.path.splitext(img)[-1]
-        if ext not in {'.png', '.jpg'}:
+        if ext not in {'.png', '.jpg', '.svg'}:
             continue
         shutil.copy(os.path.join(source, img), dest)
 
@@ -54,11 +54,7 @@ html_theme_options = {
 }
 
 blog_root = "http://www.xavierdupre.fr/app/onnxcustom/helpsphinx/"
-
-html_css_files = ['my-styles.css']
-
 html_logo = "phdoc_static/project_ico.png"
-html_sidebars = {}
 language = "en"
 onnx_doc_folder = os.path.join(os.path.dirname(__file__), 'api', 'onnxops')
 mathdef_link_only = True
