@@ -43,13 +43,12 @@ from tqdm import tqdm
 from onnx import TensorProto
 from onnx.numpy_helper import from_array
 from onnx.helper import (
-    make_model, make_node, set_model_props, make_tensor,
+    make_model, make_node,
     make_graph, make_tensor_value_info)
 from onnxruntime import InferenceSession, __version__ as ort_version
 from onnxruntime.capi._pybind_state import (  # pylint: disable=E0611
-    SessionIOBinding, OrtDevice as C_OrtDevice,
-    OrtMemType, OrtValue as C_OrtValue, RunOptions)
-from cpyquickhelper.numbers.speed_measure import measure_time
+    OrtDevice as C_OrtDevice,
+    OrtMemType, OrtValue as C_OrtValue)
 from mlprodict.testing.experimental_c_impl.experimental_c import code_optimisation
 
 ############################################
