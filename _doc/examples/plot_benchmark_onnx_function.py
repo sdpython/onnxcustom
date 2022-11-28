@@ -19,7 +19,7 @@ The following benchmarks compares a couple of implementations:
   method `onnxruntime.InferenceSession.run`
 * `bind`: inference through an ONNX graph executed with
   method `onnxruntime.InferenceSession.run_with_iobinding`
-* `run`: inference through an ONNX graph executed with
+* `inplace`: inference through an ONNX graph executed with
   method `onnxruntime.InferenceSession.run_with_iobinding`
   but without counting the binding assuming input buffers
   are reused and do not need binding again
@@ -114,7 +114,7 @@ def benchmark(name, onx, fct_numpy, *args,
 
         ms = measure_time(
             lambda: nobind_just_run(sess._sess, bind))
-        ms.update(dict(name=name, impl='run', dim=dim))
+        ms.update(dict(name=name, impl='inplace', dim=dim))
         rows.append(ms)
 
     return rows
