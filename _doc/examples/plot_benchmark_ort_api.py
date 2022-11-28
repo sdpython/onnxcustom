@@ -1,8 +1,8 @@
 """
 .. _benchmark-ort-api:
 
-Benchmark onnxruntime API: run or ...
-=====================================
+Benchmark onnxruntime API: run or run_with_ort_values
+=====================================================
 
 This short code compares different methods to call onnxruntime API.
 
@@ -16,7 +16,6 @@ You may profile this code:
 
     py-spy record -o plot_benchmark_ort_api.svg -r 10
     --native -- python plot_benchmark_ort_api.py
-
 
 .. contents::
     :local:
@@ -101,12 +100,12 @@ sess = InferenceSession(onx.SerializeToString(),
 obs = measure_time(lambda: sess.run(None, {'X': X}),
                    context=dict(sess=sess, X=X),
                    repeat=repeat, number=number)
-obs['name'] = 'ort-run'
+obs['name'] = 'ort'
 data.append(obs)
 
 
 ###################################
-# onnxruntime: run
+# onnxruntime: run from C API
 print('ort-c')
 sess = InferenceSession(onx.SerializeToString(),
                         providers=['CPUExecutionProvider'])
@@ -121,7 +120,7 @@ data.append(obs)
 
 
 ###################################
-# onnxruntime: run_with_ort_values
+# onnxruntime: run_with_ort_values from C API
 print('ort-ov-c')
 device = C_OrtDevice(C_OrtDevice.cpu(), OrtMemType.DEFAULT, 0)
 
@@ -136,12 +135,12 @@ obs = measure_time(
         {'X': Xov}, output_names, ro),
     context=dict(sess=sess),
     repeat=repeat, number=number)
-obs['name'] = 'ort-ov'
+obs['name'] = 'ort-ov-c'
 data.append(obs)
 
 
 ###################################
-# onnxruntime: run_with_iobinding
+# onnxruntime: run_with_iobinding from C API
 print('ort-bind')
 sess = InferenceSession(onx.SerializeToString(),
                         providers=['CPUExecutionProvider'])

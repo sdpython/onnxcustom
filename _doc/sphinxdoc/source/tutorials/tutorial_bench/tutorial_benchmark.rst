@@ -8,4 +8,5 @@ Inference
     ../../gyexamples/plot_benchmark_ort_api
     ../../gyexamples/plot_benchmark_inference_standard
     ../../gyexamples/plot_benchmark_inference
+    ../../gyexamples/plot_benchmark_eager_mode
     ../../gyexamples/plot_benchmark_graph_opt
