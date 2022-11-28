@@ -20,7 +20,8 @@ but the gap is small if the model manipulate big matrices.
 It is possible to do the same with :epkg:`onnxruntime`.
 This example compares the performance of a couple of
 scenarios. This work is close to what is done in example
-:ref:`benchmark-ort-api`.
+:ref:`benchmark-ort-api`. The example compares the performance
+of a couple of methods for CPU and GPU.
 
 .. contents::
     :local:
@@ -46,10 +47,16 @@ from onnx.helper import (
     make_model, make_node,
     make_graph, make_tensor_value_info)
 from onnxruntime import (
-    get_all_providers, InferenceSession, __version__ as ort_version)
+    get_all_providers, InferenceSession, __version__ as ort_version,
+    RunOptions)
 from onnxruntime.capi._pybind_state import (  # pylint: disable=E0611
     OrtDevice as C_OrtDevice,
     OrtMemType, OrtValue as C_OrtValue)
+try:
+    from onnxruntime.capi._pybind_state import OrtValueVector
+except ImportError:
+    # You need onnxruntime>=1.14
+    OrtValueVector = None
 from mlprodict.testing.experimental_c_impl.experimental_c import code_optimisation
 
 ############################################
@@ -143,8 +150,48 @@ def f_ort_ov(X):
     Z = sess_add2._sess.run_with_ort_values({'X': X}, ['Z'], None)[0]
     return Z
 
+#######################################
+# onnxruntime >= 1.14 introduces a vector of OrtValues
+# to bypass the building of a dictionary.
+
+
+if OrtValueVector is not None:
+
+    run_options = RunOptions()
+    devices = [C_OrtDevice(C_OrtDevice.cpu(), OrtMemType.DEFAULT, 0)]
+
+    def f_ort_vect_ov_eager(X):
+        "ort-vect-ov-eager"
+        vect_in = OrtValueVector()
+        vect_in.push_back(X)
+        vect_out = OrtValueVector()
+        sess_add._sess.run_with_ortvaluevector(
+            run_options, ["X"], vect_in, ["Z"], vect_out, devices)
+        vect_out2 = OrtValueVector()
+        sess_add._sess.run_with_ortvaluevector(
+            run_options, ["X"], vect_out, ["Z"], vect_out2, devices)
+        assert len(vect_out2) == 1
+        return vect_out2[0]
+
+    def f_ort_vect_ov(X):
+        "ort-vect-ov"
+        vect_in = OrtValueVector()
+        vect_in.push_back(X)
+        vect_out = OrtValueVector()
+        sess_add2._sess.run_with_ortvaluevector(
+            run_options, ["X"], vect_in, ["Z"], vect_out, devices)
+        assert len(vect_out) == 1
+        return vect_out[0]
+
+else:
+    f_ort_vect_ov_eager = None
+    f_ort_vect_ov = None
+
+#########################################
+# If GPU is available.
 
 if sess_add_gpu is not None:
+    #
 
     def f_ort_ov_eager_gpu(X):
         "ort-ov-eager-gpu"
@@ -157,9 +204,45 @@ if sess_add_gpu is not None:
         Z = sess_add2_gpu._sess.run_with_ort_values({'X': X}, ['Z'], None)[0]
         return Z
 
+    if OrtValueVector is not None:
+
+        run_options = RunOptions()
+        devices = [C_OrtDevice(C_OrtDevice.cuda(), OrtMemType.DEFAULT, 0)]
+
+        def f_ort_vect_ov_eager_gpu(X):
+            "ort-vect-ov-eager-gpu"
+            vect_in = OrtValueVector()
+            vect_in.push_back(X)
+            vect_out = OrtValueVector()
+            sess_add._sess.run_with_ortvaluevector(
+                run_options, ["X"], vect_in, ["Z"], vect_out, devices)
+            vect_out2 = OrtValueVector()
+            sess_add._sess.run_with_ortvaluevector(
+                run_options, ["X"], vect_out, ["Z"], vect_out2, devices)
+            assert len(vect_out2) == 1
+            return vect_out2[0]
+
+        def f_ort_vect_ov_gpu(X):
+            "ort-vect-ov-gpu"
+            vect_in = OrtValueVector()
+            vect_in.push_back(X)
+            vect_out = OrtValueVector()
+            sess_add2._sess.run_with_ortvaluevector(
+                run_options, ["X"], vect_in, ["Z"], vect_out, devices)
+            assert len(vect_out) == 1
+            return vect_out[0]
+
+    else:
+        f_ort_vect_ov_eager = None
+        f_ort_vect_ov = None
+
 else:
     f_ort_ov_eager_gpu = None
     f_ort_ov_gpu = None
+
+
+#######################################
+# Let's now check all these functions produces the same results.
 
 X = numpy.random.rand(10, CST.shape[1]).astype(CST.dtype)
 
@@ -173,6 +256,13 @@ Ys = [
     f_ort_ov_eager(Xov),
     f_ort_ov(Xov),
 ]
+
+if OrtValueVector is not None:
+    Ys.extend([
+        f_ort_vect_ov_eager(Xov),
+        f_ort_vect_ov(Xov),
+    ])
+
 if sess_add_gpu is not None:
     device_gpu = C_OrtDevice(C_OrtDevice.cuda(), OrtMemType.DEFAULT, 0)
     try:
@@ -181,6 +271,11 @@ if sess_add_gpu is not None:
             f_ort_ov_eager_gpu(Xov_gpu),
             f_ort_ov_gpu(Xov_gpu),
         ])
+        if OrtValueVector is not None:
+            Ys.extend([
+                f_ort_vect_ov_eager_gpu(Xov),
+                f_ort_vect_ov_gpu(Xov),
+            ])
     except RuntimeError:
         # cuda is not available
         sess_add_gpu = None
@@ -205,6 +300,7 @@ for i in range(1, len(Ys)):
 
 def benchmark(repeat=100):
     fcts = [f_numpy, f_ort_eager, f_ort, f_ort_ov_eager, f_ort_ov,
+            f_ort_vect_ov_eager, f_ort_vect_ov,
             f_ort_ov_eager_gpu, f_ort_ov_gpu]
     data = []
     for N in tqdm([1, 2, 5, 10, 20, 50, 100, 200, 500,
@@ -251,27 +347,42 @@ df
 # ++++++
 
 def make_graph(df):
-    fig, ax = plt.subplots(2, 3, figsize=(12, 8))
+
+    def subgraph(row, cols, title):
+        if "numpy" not in cols:
+            cols.append("numpy")
+        piv = piv_all[cols].copy()
+        piv.plot(ax=ax[row, 0], title=title, logy=True, logx=True)
+        piv2 = piv / piv.index.values.reshape((-1, 1))
+        piv2.plot(ax=ax[row, 1], title=f"Time(s) per execution / N", logx=True)
+        piv3 = piv / piv["numpy"].values.reshape((-1, 1))
+        piv3.plot(ax=ax[row, 2], title="Ratio against numpy (lower is better",
+                  logy=True, logx=True)
+        for j in range(0, 3):
+            ax[row, j].legend(fontsize="x-small")
+
+    fig, ax = plt.subplots(3, 3, figsize=(12, 8))
+    fig.suptitle("Time execution Eager Add + Add")
 
     piv_all = df.pivot(index="N", columns="name", values="time")
+    print(piv_all.columns)
+
+    # no gpu, no vect
+    subgraph(0, [c for c in piv_all.columns
+                 if "-gpu" not in c and "-vect" not in c],
+             title="CPU")
 
     # no gpu
-    piv = piv_all[[c for c in piv_all.columns if "gpu" not in c]].copy()
-    piv.plot(ax=ax[0, 0], title="Time(s) per execution", logy=True, logx=True)
-    piv2 = piv / piv.index.values.reshape((-1, 1))
-    piv2.plot(ax=ax[0, 1], title="Time(s) per execution / N", logx=True)
-    piv3 = piv / piv["numpy"].values.reshape((-1, 1))
-    piv3.plot(ax=ax[0, 2], title="Ratio against numpy (lower is better)",
-              logy=True, logx=True)
+    subgraph(1, [c for c in piv_all.columns
+                 if "-gpu" not in c and "-ov" in c],
+             title="CPU, OrtValue and OrtValueVector")
 
-    # ort value
-    piv = piv_all[[c for c in piv_all.columns if "ov" in c or "numpy" in c]].copy()
-    piv.plot(ax=ax[1, 0], title="Time(s) per execution", logy=True, logx=True)
-    piv2 = piv / piv.index.values.reshape((-1, 1))
-    piv2.plot(ax=ax[1, 1], title="Time(s) per execution / N", logx=True)
-    piv3 = piv / piv["numpy"].values.reshape((-1, 1))
-    piv3.plot(ax=ax[1, 2], title="Ratio against numpy (lower is better)",
-              logy=True, logx=True)
+    # gpu
+    cols = [c for c in piv_all.columns if "-gpu" in c and "-ov" in c]
+    subgraph(2, cols,
+             title="GPU, OrtValue and OrtValueVector")
+    fig.savefig("eager_mode_cpu.png" if len(cols) == 0
+                else "eager_mode_gpu.png", dpi=250)
     return fig, ax
 
 
