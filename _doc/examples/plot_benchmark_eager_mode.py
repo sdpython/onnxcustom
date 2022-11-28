@@ -157,7 +157,6 @@ def f_ort_ov(X):
 
 if OrtValueVector is not None:
 
-    vect_out = OrtValueVector()
     run_options = RunOptions()
     devices = [C_OrtDevice(C_OrtDevice.cpu(), OrtMemType.DEFAULT, 0)]
 
@@ -165,6 +164,7 @@ if OrtValueVector is not None:
         "ort-vect-ov-eager"
         vect_in = OrtValueVector()
         vect_in.push_back(X)
+        vect_out = OrtValueVector()
         temp_vect_out = OrtValueVector()
         sess_add._sess.run_with_ortvaluevector(
             run_options, ["X"], vect_in, ["Z"], temp_vect_out, devices)
@@ -178,6 +178,7 @@ if OrtValueVector is not None:
         "ort-vect-ov"
         vect_in = OrtValueVector()
         vect_in.push_back(X)
+        vect_out = OrtValueVector()
         sess_add2._sess.run_with_ortvaluevector(
             run_options, ["X"], vect_in, ["Z"], vect_out, devices)
         assert len(vect_out) == 1
@@ -213,6 +214,7 @@ if sess_add_gpu is not None:
             "ort-vect-ov-eager-gpu"
             vect_in = OrtValueVector()
             vect_in.push_back(X)
+            vect_out = OrtValueVector()
             temp_vect_out = OrtValueVector()
             sess_add._sess.run_with_ortvaluevector(
                 run_options, ["X"], vect_in, ["Z"], temp_vect_out, devices)
@@ -225,6 +227,8 @@ if sess_add_gpu is not None:
             "ort-vect-ov-gpu"
             vect_in = OrtValueVector()
             vect_in.push_back(X)
+            vect_out = OrtValueVector()
+            # crashes on the next line
             sess_add2._sess.run_with_ortvaluevector(
                 run_options, ["X"], vect_in, ["Z"], vect_out, devices)
             assert len(vect_out) == 1
@@ -273,8 +277,8 @@ if sess_add_gpu is not None:
         ])
         if OrtValueVector is not None:
             Ys.extend([
-                (f_ort_vect_ov_eager_gpu, Xov_gpu),
                 (f_ort_vect_ov_gpu, Xov_gpu),
+                (f_ort_vect_ov_eager_gpu, Xov_gpu),
             ])
     except RuntimeError:
         # cuda is not available
