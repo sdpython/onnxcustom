@@ -289,7 +289,8 @@ if sess_add_gpu is not None:
 
 results = []
 for fct, x in Ys:
-    print(f"check function {fct.__name__!r} and input type {x.__class__.__name__!r}")
+    print(
+        f"check function {fct.__name__!r} and input type {x.__class__.__name__!r}")
     results.append(fct(x))
 
 for i in range(1, len(results)):
