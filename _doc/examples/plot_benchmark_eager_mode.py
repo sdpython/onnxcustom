@@ -157,6 +157,7 @@ def f_ort_ov(X):
 
 if OrtValueVector is not None:
 
+    vect_out = OrtValueVector()
     run_options = RunOptions()
     devices = [C_OrtDevice(C_OrtDevice.cpu(), OrtMemType.DEFAULT, 0)]
 
@@ -164,20 +165,19 @@ if OrtValueVector is not None:
         "ort-vect-ov-eager"
         vect_in = OrtValueVector()
         vect_in.push_back(X)
-        vect_out = OrtValueVector()
+        temp_vect_out = OrtValueVector()
         sess_add._sess.run_with_ortvaluevector(
-            run_options, ["X"], vect_in, ["Z"], vect_out, devices)
-        vect_out2 = OrtValueVector()
+            run_options, ["X"], vect_in, ["Z"], temp_vect_out, devices)
+        assert len(temp_vect_out) == 1
         sess_add._sess.run_with_ortvaluevector(
-            run_options, ["X"], vect_out, ["Z"], vect_out2, devices)
-        assert len(vect_out2) == 1
-        return vect_out2[0]
+            run_options, ["X"], temp_vect_out, ["Z"], vect_out, devices)
+        assert len(vect_out) == 1
+        return vect_out[0]
 
     def f_ort_vect_ov(X):
         "ort-vect-ov"
         vect_in = OrtValueVector()
         vect_in.push_back(X)
-        vect_out = OrtValueVector()
         sess_add2._sess.run_with_ortvaluevector(
             run_options, ["X"], vect_in, ["Z"], vect_out, devices)
         assert len(vect_out) == 1
@@ -213,32 +213,32 @@ if sess_add_gpu is not None:
             "ort-vect-ov-eager-gpu"
             vect_in = OrtValueVector()
             vect_in.push_back(X)
-            vect_out = OrtValueVector()
+            temp_vect_out = OrtValueVector()
             sess_add._sess.run_with_ortvaluevector(
-                run_options, ["X"], vect_in, ["Z"], vect_out, devices)
-            vect_out2 = OrtValueVector()
+                run_options, ["X"], vect_in, ["Z"], temp_vect_out, devices)
             sess_add._sess.run_with_ortvaluevector(
-                run_options, ["X"], vect_out, ["Z"], vect_out2, devices)
-            assert len(vect_out2) == 1
-            return vect_out2[0]
+                run_options, ["X"], temp_vect_out, ["Z"], vect_out, devices)
+            assert len(vect_out) == 1
+            return vect_out[0]
 
         def f_ort_vect_ov_gpu(X):
             "ort-vect-ov-gpu"
             vect_in = OrtValueVector()
             vect_in.push_back(X)
-            vect_out = OrtValueVector()
             sess_add2._sess.run_with_ortvaluevector(
                 run_options, ["X"], vect_in, ["Z"], vect_out, devices)
             assert len(vect_out) == 1
             return vect_out[0]
 
     else:
-        f_ort_vect_ov_eager = None
-        f_ort_vect_ov = None
+        f_ort_vect_ov_eager_gpu = None
+        f_ort_vect_ov_gpu = None
 
 else:
     f_ort_ov_eager_gpu = None
     f_ort_ov_gpu = None
+    f_ort_vect_ov_eager_gpu = None
+    f_ort_vect_ov_gpu = None
 
 
 #######################################
@@ -250,17 +250,17 @@ device = C_OrtDevice(C_OrtDevice.cpu(), OrtMemType.DEFAULT, 0)
 Xov = C_OrtValue.ortvalue_from_numpy(X, device)
 
 Ys = [
-    f_numpy(X),
-    f_ort_eager(X),
-    f_ort(X),
-    f_ort_ov_eager(Xov),
-    f_ort_ov(Xov),
+    (f_numpy, X),
+    (f_ort_eager, X),
+    (f_ort, X),
+    (f_ort_ov_eager, Xov),
+    (f_ort_ov, Xov),
 ]
 
 if OrtValueVector is not None:
     Ys.extend([
-        f_ort_vect_ov_eager(Xov),
-        f_ort_vect_ov(Xov),
+        (f_ort_vect_ov_eager, Xov),
+        (f_ort_vect_ov, Xov),
     ])
 
 if sess_add_gpu is not None:
@@ -268,13 +268,13 @@ if sess_add_gpu is not None:
     try:
         Xov_gpu = C_OrtValue.ortvalue_from_numpy(X, device_gpu)
         Ys.extend([
-            f_ort_ov_eager_gpu(Xov_gpu),
-            f_ort_ov_gpu(Xov_gpu),
+            (f_ort_ov_eager_gpu, Xov_gpu),
+            (f_ort_ov_gpu, Xov_gpu),
         ])
         if OrtValueVector is not None:
             Ys.extend([
-                f_ort_vect_ov_eager_gpu(Xov),
-                f_ort_vect_ov_gpu(Xov),
+                (f_ort_vect_ov_eager_gpu, Xov_gpu),
+                (f_ort_vect_ov_gpu, Xov_gpu),
             ])
     except RuntimeError:
         # cuda is not available
@@ -283,12 +283,17 @@ if sess_add_gpu is not None:
         f_ort_ov_eager_gpu = None
         f_ort_ov_gpu = None
 
-for i in range(1, len(Ys)):
+results = []
+for fct, x in Ys:
+    print(f"check function {fct.__name__!r} and input type {x.__class__.__name__!r}")
+    results.append(fct(x))
+
+for i in range(1, len(results)):
     try:
-        assert_allclose(Ys[0], Ys[i])
+        assert_allclose(results[0], results[i])
     except TypeError:
         # OrtValue
-        assert_allclose(Ys[0], Ys[i].numpy())
+        assert_allclose(results[0], results[i].numpy())
 
 ##########################################
 # All outputs are the same.
@@ -301,7 +306,8 @@ for i in range(1, len(Ys)):
 def benchmark(repeat=100):
     fcts = [f_numpy, f_ort_eager, f_ort, f_ort_ov_eager, f_ort_ov,
             f_ort_vect_ov_eager, f_ort_vect_ov,
-            f_ort_ov_eager_gpu, f_ort_ov_gpu]
+            f_ort_ov_eager_gpu, f_ort_ov_gpu,
+            f_ort_vect_ov_gpu, f_ort_vect_ov_eager_gpu]
     data = []
     for N in tqdm([1, 2, 5, 10, 20, 50, 100, 200, 500,
                    1000, 2000, 5000, 10000, 20000]):
@@ -315,6 +321,7 @@ def benchmark(repeat=100):
         for f in fcts:
             if f is None:
                 continue
+            print(N, f)
             obs = {'name': f.__doc__, "N": N}
             if "-gpu" in f.__doc__:
                 begin = time.perf_counter()
@@ -365,7 +372,6 @@ def make_graph(df):
     fig.suptitle("Time execution Eager Add + Add")
 
     piv_all = df.pivot(index="N", columns="name", values="time")
-    print(piv_all.columns)
 
     # no gpu, no vect
     subgraph(0, [c for c in piv_all.columns
