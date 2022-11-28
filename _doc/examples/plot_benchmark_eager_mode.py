@@ -152,7 +152,6 @@ if sess_add_gpu is not None:
         Z = sess_add_gpu._sess.run_with_ort_values({'X': T}, ['Z'], None)[0]
         return Z
 
-
     def f_ort_ov_gpu(X):
         "ort-ov-gpu"
         Z = sess_add2_gpu._sess.run_with_ort_values({'X': X}, ['Z'], None)[0]
@@ -176,11 +175,18 @@ Ys = [
 ]
 if sess_add_gpu is not None:
     device_gpu = C_OrtDevice(C_OrtDevice.cuda(), OrtMemType.DEFAULT, 0)
-    Xov_gpu = C_OrtValue.ortvalue_from_numpy(X, device_gpu)
-    Ys.extend([
-        f_ort_ov_eager_gpu(Xov_gpu),
-        f_ort_ov_gpu(Xov_gpu),
-    ])
+    try:
+        Xov_gpu = C_OrtValue.ortvalue_from_numpy(X, device_gpu)
+        Ys.extend([
+            f_ort_ov_eager_gpu(Xov_gpu),
+            f_ort_ov_gpu(Xov_gpu),
+        ])
+    except RuntimeError:
+        # cuda is not available
+        sess_add_gpu = None
+        sess_add2_gpu
+        f_ort_ov_eager_gpu = None
+        f_ort_ov_gpu = None
 
 for i in range(1, len(Ys)):
     try:
@@ -256,7 +262,7 @@ def make_graph(df):
     piv2.plot(ax=ax[0, 1], title="Time(s) per execution / N", logx=True)
     piv3 = piv / piv["numpy"].values.reshape((-1, 1))
     piv3.plot(ax=ax[0, 2], title="Ratio against numpy (lower is better)",
-            logy=True, logx=True)
+              logy=True, logx=True)
 
     # ort value
     piv = piv_all[[c for c in piv_all.columns if "ov" in c or "numpy" in c]].copy()
@@ -265,7 +271,7 @@ def make_graph(df):
     piv2.plot(ax=ax[1, 1], title="Time(s) per execution / N", logx=True)
     piv3 = piv / piv["numpy"].values.reshape((-1, 1))
     piv3.plot(ax=ax[1, 2], title="Ratio against numpy (lower is better)",
-            logy=True, logx=True)
+              logy=True, logx=True)
     return fig, ax
 
 
@@ -290,7 +296,9 @@ else:
     ax = None
 ax
 
+######################################
+# Results obtained with the following version.
+
 print(f"onnxruntime.__version__ = {ort_version!r}")
 
-fig.savefig("eager.png")
 # plt.show()
