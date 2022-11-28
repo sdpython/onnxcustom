@@ -368,13 +368,13 @@ def make_graph(df):
         piv2 = piv / piv.index.values.reshape((-1, 1))
         piv2.plot(ax=ax[row, 1], title=f"Time(s) per execution / N", logx=True)
         piv3 = piv / piv["numpy"].values.reshape((-1, 1))
-        piv3.plot(ax=ax[row, 2], title="Ratio against numpy (lower is better",
+        piv3.plot(ax=ax[row, 2], title="Ratio against numpy",
                   logy=True, logx=True)
         for j in range(0, 3):
             ax[row, j].legend(fontsize="x-small")
 
     fig, ax = plt.subplots(3, 3, figsize=(12, 8))
-    fig.suptitle("Time execution Eager Add + Add")
+    fig.suptitle("Time execution Eager Add + Add - lower is better")
 
     piv_all = df.pivot(index="N", columns="name", values="time")
 
