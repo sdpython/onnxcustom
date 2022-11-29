@@ -26,19 +26,18 @@ The tutorial was tested with following version:
 .. runpython::
     :showcode:
 
+    import sys
     import numpy
     import scipy
     import onnx
     import onnxruntime
     import onnxcustom
+    import sklearn
     import torch
 
     print("python {}".format(sys.version_info))
-    mods = [numpy, scipy, sklearn, lightgbm, xgboost,
-            onnx, onnxmltools, onnxruntime, onnxcustom,
-            onnxconverter_common,
-            skl2onnx, mlprodict, pyquickhelper,
-            torch]
+    mods = [numpy, scipy, sklearn, onnx,
+            onnxruntime, onnxcustom, torch]
     mods = [(m.__name__, m.__version__) for m in mods]
     mx = max(len(_[0]) for _ in mods) + 1
     for name, vers in sorted(mods):
