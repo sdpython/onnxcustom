@@ -51,7 +51,8 @@ from onnxruntime import (
     RunOptions)
 from onnxruntime.capi._pybind_state import (  # pylint: disable=E0611
     OrtDevice as C_OrtDevice,
-    OrtMemType, OrtValue as C_OrtValue)
+    OrtMemType, OrtValue as C_OrtValue,
+    SessionIOBinding as C_SessionIOBinding)
 try:
     from onnxruntime.capi._pybind_state import OrtValueVector
 except ImportError:
@@ -150,6 +151,30 @@ def f_ort_ov(X):
     Z = sess_add2._sess.run_with_ort_values({'X': X}, ['Z'], None)[0]
     return Z
 
+
+cpu_device = C_OrtDevice(C_OrtDevice.cpu(), OrtMemType.DEFAULT, 0)
+
+
+def f_ort_ov_bind_eager(X):
+    "ort-ov-bind-eager"
+    bind = C_SessionIOBinding(sess_add._sess)
+    bind.bind_ortvalue_input("X", X)
+    bind.bind_output("Z", cpu_device)
+    sess_add._sess.run_with_iobinding(bind, None)
+    T = bind.get_outputs()[0]
+    bind.bind_ortvalue_input("X", T)
+    sess_add._sess.run_with_iobinding(bind, None)
+    return bind.get_outputs()[0]
+
+
+def f_ort_ov_bind(X):
+    "ort-ov-bind"
+    bind = C_SessionIOBinding(sess_add2._sess)
+    bind.bind_ortvalue_input("X", X)
+    bind.bind_output("Z", cpu_device)
+    sess_add2._sess.run_with_iobinding(bind, None)
+    return bind.get_outputs()[0]
+
 #######################################
 # onnxruntime >= 1.14 introduces a vector of OrtValues
 # to bypass the building of a dictionary.
@@ -205,6 +230,27 @@ if sess_add_gpu is not None:
         Z = sess_add2_gpu._sess.run_with_ort_values({'X': X}, ['Z'], None)[0]
         return Z
 
+    gpu_device = C_OrtDevice(C_OrtDevice.cuda(), OrtMemType.DEFAULT, 0)
+
+    def f_ort_ov_bind_eager_gpu(X):
+        "ort-ov-bind-eager-gpu"
+        bind = C_SessionIOBinding(sess_add_gpu._sess)
+        bind.bind_ortvalue_input("X", X)
+        bind.bind_output("Z", gpu_device)
+        sess_add_gpu._sess.run_with_iobinding(bind, None)
+        T = bind.get_outputs()[0]
+        bind.bind_ortvalue_input("X", T)
+        sess_add_gpu._sess.run_with_iobinding(bind, None)
+        return bind.get_outputs()[0]
+
+    def f_ort_ov_bind_gpu(X):
+        "ort-ov-bind-gpu"
+        bind = C_SessionIOBinding(sess_add2_gpu._sess)
+        bind.bind_ortvalue_input("X", X)
+        bind.bind_output("Z", gpu_device)
+        sess_add2_gpu._sess.run_with_iobinding(bind, None)
+        return bind.get_outputs()[0]
+
     if OrtValueVector is not None:
 
         run_options = RunOptions()
@@ -259,6 +305,8 @@ Ys = [
     (f_ort, X),
     (f_ort_ov_eager, Xov),
     (f_ort_ov, Xov),
+    (f_ort_ov_bind_eager, Xov),
+    (f_ort_ov_bind, Xov),
 ]
 
 if OrtValueVector is not None:
@@ -274,6 +322,8 @@ if sess_add_gpu is not None:
         Ys.extend([
             (f_ort_ov_eager_gpu, Xov_gpu),
             (f_ort_ov_gpu, Xov_gpu),
+            (f_ort_ov_bind_eager_gpu, Xov_gpu),
+            (f_ort_ov_bind_gpu, Xov_gpu),
         ])
         if OrtValueVector is not None:
             Ys.extend([
@@ -308,11 +358,15 @@ for i in range(1, len(results)):
 # +++++++++++++++++++++++
 
 
-def benchmark(repeat=100):
-    fcts = [f_numpy, f_ort_eager, f_ort, f_ort_ov_eager, f_ort_ov,
-            f_ort_vect_ov_eager, f_ort_vect_ov,
-            f_ort_ov_eager_gpu, f_ort_ov_gpu,
-            f_ort_vect_ov_gpu, f_ort_vect_ov_eager_gpu]
+def benchmark(repeat=500000):
+    fcts = [
+        f_numpy, f_ort_eager, f_ort, f_ort_ov_eager, f_ort_ov,
+        f_ort_vect_ov_eager, f_ort_vect_ov,
+        f_ort_ov_bind_eager, f_ort_ov_bind,
+        f_ort_ov_eager_gpu, f_ort_ov_gpu,
+        f_ort_vect_ov_eager_gpu, f_ort_vect_ov_gpu,
+        f_ort_ov_bind_eager_gpu, f_ort_ov_bind_gpu,
+    ]
     data = []
     for N in tqdm([1, 2, 5, 10, 20, 50, 100, 200, 500,
                    1000, 2000, 5000, 10000, 20000]):
@@ -323,26 +377,27 @@ def benchmark(repeat=100):
             device_gpu = C_OrtDevice(C_OrtDevice.cuda(), OrtMemType.DEFAULT, 0)
             Xov_gpu = C_OrtValue.ortvalue_from_numpy(X, device_gpu)
 
+        r = min(500, int(repeat / N))
         for f in fcts:
             if f is None:
                 continue
             obs = {'name': f.__doc__, "N": N}
             if "-gpu" in f.__doc__:
                 begin = time.perf_counter()
-                for r in range(repeat):
+                for r in range(r):
                     _ = f(Xov_gpu)
                 end = time.perf_counter() - begin
             elif "-ov" in f.__doc__:
                 begin = time.perf_counter()
-                for r in range(repeat):
+                for r in range(r):
                     _ = f(Xov)
                 end = time.perf_counter() - begin
             else:
                 begin = time.perf_counter()
-                for r in range(repeat):
+                for r in range(r):
                     _ = f(X)
                 end = time.perf_counter() - begin
-            obs['time'] = end / repeat
+            obs['time'] = end / r
             data.append(obs)
 
     return pandas.DataFrame(data)
@@ -359,38 +414,50 @@ df
 
 def make_graph(df):
 
-    def subgraph(row, cols, title):
+    def subgraph(row, cols):
         if "numpy" not in cols:
             cols.append("numpy")
         piv = piv_all[cols].copy()
-        piv.plot(ax=ax[row, 0], title=title, logy=True, logx=True)
+        piv.plot(ax=ax[row, 0],
+                 title="Time execution(s)" if row == 0 else "",
+                 logy=True, logx=True)
         piv2 = piv / piv.index.values.reshape((-1, 1))
-        piv2.plot(ax=ax[row, 1], title=f"Time(s) per execution / N", logx=True)
+        piv2.plot(ax=ax[row, 1],
+                  title=f"Time(s) per execution / N" if row == 0 else "",
+                  logx=True)
         piv3 = piv / piv["numpy"].values.reshape((-1, 1))
-        piv3.plot(ax=ax[row, 2], title="Ratio against numpy",
+        piv3.plot(ax=ax[row, 2],
+                  title="Ratio against numpy" if row == 0 else "",
                   logy=True, logx=True)
         for j in range(0, 3):
             ax[row, j].legend(fontsize="x-small")
 
-    fig, ax = plt.subplots(3, 3, figsize=(12, 8))
+    fig, ax = plt.subplots(5, 3, figsize=(15, 9))
     fig.suptitle("Time execution Eager Add + Add - lower is better")
 
     piv_all = df.pivot(index="N", columns="name", values="time")
 
-    # no gpu, no vect
+    # no gpu, no vect, no bind
     subgraph(0, [c for c in piv_all.columns
-                 if "-gpu" not in c and "-vect" not in c],
-             title="CPU")
+                 if "-gpu" not in c and "-vect" not in c and "-bind" not in c])
 
-    # no gpu
+    # no gpu, ov, no bind
     subgraph(1, [c for c in piv_all.columns
-                 if "-gpu" not in c and "-ov" in c],
-             title="CPU, OrtValue and OrtValueVector")
+                 if "-gpu" not in c and "-ov" in c and "-bind" not in c])
 
-    # gpu
-    cols = [c for c in piv_all.columns if "-gpu" in c and "-ov" in c]
-    subgraph(2, cols,
-             title="GPU, OrtValue and OrtValueVector")
+    # no gpu, vect or bind
+    subgraph(2, [c for c in piv_all.columns
+                 if "-gpu" not in c and ("-bind" in c or '-vect' in c)])
+
+    # gpu, no bind
+    cols = [c for c in piv_all.columns
+            if "-gpu" in c and "-ov" in c and "-bind" not in c]
+    subgraph(3, cols)
+
+    # gpu, vect or bind
+    cols = [c for c in piv_all.columns
+            if "-gpu" in c and ("-bind" in c or '-vect' in c)]
+    subgraph(4, cols)
     fig.savefig("eager_mode_cpu.png" if len(cols) == 0
                 else "eager_mode_gpu.png", dpi=250)
     return fig, ax
@@ -408,7 +475,8 @@ fig, ax = make_graph(df)
 # Eager mode must use :epkg:`OrtValue`. It is faster and it reduces the differences
 # between using two additions in a single graph or two graphs of a single addition
 # on CPU. On GPU, it is still faster but eager mode is slighly slower with
-# method `run_with_ortvaluevector`.
+# method `run_with_ortvaluevector` or `run_with_iobinding`. Both
+# methods show similar performances.
 #
 # However, method `run_with_ort_values` is not recommended
 # because the output device cannot be specified. Therefore,
