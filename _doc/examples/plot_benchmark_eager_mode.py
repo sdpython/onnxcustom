@@ -490,9 +490,9 @@ fig, ax = make_graph(df)
 # `run_with_ort_values` and the data needs to be copied from CPU
 # to GPU.
 
-if not has_cuda:
+if sess_add_gpu is None:
     print("With GPU")
-    df = pandas.read_csv("data/eager_mode.csv")
+    df = pandas.read_csv("data/plot_benchmark_eager_mode.csv")
     _, ax = make_graph(df)
 else:
     ax = None
