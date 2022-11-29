@@ -216,9 +216,9 @@ if sess_add_gpu is not None:
             vect_in.push_back(X)
             vect_out = OrtValueVector()
             temp_vect_out = OrtValueVector()
-            sess_add._sess.run_with_ortvaluevector(
+            sess_add_gpu._sess.run_with_ortvaluevector(
                 run_options, ["X"], vect_in, ["Z"], temp_vect_out, devices)
-            sess_add._sess.run_with_ortvaluevector(
+            sess_add_gpu._sess.run_with_ortvaluevector(
                 run_options, ["X"], temp_vect_out, ["Z"], vect_out, devices)
             assert len(vect_out) == 1
             return vect_out[0]
@@ -229,7 +229,7 @@ if sess_add_gpu is not None:
             vect_in.push_back(X)
             vect_out = OrtValueVector()
             # crashes on the next line
-            sess_add2._sess.run_with_ortvaluevector(
+            sess_add2_gpu._sess.run_with_ortvaluevector(
                 run_options, ["X"], vect_in, ["Z"], vect_out, devices)
             assert len(vect_out) == 1
             return vect_out[0]
@@ -326,7 +326,6 @@ def benchmark(repeat=100):
         for f in fcts:
             if f is None:
                 continue
-            print(N, f)
             obs = {'name': f.__doc__, "N": N}
             if "-gpu" in f.__doc__:
                 begin = time.perf_counter()
@@ -408,7 +407,15 @@ fig, ax = make_graph(df)
 # is using the direct python API. This could be improved by using :epkg:`cython`.
 # Eager mode must use :epkg:`OrtValue`. It is faster and it reduces the differences
 # between using two additions in a single graph or two graphs of a single addition
-# on CPU. On GPU, it is still faster but eager mode is significantly slower.
+# on CPU. On GPU, it is still faster but eager mode is slighly slower with
+# method `run_with_ortvaluevector`.
+#
+# However, method `run_with_ort_values` is not recommended
+# because the output device cannot be specified. Therefore,
+# :epkg:`onnxruntime` requests the output on CPU. On eager mode,
+# this output is used again an input for the second call to
+# `run_with_ort_values` and the data needs to be copied from CPU
+# to GPU.
 
 if not has_cuda:
     print("With GPU")
