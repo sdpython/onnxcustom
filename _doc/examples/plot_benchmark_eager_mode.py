@@ -217,7 +217,6 @@ else:
 # If GPU is available.
 
 if sess_add_gpu is not None:
-    #
 
     def f_ort_ov_eager_gpu(X):
         "ort-ov-eager-gpu"
@@ -289,6 +288,8 @@ else:
     f_ort_ov_gpu = None
     f_ort_vect_ov_eager_gpu = None
     f_ort_vect_ov_gpu = None
+    f_ort_ov_bind_eager_gpu = None
+    f_ort_ov_bind_gpu = None
 
 
 #######################################
@@ -333,9 +334,13 @@ if sess_add_gpu is not None:
     except RuntimeError:
         # cuda is not available
         sess_add_gpu = None
-        sess_add2_gpu
+        sess_add2_gpu = None
         f_ort_ov_eager_gpu = None
         f_ort_ov_gpu = None
+        f_ort_ov_bind_eager_gpu = None
+        f_ort_ov_bind_gpu = None
+        f_ort_vect_ov_eager_gpu = None
+        f_ort_vect_ov_gpu = None
 
 results = []
 for fct, x in Ys:
