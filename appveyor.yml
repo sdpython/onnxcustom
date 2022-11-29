@@ -12,9 +12,9 @@ install:
   - "%PYTHON%\\python -m pip install -r requirements.txt"
   - "%PYTHON%\\python -m pip install -r requirements-dev.txt"
   - "%PYTHON%\\python -m pip install pytest"
-  - "%PYTHON%\\python -m pip install https://github.com/sdpython/onnxruntime/releases/download/v1.14.0/onnxruntime_training-1.14.0+cpu-cp310-cp310-win_amd64.whl"
-  #- "%PYTHON%\\python -m pip install http://www.xavierdupre.fr/enseignement/setup/torch_interop_utils-1.10.1+cpu-cp39-cp39-win_amd64.whl"
-  #- "%PYTHON%\\python -m pip install http://www.xavierdupre.fr/enseignement/setup/aten_op_executor-1.10.1+cpu-cp39-cp39-win_amd64.whl"
+  - "%PYTHON%\\python -m pip install https://github.com/sdpython/onnxruntime/releases/download/v1.14.0/onnxruntime_training-1.14.92+cpu-cp310-cp310-win_amd64.whl"
+  - "%PYTHON%\\python -m pip install https://github.com/sdpython/onnxruntime/releases/download/v1.14.0/aten_op_executor-1.13.0+cpu-cp310-cp310-win_amd64.whl"
+  - "%PYTHON%\\python -m pip install https://github.com/sdpython/onnxruntime/releases/download/v1.14.0/torch_interop_utils-1.13.0+cpu-cp310-cp310-win_amd64.whl"
 
 build: off
 
