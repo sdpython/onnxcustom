@@ -428,7 +428,7 @@ def make_graph(df):
                  logy=True, logx=True)
         piv2 = piv / piv.index.values.reshape((-1, 1))
         piv2.plot(ax=ax[row, 1],
-                  title=f"Time(s) per execution / N" if row == 0 else "",
+                  title="Time(s) per execution / N" if row == 0 else "",
                   logx=True)
         piv3 = piv / piv["numpy"].values.reshape((-1, 1))
         piv3.plot(ax=ax[row, 2],
