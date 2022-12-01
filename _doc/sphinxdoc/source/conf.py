@@ -158,6 +158,7 @@ epkg_dictionary.update({
         'http://www.xavierdupre.fr/app/pandas_streaming/helpsphinx/index.html',
     'protobuf': 'https://developers.google.com/protocol-buffers',
     'py-spy': 'https://github.com/benfred/py-spy',
+    'pybind11': 'https://github.com/pybind/pybind11',
     'pyinstrument': 'https://github.com/joerick/pyinstrument',
     'pyspark': 'https://spark.apache.org/docs/latest/api/python/',
     'python': 'https://www.python.org/',
