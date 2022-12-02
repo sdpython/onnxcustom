@@ -94,11 +94,11 @@ if not os.path.exists(filenames[0]):
     with open(filenames[0], "wb") as f:
         f.write(model_onnx_1000.SerializeToString())
     model_onnx_10 = to_onnx(reg_10, X[:1].astype(numpy.float32),
-                              target_opset={'': 17, 'ai.onnx.ml': 3})
+                            target_opset={'': 17, 'ai.onnx.ml': 3})
     with open(filenames[1], "wb") as f:
         f.write(model_onnx_10.SerializeToString())
     model_onnx_2 = to_onnx(reg_2, X[:1].astype(numpy.float32),
-                              target_opset={'': 17, 'ai.onnx.ml': 3})
+                           target_opset={'': 17, 'ai.onnx.ml': 3})
     with open(filenames[2], "wb") as f:
         f.write(model_onnx_10.SerializeToString())
 else:
@@ -114,7 +114,7 @@ sess_1000 = InferenceSession(model_onnx_1000.SerializeToString(),
 sess_10 = InferenceSession(model_onnx_10.SerializeToString(),
                            providers=['CPUExecutionProvider'])
 sess_2 = InferenceSession(model_onnx_2.SerializeToString(),
-                           providers=['CPUExecutionProvider'])
+                          providers=['CPUExecutionProvider'])
 
 ##########################
 # Processing time
@@ -124,7 +124,7 @@ sess_2 = InferenceSession(model_onnx_2.SerializeToString(),
 repeat = 5
 data = []
 for N in tqdm(list(range(10, 100, 10)) +
-              list(range(100, 1000, 100)) + 
+              list(range(100, 1000, 100)) +
               list(range(1000, 10001, 1000))):
 
     X32 = numpy.random.randn(N, X.shape[1]).astype(numpy.float32)
@@ -143,7 +143,7 @@ for N in tqdm(list(range(10, 100, 10)) +
         for _ in range(repeat):
             begin = time.perf_counter()
             for i in range(X32.shape[0]):
-                sess.run(None, {'X': X32[i: i+1]})
+                sess.run(None, {'X': X32[i: i + 1]})
             end = time.perf_counter() - begin
             times.append(end / X32.shape[0])
         times.sort()
