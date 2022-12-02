@@ -1,0 +1,194 @@
+
+.. blogpost::
+    :title: Build onnxruntime on WSL (Windows Linux Subsystem)
+    :keywords: build
+    :date: 2022-12-02
+    :categories: build
+    :lid: blog-build-wsl-2022
+
+    I tried to build :epkg:`onnxruntime-training` for GPU
+    on :epkg:`WSL` (Windows Linux Subsystem). I took
+    the distribution `Ubuntu 20.04`. Paths should be updated
+    according to your installation.
+
+    **some useful commands once installed**
+
+    ::
+
+        nvidia-smi
+        nsys
+
+    Let's assume WSL is installed, otherwise, here are some useful commands.
+
+    ::
+
+        # see all local distributions
+        wsl -s -l
+
+        # see available distributions online
+        wsl --list --online
+
+        # install one distribution
+        wsl --install -d Ubuntu-20.04
+
+    Installation of required packages.
+
+    ::
+
+        sudo apt-get install -y cmake
+        sudo apt-get install -y zlib1g-dev
+        sudo apt-get install -y libssl-dev
+        sudo apt-get install -y python3-dev
+        sudo apt-get install -y libhwloc-dev
+        sudo apt-get install -y libevent-dev
+
+    Let's install :epkg:`gcc`:
+
+    ::
+
+        sudo apt-get update && sudo apt-get upgrade -y
+        sudo apt autoremove -y
+        sudo apt-get install gcc g++ -y
+        gcc --version
+
+    Installation of :epkg:`cmake`.
+
+    ::
+
+        mkdir install
+        cd install
+        curl -OL https://github.com/Kitware/CMake/releases/download/v3.25.1/cmake-3.25.1.tar.gz
+        tar -zxvf cmake-3.25.1.tar.gz
+        cd cmake-3.25.1
+        ./bootstrap
+        make
+        sudo make install
+        # export PATH=~/install/cmake-3.25.1/bin/:$PATH
+        cmake --version
+
+    Installation of :epkg:`openmpi`:
+    
+    ::
+    
+        sudo apt-get install openmpi-bin
+
+    Installation of CUDA (choose a compatible version with :epkg:`pytorch`, 11.7 for example).
+
+    See `CUDA on WSL User Guide
+    <https://docs.nvidia.com/cuda/wsl-user-guide/index.html#ch03-running-cuda>`_
+
+    ::
+
+        export CUDA_VERSION=11.7
+        export CUDA_VERSION_=11-7
+        wget https://developer.download.nvidia.com/compute/cuda/repos/wsl-ubuntu/x86_64/cuda-wsl-ubuntu.pin
+        sudo mv cuda-wsl-ubuntu.pin /etc/apt/preferences.d/cuda-repository-pin-600
+        wget https://developer.download.nvidia.com/compute/cuda/${CUDA_VERSION}.0/local_installers/cuda-repo-wsl-ubuntu-${CUDA_VERSION_}-local_${CUDA_VERSION}.0-1_amd64.deb
+        sudo dpkg -i cuda-repo-wsl-ubuntu-${CUDA_VERSION_}-local_${CUDA_VERSION}.0-1_amd64.deb
+        sudo cp /var/cuda-repo-wsl-ubuntu-11-7-local/cuda-B81839D3-keyring.gpg /usr/share/keyrings/        
+        sudo apt-key add /var/cuda-repo-wsl-ubuntu-${CUDA_VERSION_}-local/B81839D3.pub
+        sudo apt-get update
+        sudo apt-get -y install cuda
+
+    Now you may run `nvidia-smi -L` to list the available GPUs.
+
+    Installation of :epkg:`cudnn` (after it is downloaded):
+
+    ::
+
+        sudo dpkg -i cudnn-local-repo-ubuntu2004-8.7.0.84_1.0-1_amd64.deb
+        sudo cp /var/cudnn-local-repo-ubuntu2004-8.7.0.84/cudnn-local-A3837CDF-keyring.gpg /usr/share/keyrings/
+        sudo apt-get update
+        sudo apt-get install libcudnn8
+        sudo apt-get install libcudnn8-dev
+
+    Installation of :epkg:`nccl`
+
+    See `Install NCCL <https://docs.nvidia.com/deeplearning/nccl/install-guide/index.html>`_.
+
+    ::
+
+        sudo dpkg -i nccl-local-repo-ubuntu2004-2.15.5-cuda11.8_1.0-1_amd64.deb
+        sudo cp /var/nccl-local-repo-ubuntu2004-2.15.5-cuda11.8/nccl-local-14294EAC-keyring.gpg /usr/share/keyrings/
+        sudo add-apt-repository "deb https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86_64/ /"
+        sudo apt update
+        sudo apt install libnccl2 libnccl-dev
+
+    Installation of python:
+
+    ::
+    
+        ..
+
+    Installation of :epkg:`pytorch`:
+
+    ::
+
+        python3 -m pip install torch==1.10.1+cu113 torchvision==0.11.2+cu113 torchaudio==0.10.1+cu113 -f https://download.pytorch.org/whl/cu113/torch_stable.html
+
+    Then to check CUDA is available:
+
+    ::
+
+        import torch
+        print(torch.cuda.is_available())
+
+    Build :epkg:`onnxruntime-training`:
+
+    ::
+
+        alias python=python3
+        export CUDA_VERSION=11.3
+        export CUDACXX=/usr/local/cuda-${CUDA_VERSION}/bin/nvcc
+        export MPI_HOME=~/install/openmpi-4.1.2
+        python3 ./tools/ci_build/build.py --skip_tests --build_dir ./build/linux_gpu --config Release --use_mpi false --enable_training --enable_training_torch_interop --use_cuda --cuda_version=${CUDA_VERSION} --cuda_home /usr/local/cuda-${CUDA_VERSION}/ --cudnn_home /usr/local/cuda-${CUDA_VERSION}/ --build_wheel --parallel
+
+    Option ``--parallel 1`` can be used to fix the parallelism while building onnxruntime.
+    Option `--use_mpi false` can be replaced by `--mpi_home /usr/local/lib/openmpi`.
+
+    Another option is to use a docker:
+    `Running Existing GPU Accelerated Containers on WSL 2
+    <https://docs.nvidia.com/cuda/wsl-user-guide/index.html#ch05-running-containers>`_.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    ::
+
+        gunzip -c openmpi-4.1.2.tar.gz | tar xf -
+        cd openmpi-4.1.2
+        ./configure --prefix=/usr/local --with-cuda
+        make all install
+
