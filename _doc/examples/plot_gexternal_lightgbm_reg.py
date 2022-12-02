@@ -51,7 +51,7 @@ import matplotlib.pyplot as plt
 from tqdm import tqdm
 from lightgbm import LGBMRegressor
 from onnxruntime import InferenceSession
-from skl2onnx import to_onnx, update_registered_converter
+from skl2onnx import update_registered_converter
 from skl2onnx.common.shape_calculator import calculate_linear_regressor_output_shapes  # noqa
 from mlprodict.onnx_conv import to_onnx
 from onnxmltools import __version__ as oml_version
@@ -67,8 +67,8 @@ reg = LGBMRegressor(n_estimators=1000)
 reg.fit(X, y)
 
 ######################################
-# Register the converter for LGBMClassifier
-# +++++++++++++++++++++++++++++++++++++++++
+# Register the converter for LGBMRegressor
+# ++++++++++++++++++++++++++++++++++++++++
 #
 # The converter is implemented in :epkg:`onnxmltools`:
 # `onnxmltools...LightGbm.py
