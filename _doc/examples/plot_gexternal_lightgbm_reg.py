@@ -29,23 +29,31 @@ the discrepancies then become
 :math:`D'(x) = |\\sum_{k=1}^a \\left[\\sum\\right]_{i=1}^{F/a}
 float(T_{ak + i}(x)) - \\sum_{i=1}^F T_i(x)|`.
 
+In 2022, :epkg:`onnx` and :epkg:`onnxruntime` updated the specifications
+of TreeEnsemble operators and they can now support double thresholds
+(see `TreeEnsembleRegressor v3
+<https://onnx.ai/onnx/operators/onnx_aionnxml_TreeEnsembleRegressor.html>`_).
+That would be the recommended option to reduce the discrepancies.
+
 .. contents::
     :local:
 
 Train a LGBMRegressor
 +++++++++++++++++++++
 """
-from distutils.version import StrictVersion
 import warnings
+import time
 import timeit
+from packaging.version import Version
 import numpy
 from pandas import DataFrame
-# import matplotlib.pyplot as plt
+import matplotlib.pyplot as plt
 from tqdm import tqdm
 from lightgbm import LGBMRegressor
 from onnxruntime import InferenceSession
 from skl2onnx import to_onnx, update_registered_converter
 from skl2onnx.common.shape_calculator import calculate_linear_regressor_output_shapes  # noqa
+from mlprodict.onnx_conv import to_onnx
 from onnxmltools import __version__ as oml_version
 from onnxmltools.convert.lightgbm.operator_converters.LightGbm import convert_lightgbm  # noqa
 
@@ -75,7 +83,7 @@ reg.fit(X, y)
 def skl2onnx_convert_lightgbm(scope, operator, container):
     options = scope.get_options(operator.raw_operator)
     if 'split' in options:
-        if StrictVersion(oml_version) < StrictVersion('1.9.2'):
+        if Version(oml_version) < Version('1.9.2'):
             warnings.warn(
                 "Option split was released in version 1.9.2 but %s is "
                 "installed. It will be ignored." % oml_version)
@@ -100,10 +108,19 @@ update_registered_converter(
 # trees per node TreeEnsembleRegressor.
 
 model_onnx = to_onnx(reg, X[:1].astype(numpy.float32),
-                     target_opset={'': 14, 'ai.onnx.ml': 2})
+                     target_opset={'': 17, 'ai.onnx.ml': 3})
+
 model_onnx_split = to_onnx(reg, X[:1].astype(numpy.float32),
-                           target_opset={'': 14, 'ai.onnx.ml': 2},
+                           target_opset={'': 17, 'ai.onnx.ml': 3},
                            options={'split': 100})
+
+####################################
+# We create another model using the `ai.onnx.ml == 3`.
+# Node thresholds are stored in doubles and not in floats anymore.
+
+model_onnx_64 = to_onnx(reg, X[:1].astype(numpy.float64),
+                        target_opset={'': 17, 'ai.onnx.ml': 3},
+                        rewrite_ops=True)
 
 ##########################
 # Discrepancies
@@ -114,17 +131,17 @@ sess = InferenceSession(model_onnx.SerializeToString(),
 sess_split = InferenceSession(model_onnx_split.SerializeToString(),
                               providers=['CPUExecutionProvider'])
 
-X32 = X.astype(numpy.float32)
+X32 = X.astype(numpy.float32)[:500]
 expected = reg.predict(X32)
 got = sess.run(None, {'X': X32})[0].ravel()
 got_split = sess_split.run(None, {'X': X32})[0].ravel()
 
 disp = numpy.abs(got - expected).sum()
-disp_split = numpy.abs(got_split - expected).sum()
+disc_split = numpy.abs(got_split - expected).sum()
 
-print("sum of discrepancies 1 node", disp)
-print("sum of discrepancies split node",
-      disp_split, "ratio:", disp / disp_split)
+print(f"sum of discrepancies 1 node: {disp}")
+print(f"sum of discrepancies split node: {disc_split}, "
+      f"ratio: {disp / disc_split}")
 
 ######################################
 # The sum of the discrepancies were reduced 4, 5 times.
@@ -136,6 +153,21 @@ disc_split = numpy.abs(got_split - expected).max()
 print("max discrepancies 1 node", disc)
 print("max discrepancies split node", disc_split, "ratio:", disc / disc_split)
 
+#######################################
+# Let's compare with the double thresholds.
+# We compare the inputs into float first and then in double
+# to make sure they are the same.
+
+sess_64 = InferenceSession(model_onnx_64.SerializeToString(),
+                           providers=['CPUExecutionProvider'])
+
+X64 = X32.astype(numpy.float64)
+expected_64 = reg.predict(X64)
+got_64 = sess_64.run(None, {'X': X64})[0].ravel()
+disc_64 = numpy.abs(got_64 - expected_64).sum()
+disc_max64 = numpy.abs(got_64 - expected_64).max()
+print(f"sum of discrepancies with doubles: sum={disc_64}, max={disc_max64}")
+
 ################################################
 # Processing time
 # +++++++++++++++
@@ -145,6 +177,9 @@ print("max discrepancies split node", disc_split, "ratio:", disc / disc_split)
 print("processing time no split",
       timeit.timeit(
           lambda: sess.run(None, {'X': X32})[0], number=150))
+print("processing time no split with double",
+      timeit.timeit(
+          lambda: sess_64.run(None, {'X': X64})[0], number=150))
 print("processing time split",
       timeit.timeit(
           lambda: sess_split.run(None, {'X': X32})[0], number=150))
@@ -159,22 +194,46 @@ print("processing time split",
 res = []
 for i in tqdm(list(range(20, 170, 20)) + [200, 300, 400, 500]):
     model_onnx_split = to_onnx(reg, X[:1].astype(numpy.float32),
-                               target_opset={'': 14, 'ai.onnx.ml': 2},
+                               target_opset={'': 17, 'ai.onnx.ml': 3},
                                options={'split': i})
-    sess_split = InferenceSession(model_onnx_split.SerializeToString(),
-                                  providers=['CPUExecutionProvider'])
+    times = []
+    for _ in range(0, 4):
+        begin = time.perf_counter()
+        sess_split = InferenceSession(model_onnx_split.SerializeToString(),
+                                      providers=['CPUExecutionProvider'])
+        times.append(time.perf_counter() - begin)
+    times.sort()
     got_split = sess_split.run(None, {'X': X32})[0].ravel()
     disc_split = numpy.abs(got_split - expected).max()
-    res.append(dict(split=i, disc=disc_split))
+    res.append(dict(split=i, max_diff=disc_split, time=sum(times[1:3]) / 2))
 
 df = DataFrame(res).set_index('split')
 df["baseline"] = disc
+df["baseline_64"] = disc_max64
 print(df)
 
 ##########################################
 # Graph.
 
-ax = df.plot(title="Sum of discrepancies against split\n"
-                   "split = number of tree per node")
+fig, ax = plt.subplots(1, 2, figsize=(10, 4))
+df[["max_diff", "baseline", "baseline_64"]].plot(
+    title="Sum of discrepancies against split\n"
+          "split = numbers of tree per node",
+    ax=ax[0])
+df[["time"]].plot(title="Processing time against split\n"
+                        "split = numbers of tree per node",
+                  ax=ax[1])
+
+##########################################
+# Conclusion
+# ++++++++++
+#
+# The time curve is too noisy to conclude.
+# More measures should be made.
+# The double sum reduces the discrepancies
+# but increases the processing time. It is a tradeoff.
+# The best option is using double for threshold and summation
+# but it requires the latest definition of TreeEnsemble `ai.onnx.ml=3`.
+
 
 # plt.show()
