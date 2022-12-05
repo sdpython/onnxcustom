@@ -36,25 +36,23 @@ from onnxmltools.convert.lightgbm.operator_converters.LightGbm import convert_li
 
 
 N = 1000
+Ntrees = [10, 100, 500]
 X = numpy.random.randn(N, 1000)
 y = (numpy.random.randn(N) +
      numpy.random.randn(N) * 100 * numpy.random.randint(0, 1, N))
 
-filenames = [f"plot_lightgbm_regressor_1000_{X.shape[1]}.onnx",
-             f"plot_lightgbm_regressor_10_{X.shape[1]}.onnx",
-             f"plot_lightgbm_regressor_2_{X.shape[1]}.onnx"]
+filenames = [f"plot_lightgbm_regressor_{nt}_{X.shape[1]}.onnx"
+             for nt in Ntrees]
 
-if not os.path.exists(filenames[0]):
-    print(f"training with shape={X.shape}")
-    reg_1000 = LGBMRegressor(n_estimators=1000)
-    reg_1000.fit(X, y)
-    reg_10 = LGBMRegressor(n_estimators=10)
-    reg_10.fit(X, y)
-    reg_2 = LGBMRegressor(n_estimators=2)
-    reg_2.fit(X, y)
-    print("done.")
-else:
-    print("A model was already trained. Reusing it.")
+regs = []
+for nt, filename in zip(Ntrees, filenames):
+    if not os.path.exists(filename):
+        print(f"training with shape={X.shape} and {nt} trees")
+        r = LGBMRegressor(n_estimators=nt).fit(X, y)
+        regs.append(r)
+        print("done.")
+    else:
+        regs.append(None)
 
 ######################################
 # Register the converter for LGBMRegressor
@@ -88,40 +86,30 @@ update_registered_converter(
 # TreeEnsembleRegressor node, or more. *split* parameter is the number of
 # trees per node TreeEnsembleRegressor.
 
-if not os.path.exists(filenames[0]):
-    model_onnx_1000 = to_onnx(reg_1000, X[:1].astype(numpy.float32),
-                              target_opset={'': 17, 'ai.onnx.ml': 3})
-    with open(filenames[0], "wb") as f:
-        f.write(model_onnx_1000.SerializeToString())
-    model_onnx_10 = to_onnx(reg_10, X[:1].astype(numpy.float32),
-                            target_opset={'': 17, 'ai.onnx.ml': 3})
-    with open(filenames[1], "wb") as f:
-        f.write(model_onnx_10.SerializeToString())
-    model_onnx_2 = to_onnx(reg_2, X[:1].astype(numpy.float32),
-                           target_opset={'': 17, 'ai.onnx.ml': 3})
-    with open(filenames[2], "wb") as f:
-        f.write(model_onnx_10.SerializeToString())
-else:
-    with open(filenames[0], "rb") as f:
-        model_onnx_1000 = onnx.load(f)
-    with open(filenames[1], "rb") as f:
-        model_onnx_10 = onnx.load(f)
-    with open(filenames[2], "rb") as f:
-        model_onnx_2 = onnx.load(f)
+models_onnx = []
+for i, filename in enumerate(filenames):
+    print(i, filename)
+    if os.path.exists(filename):
+        with open(filename, "rb") as f:
+            model_onnx = onnx.load(f)
+        models_onnx.append(model_onnx)
+    else:
+        model_onnx = to_onnx(regs[i], X[:1].astype(numpy.float32),
+                             target_opset={'': 17, 'ai.onnx.ml': 3})
+        models_onnx.append(model_onnx)
+        with open(filename, "wb") as f:
+            f.write(model_onnx.SerializeToString())
 
-sess_1000 = InferenceSession(model_onnx_1000.SerializeToString(),
-                             providers=['CPUExecutionProvider'])
-sess_10 = InferenceSession(model_onnx_10.SerializeToString(),
-                           providers=['CPUExecutionProvider'])
-sess_2 = InferenceSession(model_onnx_2.SerializeToString(),
+sesss = [InferenceSession(m.SerializeToString(),
                           providers=['CPUExecutionProvider'])
+         for m in models_onnx]
 
 ##########################
 # Processing time
 # +++++++++++++++
 #
 
-repeat = 5
+repeat = 7
 data = []
 for N in tqdm(list(range(10, 100, 10)) +
               list(range(100, 1000, 100)) +
@@ -129,7 +117,7 @@ for N in tqdm(list(range(10, 100, 10)) +
 
     X32 = numpy.random.randn(N, X.shape[1]).astype(numpy.float32)
     obs = dict(N=N)
-    for sess, T in [(sess_1000, 1000), (sess_10, 10), (sess_2, 2)]:
+    for sess, T in zip(sesss, Ntrees):
         times = []
         for _ in range(repeat):
             begin = time.perf_counter()
@@ -147,25 +135,22 @@ for N in tqdm(list(range(10, 100, 10)) +
             end = time.perf_counter() - begin
             times.append(end / X32.shape[0])
         times.sort()
-        obs[f"one-off-{T}"] = sum(times[1:-1]) / (len(times) - 2)
+        obs[f"one-off-{T}"] = sum(times[2:-2]) / (len(times) - 2)
     data.append(obs)
 
 df = DataFrame(data).set_index("N")
+df.reset_index(drop=False).to_csv(
+    "plot_gexternal_lightgbm_reg_per.csv", index=False)
 print(df)
 
 ########################################
 # Plots.
 fig, ax = plt.subplots(1, 3, figsize=(12, 4))
 
-df[["batch-1000", "one-off-1000"]].plot(
-    ax=ax[0], title="Processing time per observation\n1000 Trees",
-    logy=True, logx=True)
-df[["batch-10", "one-off-10"]].plot(
-    ax=ax[1], title="Processing time per observation\n10 Trees",
-    logy=True, logx=True)
-df[["batch-2", "one-off-2"]].plot(
-    ax=ax[2], title="Processing time per observation\n2 Trees",
-    logy=True, logx=True)
+for i, T in enumerate(Ntrees):
+    df[[f"batch-{T}", f"one-off-{T}"]].plot(
+        ax=ax[i], title=f"Processing time per observation\n{T} Trees",
+        logy=True, logx=True)
 
 ##########################################
 # Conclusion
