@@ -35,7 +35,7 @@
 
     ::
 
-        sudo apt-get install -y cmake zlib1g-dev libssl-dev python3-dev libhwloc-dev libevent-dev libcurl4-openssl-dev
+        sudo apt-get install -y cmake zlib1g-dev libssl-dev python3-dev libhwloc-dev libevent-dev libcurl4-openssl-dev libopenmpi-dev
 
     Let's install :epkg:`gcc`:
 
@@ -61,12 +61,6 @@
         sudo make install
         export PATH=~/install/cmake-3.25.1/bin/:$PATH
         cmake --version
-
-    Installation of :epkg:`openmpi`:
-
-    ::
-
-        sudo apt-get install openmpi-bin
 
     Installation of CUDA (choose a compatible version with :epkg:`pytorch`, 11.7 for example).
 
@@ -130,16 +124,6 @@
         import torch
         print(torch.cuda.is_available())
 
-    Install openmpi:
-
-    ::
-
-        wget https://download.open-mpi.org/release/open-mpi/v4.1/openmpi-4.1.4.tar.gz
-        gunzip -c openmpi-4.1.4.tar.gz | tar xf -
-        cd openmpi-4.1.4
-        ./configure --prefix=/usr/local --with-cuda
-        make all install
-
     To build onnx from source (`python -m pip install onnx` also works),
     protobuf is too recent for onnx, it needs to be build from an older version.
 
@@ -172,8 +156,7 @@
         alias python=python3
         export CUDA_VERSION=11.7
         export CUDACXX=/usr/local/cuda-${CUDA_VERSION}/bin/nvcc
-        # export MPI_HOME=~/install/openmpi-4.1.2
-        python3 ./tools/ci_build/build.py --skip_tests --build_dir ./build/linux_gpu --config Release --use_mpi false --enable_training --enable_training_torch_interop --use_cuda --cuda_version=${CUDA_VERSION} --cuda_home /usr/local/cuda-${CUDA_VERSION}/ --cudnn_home /usr/local/cuda-${CUDA_VERSION}/ --build_wheel --parallel
+        python3 ./tools/ci_build/build.py --skip_tests --build_dir ./build/linux_gpu --config Release --use_mpi true --enable_training --enable_training_torch_interop --use_cuda --cuda_version=${CUDA_VERSION} --cuda_home /usr/local/cuda-${CUDA_VERSION}/ --cudnn_home /usr/local/cuda-${CUDA_VERSION}/ --build_wheel --parallel
 
     Option ``--parallel 1`` can be used to fix the parallelism while building onnxruntime.
     Option `--use_mpi false` can be replaced by `--mpi_home /usr/local/lib/openmpi`.
@@ -182,30 +165,9 @@
     `Running Existing GPU Accelerated Containers on WSL 2
     <https://docs.nvidia.com/cuda/wsl-user-guide/index.html#ch05-running-containers>`_.
 
+    Some useful commands:
 
+    ::
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+        export PYTHONPATH=~/github/onnx:~/github/onnxruntime/build/linux_gpu/Release/Release
+        export PYTHONPATH=$PYTHONPATH:~/github/onnxcustom:~/github/mlprodict
