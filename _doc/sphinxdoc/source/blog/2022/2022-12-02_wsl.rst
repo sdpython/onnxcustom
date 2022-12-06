@@ -109,7 +109,7 @@
         sudo apt-get install -y protobuf-compiler libprotobuf-dev python3-pybind11 libpython3.10-dev
         https://bootstrap.pypa.io/get-pip.py
         python3 get-pip.py
-        python3 -m pip install --upgrade numpy jupyter pandas statsmodels scipy scikit-learn pybind11 cython protobuf flatbuffers
+        python3 -m pip install --upgrade numpy jupyter pandas statsmodels scipy scikit-learn pybind11 cython protobuf flatbuffers mpi4py
 
     Installation of :epkg:`pytorch`:
 
