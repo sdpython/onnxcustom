@@ -106,10 +106,10 @@
 
     ::
 
-        sudo apt-get install -y protobuf-compiler libprotobuf-dev python3-pybind11 libpython3.10-dev
+        sudo apt-get install -y python3-pybind11 libpython3.10-dev
         https://bootstrap.pypa.io/get-pip.py
         python3 get-pip.py
-        python3 -m pip install --upgrade numpy jupyter pandas statsmodels scipy scikit-learn pybind11 cython protobuf flatbuffers mpi4py
+        python3 -m pip install --upgrade numpy jupyter pandas statsmodels scipy scikit-learn pybind11 cython flatbuffers mpi4py
 
     Installation of :epkg:`pytorch`:
 
@@ -124,32 +124,8 @@
         import torch
         print(torch.cuda.is_available())
 
-    To build onnx from source (`python -m pip install onnx` also works),
-    protobuf is too recent for onnx, it needs to be build from an older version.
-
-    ::
-
-        cd ..
-        git clone https://github.com/protocolbuffers/protobuf.git
-        cd protobuf
-        git checkout v3.11.3
-        git submodule update --init --recursive
-        mkdir build_source && cd build_source
-        cmake ../cmake -Dprotobuf_BUILD_SHARED_LIBS=OFF -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_INSTALL_SYSCONFDIR=/etc -DCMAKE_POSITION_INDEPENDENT_CODE=ON -Dprotobuf_BUILD_TESTS=OFF -DCMAKE_BUILD_TYPE=Release
-        make -j2
-        make install
-        protoc --version
-
-    Then onnx built inplace:
-
-    ::
-
-        git clone https://github.com/onnx/onnx.git
-        cd onnx
-        python setup.py build
-        python setup.py build_ext --inplace
-
-    Build :epkg:`onnxruntime-training`:
+    Build :epkg:`onnxruntime-training` before :epkg:`onnx` 
+    to build :epkg:`protobuf` as well.
 
     ::
 
@@ -164,6 +140,15 @@
     Another option is to use a docker:
     `Running Existing GPU Accelerated Containers on WSL 2
     <https://docs.nvidia.com/cuda/wsl-user-guide/index.html#ch05-running-containers>`_.
+
+    Then onnx built inplace:
+
+    ::
+
+        git clone https://github.com/onnx/onnx.git
+        cd onnx
+        python setup.py build
+        python setup.py build_ext --inplace
 
     Some useful commands:
 
