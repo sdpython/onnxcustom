@@ -26,26 +26,15 @@ A model
 Let's retrieve a not so big model. They are taken from the
 `ONNX Model Zoo <https://github.com/onnx/models>`_ or can even be custom.
 """
-import gc
-import multiprocessing
 import os
-import pickle
-from pprint import pprint
 import urllib.request
-import threading
 import time
-import sys
 import tqdm
 import numpy
 import onnx
 import pandas
 import matplotlib.pyplot as plt
-from onnxcustom.utils.benchmark import measure_time
-import torch.cuda
-from onnxruntime import InferenceSession, get_all_providers
-from onnxruntime.capi._pybind_state import (  # pylint: disable=E0611
-    OrtValue as C_OrtValue)
-from onnxcustom.utils.onnxruntime_helper import get_ort_device_from_session
+from onnxruntime import InferenceSession
 from onnxruntime.quantization.quantize import quantize_dynamic, quantize_static
 from onnxruntime.quantization.calibrate import CalibrationDataReader
 from onnxruntime.quantization.quant_utils import QuantFormat, QuantType
