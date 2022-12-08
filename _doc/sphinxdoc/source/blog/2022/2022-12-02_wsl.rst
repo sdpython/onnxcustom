@@ -54,7 +54,7 @@
     Installation of `ninja <https://github.com/ninja-build/ninja/>`_:
 
     ::
-    
+
         wget https://github.com/ninja-build/ninja/releases/download/v1.11.1/ninja-linux.zip
         unzip ninja-linux.zip
         sudo cp ./ninja /usr/local/bin/
@@ -132,7 +132,7 @@
     Otherwise, it has to be built from sources:
 
     ::
-    
+
         wget https://repo.anaconda.com/archive/Anaconda3-2022.10-Linux-x86_64.sh
         bash Anaconda3-2022.10-Linux-x86_64.sh
         conda create -p ~/install/acond10 python=3.10
@@ -165,7 +165,7 @@
         import torch
         print(torch.cuda.is_available())
 
-    Build :epkg:`onnxruntime-training` before :epkg:`onnx` 
+    Build :epkg:`onnxruntime-training` before :epkg:`onnx`
     to build :epkg:`protobuf` as well.
 
     ::
