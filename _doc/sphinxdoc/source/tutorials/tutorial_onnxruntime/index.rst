@@ -17,3 +17,4 @@ available on many other platforms.
     inference
     training_ort_api
     extensions
+    quantization
