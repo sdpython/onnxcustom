@@ -38,7 +38,7 @@
         sudo apt-get update
         sudo apt-get upgrade -y
         sudo apt autoremove -y
-        sudo apt-get install -y cmake zlib1g-dev libssl-dev python3-dev libhwloc-dev libevent-dev libcurl4-openssl-dev libopenmpi-dev clang unzip
+        sudo apt-get install -y cmake zlib1g-dev libssl-dev python3-dev libhwloc-dev libevent-dev libcurl4-openssl-dev libopenmpi-dev clang unzip pytest
 
     Let's install :epkg:`gcc`:
 
@@ -144,10 +144,18 @@
         cd ~/github
         git clone --recursive https://github.com/pytorch/pytorch
         cd pytorch
-        python tools/amd_build/build_amd.py
+        # python tools/amd_build/build_amd.py
         export CMAKE_PREFIX_PATH=${CONDA_PREFIX:-"$(dirname $(which conda))/../"}
         export CUDA_VERSION=11.8
         export CUDACXX=/usr/local/cuda-${CUDA_VERSION}/bin/nvcc
+        export USE_ITT=0
+        export USE_KINETO=0
+        export BUILD_TEST=0
+        export USE_MPI=0
+        export BUILD_CAFFE2=0
+        export BUILD_CAFFE2_OPS=0
+        export USE_DISTRIBUTED=0
+        export MAX_JOBS=1
         python setupy.by build
 
     Then to check CUDA is available:
