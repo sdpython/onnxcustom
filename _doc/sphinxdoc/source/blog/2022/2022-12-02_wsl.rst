@@ -156,7 +156,7 @@
         export BUILD_CAFFE2_OPS=0
         export USE_DISTRIBUTED=0
         export MAX_JOBS=1
-        python setupy.by build
+        python setup.py build
 
     Then to check CUDA is available:
 
