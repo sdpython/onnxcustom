@@ -85,8 +85,10 @@ class TestOrtTrainingForwardBackward(ExtTestCase):
         with open(quan, "rb") as f:
             qdq_onx = onnx.load(f)
 
-        sess = InferenceSession(onx.SerializeToString())
-        sessq = InferenceSession(qdq_onx.SerializeToString())
+        sess = InferenceSession(onx.SerializeToString(),
+                                providers=["CPUExecutionProvider"])
+        sessq = InferenceSession(qdq_onx.SerializeToString(),
+                                 providers=["CPUExecutionProvider"])
         expected = sess.run(None, {'X': X})[0]
         gotq = sessq.run(None, {'X': X})[0]
         errorq = numpy.abs(expected - gotq).ravel().mean()
@@ -110,7 +112,8 @@ class TestOrtTrainingForwardBackward(ExtTestCase):
         trained = train_session.get_trained_onnx()
         with open(os.path.join(temp, "model.qat.onnx"), "wb") as f:
             f.write(trained.SerializeToString())
-        sessqq = InferenceSession(trained.SerializeToString())
+        sessqq = InferenceSession(trained.SerializeToString(),
+                                  providers=["CPUExecutionProvider"])
         gotqq = sessqq.run(None, {'X': X})[0]
         errorqq = numpy.abs(expected - gotqq).ravel().mean()
         self.assertLess(errorqq, errorq)

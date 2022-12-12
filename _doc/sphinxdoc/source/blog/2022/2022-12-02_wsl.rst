@@ -31,6 +31,9 @@
         # install one distribution or download it
         wsl --install -d Ubuntu-22.04
 
+    The CUDA driver must be installed as well. it can be downloaded from
+    `NVIDIA Driver Downloads <https://www.nvidia.com/download/index.aspx>`_.
+    Make sure you are using the one from your graphics card.
     Installation of required packages.
 
     ::
@@ -38,7 +41,7 @@
         sudo apt-get update
         sudo apt-get upgrade -y
         sudo apt autoremove -y
-        sudo apt-get install -y cmake zlib1g-dev libssl-dev python3-dev libhwloc-dev libevent-dev libcurl4-openssl-dev libopenmpi-dev clang unzip pytest
+        sudo apt-get install -y cmake zlib1g-dev libssl-dev python3-dev libhwloc-dev libevent-dev libcurl4-openssl-dev libopenmpi-dev clang unzip
 
     Let's install :epkg:`gcc`:
 
@@ -78,17 +81,17 @@
     Installation of CUDA (choose a compatible version with :epkg:`pytorch`, 11.8 for example).
 
     See `CUDA on WSL User Guide
-    <https://docs.nvidia.com/cuda/wsl-user-guide/index.html#ch03-running-cuda>`_
+    <https://docs.nvidia.com/cuda/wsl-user-guide/index.html#cuda-support-for-wsl-2>`_
 
     ::
 
-        export CUDA_VERSION=11.8
-        export CUDA_VERSION_=11-8
+        export CUDA_VERSION=12.0
+        export CUDA_VERSION_=12-0
         wget https://developer.download.nvidia.com/compute/cuda/repos/wsl-ubuntu/x86_64/cuda-wsl-ubuntu.pin
         sudo mv cuda-wsl-ubuntu.pin /etc/apt/preferences.d/cuda-repository-pin-600
         wget https://developer.download.nvidia.com/compute/cuda/${CUDA_VERSION}.0/local_installers/cuda-repo-wsl-ubuntu-${CUDA_VERSION_}-local_${CUDA_VERSION}.0-1_amd64.deb
         sudo dpkg -i cuda-repo-wsl-ubuntu-${CUDA_VERSION_}-local_${CUDA_VERSION}.0-1_amd64.deb
-        sudo cp /var/cuda-repo-wsl-ubuntu-11-8-local/cuda-9EA88183-keyring.gpg /usr/share/keyrings/
+        sudo cp /var/cuda-repo-wsl-ubuntu-12-0-local/cuda-2E27EA96-keyring.gpg /usr/share/keyrings/
         sudo apt-get update
         sudo apt-get -y install cuda
 
@@ -121,7 +124,7 @@
         sudo apt-get install -y python3-pybind11 libpython3.10-dev
         wget https://bootstrap.pypa.io/get-pip.py
         sudo python3 get-pip.py
-        sudo python3 -m pip install --upgrade numpy jupyter pandas statsmodels scipy scikit-learn pybind11 cython flatbuffers mpi4py notebook nbconvert flatbuffers pylint autopep8 sphinx sphinx-gallery cffi black py-spy fire
+        sudo python3 -m pip install --upgrade numpy jupyter pandas statsmodels scipy scikit-learn pybind11 cython flatbuffers mpi4py notebook nbconvert flatbuffers pylint autopep8 sphinx sphinx-gallery cffi black py-spy fire pytest
 
     Installation of :epkg:`pytorch` of it is available for CUDA 11.8:
 
