@@ -4,7 +4,7 @@
 import unittest
 import logging
 import numpy
-from onnx import TensorProto
+from onnx import TensorProto  # pylint: disable=E0611
 from pyquickhelper.pycode import ExtTestCase
 from sklearn.model_selection import train_test_split
 from sklearn.linear_model import SGDClassifier, SGDRegressor
