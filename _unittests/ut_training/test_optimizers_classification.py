@@ -1,6 +1,8 @@
 """
 @brief      test log(time=8s)
 """
+# pylint: disable=E0611
+
 import unittest
 import logging
 from io import BytesIO
