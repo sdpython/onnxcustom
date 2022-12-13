@@ -71,3 +71,4 @@ _unittests/ut_documentation/data
 _unittests/ut_documentation/ort_*.csv
 _doc/examples/*splits*.png
 _doc/examples/eager*.png
+_doc/examples/plot_*.onnx.txt
