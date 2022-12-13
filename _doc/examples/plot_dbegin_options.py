@@ -95,7 +95,8 @@ clr = LogisticRegression()
 clr.fit(X_train, y_train)
 
 model_def = to_onnx(clr, X_train.astype(numpy.float32),
-                    options={id(clr): {'zipmap': False}})
+                    options={id(clr): {'zipmap': False}},
+                    target_opset=17)
 oinf = OnnxInference(model_def, runtime='python_compiled')
 print(oinf)
 
@@ -111,7 +112,7 @@ ax.get_yaxis().set_visible(False)
 # We need to compare that kind of visualisation to
 # what it would give with operator *ZipMap*.
 
-model_def = to_onnx(clr, X_train.astype(numpy.float32))
+model_def = to_onnx(clr, X_train.astype(numpy.float32), target_opset=17)
 oinf = OnnxInference(model_def, runtime='python_compiled')
 print(oinf)
 
@@ -128,7 +129,8 @@ ax.get_yaxis().set_visible(False)
 # It is just better to use strings.
 
 model_def = to_onnx(clr, X_train.astype(numpy.float32),
-                    options={'zipmap': False})
+                    options={'zipmap': False},
+                    target_opset=17)
 oinf = OnnxInference(model_def, runtime='python_compiled')
 print(oinf)
 
@@ -156,7 +158,8 @@ pipe = Pipeline([
 pipe.fit(X_train, y_train)
 
 model_def = to_onnx(pipe, X_train.astype(numpy.float32),
-                    options={'clr__zipmap': False})
+                    options={'clr__zipmap': False},
+                    target_opset=17)
 oinf = OnnxInference(model_def, runtime='python_compiled')
 print(oinf)
 
@@ -186,7 +189,8 @@ pipe.fit(X_train, y_train)
 
 model_def = to_onnx(
     pipe, X_train.astype(numpy.float32),
-    options={id(pipe): {'zipmap': False}})
+    options={id(pipe): {'zipmap': False}},
+    target_opset=17)
 
 oinf = OnnxInference(model_def, runtime='python_compiled')
 print(oinf.run({'X': X.astype(numpy.float32)[:5]}))
@@ -197,7 +201,8 @@ print(oinf.run({'X': X.astype(numpy.float32)[:5]}))
 
 model_def = to_onnx(
     pipe, X_train.astype(numpy.float32),
-    options={id(pipe): {'raw_scores': True, 'zipmap': False}})
+    options={id(pipe): {'raw_scores': True, 'zipmap': False}},
+    target_opset=17)
 
 oinf = OnnxInference(model_def, runtime='python_compiled')
 print(oinf.run({'X': X.astype(numpy.float32)[:5]}))
@@ -209,7 +214,8 @@ print(oinf.run({'X': X.astype(numpy.float32)[:5]}))
 
 model_def = to_onnx(
     pipe, X_train.astype(numpy.float32),
-    options={id(pipe.steps[1][1]): {'raw_scores': True, 'zipmap': False}})
+    options={id(pipe.steps[1][1]): {'raw_scores': True, 'zipmap': False}},
+    target_opset=17)
 
 oinf = OnnxInference(model_def, runtime='python_compiled')
 print(oinf.run({'X': X.astype(numpy.float32)[:5]}))
@@ -220,7 +226,8 @@ print(oinf.run({'X': X.astype(numpy.float32)[:5]}))
 
 model_def = to_onnx(
     pipe, X_train.astype(numpy.float32),
-    options={'clr__raw_scores': True, 'clr__zipmap': False})
+    options={'clr__raw_scores': True, 'clr__zipmap': False},
+    target_opset=17)
 
 oinf = OnnxInference(model_def, runtime='python_compiled')
 print(oinf.run({'X': X.astype(numpy.float32)[:5]}))
@@ -244,7 +251,8 @@ print(paths.todense())
 
 model_def = to_onnx(clrrf, X_train.astype(numpy.float32),
                     options={id(clrrf): {'decision_path': True,
-                                         'zipmap': False}})
+                                         'zipmap': False}},
+                    target_opset=17)
 sess = InferenceSession(model_def.SerializeToString(),
                         providers=['CPUExecutionProvider'])
 
