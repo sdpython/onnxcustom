@@ -52,7 +52,8 @@ model.fit(X, y)
 # Conversion to ONNX
 # ++++++++++++++++++
 
-onx = to_onnx(model, X, options={'optim': 'cdist'})
+onx = to_onnx(model, X, options={'optim': 'cdist'},
+              target_opset=17)
 
 print(onnx_simple_text_plot(onx))
 
