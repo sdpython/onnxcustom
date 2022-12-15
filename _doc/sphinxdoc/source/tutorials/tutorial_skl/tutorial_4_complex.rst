@@ -22,4 +22,5 @@ Unexpected issues
     ../../gyexamples/plot_usparse_xgboost
     ../../gyexamples/plot_gexternal_lightgbm_reg
     ../../gyexamples/plot_gexternal_lightgbm_reg_per
+    ../../gyexamples/plot_gexternal_lightgbm_reg_mono
     ../../gyexamples/plot_transformer_discrepancy

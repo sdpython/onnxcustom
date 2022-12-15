@@ -36,7 +36,7 @@ from onnxmltools.convert.lightgbm.operator_converters.LightGbm import convert_li
 
 
 N = 1000
-Ntrees = [10, 100, 500]
+Ntrees = [10, 100, 200]
 X = numpy.random.randn(N, 1000)
 y = (numpy.random.randn(N) +
      numpy.random.randn(N) * 100 * numpy.random.randint(0, 1, N))
@@ -125,7 +125,7 @@ for N in tqdm(list(range(10, 100, 10)) +
             end = time.perf_counter() - begin
             times.append(end / X32.shape[0])
         times.sort()
-        obs[f"batch-{T}"] = sum(times[1:-1]) / (len(times) - 2)
+        obs[f"batch-{T}"] = sum(times[2:-2]) / (len(times) - 4)
 
         times = []
         for _ in range(repeat):
@@ -135,7 +135,7 @@ for N in tqdm(list(range(10, 100, 10)) +
             end = time.perf_counter() - begin
             times.append(end / X32.shape[0])
         times.sort()
-        obs[f"one-off-{T}"] = sum(times[2:-2]) / (len(times) - 2)
+        obs[f"one-off-{T}"] = sum(times[2:-2]) / (len(times) - 4)
     data.append(obs)
 
 df = DataFrame(data).set_index("N")
