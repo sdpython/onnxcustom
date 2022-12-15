@@ -53,8 +53,6 @@ update_registered_converter(
     skl2onnx_convert_lightgbm,
     options={'split': None})
 
-
-
 N = 1000
 Ntrees = [10, 100, 200]
 X = numpy.random.randn(N, 1000)
