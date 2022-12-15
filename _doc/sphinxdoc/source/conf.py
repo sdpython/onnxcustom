@@ -146,6 +146,7 @@ epkg_dictionary.update({
     'ONNX ML Operators':
         'https://github.com/onnx/onnx/blob/master/docs/Operators-ml.md',
     'ONNX Zoo': 'https://github.com/onnx/models',
+    'onnxcustom': 'http://www.xavierdupre.fr/app/onnxcustom/helpsphinx/',
     'onnxmltools': 'https://github.com/onnx/onnxmltools',
     'onnxruntime': 'https://microsoft.github.io/onnxruntime/',
     'onnxruntime-extensions':

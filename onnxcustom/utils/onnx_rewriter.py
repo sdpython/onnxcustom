@@ -4,7 +4,7 @@
 """
 from onnx.helper import (
     make_graph, make_node, make_tensor_value_info, make_model)
-from onnx import NodeProto
+from onnx import NodeProto  # pylint: disable=E0611
 from onnx.numpy_helper import to_array, from_array
 
 

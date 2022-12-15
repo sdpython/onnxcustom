@@ -30,7 +30,7 @@ It is initialized with an ONNX graph defining a prediction function.
 
     train_session = OrtGradientForwardBackwardOptimizer(
         onx, ['coef', 'intercept'],
-        learning_rate=LearningRateSGDNesterov()
+        learning_rate=LearningRateSGDNesterov(),
         learning_loss=ElasticLearningLoss(l1_weight=0.1, l2_weight=0.9),
         learning_penalty=ElasticLearningPenalty(l1=0.1, l2=0.9))
 

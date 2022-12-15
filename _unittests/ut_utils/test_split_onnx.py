@@ -5,7 +5,8 @@
 import unittest
 import numpy
 from pyquickhelper.pycode import ExtTestCase, ignore_warnings
-from onnx import ModelProto, TensorProto, numpy_helper
+from onnx import (  # pylint: disable=E0611
+    ModelProto, TensorProto, numpy_helper)
 from onnx.helper import (
     make_model, make_node, set_model_props, make_tensor,
     make_graph, make_tensor_value_info, make_opsetid)

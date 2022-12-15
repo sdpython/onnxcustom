@@ -4,7 +4,8 @@
 """
 import textwrap
 import numpy
-from onnx import ModelProto, shape_inference, TensorProto, ValueInfoProto
+from onnx import (  # pylint: disable=E0611
+    ModelProto, shape_inference, TensorProto, ValueInfoProto)
 from onnx.helper import make_graph, make_model
 
 

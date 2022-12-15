@@ -10,7 +10,7 @@ from onnx.numpy_helper import to_array, from_array
 from onnx.helper import (
     make_node, make_graph, make_model, make_tensor_value_info,
     set_model_props)
-from onnx import TensorProto
+from onnx import TensorProto  # pylint: disable=E0611
 
 
 def _unique_name(existing_names, name):
