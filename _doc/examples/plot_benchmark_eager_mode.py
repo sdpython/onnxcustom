@@ -44,7 +44,7 @@ from tqdm import tqdm
 from onnx import TensorProto
 from onnx.numpy_helper import from_array
 from onnx.helper import (
-    make_model, make_node,
+    make_model, make_node, make_opsetid,
     make_graph, make_tensor_value_info)
 from onnxruntime import (
     get_all_providers, InferenceSession, __version__ as ort_version,
@@ -74,25 +74,19 @@ CST = numpy.array(list(range(100))).reshape(1, -1).astype(numpy.float32)
 X = make_tensor_value_info('X', TensorProto.FLOAT, [None, CST.shape[1]])
 Z = make_tensor_value_info('Z', TensorProto.FLOAT, [None, CST.shape[1]])
 
-graph = make_graph([
-    make_node("Add", ['X', 'Y'], ['Z']),
-], '', [X], [Z], [
-    from_array(CST, name='Y'),
-])
-onnx_add = make_model(graph)
+graph = make_graph([make_node("Add", ['X', 'Y'], ['Z'])],
+                   '', [X], [Z], [from_array(CST, name='Y')])
+onnx_add = make_model(graph, opset_imports=[make_opsetid('', 17)])
 sess_add = InferenceSession(onnx_add.SerializeToString(),
                             providers=["CPUExecutionProvider"])
 
 #############################################
 # Two additions of the same matrix.
 
-graph = make_graph([
-    make_node("Add", ['X', 'Y'], ['T']),
-    make_node("Add", ['T', 'Y'], ['Z']),
-], '', [X], [Z], [
-    from_array(CST, 'Y'),
-])
-onnx_add2 = make_model(graph)
+graph = make_graph([make_node("Add", ['X', 'Y'], ['T']),
+                    make_node("Add", ['T', 'Y'], ['Z'])],
+                   '', [X], [Z], [from_array(CST, 'Y')])
+onnx_add2 = make_model(graph, opset_imports=[make_opsetid('', 17)])
 sess_add2 = InferenceSession(onnx_add2.SerializeToString(),
                              providers=["CPUExecutionProvider"])
 
@@ -180,7 +174,8 @@ def f_ort_ov_bind(X):
 # to bypass the building of a dictionary.
 
 
-if OrtValueVector is not None:
+if (OrtValueVector is not None and
+        hasattr(sess_add._sess, "run_with_ortvaluevector")):
 
     run_options = RunOptions()
     devices = [C_OrtDevice(C_OrtDevice.cpu(), OrtMemType.DEFAULT, 0)]
@@ -344,6 +339,8 @@ if sess_add_gpu is not None:
 
 results = []
 for fct, x in Ys:
+    if fct is None:
+        continue
     print(
         f"check function {fct.__name__!r} and input type {x.__class__.__name__!r}")
     results.append(fct(x))
