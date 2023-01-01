@@ -356,7 +356,7 @@ X = data.data
 dec = LiveDecorrelateTransformer()
 dec.fit(X)
 
-onx = to_onnx(dec, X.astype(numpy.float32))
+onx = to_onnx(dec, X.astype(numpy.float32), target_opset=17)
 
 register_operator(OpEig, name='Eig', overwrite=False)
 
