@@ -48,7 +48,7 @@ X = data.data
 
 pipe = Pipeline(steps=[
     ('std', StandardScaler()),
-    ('km', KMeans(3))
+    ('km', KMeans(3, n_init=3))
 ])
 pipe.fit(X)
 
@@ -58,7 +58,8 @@ pipe.fit(X)
 # returns an ONNX graph for every step.
 steps = collect_intermediate_steps(
     pipe, "pipeline",
-    [("X", FloatTensorType([None, X.shape[1]]))])
+    [("X", FloatTensorType([None, X.shape[1]]))],
+    target_opset=17)
 
 #####################################
 # We call method transform to population the

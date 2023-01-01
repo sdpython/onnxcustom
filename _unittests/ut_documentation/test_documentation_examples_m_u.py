@@ -8,6 +8,7 @@ import importlib
 import subprocess
 from datetime import datetime
 from pyquickhelper.pycode import ExtTestCase, skipif_appveyor
+from pyquickhelper.filehelper import synchronize_folder
 
 
 def import_source(module_file_path, module_name):
@@ -38,6 +39,8 @@ class TestDocumentationExample_m_u(ExtTestCase):
         os.environ['PYTHONPATH'] = pypath
         fold = os.path.normpath(
             os.path.join(this, '..', '..', '_doc', 'examples'))
+        synchronize_folder(os.path.join(fold, "data"), "data",
+                           no_deletion=True, create_dest=True)
         found = os.listdir(fold)
         tested = 0
         for name in sorted(found):
