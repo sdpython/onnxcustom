@@ -302,7 +302,7 @@ def discretizer_transformer_converter(scope, operator, container):
 
     out_name = operator.outputs[0].full_name
     apply_cast(scope, tree_out.full_name, out_name, container,
-               to=onnx_proto.TensorProto.INT64)
+               to=onnx_proto.TensorProto.FLOAT)
 
 
 update_registered_converter(
@@ -315,7 +315,7 @@ update_registered_converter(
 initial_types = guess_schema_from_data(data)
 pprint(initial_types)
 onx = to_onnx(dec, initial_types=initial_types,
-              target_opset={'': 14, 'ai.onnx.ml': 2})
+              target_opset={'': 17, 'ai.onnx.ml': 3})
 sess = InferenceSession(onx.SerializeToString(),
                         providers=['CPUExecutionProvider'])
 
