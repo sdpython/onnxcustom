@@ -5,6 +5,28 @@ onnx.helper
 .. contents::
     :local:
 
+getter
+++++++
+
+.. autofunction:: onnx.helper.get_attribute_value
+
+print
++++++
+
+.. autofunction:: onnx.helper.printable_attribute
+
+.. autofunction:: onnx.helper.printable_dim
+
+.. autofunction:: onnx.helper.printable_graph
+
+.. autofunction:: onnx.helper.printable_node
+
+.. autofunction:: onnx.helper.printable_tensor_proto
+
+.. autofunction:: onnx.helper.printable_type
+
+.. autofunction:: onnx.helper.printable_value_info
+
 tools
 +++++
 
@@ -44,8 +66,6 @@ All functions uses to create an ONNX graph.
 .. autofunction:: onnx.helper.make_sequence
 
 .. autofunction:: onnx.helper.make_sequence_type_proto
-
-.. autofunction:: onnx.helper.make_sequence_value_info
 
 .. autofunction:: onnx.helper.make_sparse_tensor
 
@@ -88,3 +108,18 @@ print
 .. autofunction:: onnx.helper.printable_type
 
 .. autofunction:: onnx.helper.printable_value_info
+
+type mappings
++++++++++++++
+
+.. autofunction:: onnx.helper.get_all_tensor_dtypes
+
+.. autofunction:: onnx.helper.np_dtype_to_tensor_dtype
+
+.. autofunction:: onnx.helper.tensor_dtype_to_field
+
+.. autofunction:: onnx.helper.tensor_dtype_to_np_dtype
+
+.. autofunction:: onnx.helper.tensor_dtype_to_storage_tensor_dtype
+
+.. autofunction:: onnx.helper.tensor_dtype_to_string

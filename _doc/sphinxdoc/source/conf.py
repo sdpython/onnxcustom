@@ -142,10 +142,11 @@ epkg_dictionary.update({
     'nvprof': 'https://docs.nvidia.com/cuda/profiler-users-guide/index.html',
     'onnx': 'https://github.com/onnx/onnx',
     'ONNX': 'https://onnx.ai/',
-    'ONNX operators':
-        'https://github.com/onnx/onnx/blob/master/docs/Operators.md',
+    'ONNX Backend Dashboard': 'http://onnx.ai/backend-scoreboard/index.html',
     'ONNX ML Operators':
         'https://github.com/onnx/onnx/blob/master/docs/Operators-ml.md',
+    'ONNX operators':
+        'https://github.com/onnx/onnx/blob/master/docs/Operators.md',
     'ONNX Zoo': 'https://github.com/onnx/models',
     'onnxcustom': 'http://www.xavierdupre.fr/app/onnxcustom/helpsphinx/',
     'onnxmltools': 'https://github.com/onnx/onnxmltools',
