@@ -83,7 +83,7 @@ intermediate results. This is how it looks like.
                         [Y])  # outputs
 
     # onnx graph
-    # there is no metata in this case.
+    # there is no metadata in this case.
 
     onnx_model = make_model(graph)
 
