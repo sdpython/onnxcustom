@@ -31,10 +31,11 @@ def callback_begin():
         shutil.copy(os.path.join(source, img), dest)
 
 
-set_sphinx_variables(__file__, "onnxcustom", "Xavier Dupré", 2022,
+set_sphinx_variables(__file__, "onnxcustom", "Xavier Dupré", 2023,
                      "pydata_sphinx_theme", ['_static'],
-                     locals(), extlinks=dict(
-                         issue=('https://github.com/sdpython/onnxcustom/issues/%s', 'issue')),
+                     locals(), extlinks=dict(issue=(
+                         'https://github.com/sdpython/onnxcustom/issues/%s',
+                         'issue %s')),
                      title="onnxcustom", book=True,
                      callback_begin=callback_begin)
 
@@ -141,10 +142,11 @@ epkg_dictionary.update({
     'nvprof': 'https://docs.nvidia.com/cuda/profiler-users-guide/index.html',
     'onnx': 'https://github.com/onnx/onnx',
     'ONNX': 'https://onnx.ai/',
-    'ONNX operators':
-        'https://github.com/onnx/onnx/blob/master/docs/Operators.md',
+    'ONNX Backend Dashboard': 'http://onnx.ai/backend-scoreboard/index.html',
     'ONNX ML Operators':
         'https://github.com/onnx/onnx/blob/master/docs/Operators-ml.md',
+    'ONNX operators':
+        'https://github.com/onnx/onnx/blob/master/docs/Operators.md',
     'ONNX Zoo': 'https://github.com/onnx/models',
     'onnxcustom': 'http://www.xavierdupre.fr/app/onnxcustom/helpsphinx/',
     'onnxmltools': 'https://github.com/onnx/onnxmltools',

@@ -5,8 +5,8 @@ ONNX Concepts
 ONNX can be compared to a programming language specialized
 in mathematical functions. It defines all the necessary operations
 a machine learning model needs to implement its inference function
-with this langage. A linear regression could be represented
-the following way:
+with this language. A linear regression could be represented
+in the following way:
 
 ::
 
@@ -16,21 +16,24 @@ the following way:
 
 .. index:: ONNX graph
 
-This example is very similar to an expression a developper could
-write in Python. It can be also represented as a graph which shows
-step by step how to transform the features to get a prediction.
-That's why a machine learning model implemented with ONNX is often
+This example is very similar to an expression a developer could
+write in Python. It can be also represented as a graph that shows
+step-by-step how to transform the features to get a prediction.
+That's why a machine-learning model implemented with ONNX is often
 referenced as an **ONNX graph**.
 
 .. image:: images/linreg1.png
 
 ONNX aims at providing a common language any machine learning framework
 can use to describe its models. The first scenario is to make it easier
-to deploy a machine learning model in production. An ONNX interpretor
+to deploy a machine learning model in production. An ONNX interpreter
 (or **runtime**) can be specifically implemented and optimized for this task
 in the environment where it is deployed. With ONNX, it is possible
-to build a unique process to deploy a model in production and independant
+to build a unique process to deploy a model in production and independent
 from the learning framework used to build the model.
+:epkg:`onnx` implements a python runtime (see :ref:`l-reference-implementation`)
+to help evaluating ONNX models
+useful to help debugging converting libraries.
 
 .. contents::
     :local:
@@ -55,7 +58,7 @@ It is just a kind of pseudo code to illustrate the model.
 
     onnx.output(0) = axc
 
-This code implements a function with the signature `f(x, a, c) -> axc`.
+This code implements a function `f(x, a, c) -> axc`.
 And *x*, *a*, *c* are the **inputs**, *axc* is the **output**.
 *ax* is an intermediate result.
 Inputs and outputs are changing at each inference.
@@ -95,11 +98,11 @@ Serialization with protobuf
 +++++++++++++++++++++++++++
 
 The deployment of a machine learned model into production
-usually requires to replicate the entire ecosystem used to
+usually requires replicating the entire ecosystem used to
 train the model, most of the time with a :epkg:`docker`.
 Once a model is converted into ONNX, the production environment
 only needs a runtime to execute the graph defined with ONNX
-operators. This runtime can be developped in any language
+operators. This runtime can be developed in any language
 suitable for the production application, C, java, python, javascript,
 C#, Webassembly, ARM...
 
@@ -115,9 +118,9 @@ Metadata
 ++++++++
 
 Machine learned models are continuously refreshed. It is important
-to keep track of the model version, the author of the model,
+to keep track of the model version, the author of the model and
 how it was trained. ONNX offers the possibility to store additional data
-into the model itself.
+in the model itself.
 
 * **doc_string**: Human-readable documentation for this model.
     Markdown is allowed.
@@ -156,7 +159,7 @@ A few operators in this list are dedicated to text but they hardly cover
 the needs. The main list is also missing tree based models very
 popular in standard machine learning.
 These are part of another domain **ai.onnx.ml** :ref:`l-onnx-operators-ml`,
-it includes tree bases models (TreeEnsmble Regressor, ...),
+it includes tree bases models (TreeEnsemble Regressor, ...),
 preprocessing (OneHotEncoder, LabelEncoder, ...), SVM models
 (SVMRegressor, ...), imputer (Imputer).
 
@@ -167,7 +170,7 @@ supports any custom domains and operators
 Supported Types
 +++++++++++++++
 
-ONNX specifications is optimized for numerical competition with
+ONNX specifications are optimized for numerical competition with
 tensors. A :epkg:`tensor` is a multidimensional array. It is defined
 by:
 
@@ -176,15 +179,15 @@ by:
   a dimension can be null
 * a contiguous array: it represents all the values
 
-This definition do not include *strides* or the possibility to define
+This definition does not include *strides* or the possibility to define
 a view of a tensor based on an existing tensor. An ONNX tensor is a dense
-full array with no strides.
+full array with no stride.
 
 Element Type
 ~~~~~~~~~~~~
 
-ONNX was initially developped to help deploying deep learning model.
-That's why the specifications was initially designed for floats (32 bits).
+ONNX was initially developed to help deploying deep learning model.
+That's why the specifications were initially designed for floats (32 bits).
 The current version supports all common types. Dictionary
 :ref:`l-onnx-types-mapping` gives the correspondance between :epkg:`ONNX`
 and :epkg:`numpy`.
@@ -211,7 +214,7 @@ and :epkg:`numpy`.
 
 ONNX is strongly typed and its definition does not support
 implicit cast. It is impossible to add two tensors or matrices
-with different types even if other languages does. That's why explicit
+with different types even if other languages does. That's why an explicit
 cast must be inserted in a graph.
 
 Sparse Tensor
@@ -234,7 +237,7 @@ What is an opset version?
 The opset is mapped to the version of the :epkg:`onnx` package.
 It is incremented every time the minor version increases.
 Every version brings updated or new operators.
-Pages :ref:`l-md-change-logs` keeps tracks of these changes.
+Pages :ref:`l-md-change-logs` keep track of these changes.
 The current version is the following.
 
 .. runpython::
@@ -272,9 +275,9 @@ one of the two graphs depending one the condition evaluation.
 ::
 
     If(condition) then
-        exeute this ONNX graph (`then_branch`)
+        execute this ONNX graph (`then_branch`)
     else
-        exeute this ONNX graph (`else_branch`)
+        execute this ONNX graph (`else_branch`)
 
 Those two graphs can use any result already computed in the
 graph and must produce the exact same number of outputs.
@@ -370,7 +373,7 @@ pairwise distances: :math:`M(i,j) = \norm{X_i - X_j}^2`.
 This loop is efficient even if it is still slower than a custom implementation
 of pairwise distances. It assumes inputs and outputs are tensors and
 automatically concatenate the outputs of every iteration into single
-tensors. The previous example only have one but it could have several.
+tensors. The previous example only has one but it could have several.
 
 Loop
 ~~~~
@@ -391,8 +394,10 @@ ONNX defines a list of operators as the standard: :ref:`l-onnx-operators`.
 It extends this list with other operators specific to standard
 machine learning :ref:`l-onnx-operators-ml`. However it is very possible
 to define your own operators under this domain or a new one.
-:epkg:`onnxruntime` defines custom operators to improve inference
-performance: :epkg:`Contrib Operators`. Every node has a type, a name,
+:epkg:`onnx` implements a python runtime supporting that option
+(see :ref:`l-reference-implementation`) as well as
+:epkg:`onnxruntime`. Defining custom operators to improve inference:
+:epkg:`Contrib Operators`. Every node has a type, a name,
 named inputs and outputs, and attributes. As long as a node is described
 under these constraints, a node can be added to any ONNX graph.
 
@@ -408,12 +413,12 @@ Functions
 +++++++++
 
 Functions are one way to extend ONNX specifications. Some model requires
-the same combination of operators. This can be avoid by created a function
+the same combination of operators. This can be avoided by creating a function
 itself defined with existing ONNX operators. Once defined, a function behaves
 like any other operators. It has inputs, outputs and attributes.
 
 There are two advantages of using functions. The first one is to have a
-shorter code and easier to read. The second one is that any onnxruntime
+shorter code and easier to read. The second one is that any onnx runtime
 can leverage that information to run predictions faster. The runtime
 could have a specific implementation for a function not relying on the
 implementation of the existing operators.

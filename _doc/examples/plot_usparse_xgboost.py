@@ -72,6 +72,7 @@ X = data.data[:, :2]
 y = data.target
 
 df = pandas.DataFrame(X)
+df.columns = [f"c{i}" for i in range(X.shape[1])]
 df["text"] = [cst[i] for i in y]
 
 
@@ -196,7 +197,8 @@ def make_pipelines(df_train, y_train, models=None,
         try:
             pipe.fit(df_train, y_train)
         except TypeError as e:
-            obs = dict(model=model.__name__, pipe=pipe, error=e)
+            obs = dict(model=model.__name__, pipe=pipe,
+                       error=e, model_onnx=None)
             pipes.append(obs)
             continue
 
@@ -208,7 +210,7 @@ def make_pipelines(df_train, y_train, models=None,
         # convert
 
         oinf = OnnxInference(model_onnx)
-        inputs = {"input": df[[0, 1]].values.astype(numpy.float32),
+        inputs = {"input": df[["c0", "c1"]].values.astype(numpy.float32),
                   "text": df[["text"]].values}
         pred_onx = oinf.run(inputs)
 

@@ -103,7 +103,7 @@ sesss = [InferenceSession(m.SerializeToString(),
 # a different engine, disable the parallelism
 oinfs = [OnnxInference(m) for m in models_onnx]
 for oinf in oinfs:
-    oinf.sequence_[0].ops_.change_parallel(100000, 100000)
+    oinf.sequence_[0].ops_.change_parallel(100000, 100000, 100000)
 
 ##########################
 # Processing time

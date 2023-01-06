@@ -10,9 +10,9 @@ onnx.numpy_helper
 array
 +++++
 
-.. autofunction:: onnx.numpy_helper.to_array
-
 .. autofunction:: onnx.numpy_helper.from_array
+
+.. autofunction:: onnx.numpy_helper.to_array
 
 sequence
 ++++++++

@@ -7,8 +7,8 @@ Using ONNX in production means the prediction function
 of a model can be implemented with ONNX operators.
 A runtime must be chosen, one available on the platform
 the model is deployed. Discrepancies are checked
-and finally the latency is measured.
-The first step about the model conversion can be easy
+and finally, the latency is measured.
+The first step of the model conversion can be easy
 if there exists a converting library for this framework
 supporting all the pieces of the model. If it is not the
 case, the missing parts must be implemented in ONNX.
@@ -59,7 +59,7 @@ They have to write the specific converter for this piece.
 Somehow, it is like implementing
 twice the prediction function. There is one easy case:
 deep learning frameworks have their own primitives to ensure
-the same code can be executed on different environment.
+the same code can be executed on different environments.
 As long as a custom layer or a subpart is using pieces of
 :epkg:`pytorch` or :epkg:`tensorflow`, there is not much to do.
 It is a different story for :epkg:`scikit-learn`. This package
@@ -72,7 +72,7 @@ not it was implemented with :epkg:`numpy`. Example
 Opsets
 ======
 
-ONNX releases package with version number like
+ONNX releases packages with version numbers like
 `major.minor.fix`. Every minor update means the list of operators
 is different or the signature has changed. It is also associated to
 an opset, version `1.10` is opset 15, `1.11` will be opset 16.
@@ -88,7 +88,7 @@ support newest opsets or at least not in the installed version.
 That's why every converting library offers the
 possibility to create an ONNX graph for a specific opset usually called
 ``target_opset``. ONNX language describes simple and complex operators.
-Changing the opset is similar to upgrade a library. :epkg:`onnx`
+Changing the opset is similar to upgrading a library. :epkg:`onnx`
 and onnx runtimes must support backward compatibility.
 
 Other API
@@ -116,7 +116,7 @@ tf2onnx/onnx_opset/math.py#L414>`_.
 :epkg:`sklearn-onnx` defines two different API. The first one
 introduced in that example :ref:`j-plot-custom-syntax`
 follows a similar design that :epkg:`tf2onnx`.
-Following line are extracted from the converter of a linear
+The following lines are extracted from the converter of a linear
 classifier.
 
 ::
@@ -295,8 +295,17 @@ Then build the package:
 
 The package can now be installed.
 
-Build the documentation
-+++++++++++++++++++++++
+**Linux**
+
+After cloning the repository, the two following instructions can be run:
+
+::
+
+    python setup.py build
+    python setup.py build_ext --inplace
+
+Build the markdown documentation
+++++++++++++++++++++++++++++++++
 
 The package must be built first (see previous section).
 
@@ -306,15 +315,23 @@ The package must be built first (see previous section).
     set ONNX_ML=$(onnx_ml)
     set CMAKE_ARGS=-DONNX_USE_PROTOBUF_SHARED_LIBS=ON -DONNX_USE_LITE_PROTO=ON -DONNX_WERROR=ON
 
-    python onnx\gen_proto.py -l
-    python onnx\gen_proto.py -l --ml
+    python onnx/gen_proto.py -l
+    python onnx/gen_proto.py -l --ml
     python setup.py develop
-    python onnx\backend\test\cmd_tools.py generate-data
-    python onnx\backend\test\stat_coverage.py
-    python onnx\defs\gen_doc.py
+    python onnx/backend/test/cmd_tools.py generate-data
+    python onnx/backend/test/stat_coverage.py
+    python onnx/defs/gen_doc.py
     set ONNX_ML=0
-    python onnx\defs\gen_doc.py
+    python onnx/defs/gen_doc.py
     set ONNX_ML=1
+
+These lines were extracted from the CI jobs. It can shortened to only
+two lines:
+
+::
+
+	ONNX_ML=0 python onnx/defs/gen_doc.py
+	ONNX_ML=1 python onnx/defs/gen_doc.py
 
 Update an existing operator
 +++++++++++++++++++++++++++
@@ -336,7 +353,7 @@ of existing operators.
 
 File `onnx/defs/schema.h
 <https://github.com/onnx/onnx/tree/master/onnx/defs/schema.h>`_
-contains the latest opset version. It must updated too if one opset
+contains the latest opset version. It must be updated too if one opset
 was upgraded.
 
 File `onnx/version_converter/convert.h
@@ -346,7 +363,7 @@ This file may be updated too.
 
 The package must be compiled and the documentation must be generated
 again to automatically update the markdown documentation and it must
-be included into the PR.
+be included in the PR.
 
 Then unit test must be updated.
 

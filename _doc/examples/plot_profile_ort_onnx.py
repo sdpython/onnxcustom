@@ -56,7 +56,7 @@ if not os.path.exists(filename):
 
     model = RadiusNeighborsRegressor()
     model.fit(X, y)
-    onx = to_onnx(model, X, options={'optim': 'cdist'})
+    onx = to_onnx(model, X, options={'optim': 'cdist'}, target_opset=17)
 
     with open(filename, "wb") as f:
         f.write(onx.SerializeToString())
