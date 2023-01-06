@@ -108,28 +108,41 @@ class OnnxSplitting:
         # tag shape nodes
         if self.verbose > 0:
             self.fLOG(
-                f"[OnnxSplitting] mark shape nodes among {len(node_list)} nodes.")
+                f"[OnnxSplitting._init] mark shape nodes among {len(node_list)} nodes.")
         shape_obj = self._make_shape_nodes(node_list)
         self.shape_obj = shape_obj
         self.shape_results = set(k[1] for k in shape_obj if k[0] == 0)
         self.shape_nodes = set(k[1] for k in shape_obj if k[0] == 1)
         if self.verbose > 0:
-            self.fLOG(f"[OnnxSplitting] # shape_results = "
-                      f"{len(self.shape_results)}"
+            self.fLOG(f"[OnnxSplitting._init] # shape_results = "
+                      f"{len(self.shape_results)} "
                       f"- {list(sorted(self.shape_results))[:5]}")
-            self.fLOG(f"[OnnxSplitting] # shape_nodes = "
-                      f"{len(self.shape_nodes)}")
+            self.fLOG(f"[OnnxSplitting._init] # shape_nodes = "
+                      f"{len(self.shape_nodes)} "
+                      f"- {list(sorted(self.shape_nodes))[:5]}")
+
+        # retrieve all related node for a shape result
+        self.shape_results_nodes = self._contributing_make_shape_nodes(
+            node_list, self.shape_nodes, self.shape_results)
+        if self.verbose > 2:
+            for ii, (k, v) in sorted(enumerate(
+                    self.shape_results_nodes.items())):
+                txt = "/".join(v[:5])
+                self.fLOG(f"[OnnxSplitting._init]   {ii}:shaperesult[{k}]:"
+                          f"{len(v)} - {txt}")
 
         # cut points: results breaking the connexity of the graph
         if self.verbose > 0:
             self.fLOG(
-                f"[OnnxSplitting] look for cutting points in {len(node_list)} nodes.")
+                f"[OnnxSplitting._init] look for cutting points in "
+                f"{len(node_list)} nodes.")
 
         self.cutting_points = self._get_cutting_points(node_list)
 
         if self.verbose:
             self.fLOG(
-                f"[OnnxSplitting] # cuttings points: {len(self.cutting_points)}")
+                f"[OnnxSplitting._init] # cuttings points: "
+                f"{len(self.cutting_points)}")
 
         # segments
         if self.verbose > 1:
@@ -146,18 +159,22 @@ class OnnxSplitting:
         segments.append(self._make_segment(self.cutting_points[-1], None))
         self.segments = segments
         if self.verbose > 0:
-            self.fLOG(f"[OnnxSplitting] # segments = {len(sizes)}")
-            self.fLOG("[OnnxSplitting] run shape_inference")
+            self.fLOG(f"[OnnxSplitting._init] # segments = {len(sizes)}")
+            self.fLOG("[OnnxSplitting._init] run shape_inference")
         self.shapes = shape_inference.infer_shapes(onnx_model)
 
         if self.verbose > 0:
             sizes = [seg.size for seg in self.segments]
-            self.fLOG(f"[OnnxSplitting] # segments = {len(sizes)}, "
+            self.fLOG(f"[OnnxSplitting._init] # segments = {len(sizes)}, "
                       f"min,avg,max size=[{min(sizes)}, "
                       f"{sum(sizes) / len(sizes)}, {max(sizes)}]")
 
     @staticmethod
     def _propagate_shape(key, edges):
+        """
+        From a shape node, walk through the graph
+        to find all the nodes contributing to a reshaping.
+        """
         dist = {(1, key): 0}
         stack = [(1, key)]
         while len(stack) > 0:
@@ -211,6 +228,32 @@ class OnnxSplitting:
                     marked[k] = []
                 marked[k].append((v, shape))
         return marked
+
+    def _contributing_make_shape_nodes(self, node_list, shape_nodes, shape_results):
+        """
+        For all results in shape_results, make the of contributing
+        nodes which are needed to build this result.
+        """
+        key_node = {self._key(idn, node): node for idn, node in node_list}
+        backward = {}
+        for key, node in key_node.items():
+            for o in node.output:
+                backward[o] = key
+        res = {}
+        for name in shape_results:
+            r = []
+            stack = [backward[name]]
+            while len(stack) > 0:
+                proc = stack
+                stack = []
+                for key in proc:
+                    r.append(key)
+                    node = key_node[key]
+                    for i in node.input:
+                        if i in shape_results:
+                            stack.append(backward[i])
+            res[name] = r
+        return res
 
     @staticmethod
     def _connex_components(vertices, adja):
@@ -445,7 +488,7 @@ class OnnxSplitting:
             return extremities
 
         if self.verbose > 10:
-            self.fLOG("[OnnxSplitting] cutting points")
+            self.fLOG("[OnnxSplitting.split_segment] cutting points")
             self.fLOG("\n".join(textwrap.wrap(
                 ", ".join(map(str, self.cutting_points)))))
         extremities = [0, len(self.segments)]
@@ -460,13 +503,13 @@ class OnnxSplitting:
                 if self.verbose > 1:
                     size = sum(s.size for s in self.segments[a:b])
                     names = self.segments[a].begin, self.segments[b - 1].end
-                    self.fLOG(f"[OnnxSplitting] split into n={n}, from a={a} to b={b}, "
+                    self.fLOG(f"[OnnxSplitting.split_segment] split into n={n}, from a={a} to b={b}, "
                               f"size={size}, {names[0]!r} -> {names[1]!r}")
                 pos = self._split_2(a, b)
                 if self.verbose > 1:
                     size_a = sum(s.size for s in self.segments[a:pos])
                     size_b = sum(s.size for s in self.segments[pos:b])
-                    self.fLOG(f"[OnnxSplitting] found pos={pos}, size_1={size_a}, "
+                    self.fLOG(f"[OnnxSplitting.split_segment] found pos={pos}, size_1={size_a}, "
                               f"size_2={size_b}={size_b/size:1.2f}, "
                               f"split={self.segments[pos].begin!r}")
                 new_ext.extend([pos, b])
@@ -493,7 +536,7 @@ class OnnxSplitting:
                 n_nodes = len(self.onnx_model.graph.node)
                 total = sum(s.size for s in self.segments)
                 size = sum(self.segments[i].size for i in range(a, b))
-                self.fLOG(f"[OnnxSplitting] part {i}: "
+                self.fLOG(f"[OnnxSplitting.make_onnx] part {i}: "
                           f"#nodes={len(onx.graph.node)}"  # pylint: disable=E1101
                           f"/{n_nodes}, size={size}/{total}={size/total:1.2f}")
         return res

@@ -583,7 +583,7 @@ class TestSplitOnnx(ExtTestCase):
             f.write(onx.SerializeToString())
 
         parts, stats = split_onnx(onx, 2, stats=True,
-                                  doc_string=True, verbose=2)
+                                  doc_string=True, verbose=3)
         names = stats["shape_results"]
         self.assertEqual(names, {'new_shape', 'shape'})
         self.assertEqual(len(parts), 2)
@@ -591,14 +591,14 @@ class TestSplitOnnx(ExtTestCase):
         self.assertIn("oneg", cuts)
 
         for i, p in enumerate(parts):
-            with open(f"debug{i}.onnx", "wb") as f:
-                f.write(p.SerializeToString())
             try:
                 check_model(p)
             except Exception as e:
                 with open(f"test_split_input_optional_{i}.onnx", "wb") as f:
                     f.write(p.SerializeToString())
                 raise AssertionError(f"Part {i} is not valid.\n{p}") from e
+            with open(f"debug{i}.onnx", "wb") as f:
+                f.write(p.SerializeToString())
         self.assertEqual(len(parts), 2)
         self.assertEqual(stats["split_points"], ["oneg"])
         names1 = [i.name for i in parts[0].graph.input]
