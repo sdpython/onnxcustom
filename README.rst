@@ -89,7 +89,7 @@ inside WSL (Windows Linux Subsystem) or compile it for CPU:
 
 ::
 
-    python tools\ci_build\build.py --skip_tests --build_dir .\build\Windows --config Release --build_shared_lib --build_wheel --numpy_version= --cmake_generator="Visual Studio 16 2019" --enable_training --enable_training_ops --enable_training_torch_interop
+    python tools\ci_build\build.py --skip_tests --build_dir .\build\Windows --config Release --build_shared_lib --build_wheel --numpy_version= --cmake_generator="Visual Studio 16 2019" --enable_training --enable_training_ops
 
 GPU versions work better on WSL, see `Build onnxruntime on WSL (Windows Linux Subsystem)
 <http://www.xavierdupre.fr/app/onnxcustom/helpsphinx/blog/2021/2021-12-16_wsl.html>`_.
