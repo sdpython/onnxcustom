@@ -115,7 +115,7 @@ class TestSplitOnnx(ExtTestCase):
         self.assertEqual(len(onx.graph.node), total)
 
         for i in range(len(split.segments)):
-            ox = split._make_onnx(i, i + 1)
+            ox, _ = split._make_onnx(i, i + 1)
             self.assertNotEmpty(ox.graph.input)
             self.assertNotEmpty(ox.graph.output)
 
@@ -310,7 +310,7 @@ class TestSplitOnnx(ExtTestCase):
         self.assertNotIn('R10', split.cutting_points)
         self.assertIn('R7', split.cutting_points)
         for i in range(len(split.segments)):
-            ox = split._make_onnx(i, i + 1)
+            ox, _ = split._make_onnx(i, i + 1)
             self.assertNotEmpty(ox.graph.input)
             self.assertNotEmpty(ox.graph.output)
             if i > 0:
@@ -346,7 +346,7 @@ class TestSplitOnnx(ExtTestCase):
         self.assertNotIn('R10', split.cutting_points)
         self.assertIn('R7', split.cutting_points)
         for i in range(len(split.segments)):
-            ox = split._make_onnx(i, i + 1)
+            ox, _ = split._make_onnx(i, i + 1)
             self.assertNotEmpty(ox.graph.input)
             self.assertNotEmpty(ox.graph.output)
             if i > 0:
@@ -376,7 +376,7 @@ class TestSplitOnnx(ExtTestCase):
         self.assertNotIn('R10', split.cutting_points)
         self.assertIn('R7', split.cutting_points)
         for i in range(len(split.segments)):
-            ox = split._make_onnx(i, i + 1)
+            ox, _ = split._make_onnx(i, i + 1)
             self.assertNotEmpty(ox.graph.input)
             self.assertNotEmpty(ox.graph.output)
             if i > 0:
@@ -579,8 +579,9 @@ class TestSplitOnnx(ExtTestCase):
         graph = make_graph(nodes, "dummy", [X, Y, Z], [T], [Idef])
         onx = make_model(graph)
         check_model(onx)
-        with open("debug.onnx", "wb") as f:
-            f.write(onx.SerializeToString())
+        if __name__ == "__main__":
+            with open("debug.onnx", "wb") as f:
+                f.write(onx.SerializeToString())
 
         parts, stats = split_onnx(onx, 2, stats=True,
                                   doc_string=True, verbose=5)
@@ -603,8 +604,12 @@ class TestSplitOnnx(ExtTestCase):
         self.assertEqual(stats["split_points"], ["oneg"])
         names1 = [i.name for i in parts[0].graph.input]
         names2 = [i.name for i in parts[1].graph.input]
-        self.assertEqual(["X", "Y", "I"], names1)
-        self.assertEqual(["oneg", "Z", "I"], names2)
+        self.assertEqual(["X", "Y"], names1)
+        self.assertEqual(["oneg", "Z", "new_shape"], names2)
+        names1 = [i.name for i in parts[0].graph.output]
+        names2 = [i.name for i in parts[1].graph.output]
+        self.assertEqual(["T"], names2)
+        self.assertEqual(["oneg", "new_shape"], names1)
 
 
 if __name__ == "__main__":
