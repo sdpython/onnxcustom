@@ -153,7 +153,7 @@ class OnnxSplitting:
                 f"{len(self.cutting_points)}")
 
         # segments
-        if self.verbose > 1:
+        if self.verbose >= 10:
             import tqdm  # pylint: disable=C0415
             loop = tqdm.tqdm(range(len(self.cutting_points)))
         else:
@@ -221,7 +221,7 @@ class OnnxSplitting:
             return {}
 
         # There are shapes, let's propagate.
-        if self.verbose > 1:
+        if self.verbose >= 10:
             import tqdm  # pylint: disable=C0415
             loop = tqdm.tqdm(shapeops)
         else:
@@ -365,7 +365,7 @@ class OnnxSplitting:
                 adja[key, o] = 1
 
         # checking the connexity
-        if self.verbose > 1:
+        if self.verbose >= 10:
             import tqdm  # pylint: disable=C0415
             loop = tqdm.tqdm(ordered_names)
         else:
@@ -392,6 +392,35 @@ class OnnxSplitting:
 
         return cutting_points
 
+    def _segment_names(self, nodes, names, skip_names=None):
+        if skip_names is None:
+            skip_names = set()
+        names = names.copy()
+        size = 0
+        subset = []
+        shape_results = set()
+        for idn, node in reversed(nodes):
+            if set(node.output) & names:
+                size += self.sizes[self._key(idn, node)]
+                if len(node.output) == 1 and node.output[0] in skip_names:
+                    continue
+                subset.append((idn, node))
+                no_shape = [i for i in node.input
+                            if i not in self.shape_results]
+                if len(no_shape) == 1 and no_shape[0] in skip_names:
+                    for i in node.input:
+                        if i in self.shape_results:
+                            shape_results.add(i)
+                    continue
+                for i in node.input:
+                    if i in self.shape_results:
+                        shape_results.add(i)
+                        continue
+                    if i in self.sizes:
+                        size += self.sizes[i]
+                    names.add(i)
+        return subset, shape_results, size, names
+
     def _make_segment(self, name1, name2):
         nodes = []
         for idn, node in enumerate(self.onnx_model.graph.node):
@@ -412,76 +441,13 @@ class OnnxSplitting:
         else:
             names = {name2}
 
-        size = 0
-        subset = []
-        shape_results = set()
-        for idn, node in reversed(nodes):
-            if set(node.output) & names:
-                size += self.sizes[self._key(idn, node)]
-                if len(node.output) == 1 and node.output[0] == name1:
-                    continue
-                subset.append((idn, node))
-                no_shape = [i for i in node.input
-                            if i not in self.shape_results]
-                if len(no_shape) == 1 and no_shape[0] == name1:
-                    for i in node.input:
-                        if i in self.shape_results:
-                            shape_results.add(i)
-                    continue
-                for i in node.input:
-                    if i in self.shape_results:
-                        shape_results.add(i)
-                        continue
-                    if i in self.sizes:
-                        size += self.sizes[i]
-                    names.add(i)
-
-        # gather shape nodes        
-        if len(shape_results) > 0:
-            for shape in shape_results:
-                if self.verbose > 4:
-                    self.fLOG(
-                        f"[OnnxSplitting._make_segment] {name1}->"
-                        f"{name2}:+shape[{shape}]")
-                subset_shape = []
-                keys = set(self.shape_results_nodes[shape])
-                for idn, node in nodes:
-                    key = self._key(idn, node)
-                    if key in keys:
-                        subset_shape.append((idn, node))
-                included = set()
-                for _, node in subset_shape:
-                    included |= set(node.output)
-                for idn, node in subset_shape:
-                    for i in node.input:
-                        if i in names or i == name1 or i in included:
-                            continue
-                        if i in self.inputs:
-                            if self.verbose > 4:
-                                self.fLOG(
-                                    f"[OnnxSplitting._make_segment]    "
-                                    f"+in[{i}]")
-                            obj = self.inputs[i]
-                            if not self.is_small(obj):
-                                raise RuntimeError(
-                                    f"Input {i!r} is needed to reshape "
-                                    f"but is not small.")
-                            names.add(i)
-                        else:
-                            if self.verbose > 4:
-                                self.fLOG(
-                                    f"[OnnxSplitting._make_segment]    "
-                                    f"+shape[{shape}] copied")
-                            # one input is not an initializer
-                            # we look into copying the shape or
-                            raise NotImplementedError()
-                subset.extend(subset_shape)
-
+        subset, shape_results, size, names = self._segment_names(
+            nodes, names, skip_names={name1})
         subset.sort()  # original order must be kept
         involved = names if name2 is None else names - {name2}
         return OnnxSegment(self, begin=name1, end=name2, involved=involved,
                            size=size, nodes=subset,
-                           shape_results=set(shape_results))
+                           shape_results=shape_results)
 
     def _split_2(self, a, b):
         """
@@ -592,6 +558,75 @@ class OnnxSplitting:
                           f"/{n_nodes}, size={size}/{total}={size/total:1.2f}")
         return res
 
+    def _process_shape(self, nodes, shape_results, input_names, output_names):
+        if shape_results is None or len(shape_results) == 0:
+            return None, None
+
+        if self.verbose > 1:
+            self.fLOG(
+                f"[OnnxSplitting._process_shape] {input_names}->{output_names}:#"
+                f"{len(shape_results)}")
+
+        subset, shape_results, _, names = self._segment_names(
+            nodes, output_names)
+        graph_nodes = []
+        for idn, node in enumerate(self.onnx_model.graph.node):
+            graph_nodes.append((idn, node))
+
+        # gather shape nodes
+        subset = []
+        shape_results_to_add = set()
+        for shape in shape_results:
+            if self.verbose > 2:
+                self.fLOG(
+                    f"[OnnxSplitting._process_shape]   "
+                    f"shape:{shape}")
+            subset_shape = []
+            keys = set(self.shape_results_nodes[shape])
+            for idn, node in graph_nodes:
+                key = self._key(idn, node)
+                if key in keys:
+                    subset_shape.append((idn, node))
+            included = set()
+            for _, node in subset_shape:
+                included |= set(node.output)
+            no_addition = False
+            for idn, node in subset_shape:
+                for i in node.input:
+                    if i in included or i in names or i in input_names:
+                        continue
+                    if i in self.inputs:
+                        if self.verbose > 3:
+                            self.fLOG(
+                                f"[OnnxSplitting._process_shape]     "
+                                f"+in[{i}]")
+                        obj = self.inputs[i]
+                        if not self.is_small(obj):
+                            raise RuntimeError(
+                                f"Input {i!r} is needed to reshape "
+                                f"but is not small.")
+                        names.add(i)
+                    else:
+                        if self.verbose > 3:
+                            self.fLOG(
+                                "[OnnxSplitting._process_shape]     +copied")
+                        # one input is not an initializer
+                        # we look into copying the shape or
+                        no_addition = True
+                        break
+                if no_addition:
+                    break
+
+            print("no_addition=", no_addition)
+            if no_addition:
+                # the shape comes from a tensor not in this segment,
+                # the shape has to be considered as an input
+                shape_results_to_add.add(shape)
+            else:
+                # the shape comes from a tensor in this segment
+                subset.extend(subset_shape)
+        return subset, shape_results_to_add
+
     def _make_onnx(self, a, b, index=None):
         """
         Builds one onnx subpart including segments from a to b (excluded).
@@ -612,13 +647,14 @@ class OnnxSplitting:
             involved |= seg.involved
             shape_results |= seg.shape_results
 
-        # initiliazers
+        # initilizers
         new_inits = [init for init in self.onnx_model.graph.initializer
                      if init.name in involved]
         new_sp_inits = [init for init in self.onnx_model.graph.sparse_initializer
                         if init.name in involved]
 
         # nodes
+        shape_results = set()
         nodes = []
         for iseg, seg in enumerate(segs):
             if self.doc_string:
@@ -626,13 +662,14 @@ class OnnxSplitting:
                          f"[{seg.begin or ''},{seg.end or ''}]")
                 if seg.shape_results:
                     label += f"-shape={list(sorted(seg.shape_results))}"
-            for _, node in seg.nodes:
+                    shape_results |= seg.shape_results
+            for idn, node in seg.nodes:
                 if self.doc_string:
                     if node.doc_string:
                         node.doc_string = f"{node.doc_string}-{label}"
                     else:
                         node.doc_string = label
-                nodes.append(node)
+                nodes.append((idn, node))
 
         # inputs, outputs
         existing_inputs = [i for i in self.onnx_model.graph.input
@@ -647,6 +684,19 @@ class OnnxSplitting:
                            if i.name in involved]
         else:
             new_outputs = [value_info[segs[-1].end]]
+
+        # process shapes
+        input_names = set(o.name for o in new_inputs)
+        output_names = set(o.name for o in new_outputs)
+        new_nodes, shape_to_add = self._process_shape(
+            nodes, shape_results, input_names, output_names)
+        if len(shape_to_add) > 0:
+            raise NotImplementedError(shape_to_add)
+        nodes.extend(new_nodes)
+        nodes.sort()
+
+        # remove node index
+        nodes = [n for _, n in nodes]
 
         model = self.onnx_model
         graph = make_graph(
