@@ -87,6 +87,14 @@ class OnnxSplitting:
                 f"onnx_model must a ModelProto not a {type(onnx_model)}.")
         node_list = list(enumerate(onnx_model.graph.node))
 
+        # inputs
+        inputs = {}
+        for i in onnx_model.graph.input:
+            inputs[i.name] = i
+        for i in onnx_model.graph.initializer:
+            inputs[i.name] = i
+        self.inputs = inputs
+
         # sizes
         sizes = {}
         for init in onnx_model.graph.initializer:
@@ -114,12 +122,12 @@ class OnnxSplitting:
         self.shape_results = set(k[1] for k in shape_obj if k[0] == 0)
         self.shape_nodes = set(k[1] for k in shape_obj if k[0] == 1)
         if self.verbose > 0:
-            self.fLOG(f"[OnnxSplitting._init] # shape_results = "
-                      f"{len(self.shape_results)} "
-                      f"- {list(sorted(self.shape_results))[:5]}")
-            self.fLOG(f"[OnnxSplitting._init] # shape_nodes = "
-                      f"{len(self.shape_nodes)} "
-                      f"- {list(sorted(self.shape_nodes))[:5]}")
+            self.fLOG(f"[OnnxSplitting._init] #shape_results = "
+                      f"{len(self.shape_results)}:"
+                      f"{list(sorted(self.shape_results))[:5]}")
+            self.fLOG(f"[OnnxSplitting._init] #shape_nodes = "
+                      f"{len(self.shape_nodes)}:"
+                      f"{list(sorted(self.shape_nodes))[:5]}")
 
         # retrieve all related node for a shape result
         self.shape_results_nodes = self._contributing_make_shape_nodes(
@@ -141,7 +149,7 @@ class OnnxSplitting:
 
         if self.verbose:
             self.fLOG(
-                f"[OnnxSplitting._init] # cuttings points: "
+                f"[OnnxSplitting._init] # cuttings-points:"
                 f"{len(self.cutting_points)}")
 
         # segments
@@ -159,14 +167,14 @@ class OnnxSplitting:
         segments.append(self._make_segment(self.cutting_points[-1], None))
         self.segments = segments
         if self.verbose > 0:
-            self.fLOG(f"[OnnxSplitting._init] # segments = {len(sizes)}")
+            self.fLOG(f"[OnnxSplitting._init] #segments:{len(sizes)}")
             self.fLOG("[OnnxSplitting._init] run shape_inference")
         self.shapes = shape_inference.infer_shapes(onnx_model)
 
         if self.verbose > 0:
             sizes = [seg.size for seg in self.segments]
-            self.fLOG(f"[OnnxSplitting._init] # segments = {len(sizes)}, "
-                      f"min,avg,max size=[{min(sizes)}, "
+            self.fLOG(f"[OnnxSplitting._init] #segments:{len(sizes)}, "
+                      f"min,avg,max-size=[{min(sizes)}, "
                       f"{sum(sizes) / len(sizes)}, {max(sizes)}]")
 
     @staticmethod
@@ -406,26 +414,69 @@ class OnnxSplitting:
 
         size = 0
         subset = []
-        shape_results = {}
+        shape_results = set()
         for idn, node in reversed(nodes):
             if set(node.output) & names:
                 size += self.sizes[self._key(idn, node)]
                 if len(node.output) == 1 and node.output[0] == name1:
                     continue
                 subset.append((idn, node))
-                no_shape = [i for i in node.input if i not in self.shape_results]
+                no_shape = [i for i in node.input
+                            if i not in self.shape_results]
                 if len(no_shape) == 1 and no_shape[0] == name1:
                     for i in node.input:
                         if i in self.shape_results:
-                            shape_results[i] = node
+                            shape_results.add(i)
                     continue
                 for i in node.input:
                     if i in self.shape_results:
-                        shape_results[i] = node
+                        shape_results.add(i)
                         continue
                     if i in self.sizes:
                         size += self.sizes[i]
                     names.add(i)
+
+        # gather shape nodes        
+        if len(shape_results) > 0:
+            for shape in shape_results:
+                if self.verbose > 4:
+                    self.fLOG(
+                        f"[OnnxSplitting._make_segment] {name1}->"
+                        f"{name2}:+shape[{shape}]")
+                subset_shape = []
+                keys = set(self.shape_results_nodes[shape])
+                for idn, node in nodes:
+                    key = self._key(idn, node)
+                    if key in keys:
+                        subset_shape.append((idn, node))
+                included = set()
+                for _, node in subset_shape:
+                    included |= set(node.output)
+                for idn, node in subset_shape:
+                    for i in node.input:
+                        if i in names or i == name1 or i in included:
+                            continue
+                        if i in self.inputs:
+                            if self.verbose > 4:
+                                self.fLOG(
+                                    f"[OnnxSplitting._make_segment]    "
+                                    f"+in[{i}]")
+                            obj = self.inputs[i]
+                            if not self.is_small(obj):
+                                raise RuntimeError(
+                                    f"Input {i!r} is needed to reshape "
+                                    f"but is not small.")
+                            names.add(i)
+                        else:
+                            if self.verbose > 4:
+                                self.fLOG(
+                                    f"[OnnxSplitting._make_segment]    "
+                                    f"+shape[{shape}] copied")
+                            # one input is not an initializer
+                            # we look into copying the shape or
+                            raise NotImplementedError()
+                subset.extend(subset_shape)
+
         subset.sort()  # original order must be kept
         involved = names if name2 is None else names - {name2}
         return OnnxSegment(self, begin=name1, end=name2, involved=involved,

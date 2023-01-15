@@ -583,7 +583,7 @@ class TestSplitOnnx(ExtTestCase):
             f.write(onx.SerializeToString())
 
         parts, stats = split_onnx(onx, 2, stats=True,
-                                  doc_string=True, verbose=3)
+                                  doc_string=True, verbose=5)
         names = stats["shape_results"]
         self.assertEqual(names, {'new_shape', 'shape'})
         self.assertEqual(len(parts), 2)
