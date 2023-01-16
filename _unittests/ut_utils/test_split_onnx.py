@@ -213,7 +213,9 @@ class TestSplitOnnx(ExtTestCase):
 
         node = make_node(
             'Conv', ['R2', 'I3', 'I4'], ['R3'],
-            name='Conv3', dilations=[1, 1], group=960, kernel_shape=[3, 3], pads=[1, 1, 1, 1], strides=[1, 1], domain='')
+            name='Conv3', dilations=[1, 1], group=960, 
+            kernel_shape=[3, 3], pads=[1, 1, 1, 1],
+            strides=[1, 1], domain='')
         nodes.append(node)
 
         node = make_node(
@@ -223,12 +225,14 @@ class TestSplitOnnx(ExtTestCase):
 
         node = make_node(
             'Conv', ['R4', 'I5', 'I6'], ['R5'],
-            name='Conv5', dilations=[1, 1], group=1, kernel_shape=[1, 1], pads=[0, 0, 0, 0], strides=[1, 1], domain='')
+            name='Conv5', dilations=[1, 1], group=1, kernel_shape=[1, 1],
+            pads=[0, 0, 0, 0], strides=[1, 1], domain='')
         nodes.append(node)
 
         node = make_node(
             'Conv', ['R5', 'I7', 'I8'], ['R6'],
-            name='Conv6', dilations=[1, 1], group=1, kernel_shape=[1, 1], pads=[0, 0, 0, 0], strides=[1, 1], domain='')
+            name='Conv6', dilations=[1, 1], group=1, kernel_shape=[1, 1],
+            pads=[0, 0, 0, 0], strides=[1, 1], domain='')
         nodes.append(node)
 
         node = make_node(
@@ -248,7 +252,9 @@ class TestSplitOnnx(ExtTestCase):
 
         node = make_node(
             'Constant', [], ['R10'],
-            name='Constant10', value=make_tensor("value", TensorProto.INT64, dims=[1], vals=[0]), domain='')
+            name='Constant10',
+            value=make_tensor("value", TensorProto.INT64, dims=[1], vals=[0]),
+            domain='')
         nodes.append(node)
 
         node = make_node(
@@ -386,7 +392,7 @@ class TestSplitOnnx(ExtTestCase):
                 self.assertEqual(
                     split.segments[i].end, ox.graph.output[0].name)
 
-        parts = split_onnx(onx, 2, verbose=9)
+        parts = split_onnx(onx, 2, verbose=0)
         with open("dd.onnx", "wb") as f:
             f.write(onx.SerializeToString())
         for i, p in enumerate(parts):
@@ -396,7 +402,6 @@ class TestSplitOnnx(ExtTestCase):
         ids = set(n.SerializeToString() for n in onx.graph.node)
         total = 0
         for ip, p in enumerate(parts):
-            print(ip)
             if ip == 0:
                 self.assertNotIn('IADD', set(i.name for i in p.graph.initializer))
             co = set()
@@ -629,5 +634,5 @@ class TestSplitOnnx(ExtTestCase):
 
 
 if __name__ == "__main__":
-    TestSplitOnnx().test_split_big_model_small_constant()
+    # TestSplitOnnx().test_split_big_model_small_constant()
     unittest.main(verbosity=2)
