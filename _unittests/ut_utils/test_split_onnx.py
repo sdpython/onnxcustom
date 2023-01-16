@@ -213,7 +213,7 @@ class TestSplitOnnx(ExtTestCase):
 
         node = make_node(
             'Conv', ['R2', 'I3', 'I4'], ['R3'],
-            name='Conv3', dilations=[1, 1], group=960, 
+            name='Conv3', dilations=[1, 1], group=960,
             kernel_shape=[3, 3], pads=[1, 1, 1, 1],
             strides=[1, 1], domain='')
         nodes.append(node)
@@ -403,7 +403,8 @@ class TestSplitOnnx(ExtTestCase):
         total = 0
         for ip, p in enumerate(parts):
             if ip == 0:
-                self.assertNotIn('IADD', set(i.name for i in p.graph.initializer))
+                self.assertNotIn('IADD', set(
+                    i.name for i in p.graph.initializer))
             co = set()
             for node in p.graph.node:
                 if node.op_type == 'Constant':
@@ -470,7 +471,7 @@ class TestSplitOnnx(ExtTestCase):
         self.assertRaise(lambda: split_onnx(onx, 2, []), ValueError)
         parts, stats = split_onnx(onx, 2, stats=True)
         self.assertEqual(len(parts), 2)
-        for p in parts:
+        for i, p in enumerate(parts):
             try:
                 check_model(p)
             except Exception as e:
@@ -511,7 +512,7 @@ class TestSplitOnnx(ExtTestCase):
         self.assertRaise(lambda: split_onnx(onx, 2, []), ValueError)
         parts, stats = split_onnx(onx, 2, stats=True)
         self.assertEqual(len(parts), 2)
-        for p in parts:
+        for i, p in enumerate(parts):
             try:
                 check_model(p)
             except Exception as e:
@@ -550,7 +551,7 @@ class TestSplitOnnx(ExtTestCase):
         self.assertRaise(lambda: split_onnx(onx, 2, []), ValueError)
         parts, stats = split_onnx(onx, stats=True, cut_points=["oneg"])
         self.assertEqual(len(parts), 2)
-        for p in parts:
+        for i, p in enumerate(parts):
             try:
                 check_model(p)
             except Exception as e:
@@ -598,7 +599,7 @@ class TestSplitOnnx(ExtTestCase):
         cuts = stats["cutting_points"]
         self.assertIn("oneg", cuts)
 
-        for p in parts:
+        for i, p in enumerate(parts):
             try:
                 check_model(p)
             except Exception as e:

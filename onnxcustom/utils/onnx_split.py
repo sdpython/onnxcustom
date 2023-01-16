@@ -766,7 +766,7 @@ class OnnxSplitting:
 
         # nodes
         shape_results = set()
-        nodes = [(-i-1, node) for i, node in enumerate(new_constants)]
+        nodes = [(-i - 1, node) for i, node in enumerate(new_constants)]
         for iseg, seg in enumerate(segs):
             if self.doc_string:
                 label = (f"seg{iseg + a}-size={seg.size}-"
@@ -806,7 +806,8 @@ class OnnxSplitting:
             # adding initializer or existing inputs
             for name in new_internals:
                 if name in self.constants:
-                    new_nodes.append((-len(new_nodes)-1, self.constants[name]))
+                    new_nodes.append(
+                        (-len(new_nodes) - 1, self.constants[name]))
                     continue
                 if name in self.inputs_only:
                     new_inputs.append(self.inputs_only[name])
