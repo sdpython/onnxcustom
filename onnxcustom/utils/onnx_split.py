@@ -556,12 +556,16 @@ class OnnxSplitting:
         :return: list of onnx subgraphs (:epkg:`ModelProto`)
         """
         if self.verbose > 0:
-            self.fLOG(f"[OnnxSplitting.make_onnx] #parts:{len(extremities) - 1}")
+            self.fLOG(
+                f"[OnnxSplitting.make_onnx] #parts:{len(extremities) - 1}")
         res = []
         needed_inputs = {}
         for i in range(len(extremities) - 1, 0, -1):
+            if self.verbose > 0:
+                self.fLOG(f"[OnnxSplitting.make_onnx] part {i}:begin")
             a, b = extremities[i - 1:i + 1]
-            onx, extra_inputs = self._make_onnx(a, b, i - 1)
+            onx, extra_inputs = self._make_onnx(
+                a, b, i - 1, add_inputs=needed_inputs)
             res.append(onx)
             for name in extra_inputs:
                 if name not in needed_inputs:
@@ -571,12 +575,13 @@ class OnnxSplitting:
                 n_nodes = len(self.onnx_model.graph.node)
                 total = sum(s.size for s in self.segments)
                 size = sum(self.segments[i].size for i in range(a, b))
-                self.fLOG(f"[OnnxSplitting.make_onnx] part {i}: "
+                self.fLOG(f"[OnnxSplitting.make_onnx] part {i}:end:"
                           f"#nodes={len(onx.graph.node)}"  # pylint: disable=E1101
                           f"/{n_nodes}, size={size}/{total}={size/total:1.2f}, "
                           f"extra_inputs={extra_inputs}")
         if self.verbose > 0:
-            self.fLOG(f"[OnnxSplitting.make_onnx] needed_inputs={needed_inputs}")
+            self.fLOG(
+                f"[OnnxSplitting.make_onnx] needed_inputs={needed_inputs}")
         return list(reversed(res))
 
     def _process_shape(self, nodes, shape_results, input_names, output_names):
@@ -633,10 +638,33 @@ class OnnxSplitting:
                                 f"but is not small.")
                         names.add(i)
                         new_inputs.add(i)
+                    elif i in self.initializers:
+                        obj = self.inputs[i]
+                        if not self.is_small(obj):
+                            raise RuntimeError(
+                                f"Initializer {i!r} is needed to reshape "
+                                f"but is not small.")
+                        if self.verbose > 3:
+                            self.fLOG(
+                                f"[OnnxSplitting._process_shape]     "
+                                f"+ci[{i}]")
+                        names.add(i)
+                    elif i in self.constants:
+                        obj = self.inputs[i]
+                        if not self.is_small(obj):
+                            raise RuntimeError(
+                                f"Constant {i!r} is needed to reshape "
+                                f"but is not small.")
+                        if self.verbose > 3:
+                            self.fLOG(
+                                f"[OnnxSplitting._process_shape]     "
+                                f"+cs[{i}]")
+                        names.add(i)
                     else:
                         if self.verbose > 3:
                             self.fLOG(
-                                "[OnnxSplitting._process_shape]     +copied")
+                                "[OnnxSplitting._process_shape]     +copied"
+                                f" because missing[{i}]")
                         # one input is not an initializer
                         # we look into copying the shape or
                         no_addition = True
@@ -653,9 +681,16 @@ class OnnxSplitting:
                 subset.extend(subset_shape)
         return subset, shape_results_to_add, new_inputs
 
-    def _make_onnx(self, a, b, index=None):
+    def _make_onnx(self, a, b, index=None, add_inputs=None):
         """
         Builds one onnx subpart including segments from a to b (excluded).
+
+        :param a: index of the first segment (or None for the first one)
+        :param b: index of the second segment (or None for the last one)
+        :param index:
+        :param add_inputs: shape result needed in the next parts
+        :return: (ONNX model, extra_inputs),
+            extra_inputs is the set of inputs this part requires
         """
         if self.verbose > 1:
             self.fLOG(f"[OnnxSplitting._make_onnx] {a}->{b}")
@@ -680,7 +715,7 @@ class OnnxSplitting:
             involved |= seg.involved
             shape_results |= seg.shape_results
 
-        # initilizers
+        # initiliazers
         new_inits = [init for init in self.onnx_model.graph.initializer
                      if init.name in involved]
         new_sp_inits = [init for init in self.onnx_model.graph.sparse_initializer
@@ -693,9 +728,10 @@ class OnnxSplitting:
             if self.doc_string:
                 label = (f"seg{iseg + a}-size={seg.size}-"
                          f"[{seg.begin or ''},{seg.end or ''}]")
-                if seg.shape_results:
+            if seg.shape_results:
+                if self.doc_string:
                     label += f"-shape={list(sorted(seg.shape_results))}"
-                    shape_results |= seg.shape_results
+                shape_results |= seg.shape_results
             for idn, node in seg.nodes:
                 if self.doc_string:
                     if node.doc_string:
@@ -737,10 +773,33 @@ class OnnxSplitting:
             # add unresolved shapes as new inputs
             for i in shape_to_add:
                 extra_inputs.append(i)
-                new_inputs.append(value_info[i])
+                if i in value_info:
+                    new_inputs.append(value_info[i])
+                else:
+                    # shape information is missing
+                    new_inputs.append(make_tensor_value_info(
+                        i, TensorProto.INT64, [None],
+                        doc_string="shape-shape"))
         if new_nodes is not None:
             nodes.extend(new_nodes)
         nodes.sort()
+
+        # extra inputs
+        if add_inputs is not None:
+            in_this = set(i.name for i in new_inputs)
+            for _, n in nodes:
+                in_this |= set(n.output)
+            for name in add_inputs:
+                new_outputs.append(value_info[name])
+                if self.verbose > 2:
+                    self.fLOG(
+                        f"[OnnxSplitting._make_onnx]   +output:{name}")
+                if name in in_this:
+                    # the shape is produced in this part
+                    continue
+                # the shape comes from a previous shape
+                new_inputs.append(value_info[name])
+                extra_inputs.append(name)
 
         # remove node index
         nodes = [n for _, n in nodes]

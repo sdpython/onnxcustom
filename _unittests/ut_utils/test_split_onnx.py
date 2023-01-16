@@ -306,7 +306,7 @@ class TestSplitOnnx(ExtTestCase):
     def test_split_big_model(self):
         onx = self.create_model()
 
-        split = OnnxSplitting(onx)
+        split = OnnxSplitting(onx, verbose=0)
         self.assertNotIn('R10', split.cutting_points)
         self.assertIn('R7', split.cutting_points)
         for i in range(len(split.segments)):
@@ -327,11 +327,15 @@ class TestSplitOnnx(ExtTestCase):
                     f"\ninvolved={split.segments[i].involved}"
                     f"\n{onnx_simple_text_plot(ox)}")
 
-        parts = split_onnx(onx, 2, verbose=0)
+        parts = split_onnx(onx, 2, verbose=9)
 
         ids = set(n.SerializeToString() for n in onx.graph.node)
         total = 0
-        for p in parts:
+        with open("d.onnx", "wb") as f:
+            f.write(onx.SerializeToString())
+        for i, p in enumerate(parts):
+            with open(f"d{i}.onnx", "wb") as f:
+                f.write(p.SerializeToString())
             keys = [n.SerializeToString() for n in p.graph.node]
             for k in keys:
                 if k not in ids:
@@ -560,7 +564,7 @@ class TestSplitOnnx(ExtTestCase):
     def test_split_reshape(self):
         X = make_tensor_value_info('X', TensorProto.FLOAT, [None, None])
         Y = make_tensor_value_info('Y', TensorProto.FLOAT, [None, None])
-        Z = make_tensor_value_info('Z', TensorProto.FLOAT, [None, None])
+        Z = make_tensor_value_info('Z', TensorProto.FLOAT, [None, None, 1])
         T = make_tensor_value_info('T', TensorProto.FLOAT, [None, None])
         nodes = [make_node('Sub', ['X', 'Y'], ['diff']),
                  make_node('Mul', ['diff', 'diff'], ['muld']),
@@ -570,21 +574,21 @@ class TestSplitOnnx(ExtTestCase):
                  make_node('Neg', ['muldis'], ['oneg']),
                  make_node('Add', ['oneg', 'Z'], ['dz1']),
                  make_node('Sub', ['oneg', 'Z'], ['dz2']),
-                 make_node('Add', ['dz1', 'I'], ['dz1I']),
+                 make_node('CastLike', ['I', 'dz1'], ['fI']),
+                 make_node('Add', ['dz1', 'fI'], ['dz1I']),
                  make_node('Mul', ['dz1I', 'dz2'], ['tt']),
                  make_node('Reshape', ['tt', 'new_shape'], ['T'])]
         Idef = numpy_helper.from_array(
-            numpy.array([1], dtype=numpy.float32), name='I')
+            numpy.array([1], dtype=numpy.int64), name='I')
 
         graph = make_graph(nodes, "dummy", [X, Y, Z], [T], [Idef])
-        onx = make_model(graph)
+        onx = make_model(graph, opset_imports=[make_opsetid('', 17)])
         check_model(onx)
-        if __name__ == "__main__":
-            with open("debug.onnx", "wb") as f:
-                f.write(onx.SerializeToString())
+        # with open("debug.onnx", "wb") as f:
+        #     f.write(onx.SerializeToString())
 
         parts, stats = split_onnx(onx, 2, stats=True,
-                                  doc_string=True, verbose=5)
+                                  doc_string=True, verbose=0)
         names = stats["shape_results"]
         self.assertEqual(names, {'new_shape', 'shape'})
         self.assertEqual(len(parts), 2)
@@ -598,8 +602,8 @@ class TestSplitOnnx(ExtTestCase):
                 with open(f"test_split_input_optional_{i}.onnx", "wb") as f:
                     f.write(p.SerializeToString())
                 raise AssertionError(f"Part {i} is not valid.\n{p}") from e
-            with open(f"debug{i}.onnx", "wb") as f:
-                f.write(p.SerializeToString())
+            # with open(f"debug{i}.onnx", "wb") as f:
+            #     f.write(p.SerializeToString())
         self.assertEqual(len(parts), 2)
         self.assertEqual(stats["split_points"], ["oneg"])
         names1 = [i.name for i in parts[0].graph.input]
@@ -611,7 +615,23 @@ class TestSplitOnnx(ExtTestCase):
         self.assertEqual(["T"], names2)
         self.assertEqual(["oneg", "new_shape"], names1)
 
+        sess = InferenceSession(onx.SerializeToString(),
+                                providers=['CPUExecutionProvider'])
+        sesst = [InferenceSession(p.SerializeToString(),
+                                  providers=['CPUExecutionProvider'])
+                 for p in parts]
+        x = numpy.arange(4).reshape((2, 2)).astype(numpy.float32)
+        y = x + 1
+        z = (x * 10).reshape((2, 2, 1))
+        feeds = {'X': x, 'Y': y, 'Z': z}
+        expected = sess.run(None, feeds)[0]
+        del feeds['Z']
+        oneg, new_shape = sesst[0].run(None, feeds)
+        got = sesst[1].run(
+            None, {'oneg': oneg, 'new_shape': new_shape, 'Z': z})
+        self.assertEqualArray(expected, got)
+
 
 if __name__ == "__main__":
-    TestSplitOnnx().test_split_reshape()
+    TestSplitOnnx().test_split_big_model()
     unittest.main(verbosity=2)
