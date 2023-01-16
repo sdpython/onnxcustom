@@ -569,13 +569,15 @@ class OnnxSplitting:
                 if self.verbose > 1:
                     size = sum(s.size for s in self.segments[a:b])
                     names = self.segments[a].begin, self.segments[b - 1].end
-                    self.fLOG(f"[OnnxSplitting.split_segment] split into n={n}, from a={a} to b={b}, "
+                    self.fLOG(f"[OnnxSplitting.split_segment] "
+                              f"split into n={n}, from a={a} to b={b}, "
                               f"size={size}, {names[0]!r} -> {names[1]!r}")
                 pos = self._split_2(a, b)
                 if self.verbose > 1:
                     size_a = sum(s.size for s in self.segments[a:pos])
                     size_b = sum(s.size for s in self.segments[pos:b])
-                    self.fLOG(f"[OnnxSplitting.split_segment] found pos={pos}, size_1={size_a}, "
+                    self.fLOG(f"[OnnxSplitting.split_segment] found "
+                              f"pos={pos}, size_1={size_a}, "
                               f"size_2={size_b}={size_b/size:1.2f}, "
                               f"split={self.segments[pos].begin!r}")
                 new_ext.extend([pos, b])
@@ -641,7 +643,6 @@ class OnnxSplitting:
         subset = []
         shape_results_to_add = set()
         new_inputs = set()
-        new_constants = set()
         for shape in shape_results:
             if self.verbose > 2:
                 self.fLOG(
