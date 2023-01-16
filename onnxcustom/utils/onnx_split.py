@@ -87,11 +87,12 @@ class OnnxSplitting:
                 f"onnx_model must a ModelProto not a {type(onnx_model)}.")
         node_list = list(enumerate(onnx_model.graph.node))
 
-        # inputs and initializers
+        # inputs, initializers, constants
         inputs = {}
         initializers = {}
         sparse_initializers = {}
         inputs_only = {}
+        constants = {}
         for i in onnx_model.graph.input:
             inputs[i.name] = i
             inputs_only[i.name] = i
@@ -101,10 +102,16 @@ class OnnxSplitting:
         for i in onnx_model.graph.sparse_initializer:
             inputs[i.name] = i
             sparse_initializers[i.name] = i
+        for i, n in enumerate(onnx_model.graph.node):
+            if n.op_type != "Constant":
+                continue
+            key = self._key(i, n)
+            constants[key] = n
         self.inputs = inputs
         self.inputs_only = inputs_only
         self.sparse_initializers = sparse_initializers
         self.initializers = initializers
+        self.constants = constants
 
         # sizes
         sizes = {}
@@ -112,7 +119,6 @@ class OnnxSplitting:
             sizes[init.name] = len(init.SerializeToString())
         for init in onnx_model.graph.sparse_initializer:
             sizes[init.name] = len(init.SerializeToString())
-
         for idn, node in node_list:
             sizes[self._key(idn, node)] = len(node.SerializeToString())
         self.sizes = sizes
@@ -218,6 +224,8 @@ class OnnxSplitting:
         shapeops = []
         edges = {}
         for idn, node in node_list:
+            if node.op_type == "Constant":
+                continue
             key = self._key(idn, node)
             for i in node.input:
                 if (0, i) not in edges:
@@ -253,7 +261,9 @@ class OnnxSplitting:
         For all results in shape_results, make the of contributing
         nodes which are needed to build this result.
         """
-        key_node = {self._key(idn, node): node for idn, node in node_list}
+        key_node = {self._key(idn, node): node
+                    for idn, node in node_list
+                    if node.op_type != "Constant"}
         backward = {}
         for key, node in key_node.items():
             for o in node.output:
@@ -340,6 +350,9 @@ class OnnxSplitting:
                 key = self._key(idn, node)
                 set_small.add(key)
                 set_small |= set(node.output)
+            elif node.op_type == "Constant":
+                key = self._key(idn, node)
+                small_tensors[key] = False
 
         # adjacency matrix
         no_cutting = (
@@ -350,6 +363,8 @@ class OnnxSplitting:
         vertices = set()
         ordered_names = []
         for idn, node in node_list:
+            if node.op_type == "Constant":
+                continue
             key = self._key(idn, node)
             if key in set_small or key in self.shape_nodes:
                 continue
@@ -411,6 +426,8 @@ class OnnxSplitting:
         subset = []
         shape_results = set()
         for idn, node in reversed(nodes):
+            if node.op_type == "Constant":
+                continue
             if set(node.output) & names:
                 size += self.sizes[self._key(idn, node)]
                 if len(node.output) == 1 and node.output[0] in skip_names:
@@ -435,6 +452,8 @@ class OnnxSplitting:
     def _make_segment(self, name1, name2):
         nodes = []
         for idn, node in enumerate(self.onnx_model.graph.node):
+            if node.op_type == "Constant":
+                continue
             nodes.append((idn, node))
             if name2 is not None and name2 in node.output:
                 break
@@ -507,8 +526,8 @@ class OnnxSplitting:
                     raise ValueError(
                         f"Cut point {name!r} is not considered as a cutting "
                         f"points. Possible canditates:\n{text}")
-            memo = {s.begin: i for i, s in enumerate(
-                self.segments) if s.begin is not None}
+            memo = {s.begin: i for i, s in enumerate(self.segments)
+                    if s.begin is not None}
             extremities = [0]
             for name in cut_points:
                 extremities.append(memo[name])
