@@ -5,7 +5,7 @@
 import textwrap
 import numpy
 from onnx import (  # pylint: disable=E0611
-    ModelProto, shape_inference, TensorProto, ValueInfoProto)
+    ModelProto, NodeProto, shape_inference, TensorProto, ValueInfoProto)
 from onnx.helper import make_graph, make_model, make_tensor_value_info
 
 
@@ -105,8 +105,7 @@ class OnnxSplitting:
         for i, n in enumerate(onnx_model.graph.node):
             if n.op_type != "Constant":
                 continue
-            key = self._key(i, n)
-            constants[key] = n
+            constants[n.output[0]] = n
         self.inputs = inputs
         self.inputs_only = inputs_only
         self.sparse_initializers = sparse_initializers
@@ -120,7 +119,10 @@ class OnnxSplitting:
         for init in onnx_model.graph.sparse_initializer:
             sizes[init.name] = len(init.SerializeToString())
         for idn, node in node_list:
-            sizes[self._key(idn, node)] = len(node.SerializeToString())
+            if node.op_type == "Constant":
+                sizes[node.output[0]] = len(node.SerializeToString())
+            else:
+                sizes[self._key(idn, node)] = len(node.SerializeToString())
         self.sizes = sizes
 
         # only working for standard domain (supporting shape inference)
@@ -166,7 +168,7 @@ class OnnxSplitting:
 
         if self.verbose:
             self.fLOG(
-                f"[OnnxSplitting._init] # cuttings-points:"
+                f"[OnnxSplitting._init] #cuttings-points:"
                 f"{len(self.cutting_points)}")
 
         # segments
@@ -324,12 +326,29 @@ class OnnxSplitting:
             dims = [d.dim_value for d in dim]
             if any(map(lambda x: not isinstance(x, int), dims)):
                 return False
+        elif isinstance(tensor, NodeProto) and tensor.op_type == "Constant":
+            dims = None
+            for attr in tensor.attribute:
+                if attr.name in {'value_int', 'value_float', 'value_string'}:
+                    return True
+                if attr.name == "value":
+                    return OnnxSplitting.is_small(attr.t)
+                if attr.name == 'value_ints':
+                    dims = [len(attr.ints)]
+                elif attr.name == 'value_floats':
+                    dims = [len(attr.floats)]
+                elif attr.name == 'value_strings':
+                    dims = [len(attr.strings)]
+            if dims is None:
+                raise TypeError(  # pragma: no cover
+                    f"Unexpected constant {type(tensor)}, "
+                    f"attribute={','.join(a.name) for a in tensor.attribute}.")
         else:
             raise TypeError(  # pragma: no cover
                 f"Unexpected type {type(tensor)}.")
         total = numpy.prod(dims)
         if total < 32:
-            # Covers small constants, reshaping...
+            # covers small constants, reshaping...
             return True
         return False
 
@@ -622,6 +641,7 @@ class OnnxSplitting:
         subset = []
         shape_results_to_add = set()
         new_inputs = set()
+        new_constants = set()
         for shape in shape_results:
             if self.verbose > 2:
                 self.fLOG(
@@ -669,7 +689,7 @@ class OnnxSplitting:
                                 f"+ci[{i}]")
                         names.add(i)
                     elif i in self.constants:
-                        obj = self.inputs[i]
+                        obj = self.constants[i]
                         if not self.is_small(obj):
                             raise RuntimeError(
                                 f"Constant {i!r} is needed to reshape "
@@ -679,6 +699,7 @@ class OnnxSplitting:
                                 f"[OnnxSplitting._process_shape]     "
                                 f"+cs[{i}]")
                         names.add(i)
+                        new_inputs.add(i)
                     else:
                         if self.verbose > 3:
                             self.fLOG(
@@ -781,11 +802,14 @@ class OnnxSplitting:
         if new_internals is not None and len(new_internals) > 0:
             # adding initializer or existing inputs
             for name in new_internals:
+                if name in self.constants:
+                    new_nodes.append((-1, self.constants[name]))
+                    continue
                 if name in self.inputs_only:
                     new_inputs.append(self.inputs_only[name])
                 if name in self.initializers:
                     new_inits.append(self.initializers[name])
-                if name in self.sparse_initializers:
+                elif name in self.sparse_initializers:
                     new_sp_inits.append(self.sparse_initializers[name])
         extra_inputs = []
         if shape_to_add is not None and len(shape_to_add) > 0:

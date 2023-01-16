@@ -327,15 +327,11 @@ class TestSplitOnnx(ExtTestCase):
                     f"\ninvolved={split.segments[i].involved}"
                     f"\n{onnx_simple_text_plot(ox)}")
 
-        parts = split_onnx(onx, 2, verbose=9)
+        parts = split_onnx(onx, 2, verbose=0)
 
         ids = set(n.SerializeToString() for n in onx.graph.node)
         total = 0
-        with open("d.onnx", "wb") as f:
-            f.write(onx.SerializeToString())
-        for i, p in enumerate(parts):
-            with open(f"d{i}.onnx", "wb") as f:
-                f.write(p.SerializeToString())
+        for p in parts:
             keys = [n.SerializeToString() for n in p.graph.node]
             for k in keys:
                 if k not in ids:
@@ -390,17 +386,25 @@ class TestSplitOnnx(ExtTestCase):
                 self.assertEqual(
                     split.segments[i].end, ox.graph.output[0].name)
 
-        parts = split_onnx(onx, 2, verbose=0)
+        parts = split_onnx(onx, 2, verbose=9)
+        with open("dd.onnx", "wb") as f:
+            f.write(onx.SerializeToString())
+        for i, p in enumerate(parts):
+            with open(f"dd{i}.onnx", "wb") as f:
+                f.write(p.SerializeToString())
 
         ids = set(n.SerializeToString() for n in onx.graph.node)
         total = 0
-        for p in parts:
-            self.assertNotIn('IADD', set(i.name for i in p.graph.initializer))
+        for ip, p in enumerate(parts):
+            print(ip)
+            if ip == 0:
+                self.assertNotIn('IADD', set(i.name for i in p.graph.initializer))
             co = set()
             for node in p.graph.node:
                 if node.op_type == 'Constant':
                     co |= set(node.output)
-            self.assertIn("IADD", co)
+            if ip == 1:
+                self.assertIn("IADD", co)
             keys = [n.SerializeToString() for n in p.graph.node]
             for k in keys:
                 if k not in ids:
@@ -461,9 +465,7 @@ class TestSplitOnnx(ExtTestCase):
         self.assertRaise(lambda: split_onnx(onx, 2, []), ValueError)
         parts, stats = split_onnx(onx, 2, stats=True)
         self.assertEqual(len(parts), 2)
-        for i, p in enumerate(parts):
-            with open(f"debug{i}.onnx", "wb") as f:
-                f.write(p.SerializeToString())
+        for p in parts:
             try:
                 check_model(p)
             except Exception as e:
@@ -504,9 +506,7 @@ class TestSplitOnnx(ExtTestCase):
         self.assertRaise(lambda: split_onnx(onx, 2, []), ValueError)
         parts, stats = split_onnx(onx, 2, stats=True)
         self.assertEqual(len(parts), 2)
-        for i, p in enumerate(parts):
-            with open(f"debug{i}.onnx", "wb") as f:
-                f.write(p.SerializeToString())
+        for p in parts:
             try:
                 check_model(p)
             except Exception as e:
@@ -545,9 +545,7 @@ class TestSplitOnnx(ExtTestCase):
         self.assertRaise(lambda: split_onnx(onx, 2, []), ValueError)
         parts, stats = split_onnx(onx, stats=True, cut_points=["oneg"])
         self.assertEqual(len(parts), 2)
-        for i, p in enumerate(parts):
-            with open(f"debug{i}.onnx", "wb") as f:
-                f.write(p.SerializeToString())
+        for p in parts:
             try:
                 check_model(p)
             except Exception as e:
@@ -595,15 +593,13 @@ class TestSplitOnnx(ExtTestCase):
         cuts = stats["cutting_points"]
         self.assertIn("oneg", cuts)
 
-        for i, p in enumerate(parts):
+        for p in parts:
             try:
                 check_model(p)
             except Exception as e:
                 with open(f"test_split_input_optional_{i}.onnx", "wb") as f:
                     f.write(p.SerializeToString())
                 raise AssertionError(f"Part {i} is not valid.\n{p}") from e
-            # with open(f"debug{i}.onnx", "wb") as f:
-            #     f.write(p.SerializeToString())
         self.assertEqual(len(parts), 2)
         self.assertEqual(stats["split_points"], ["oneg"])
         names1 = [i.name for i in parts[0].graph.input]
@@ -633,5 +629,5 @@ class TestSplitOnnx(ExtTestCase):
 
 
 if __name__ == "__main__":
-    TestSplitOnnx().test_split_big_model()
+    TestSplitOnnx().test_split_big_model_small_constant()
     unittest.main(verbosity=2)
