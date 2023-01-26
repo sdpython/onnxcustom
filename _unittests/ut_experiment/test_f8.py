@@ -1,9 +1,11 @@
 """
 @brief      test log(time=3s)
 """
+import os
 import struct
 import unittest
 import numpy
+import pandas
 from pyquickhelper.pycode import (
     ExtTestCase, skipif_travis, skipif_circleci, get_temp_folder)
 from onnxcustom.experiment.f8 import (
@@ -62,6 +64,23 @@ class TestF8(ExtTestCase):
                     continue
                 self.assertEqual(f.astype(numpy.float16), x)
 
+    def test_search_float32_into_fe4m3_simple(self):
+        values = [
+            (0.001953125, 0.001953125),
+            (-447.5, -448),
+            (23.5, 24),
+            (192.5, 192),
+            (79.5, 80),
+        ]
+        for v, expected in values:
+            with self.subTest(v=v, expected=expected):
+                b = search_float32_into_fe4m3(v)
+                got = fe4m3_to_float32(b)
+                self.assertEqual(expected, got)
+                b = float32_to_fe4m3(v)
+                got = fe4m3_to_float32(b)
+                self.assertEqual(expected, got)
+
     def test_search_float32_into_fe4m3(self):
         values = [(fe4m3_to_float32(i), i) for i in range(0, 256)]
         values.sort()
@@ -70,18 +89,37 @@ class TestF8(ExtTestCase):
             b = search_float32_into_fe4m3(value)
             ival = int.from_bytes(struct.pack("<f", value), "little")
             nf = float32_to_fe4m3(value)
-            self.assertEqual(value, fe4m3_to_float32(b))
+            self.assertEqual(expected, b)
+            self.assertEqual(expected, nf)
 
-        for value in [1e-3, 1e-2, 1e-1, 0, 4, 5, 6, 7, 100, 200, 300]:
-            with self.subTest(value=value):
-                b = search_float32_into_fe4m3(value)
-                nf = float32_to_fe4m3(value)
-                self.assertEqual(b, nf)
-            with self.subTest(value=-value):
-                b = search_float32_into_fe4m3(-value)
-                nf = float32_to_fe4m3(-value)
-                self.assertEqual(b, nf)
+        obs = []
+        for value, expected in values:
+            for add in [0, -0.4, -1e-4, 1e-4, 0.4]:
+                v = value + add
+                with self.subTest(value=v):
+                    b = search_float32_into_fe4m3(v)
+                    nf = float32_to_fe4m3(v)
+                    obs.append(dict(
+                        value=v,
+                        bin_value=display_float32(v),
+                        expected=b,
+                        float_expected=fe4m3_to_float32(b),
+                        bin_expected=display_fe4m3(b),                        
+                        got=nf,
+                        bin_got=display_fe4m3(nf),
+                        float_got=fe4m3_to_float32(nf),
+                        ok= "" if b == nf else "WRONG",
+                        true=value,
+                        add=add,
+                    ))
+                    self.assertEqual(b, nf)
+                if b != nf:
+                    break
+        output = os.path.join(os.path.dirname(__file__),
+                              "temp_search_float32_into_fe4m3.xlsx")
+        pandas.DataFrame(obs).to_excel(output)
 
 
 if __name__ == "__main__":
+    TestF8().test_search_float32_into_fe4m3_simple()
     unittest.main(verbosity=2)

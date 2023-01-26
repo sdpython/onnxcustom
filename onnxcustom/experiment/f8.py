@@ -67,7 +67,7 @@ def display_fe4m3(value, sign=1, exponent=4, mantissa=3):
     return ".".join([s1, s2, s3])
 
 
-def fe4m3_to_float32(ival: int) -> float:
+def fe4m3_to_float32_float(ival: int) -> float:
     """
     Casts a float 8 encoded as an integer into a float.
 
@@ -93,7 +93,39 @@ def fe4m3_to_float32(ival: int) -> float:
     else:
         powe -= 7
         fraction = 1
-    fval = float(mant * 2 ** (-3) + fraction) * 2.0**powe
+    fval = float(mant / 8 + fraction) * 2.0**powe        
+    if sign:
+        fval = -fval
+    return numpy.float32(fval)
+
+
+def fe4m3_to_float32(ival: int) -> float:
+    """
+    Casts a float 8 encoded as an integer into a float.
+
+    :param ival: byte
+    :return: float (float 32)
+    """
+    if ival < 0 or ival > 255:
+        raise ValueError(f"{ival} is not a float8.")
+    if ival == 255:
+        return numpy.float32(numpy.inf)
+    if ival == 127:
+        return numpy.float32(-numpy.inf)
+    if ival == 0:
+        return numpy.float32(0)
+
+    expo = (ival & 0x74) >> 3
+    mant = ival & 0x07
+    sign = (ival & 0x80 >> 7)
+    powe = expo & 15
+    if expo == 0:
+        powe -= 6
+        fraction = 0
+    else:
+        powe -= 7
+        fraction = 1
+    fval = float(mant / 8 + fraction) * 2.0**powe        
     if sign:
         fval = -fval
     return numpy.float32(fval)
@@ -127,7 +159,7 @@ class CastFloat8:
             elif a == m:
                 break
             else:
-                a = m + 1
+                a = m
         # finds the closest one
         d1 = value - sorted_values[a][0]
         d2 = sorted_values[b][0] - value
@@ -268,10 +300,22 @@ def float32_to_fe4m3(x):
     if e != 0:
         # normalized
         # e >= 0x70 is always true
+        print("Z", e)
         ret |= ((e - 0x70) << 3) & 0x78
         if e > 0x7f:
+            print("A")
             ret |= 0x40
         else:
+            print("B", bin(ret), bin(0xbf))
             ret &= 0xbf
         ret |= m >> 20
+    print("C", ret, bin(ret), e)
+    # rounding
+    truncated_mantisse = m & 0x000FFFFF
+    print(m, truncated_mantisse, bin(m), bin(truncated_mantisse))
+    left = truncated_mantisse >> 10
+    print(left, bin(left), bin(0x3FF))
+    if left > 0x200:
+        print("D")
+        ret += 1
     return int(ret)
