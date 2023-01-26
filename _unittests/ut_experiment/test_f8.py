@@ -72,6 +72,16 @@ class TestF8(ExtTestCase):
             nf = float32_to_fe4m3(value)
             self.assertEqual(value, fe4m3_to_float32(b))
 
+        for value in [1e-3, 1e-2, 1e-1, 0, 4, 5, 6, 7, 100, 200, 300]:
+            with self.subTest(value=value):
+                b = search_float32_into_fe4m3(value)
+                nf = float32_to_fe4m3(value)
+                self.assertEqual(b, nf)
+            with self.subTest(value=-value):
+                b = search_float32_into_fe4m3(-value)
+                nf = float32_to_fe4m3(-value)
+                self.assertEqual(b, nf)
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)
