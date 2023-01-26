@@ -51,6 +51,7 @@ of this second approach.
 
     tutorial_6_training
     tutorial_6_training_partial
+    tutorial_7_related_topics
 
 The tutorial was tested with following version:
 
