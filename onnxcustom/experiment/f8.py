@@ -80,20 +80,21 @@ def fe4m3_to_float32_float(ival: int) -> float:
         return numpy.float32(numpy.inf)
     if ival == 127:
         return numpy.float32(-numpy.inf)
-    if ival == 0:
+    if (ival & 0x7F) == 0:
         return numpy.float32(0)
 
+    sign = ival & 0x80
+    ival &= 0x7F
     expo = ival >> 3
-    mant = ival - (expo << 3)
-    sign = expo & 16
-    powe = expo & 15
+    mant = ival & 0x07
+    powe = expo & 0x0F
     if expo == 0:
         powe -= 6
         fraction = 0
     else:
         powe -= 7
         fraction = 1
-    fval = float(mant / 8 + fraction) * 2.0**powe        
+    fval = float(mant / 8 + fraction) * 2.0**powe
     if sign:
         fval = -fval
     return numpy.float32(fval)
@@ -112,28 +113,41 @@ def fe4m3_to_float32(ival: int) -> float:
         return numpy.float32(numpy.inf)
     if ival == 127:
         return numpy.float32(-numpy.inf)
-    if ival == 0:
-        return numpy.float32(0)
 
-    expo = (ival & 0x74) >> 3
+    expo = (ival & 0x78) >> 3
     mant = ival & 0x07
-    sign = (ival & 0x80 >> 7)
-    powe = expo & 15
+    sign = ival & 0x80
+    res = sign << 24
     if expo == 0:
-        powe -= 6
-        fraction = 0
+        if mant > 0:
+            expo = 0x7F - 7
+            if mant & 0x4 == 0:
+                mant &= 0x3
+                mant <<= 1
+                expo -= 1
+            if mant & 0x4 == 0:
+                mant &= 0x3
+                mant <<= 1
+                expo -= 1
+            if mant & 0x4 == 0:
+                mant &= 0x3
+                mant <<= 1
+                expo -= 1
+            res |= (mant & 0x3) << 21
+            res |= expo << 23
     else:
-        powe -= 7
-        fraction = 1
-    fval = float(mant / 8 + fraction) * 2.0**powe        
-    if sign:
-        fval = -fval
-    return numpy.float32(fval)
+        res |= mant << 20
+        expo -= 0x7
+        expo += 0x7F
+        res |= expo << 23
+    f = numpy.uint32(res).view(numpy.float32)
+    return f
 
 
 class CastFloat8:
 
-    values_e4m3 = list(sorted((fe4m3_to_float32(i), i) for i in range(0, 256)))
+    values_e4m3 = list(sorted((fe4m3_to_float32_float(i), i)
+                       for i in range(0, 256)))
 
     @staticmethod
     def find_closest_value(value, sorted_values):
@@ -300,22 +314,15 @@ def float32_to_fe4m3(x):
     if e != 0:
         # normalized
         # e >= 0x70 is always true
-        print("Z", e)
         ret |= ((e - 0x70) << 3) & 0x78
         if e > 0x7f:
-            print("A")
             ret |= 0x40
         else:
-            print("B", bin(ret), bin(0xbf))
             ret &= 0xbf
         ret |= m >> 20
-    print("C", ret, bin(ret), e)
     # rounding
     truncated_mantisse = m & 0x000FFFFF
-    print(m, truncated_mantisse, bin(m), bin(truncated_mantisse))
     left = truncated_mantisse >> 10
-    print(left, bin(left), bin(0x3FF))
     if left > 0x200:
-        print("D")
         ret += 1
     return int(ret)

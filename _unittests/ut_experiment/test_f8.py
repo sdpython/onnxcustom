@@ -13,6 +13,7 @@ from onnxcustom.experiment.f8 import (
     display_float16,
     display_float32,
     fe4m3_to_float32,
+    fe4m3_to_float32_float,
     float16_to_float32,
     float32_to_fe4m3,
     float32_to_float16,
@@ -21,12 +22,26 @@ from onnxcustom.experiment.f8 import (
 
 class TestF8(ExtTestCase):
 
+    def test_fe4m3_to_float32_float_paper(self):
+        self.assertEqual(fe4m3_to_float32_float(int("1111110", 2)), 448)
+        self.assertEqual(fe4m3_to_float32_float(int("1000", 2)), 2 ** (-6))
+        self.assertEqual(fe4m3_to_float32_float(int("1", 2)), 2 ** (-9))
+        self.assertEqual(fe4m3_to_float32_float(
+            int("111", 2)), 0.875 * 2 ** (-6))
+        self.assertRaise(lambda: fe4m3_to_float32_float(256), ValueError)
+
     def test_fe4m3_to_float32_paper(self):
         self.assertEqual(fe4m3_to_float32(int("1111110", 2)), 448)
         self.assertEqual(fe4m3_to_float32(int("1000", 2)), 2 ** (-6))
         self.assertEqual(fe4m3_to_float32(int("1", 2)), 2 ** (-9))
         self.assertEqual(fe4m3_to_float32(int("111", 2)), 0.875 * 2 ** (-6))
         self.assertRaise(lambda: fe4m3_to_float32(256), ValueError)
+
+    def test_fe4m3_to_float32_all(self):
+        for i in range(0, 256):
+            a = fe4m3_to_float32_float(i)
+            b = fe4m3_to_float32(i)
+            self.assertEqual(a, b)
 
     def test_display_float32(self):
         f = 45
@@ -75,14 +90,14 @@ class TestF8(ExtTestCase):
         for v, expected in values:
             with self.subTest(v=v, expected=expected):
                 b = search_float32_into_fe4m3(v)
-                got = fe4m3_to_float32(b)
+                got = fe4m3_to_float32_float(b)
                 self.assertEqual(expected, got)
                 b = float32_to_fe4m3(v)
-                got = fe4m3_to_float32(b)
+                got = fe4m3_to_float32_float(b)
                 self.assertEqual(expected, got)
 
     def test_search_float32_into_fe4m3(self):
-        values = [(fe4m3_to_float32(i), i) for i in range(0, 256)]
+        values = [(fe4m3_to_float32_float(i), i) for i in range(0, 256)]
         values.sort()
 
         for value, expected in values:
@@ -103,12 +118,12 @@ class TestF8(ExtTestCase):
                         value=v,
                         bin_value=display_float32(v),
                         expected=b,
-                        float_expected=fe4m3_to_float32(b),
-                        bin_expected=display_fe4m3(b),                        
+                        float_expected=fe4m3_to_float32_float(b),
+                        bin_expected=display_fe4m3(b),
                         got=nf,
                         bin_got=display_fe4m3(nf),
-                        float_got=fe4m3_to_float32(nf),
-                        ok= "" if b == nf else "WRONG",
+                        float_got=fe4m3_to_float32_float(nf),
+                        ok="" if b == nf else "WRONG",
                         true=value,
                         add=add,
                     ))
@@ -121,5 +136,5 @@ class TestF8(ExtTestCase):
 
 
 if __name__ == "__main__":
-    TestF8().test_search_float32_into_fe4m3_simple()
+    TestF8().test_fe4m3_to_float32_all()
     unittest.main(verbosity=2)
