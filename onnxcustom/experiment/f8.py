@@ -312,17 +312,29 @@ def float32_to_fe4m3(x):
     ret = (b & 0x80000000) >> 24  # sign
 
     if e != 0:
-        # normalized
-        # e >= 0x70 is always true
-        ret |= ((e - 0x70) << 3) & 0x78
-        if e > 0x7f:
-            ret |= 0x40
+        if e < 0x75:
+            return 0
+        if e < 0x78:
+            d = 0x78 - e
+            if 2 - d < 0:
+                print(e, m, x, display_fe4m3(search_float32_into_fe4m3(x)), fe4m3_to_float32(
+                    search_float32_into_fe4m3(x)), display_float32(x))
+                print(d, m >> 20, bin(m >> 20))
+            ret |= 1 << (2 - d)
+            ret |= m >> (20 + d)
+        elif e < 0x88:
+            ex = (e - 0x78) << 3
+            if ex == 0:
+                ret |= 0x4
+                ret |= m >> 21
+            else:
+                ret |= ex
+                ret |= m >> 20
+                if m & 0x80000:
+                    # rounding
+                    ret += 1
         else:
-            ret &= 0xbf
-        ret |= m >> 20
-    # rounding
-    truncated_mantisse = m & 0x000FFFFF
-    left = truncated_mantisse >> 10
-    if left > 0x200:
-        ret += 1
+            ret |= 126  # 01111110
+    elif m == 0:
+        return 0
     return int(ret)
