@@ -55,7 +55,7 @@ html_theme_options = {
 }
 
 blog_root = "http://www.xavierdupre.fr/app/onnxcustom/helpsphinx/"
-html_logo = "phdoc_static/project_ico.png"
+html_logo = "_static/project_ico.png"
 language = "en"
 onnx_doc_folder = os.path.join(os.path.dirname(__file__), 'api', 'onnxops')
 mathdef_link_only = True
