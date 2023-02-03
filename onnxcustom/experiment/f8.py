@@ -313,28 +313,32 @@ def float32_to_fe4m3(x):
 
     if e != 0:
         if e < 0x75:
-            return 0
-        if e < 0x78:
+            pass
+        elif e < 0x76:
             d = 0x78 - e
-            if 2 - d < 0:
-                print(e, m, x, display_fe4m3(search_float32_into_fe4m3(x)), fe4m3_to_float32(
-                    search_float32_into_fe4m3(x)), display_float32(x))
-                print(d, m >> 20, bin(m >> 20))
+            ret |= 1 << (3 - d)
+            ret |= m >> (21 + d)
+            if (m >> (20 + d)) & 1:
+                # rounding
+                ret += 1
+        elif e < 0x79:
+            d = 0x78 - e
             ret |= 1 << (2 - d)
-            ret |= m >> (20 + d)
+            ret |= m >> (21 + d)
+            if (m >> (20 + d)) & 1:
+                # rounding
+                ret += 1
         elif e < 0x88:
-            ex = (e - 0x78) << 3
+            ex = e - 0x78
             if ex == 0:
                 ret |= 0x4
                 ret |= m >> 21
             else:
-                ret |= ex
+                ret |= ex << 3
                 ret |= m >> 20
-                if m & 0x80000:
-                    # rounding
-                    ret += 1
+            if m & 0x80000:
+                # rounding
+                ret += 1
         else:
             ret |= 126  # 01111110
-    elif m == 0:
-        return 0
     return int(ret)

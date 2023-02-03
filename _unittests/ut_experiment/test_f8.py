@@ -101,14 +101,6 @@ class TestF8(ExtTestCase):
         values = [(fe4m3_to_float32_float(i), i) for i in range(0, 256)]
         values.sort()
 
-        if False:
-            for value, expected in values:
-                b = search_float32_into_fe4m3(value)
-                ival = int.from_bytes(struct.pack("<f", value), "little")
-                nf = float32_to_fe4m3(value)
-                self.assertEqual(expected, b)
-                self.assertEqual(expected, nf)
-
         obs = []
         values += [(1e-8, 0), (-1e-8, 0), (1e8, 448), (-1e-8, -448)]
         wrong = 0
@@ -118,6 +110,9 @@ class TestF8(ExtTestCase):
                 b = search_float32_into_fe4m3(v)
                 nf = float32_to_fe4m3(v)
                 if b != nf:
+                    # signed, not signed zero?
+                    if (nf & 0x7F) == 0 and (b & 0x7F) == 0:
+                        continue
                     wrong += 1
                     obs.append(dict(
                         value=v,
@@ -138,6 +133,27 @@ class TestF8(ExtTestCase):
                                   "temp_search_float32_into_fe4m3.xlsx")
             pandas.DataFrame(obs).to_excel(output)
             raise AssertionError(f"{wrong} conversion are wrong.")
+
+    def test_search_float32_into_fe4m3_equal(self):
+        values = [(fe4m3_to_float32_float(i), i) for i in range(0, 256)]
+        values.sort()
+
+        for value, expected in values:
+            with self.subTest(value=value, expected=expected, bin=display_float32(value)):
+                b = search_float32_into_fe4m3(value)
+                ival = int.from_bytes(struct.pack("<f", value), "little")
+                nf = float32_to_fe4m3(value)
+                if b not in (128, 0):
+                    self.assertEqual(expected, b)
+                if expected != nf:
+                    b = int.from_bytes(struct.pack(
+                        "<f", numpy.float32(value)), "little")
+                    e = (b & 0x7F800000) >> 23  # exponent
+                    m = b & 0x007FFFFF  # mantissa
+                    ret = (b & 0x80000000) >> 24  # sign
+                    print(e, m, ret)
+
+                self.assertEqual(expected, nf)
 
 
 if __name__ == "__main__":
