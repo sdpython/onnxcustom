@@ -12,12 +12,10 @@ shows. It introduces two new types encoded on one byte:
 * E4M3: 1 bit for the sign, 4 for the exponent, 3 for the mantissa
 * E5M2: 1 bit for the sign, 5 for the exponent, 2 for the mantissa
 
-
 .. index:: discrepencies, float8, float, E4M3, E5M2
 
 .. contents::
     :local:
-
 
 E4M3
 ++++
@@ -67,3 +65,24 @@ fig, ax = plt.subplots(1, 2, figsize=(10, 4))
 df["float"].plot(title="E4M3 values", ax=ax[0])
 df["float"].plot(title="logarithmic scale", ax=ax[1], logy=True)
 # fig.savefig("fig.png")
+
+#######################################
+# E5M2
+# ++++
+#
+# List of possibles values:
+
+import pprint
+import numpy
+import matplotlib.pyplot as plt
+import pandas
+from onnxcustom.experiment.f8 import (
+    display_fe5m2,
+    fe5m2_to_float32,
+    float32_to_fe5m2)
+
+values = [(fe5m2_to_float32(i), i, display_fe5m2(i)) for i in range(0, 256)]
+values.sort()
+values = [i[::-1] for i in values]
+
+pprint.pprint(values)
