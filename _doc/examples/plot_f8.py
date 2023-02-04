@@ -27,9 +27,9 @@ import numpy
 import matplotlib.pyplot as plt
 import pandas
 from onnxcustom.experiment.f8 import (
-    display_fe4m3,
-    fe4m3_to_float32,
-    float32_to_fe4m3)
+    display_fe4m3, display_fe5m2,
+    fe4m3_to_float32, fe5m2_to_float32,
+    float32_to_fe4m3, float32_to_fe5m2)
 
 values = [(fe4m3_to_float32(i), i, display_fe4m3(i)) for i in range(0, 256)]
 values.sort()
@@ -64,7 +64,6 @@ df.columns = ["binary", "int", "float"]
 fig, ax = plt.subplots(1, 2, figsize=(10, 4))
 df["float"].plot(title="E4M3 values", ax=ax[0])
 df["float"].plot(title="logarithmic scale", ax=ax[1], logy=True)
-# fig.savefig("fig.png")
 
 #######################################
 # E5M2
@@ -72,17 +71,38 @@ df["float"].plot(title="logarithmic scale", ax=ax[1], logy=True)
 #
 # List of possibles values:
 
-import pprint
-import numpy
-import matplotlib.pyplot as plt
-import pandas
-from onnxcustom.experiment.f8 import (
-    display_fe5m2,
-    fe5m2_to_float32,
-    float32_to_fe5m2)
 
 values = [(fe5m2_to_float32(i), i, display_fe5m2(i)) for i in range(0, 256)]
 values.sort()
 values = [i[::-1] for i in values]
 
 pprint.pprint(values)
+
+######################################
+# Round conversion.
+
+for x in numpy.random.randn(10).astype(numpy.float32):
+    f8 = float32_to_fe5m2(x)
+    y = fe5m2_to_float32(f8)
+    print(f"x={x}, f8={f8} or {display_fe5m2(f8)}, y={y}")
+    f8_2 = float32_to_fe5m2(y)
+
+###########################
+# Bigger values.
+
+for x in (numpy.random.rand(10) * 60000).astype(numpy.float32):
+    f8 = float32_to_fe5m2(x)
+    y = fe5m2_to_float32(f8)
+    print(f"x={x}, f8={f8} or {display_fe5m2(f8)}, y={y}")
+    f8_2 = float32_to_fe5m2(y)
+
+#######################################
+# Plot.
+
+df = pandas.DataFrame(values)
+df.columns = ["binary", "int", "float"]
+
+fig, ax = plt.subplots(1, 2, figsize=(10, 4))
+df["float"].plot(title="E5M2 values", ax=ax[0])
+df["float"].plot(title="logarithmic scale", ax=ax[1], logy=True)
+fig.savefig("fig.png")
