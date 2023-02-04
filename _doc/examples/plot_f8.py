@@ -25,6 +25,7 @@ E4M3
 List of possibles values:
 """
 import pprint
+import numpy
 import matplotlib.pyplot as plt
 import pandas
 from onnxcustom.experiment.f8 import (
@@ -38,10 +39,26 @@ values = [i[::-1] for i in values]
 
 pprint.pprint(values)
 
+######################################
+# Round conversion.
+
+for x in numpy.random.randn(10).astype(numpy.float32):
+    f8 = float32_to_fe4m3(x)
+    y = fe4m3_to_float32(f8)
+    print(f"x={x}, f8={f8} or {display_fe4m3(f8)}, y={y}")
+    f8_2 = float32_to_fe4m3(y)
+
+###########################
+# Bigger values.
+
+for x in (numpy.random.rand(10) * 500).astype(numpy.float32):
+    f8 = float32_to_fe4m3(x)
+    y = fe4m3_to_float32(f8)
+    print(f"x={x}, f8={f8} or {display_fe4m3(f8)}, y={y}")
+    f8_2 = float32_to_fe4m3(y)
 
 #######################################
-# Plot
-# ++++
+# Plot.
 
 df = pandas.DataFrame(values)
 df.columns = ["binary", "int", "float"]

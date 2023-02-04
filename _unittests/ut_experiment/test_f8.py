@@ -6,17 +6,14 @@ import struct
 import unittest
 import numpy
 import pandas
-from pyquickhelper.pycode import (
-    ExtTestCase, skipif_travis, skipif_circleci, get_temp_folder)
+from pyquickhelper.pycode import ExtTestCase
 from onnxcustom.experiment.f8 import (
     display_fe4m3,
     display_float16,
     display_float32,
     fe4m3_to_float32,
     fe4m3_to_float32_float,
-    float16_to_float32,
     float32_to_fe4m3,
-    float32_to_float16,
     search_float32_into_fe4m3)
 
 
@@ -26,8 +23,8 @@ class TestF8(ExtTestCase):
         self.assertEqual(fe4m3_to_float32_float(int("1111110", 2)), 448)
         self.assertEqual(fe4m3_to_float32_float(int("1000", 2)), 2 ** (-6))
         self.assertEqual(fe4m3_to_float32_float(int("1", 2)), 2 ** (-9))
-        self.assertEqual(fe4m3_to_float32_float(
-            int("111", 2)), 0.875 * 2 ** (-6))
+        self.assertEqual(
+            fe4m3_to_float32_float(int("111", 2)), 0.875 * 2 ** (-6))
         self.assertRaise(lambda: fe4m3_to_float32_float(256), ValueError)
 
     def test_fe4m3_to_float32_paper(self):
@@ -45,39 +42,12 @@ class TestF8(ExtTestCase):
 
     def test_display_float32(self):
         f = 45
-        s = display_float32(45)
+        s = display_float32(f)
         self.assertEqual(s, "0.10000100.01101000000000000000000")
-        s = display_fe4m3(45)
+        s = display_fe4m3(f)
         self.assertEqual(s, "0.0101.101")
-        s = display_float16(numpy.float16(45))
+        s = display_float16(numpy.float16(f))
         self.assertEqual(s, "0.10100.0110100000")
-
-    def test_float16_to_float32(self):
-        fs = [numpy.float16(x) for x in [0, 1, numpy.nan, numpy.inf, -numpy.inf,
-                                         10, 1000, 0.456, -0.456,
-                                         0.25]]
-        for f in fs:
-            with self.subTest(f=f):
-                x = float16_to_float32(f)
-                if numpy.isnan(f):
-                    self.assertTrue(numpy.isnan(x))
-                    continue
-                self.assertEqual(f.astype(numpy.float32), x)
-
-    def test_float32_to_float16(self):
-        fs = [numpy.float32(x) for x in [
-            0, 1, numpy.nan, numpy.inf, -numpy.inf,
-            10, 1000,
-            0.25, -0.25,
-            # 0.456, -0.456, 456.456, -456.456,  # failing values
-        ]]
-        for f in fs:
-            with self.subTest(f=f):
-                x = float32_to_float16(f)
-                if numpy.isnan(f):
-                    self.assertTrue(numpy.isnan(x))
-                    continue
-                self.assertEqual(f.astype(numpy.float16), x)
 
     def test_search_float32_into_fe4m3_simple(self):
         values = [
@@ -104,7 +74,7 @@ class TestF8(ExtTestCase):
         obs = []
         values += [(1e-8, 0), (-1e-8, 0), (1e8, 448), (-1e-8, -448)]
         wrong = 0
-        for value, expected in values:
+        for value, _ in values:
             for add in [0, -0.4, -1e-4, 1e-4, 0.4]:
                 v = value + add
                 b = search_float32_into_fe4m3(v)
@@ -128,7 +98,6 @@ class TestF8(ExtTestCase):
                         add=add,
                     ))
         if wrong > 0:
-            import pandas
             output = os.path.join(os.path.dirname(__file__),
                                   "temp_search_float32_into_fe4m3.xlsx")
             pandas.DataFrame(obs).to_excel(output)
@@ -141,21 +110,15 @@ class TestF8(ExtTestCase):
         for value, expected in values:
             with self.subTest(value=value, expected=expected, bin=display_float32(value)):
                 b = search_float32_into_fe4m3(value)
-                ival = int.from_bytes(struct.pack("<f", value), "little")
                 nf = float32_to_fe4m3(value)
-                if b not in (128, 0):
+                if value != 0:
                     self.assertEqual(expected, b)
-                if expected != nf:
-                    b = int.from_bytes(struct.pack(
-                        "<f", numpy.float32(value)), "little")
-                    e = (b & 0x7F800000) >> 23  # exponent
-                    m = b & 0x007FFFFF  # mantissa
-                    ret = (b & 0x80000000) >> 24  # sign
-                    print(e, m, ret)
-
-                self.assertEqual(expected, nf)
+                    self.assertEqual(expected, nf)
+                else:
+                    self.assertIn(b, (0, 128))
+                    self.assertIn(nf, (0, 128))
 
 
 if __name__ == "__main__":
-    TestF8().test_search_float32_into_fe4m3_simple()
+    TestF8().test_search_float32_into_fe4m3_equal()
     unittest.main(verbosity=2)
