@@ -2,7 +2,6 @@
 @brief      test log(time=3s)
 """
 import os
-import struct
 import unittest
 import numpy
 import pandas

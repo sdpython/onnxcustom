@@ -18,7 +18,7 @@ class TestCodeStyle(ExtTestCase):
             pylint_ignore=(
                 'C0103', 'C1801', 'R1705', 'W0108', 'W0613', 'C3001',
                 'W0201', 'W0221', 'E0632', 'R1702', 'W0212', 'W0223',
-                'W0107', "R1720", 'R1732', 'C0209', 'C0302'),
+                'W0107', "R1720", 'R1732', 'C0209', 'C0302', 'R1735'),
             skip=[])
 
     def test_style_test(self):
