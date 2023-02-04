@@ -8,12 +8,17 @@ import pandas
 from pyquickhelper.pycode import ExtTestCase
 from onnxcustom.experiment.f8 import (
     display_fe4m3,
+    display_fe5m2,
     display_float16,
     display_float32,
     fe4m3_to_float32,
+    fe5m2_to_float32,
     fe4m3_to_float32_float,
+    fe5m2_to_float32_float,
     float32_to_fe4m3,
-    search_float32_into_fe4m3)
+    float32_to_fe5m2,
+    search_float32_into_fe4m3,
+    search_float32_into_fe5m2)
 
 
 class TestF8(ExtTestCase):
@@ -26,12 +31,27 @@ class TestF8(ExtTestCase):
             fe4m3_to_float32_float(int("111", 2)), 0.875 * 2 ** (-6))
         self.assertRaise(lambda: fe4m3_to_float32_float(256), ValueError)
 
+    def test_fe5m2_to_float32_float_paper(self):
+        self.assertEqual(fe5m2_to_float32_float(int("1111011", 2)), 57344)
+        self.assertEqual(fe5m2_to_float32_float(int("100", 2)), 2 ** (-14))
+        self.assertEqual(fe5m2_to_float32_float(
+            int("11", 2)), 0.75 * 2 ** (-14))
+        self.assertEqual(fe5m2_to_float32_float(int("1", 2)), 2 ** (-16))
+        self.assertRaise(lambda: fe5m2_to_float32_float(256), ValueError)
+
     def test_fe4m3_to_float32_paper(self):
         self.assertEqual(fe4m3_to_float32(int("1111110", 2)), 448)
         self.assertEqual(fe4m3_to_float32(int("1000", 2)), 2 ** (-6))
         self.assertEqual(fe4m3_to_float32(int("1", 2)), 2 ** (-9))
         self.assertEqual(fe4m3_to_float32(int("111", 2)), 0.875 * 2 ** (-6))
         self.assertRaise(lambda: fe4m3_to_float32(256), ValueError)
+
+    def test_fe5m2_to_float32_paper(self):
+        self.assertEqual(fe5m2_to_float32(int("1111110", 2)), 448)
+        self.assertEqual(fe5m2_to_float32(int("1000", 2)), 2 ** (-6))
+        self.assertEqual(fe5m2_to_float32(int("1", 2)), 2 ** (-9))
+        self.assertEqual(fe5m2_to_float32(int("111", 2)), 0.875 * 2 ** (-6))
+        self.assertRaise(lambda: fe5m2_to_float32(256), ValueError)
 
     def test_fe4m3_to_float32_all(self):
         for i in range(0, 256):
@@ -45,6 +65,8 @@ class TestF8(ExtTestCase):
         self.assertEqual(s, "0.10000100.01101000000000000000000")
         s = display_fe4m3(f)
         self.assertEqual(s, "0.0101.101")
+        s = display_fe5m2(f)
+        self.assertEqual(s, "0.01011.01")
         s = display_float16(numpy.float16(f))
         self.assertEqual(s, "0.10100.0110100000")
 
@@ -119,5 +141,5 @@ class TestF8(ExtTestCase):
 
 
 if __name__ == "__main__":
-    TestF8().test_search_float32_into_fe4m3_equal()
+    # TestF8().test_search_float32_into_fe4m3_equal()
     unittest.main(verbosity=2)
