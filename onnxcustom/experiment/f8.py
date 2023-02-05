@@ -47,9 +47,11 @@ def display_float16(value, sign=1, exponent=5, mantissa=10):
     return ".".join([s1, s2, s3])
 
 
-def display_fe4m3(value, sign=1, exponent=4, mantissa=3):
+def display_fexmx(value, sign, exponent, mantissa):
     """
-    Displays a float32 into b.
+    Displays any float encoded with 1 bit for the sign,
+    *exponent* bit for the exponent and *mantissa* bit for the
+    mantissa.
 
     :param value: value to display (int)
     :param sign: number of bits for the sign
@@ -67,6 +69,32 @@ def display_fe4m3(value, sign=1, exponent=4, mantissa=3):
     return ".".join([s1, s2, s3])
 
 
+def display_fe4m3(value, sign=1, exponent=4, mantissa=3):
+    """
+    Displays a float 8 E4M3 into b.
+
+    :param value: value to display (int)
+    :param sign: number of bits for the sign
+    :param exponent: number of bits for the exponent
+    :param mantissa: number of bits for the mantissa
+    :return: string
+    """
+    return display_fexmx(value, sign=1, exponent=4, mantissa=3)
+
+
+def display_fe5m2(value, sign=1, exponent=4, mantissa=3):
+    """
+    Displays a float 8 E5M2 into binary format.
+
+    :param value: value to display (int)
+    :param sign: number of bits for the sign
+    :param exponent: number of bits for the exponent
+    :param mantissa: number of bits for the mantissa
+    :return: string
+    """
+    return display_fexmx(value, sign=1, exponent=5, mantissa=2)
+
+
 def fe4m3_to_float32_float(ival: int) -> float:
     """
     Casts a float 8 encoded as an integer into a float.
@@ -77,9 +105,9 @@ def fe4m3_to_float32_float(ival: int) -> float:
     if ival < 0 or ival > 255:
         raise ValueError(f"{ival} is not a float8.")
     if ival == 255:
-        return numpy.float32(numpy.inf)
+        return numpy.float32(-numpy.nan)
     if ival == 127:
-        return numpy.float32(-numpy.inf)
+        return numpy.float32(numpy.nan)
     if (ival & 0x7F) == 0:
         return numpy.float32(0)
 
@@ -100,7 +128,7 @@ def fe4m3_to_float32_float(ival: int) -> float:
     return numpy.float32(fval)
 
 
-def fe4m3_to_float32(ival: int) -> float:
+def fe5m2_to_float32_float(ival: int) -> float:
     """
     Casts a float 8 encoded as an integer into a float.
 
@@ -109,10 +137,47 @@ def fe4m3_to_float32(ival: int) -> float:
     """
     if ival < 0 or ival > 255:
         raise ValueError(f"{ival} is not a float8.")
-    if ival == 255:
+    if ival in (255, 254, 253):
+        return numpy.float32(-numpy.nan)
+    if ival in (127, 126, 125):
+        return numpy.float32(numpy.nan)
+    if ival == 252:
+        return -numpy.float32(numpy.inf)
+    if ival == 124:
         return numpy.float32(numpy.inf)
+    if (ival & 0x7F) == 0:
+        return numpy.float32(0)
+
+    sign = ival & 0x80
+    ival &= 0x7F
+    expo = ival >> 2
+    mant = ival & 0x03
+    powe = expo & 0x1F
+    if expo == 0:
+        powe -= 14
+        fraction = 0
+    else:
+        powe -= 15
+        fraction = 1
+    fval = float(mant / 4 + fraction) * 2.0**powe
+    if sign:
+        fval = -fval
+    return numpy.float32(fval)
+
+
+def fe4m3_to_float32(ival: int) -> float:
+    """
+    Casts a float E4M3 encoded as an integer into a float.
+
+    :param ival: byte
+    :return: float (float 32)
+    """
+    if ival < 0 or ival > 255:
+        raise ValueError(f"{ival} is not a float8.")
+    if ival == 255:
+        return numpy.float32(-numpy.nan)
     if ival == 127:
-        return numpy.float32(-numpy.inf)
+        return numpy.float32(numpy.nan)
 
     expo = (ival & 0x78) >> 3
     mant = ival & 0x07
@@ -144,13 +209,65 @@ def fe4m3_to_float32(ival: int) -> float:
     return f
 
 
+def fe5m2_to_float32(ival: int) -> float:
+    """
+    Casts a float E5M2 encoded as an integer into a float.
+
+    :param ival: byte
+    :return: float (float 32)
+    """
+    """
+    Casts a float E4M3 encoded as an integer into a float.
+
+    :param ival: byte
+    :return: float (float 32)
+    """
+    if ival < 0 or ival > 255:
+        raise ValueError(f"{ival} is not a float8.")
+    if ival in {253, 254, 255, 125, 126, 127}:
+        return numpy.nan
+    if ival == 252:
+        return numpy.float32(-numpy.inf)
+    if ival == 124:
+        return numpy.float32(numpy.inf)
+
+    expo = (ival & 0x7C) >> 2
+    mant = ival & 0x03
+    sign = ival & 0x80
+    res = sign << 24
+    if expo == 0:
+        if mant > 0:
+            expo = 0x7F - 15
+            if mant & 0x2 == 0:
+                mant &= 0x1
+                mant <<= 1
+                expo -= 1
+            if mant & 0x2 == 0:
+                mant &= 0x1
+                mant <<= 1
+                expo -= 1
+            res |= (mant & 0x1) << 22
+            res |= expo << 23
+    else:
+        res |= mant << 21
+        expo -= 15
+        expo += 0x7F
+        res |= expo << 23
+    f = numpy.uint32(res).view(numpy.float32)  # pylint: disable=E1121
+    return f
+
+
 class CastFloat8:
     """
     Helpers to cast float8 into float32 or the other way around.
     """
 
     values_e4m3 = list(sorted((fe4m3_to_float32_float(i), i)
-                       for i in range(0, 256)))
+                       for i in range(0, 256) if i not in (255, 127)))
+
+    values_e5m2 = list(sorted((fe5m2_to_float32_float(i), i)
+                       for i in range(0, 256) if i not in {
+        253, 254, 255, 125, 126, 127}))
 
     @staticmethod
     def find_closest_value(value, sorted_values):
@@ -165,7 +282,7 @@ class CastFloat8:
         return the value on the second columns.
         """
         a = 0
-        b = 256
+        b = len(sorted_values)
         while a < b:
             m = (a + b) // 2
             th = sorted_values[m][0]
@@ -178,11 +295,13 @@ class CastFloat8:
             else:
                 a = m
         # finds the closest one
-        d1 = value - sorted_values[a][0]
-        d2 = sorted_values[b][0] - value
-        if d1 < d2:
-            return sorted_values[a][1]
-        return sorted_values[b][1]
+        if b < len(sorted_values):
+            d1 = value - sorted_values[a][0]
+            d2 = sorted_values[b][0] - value
+            if d1 < d2:
+                return sorted_values[a][1]
+            return sorted_values[b][1]
+        return sorted_values[a][1]
 
 
 def search_float32_into_fe4m3(value: float) -> int:
@@ -192,8 +311,23 @@ def search_float32_into_fe4m3(value: float) -> int:
     :param value: float
     :return: byte
     """
+    if numpy.isnan(value):
+        return 255
     f = numpy.float32(value)
     return CastFloat8.find_closest_value(f, CastFloat8.values_e4m3)
+
+
+def search_float32_into_fe5m2(value: float) -> int:
+    """
+    Casts a float 32 into a float E4M3.
+
+    :param value: float
+    :return: byte
+    """
+    if numpy.isnan(value):
+        return 255
+    f = numpy.float32(value)
+    return CastFloat8.find_closest_value(f, CastFloat8.values_e5m2)
 
 
 def float32_to_fe4m3(x):
@@ -204,33 +338,29 @@ def float32_to_fe4m3(x):
     :return: byte
     """
     b = int.from_bytes(struct.pack("<f", numpy.float32(x)), "little")
-    if b == 0x7fc00000:
-        return 0xff
-    if b == 0x7f800000:
-        return 0xff
-    if b == 0xff800000:
-        return 0x7f
+    ret = (b & 0x80000000) >> 24  # sign
+    if (b & 0x7fc00000) == 0x7fc00000:
+        return 0xff | ret
     e = (b & 0x7F800000) >> 23  # exponent
     m = b & 0x007FFFFF  # mantissa
-    ret = (b & 0x80000000) >> 24  # sign
 
     if e != 0:
-        if e < 0x75:
+        if e < 117:
             pass
-        elif e < 0x76:
+        elif e < 118:
             ret |= 1
             if (m >> 23) & 1:
                 # rounding
                 ret += 1
-        elif e < 0x79:
-            d = 0x78 - e
+        elif e < 121:  # 127 - 7 + 1
+            d = 120 - e
             ret |= 1 << (2 - d)
             ret |= m >> (21 + d)
             if (m >> (20 + d)) & 1:
                 # rounding
                 ret += 1
-        elif e < 0x88:
-            ex = e - 0x78
+        elif e < 136:  # 127 + 8 + 1
+            ex = e - 120  # 127 - 7
             if ex == 0:
                 ret |= 0x4
                 ret |= m >> 21
@@ -242,4 +372,48 @@ def float32_to_fe4m3(x):
                 ret += 1
         else:
             ret |= 126  # 01111110
+    return int(ret)
+
+
+def float32_to_fe5m2(x):
+    """
+    Converts a float32 into a float E5M2.
+
+    :param x: numpy.float32
+    :return: byte
+    """
+    b = int.from_bytes(struct.pack("<f", numpy.float32(x)), "little")
+    ret = (b & 0x80000000) >> 24  # sign
+    if (b & 0x7fc00000) == 0x7fc00000:
+        return 0xff | ret
+    e = (b & 0x7F800000) >> 23  # exponent
+    m = b & 0x007FFFFF  # mantissa
+
+    if e != 0:
+        if e < 110:
+            pass
+        elif e < 111:
+            ret |= 1
+            if (m >> 23) & 1:
+                # rounding
+                # may be unused
+                ret += 1
+        elif e < 113:  # 127 - 15 + 1
+            d = 112 - e
+            ret |= 1 << (1 - d)
+            ret |= m >> (22 + d)
+            if (m >> (21 + d)) & 1:
+                # rounding
+                ret += 1
+        elif e < 144:  # 127 + 16 + 1
+            ex = e - 112  # 127 - 15
+            ret |= ex << 2
+            ret |= m >> 21
+            if m & 0x100000:
+                # rounding
+                ret += 1
+        elif e == 255 and m == 0:  # inf
+            ret |= 124
+        else:
+            ret |= 123
     return int(ret)
