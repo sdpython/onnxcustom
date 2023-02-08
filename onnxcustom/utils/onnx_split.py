@@ -135,7 +135,9 @@ class OnnxSplitting:
         # tag shape nodes
         if self.verbose > 0:
             self.fLOG(
-                f"[OnnxSplitting._init] mark shape nodes among {len(node_list)} nodes.")
+                f"[OnnxSplitting._init] mark shape nodes among "
+                f"{len(node_list)} nodes.")
+        self.node_list_debug = node_list
         shape_obj = self._make_shape_nodes(node_list)
         self.shape_obj = shape_obj
         self.shape_results = set(k[1] for k in shape_obj if k[0] == 0)
@@ -149,6 +151,8 @@ class OnnxSplitting:
                       f"{list(sorted(self.shape_nodes))[:5]}")
 
         # retrieve all related node for a shape result
+        print(self.display_shape_node_result())
+                
         self.shape_results_nodes = self._contributing_make_shape_nodes(
             node_list, self.shape_nodes, self.shape_results)
         if self.verbose > 2:
@@ -165,6 +169,12 @@ class OnnxSplitting:
                 f"{len(node_list)} nodes.")
 
         self.cutting_points = self._get_cutting_points(node_list)
+        if len(self.cutting_points) == 0:
+            msg = self.display_shape_node_result(
+                node_list, self.shape_nodes, self.shape_results)
+            raise RuntimeError(
+                f"No cutting point, the model with "
+                f"{len(node_list)} nodes cannot be split.\n{msg}")
 
         if self.verbose:
             self.fLOG(
@@ -196,8 +206,41 @@ class OnnxSplitting:
                       f"min,avg,max-size=[{min(sizes)}, "
                       f"{sum(sizes) / len(sizes)}, {max(sizes)}]")
 
+    def display_shape_node_result(self, nodes=None, shape_nodes=None,
+                                  shape_results=None):
+        """
+        Displays a message sum
+        """
+        if nodes is None:
+            nodes = self.node_list_debug
+        if shape_nodes is None:
+            shape_nodes = self.shape_nodes
+        if shape_results is None:
+            shape_results = self.shape_results
+        rows = []
+        for idn, node in nodes:
+            key = self._key(idn, node)
+            inps = []
+            for inp in node.input:
+                t = "|S" if inp in shape_results else ""
+                inps.append(f"{inp}{t}")
+            sinps = ", ".join(inps)
+            outs = []
+            for out in node.output:
+                t = "|S" if out in shape_results else ""
+                outs.append(f"{out}{t}")
+            souts = ", ".join(outs)
+
+            if key in shape_nodes:
+                inps = ", ".join(node.input)
+                outs = ", ".join(node.output)
+                rows.append(f"{node.op_type}|NS({sinps}) -> {souts}")
+            else:
+                rows.append(f"{node.op_type}({sinps}) -> {souts}")
+        return "\n".join(rows)
+
     @staticmethod
-    def _propagate_shape(key, edges):
+    def _forward_propagate_shape(key, forward_edges):
         """
         From a shape node, walk through the graph
         to find all the nodes contributing to a reshaping.
@@ -207,7 +250,7 @@ class OnnxSplitting:
         while len(stack) > 0:
             last = stack.pop()
             d = dist[last] + 1
-            ed = edges[last]
+            ed = forward_edges[last]
             for k, node in ed.items():
                 if k not in dist:
                     if k[0] == 1:
@@ -218,26 +261,65 @@ class OnnxSplitting:
                     stack.append(k)
         return dist
 
+    @staticmethod
+    def _backward_propagate_shape(key, backward_edges):
+        """
+        From a shape node, walk through the graph
+        to find all the nodes contributing to a reshaping.
+        """
+        dist = {(1, key): 0}
+        stack = [(1, key)]
+        while len(stack) > 0:
+            last = stack.pop()
+            d = dist[last] - 1
+            if last not in backward_edges:
+                # an input
+                continue
+            ed = backward_edges[last]
+            for k, node in ed.items():
+                if k[0] == 1:
+                    # node
+                    if node.op_type in ("Shape", ):
+                        continue
+                if k not in dist:
+                    dist[k] = d
+                    stack.append(k)
+        import pprint
+        pprint.pprint(dist)
+        return dist
+
     def _make_shape_nodes(self, node_list):
         """
         *shape nodes* are nodes operating on shapes, they are usually
         small and can be ignored while looking for the cutting points.
         """
         shapeops = []
-        edges = {}
+        forward_edges = {}
+        backward_edges = {}
         for idn, node in node_list:
             if node.op_type == "Constant":
                 continue
             key = self._key(idn, node)
+
+            # forward
             for i in node.input:
-                if (0, i) not in edges:
-                    edges[0, i] = {}
-                edges[0, i][1, key] = node
-            edges[1, key] = {}
+                if (0, i) not in forward_edges:
+                    forward_edges[0, i] = {}
+                forward_edges[0, i][1, key] = node
+            forward_edges[1, key] = {}
             for o in node.output:
-                edges[1, key][0, o] = node
+                forward_edges[1, key][0, o] = node
             if node.op_type in ('Shape', 'Size'):
                 shapeops.append((idn, node))
+
+            # backward
+            backward_edges[1, key] = {}
+            for i in node.input:
+                backward_edges[1, key][0, i] = node
+            backward_edges[0, o] = {}
+            for o in node.output:
+                backward_edges[0, o][1, key] = node
+            
         if len(shapeops) == 0:
             return {}
 
@@ -251,16 +333,25 @@ class OnnxSplitting:
         for idn, shape in loop:
             key = self._key(idn, shape)
             marked[1, key] = [shape]
-            prop = self._propagate_shape(key, edges)
+            prop = self._forward_propagate_shape(key, forward_edges)
             for k, v in prop.items():
                 if k not in marked:
                     marked[k] = []
                 marked[k].append((v, shape))
+            # backward propagation, a node is taking a shape result as input,
+            # what about the other inputs?
+            # Concat(shape, result) -> result contributes to the shape
+            prop = self._backward_propagate_shape(key, backward_edges)
+            for k, v in prop.items():
+                if k not in marked:
+                    marked[k] = []
+                marked[k].append((v, shape))
+            
         return marked
 
     def _contributing_make_shape_nodes(self, node_list, shape_nodes, shape_results):
         """
-        For all results in shape_results, make the of contributing
+        For all results in shape_results, make the list of contributing
         nodes which are needed to build this result.
         """
         key_node = {self._key(idn, node): node
