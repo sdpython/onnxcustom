@@ -238,7 +238,29 @@ class TestF8(ExtTestCase):
             pandas.DataFrame(obs).to_excel(output)
             raise AssertionError(f"{wrong} conversion are wrong.")
 
+    def test_inf_nan(self):
+        np_fp32 = numpy.array([
+            "0.47892547", "0.48033667", "0.49968487", "0.81910545",
+            "0.47031248", "0.816468", "0.21087195", "0.7229038",
+            "NaN", "INF", "+INF", "-INF"], dtype=numpy.float32)
+        v_fe4m3_to_float32 = numpy.vectorize(fe4m3_to_float32)
+        v_float32_to_fe4m3 = numpy.vectorize(float32_to_fe4m3)
+        v_float32_to_fe5m2 = numpy.vectorize(float32_to_fe5m2)
+        v_fe5m2_to_float32 = numpy.vectorize(fe5m2_to_float32)
+
+        got = v_fe4m3_to_float32(v_float32_to_fe4m3(np_fp32))
+        expected = numpy.array([0.46875, 0.46875, 0.5, 0.8125, 0.46875, 0.8125,
+                                0.203125, 0.75, numpy.nan, 448.0, 448.0, -448.0],
+                               dtype=numpy.float32)
+        self.assertEqualArray(expected, got)
+        got = v_fe5m2_to_float32(v_float32_to_fe5m2(np_fp32))
+        expected = numpy.array([0.5, 0.5, 0.5, 0.875, 0.5, 0.875,
+                                0.21875, 0.75, numpy.nan, numpy.inf,
+                                numpy.inf, -numpy.inf],
+                               dtype=numpy.float32)
+        self.assertEqualArray(expected, got)
+
 
 if __name__ == "__main__":
-    TestF8().test_search_float32_into_fe5m2()
+    TestF8().test_inf_nan()
     unittest.main(verbosity=2)
