@@ -150,9 +150,7 @@ class OnnxSplitting:
                       f"{len(self.shape_nodes)}:"
                       f"{list(sorted(self.shape_nodes))[:5]}")
 
-        # retrieve all related node for a shape result
-        print(self.display_shape_node_result())
-                
+        # retrieve all related nodes for a shape result
         self.shape_results_nodes = self._contributing_make_shape_nodes(
             node_list, self.shape_nodes, self.shape_results)
         if self.verbose > 2:
@@ -284,8 +282,6 @@ class OnnxSplitting:
                 if k not in dist:
                     dist[k] = d
                     stack.append(k)
-        import pprint
-        pprint.pprint(dist)
         return dist
 
     def _make_shape_nodes(self, node_list):
@@ -332,7 +328,7 @@ class OnnxSplitting:
         marked = {}
         for idn, shape in loop:
             key = self._key(idn, shape)
-            marked[1, key] = [shape]
+            marked[1, key] = [(0, shape)]
             prop = self._forward_propagate_shape(key, forward_edges)
             for k, v in prop.items():
                 if k not in marked:
@@ -341,12 +337,15 @@ class OnnxSplitting:
             # backward propagation, a node is taking a shape result as input,
             # what about the other inputs?
             # Concat(shape, result) -> result contributes to the shape
-            prop = self._backward_propagate_shape(key, backward_edges)
-            for k, v in prop.items():
-                if k not in marked:
-                    marked[k] = []
-                marked[k].append((v, shape))
-            
+            for fk, fv in prop.items():
+                if fv == 0 or fk[0] == 0:
+                    # We skip the node Shape.
+                    continue
+                back_prop = self._backward_propagate_shape(fk[1], backward_edges)
+                for k, v in back_prop.items():
+                    if k not in marked:
+                        marked[k] = []
+                    marked[k].append((v, shape))
         return marked
 
     def _contributing_make_shape_nodes(self, node_list, shape_nodes, shape_results):
@@ -363,6 +362,10 @@ class OnnxSplitting:
                 backward[o] = key
         res = {}
         for name in shape_results:
+            if name not in backward:
+                # An initializer
+                res[name] = []
+                continue
             r = []
             stack = [backward[name]]
             while len(stack) > 0:
@@ -372,7 +375,7 @@ class OnnxSplitting:
                     r.append(key)
                     node = key_node[key]
                     for i in node.input:
-                        if i in shape_results:
+                        if i in shape_results and i in backward:
                             stack.append(backward[i])
             res[name] = r
         return res
