@@ -1,13 +1,10 @@
 
-=============================
-Quantization with onnxruntime
-=============================
+============
+Quantization
+============
 
 .. contents::
     :local:
-
-Simple case
-===========
 
 Examples
 ========
