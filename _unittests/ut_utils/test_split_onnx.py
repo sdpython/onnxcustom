@@ -663,10 +663,16 @@ class TestSplitOnnx(ExtTestCase):
 
         parts, stats = split_onnx(onx, 2, stats=True,
                                   doc_string=True, verbose=0)
+        self.assertEqual(['diff', 'muld', 'muldis', 'oneg', 'tt'],
+                         stats["split"].cutting_points)
         msg = stats["split"].display_shape_node_result()
+        seg = stats["split"].segments[2]
+        self.assertEqual({'new_shape'},
+                         seg.shape_results)
         self.assertIn("Shape|NS(muld) -> shape|S", msg)
         self.assertNotIn("Mul|NS(diff|S, diff|S) -> muld|S", msg)
         self.assertIn("Identity|NS(Init|S) -> Id|S", msg)
+        self.assertIn("CastLike(Init|S, dz1) -> fI", msg)
         names = stats["shape_results"]
         self.assertEqual(names, {'new_shape', 'shape', 'Id', 'Init'})
         self.assertEqual(len(parts), 2)
@@ -677,6 +683,8 @@ class TestSplitOnnx(ExtTestCase):
             try:
                 check_model(p)
             except Exception as e:
+                with open("test_split_reshape_back.onnx", "wb") as f:
+                    f.write(onx.SerializeToString())
                 with open(f"test_split_reshape_back_{i}.onnx", "wb") as f:
                     f.write(p.SerializeToString())
                 raise AssertionError(f"Part {i} is not valid.\n{p}") from e
@@ -709,5 +717,5 @@ class TestSplitOnnx(ExtTestCase):
 
 
 if __name__ == "__main__":
-    #TestSplitOnnx().test_split_reshape_back()
+    TestSplitOnnx().test_split_reshape_back()
     unittest.main(verbosity=2)
