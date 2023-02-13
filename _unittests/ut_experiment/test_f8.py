@@ -7,7 +7,6 @@ import numpy
 import pandas
 from pyquickhelper.pycode import ExtTestCase
 from onnxcustom.experiment.f8 import (
-    CastFloat8,
     display_fe4m3,
     display_fe5m2,
     display_float16,

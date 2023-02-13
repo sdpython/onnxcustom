@@ -2,6 +2,7 @@
 @file
 @brief Helpers to split an ONNX models.
 """
+# pylint: disable=R0912
 import textwrap
 import numpy
 from onnx import (  # pylint: disable=E0611
@@ -49,11 +50,17 @@ class OnnxSegment:
         self.shape_results = shape_results
 
     def __repr__(self):
+        rows = []
+        if self.involved:
+            rows.append(f"involved={self.involved!r}")
+        if self.shape_results:
+            rows.append(f"involved={self.shape_results!r}")
+        text = ", ".join(rows)
+        if text:
+            text = ", " + text
         return f"{self.__class__.__name__}(...,\n    " + "\n".join(
             textwrap.wrap(
-                f"{self.begin!r}, {self.end!r}, size={self.size!r}, "
-                f"involved={self.involved!r}, "
-                f"shape_results={self.shape_results})",
+                f"{self.begin!r}, {self.end!r}, size={self.size!r}{text}",
                 subsequent_indent="    "))
 
 
@@ -135,7 +142,9 @@ class OnnxSplitting:
         # tag shape nodes
         if self.verbose > 0:
             self.fLOG(
-                f"[OnnxSplitting._init] mark shape nodes among {len(node_list)} nodes.")
+                f"[OnnxSplitting._init] mark shape nodes among "
+                f"{len(node_list)} nodes.")
+        self.node_list_debug = node_list
         shape_obj = self._make_shape_nodes(node_list)
         self.shape_obj = shape_obj
         self.shape_results = set(k[1] for k in shape_obj if k[0] == 0)
@@ -148,7 +157,7 @@ class OnnxSplitting:
                       f"{len(self.shape_nodes)}:"
                       f"{list(sorted(self.shape_nodes))[:5]}")
 
-        # retrieve all related node for a shape result
+        # retrieve all related nodes for a shape result
         self.shape_results_nodes = self._contributing_make_shape_nodes(
             node_list, self.shape_nodes, self.shape_results)
         if self.verbose > 2:
@@ -165,6 +174,12 @@ class OnnxSplitting:
                 f"{len(node_list)} nodes.")
 
         self.cutting_points = self._get_cutting_points(node_list)
+        if len(self.cutting_points) == 0:
+            msg = self.display_shape_node_result(
+                node_list, self.shape_nodes, self.shape_results)
+            raise RuntimeError(
+                f"No cutting point, the model with "
+                f"{len(node_list)} nodes cannot be split.\n{msg}")
 
         if self.verbose:
             self.fLOG(
@@ -196,8 +211,41 @@ class OnnxSplitting:
                       f"min,avg,max-size=[{min(sizes)}, "
                       f"{sum(sizes) / len(sizes)}, {max(sizes)}]")
 
+    def display_shape_node_result(self, nodes=None, shape_nodes=None,
+                                  shape_results=None):
+        """
+        Displays a message sum
+        """
+        if nodes is None:
+            nodes = self.node_list_debug
+        if shape_nodes is None:
+            shape_nodes = self.shape_nodes
+        if shape_results is None:
+            shape_results = self.shape_results
+        rows = []
+        for idn, node in nodes:
+            key = self._key(idn, node)
+            inps = []
+            for inp in node.input:
+                t = "|S" if inp in shape_results else ""
+                inps.append(f"{inp}{t}")
+            sinps = ", ".join(inps)
+            outs = []
+            for out in node.output:
+                t = "|S" if out in shape_results else ""
+                outs.append(f"{out}{t}")
+            souts = ", ".join(outs)
+
+            if key in shape_nodes:
+                inps = ", ".join(node.input)
+                outs = ", ".join(node.output)
+                rows.append(f"{node.op_type}|NS({sinps}) -> {souts}")
+            else:
+                rows.append(f"{node.op_type}({sinps}) -> {souts}")
+        return "\n".join(rows)
+
     @staticmethod
-    def _propagate_shape(key, edges):
+    def _forward_propagate_shape(key, forward_edges):
         """
         From a shape node, walk through the graph
         to find all the nodes contributing to a reshaping.
@@ -207,7 +255,7 @@ class OnnxSplitting:
         while len(stack) > 0:
             last = stack.pop()
             d = dist[last] + 1
-            ed = edges[last]
+            ed = forward_edges[last]
             for k, node in ed.items():
                 if k not in dist:
                     if k[0] == 1:
@@ -218,26 +266,64 @@ class OnnxSplitting:
                     stack.append(k)
         return dist
 
+    @staticmethod
+    def _backward_propagate_shape(key, backward_edges):
+        """
+        From a shape node, walk through the graph
+        to find all the nodes contributing to a reshaping.
+        """
+        dist = {(1, key): 0}
+        stack = [(1, key)]
+        while len(stack) > 0:
+            last = stack.pop()
+            d = dist[last] - 1
+            if last not in backward_edges:
+                # an input
+                continue
+            ed = backward_edges[last]
+            for k, node in ed.items():
+                if k[0] == 1:
+                    # node
+                    if node.op_type in ("Shape", ):
+                        continue
+                if k not in dist:
+                    dist[k] = d
+                    stack.append(k)
+        return dist
+
     def _make_shape_nodes(self, node_list):
         """
         *shape nodes* are nodes operating on shapes, they are usually
         small and can be ignored while looking for the cutting points.
         """
         shapeops = []
-        edges = {}
+        forward_edges = {}
+        backward_edges = {}
         for idn, node in node_list:
             if node.op_type == "Constant":
                 continue
             key = self._key(idn, node)
+
+            # forward
             for i in node.input:
-                if (0, i) not in edges:
-                    edges[0, i] = {}
-                edges[0, i][1, key] = node
-            edges[1, key] = {}
+                if (0, i) not in forward_edges:
+                    forward_edges[0, i] = {}
+                forward_edges[0, i][1, key] = node
+            forward_edges[1, key] = {}
             for o in node.output:
-                edges[1, key][0, o] = node
+                forward_edges[1, key][0, o] = node
             if node.op_type in ('Shape', 'Size'):
                 shapeops.append((idn, node))
+
+            # backward
+            backward_edges[1, key] = {}
+            for i in node.input:
+                backward_edges[1, key][0, i] = node
+            for o in node.output:
+                if (0, o) not in backward_edges:
+                    backward_edges[0, o] = {}
+                backward_edges[0, o][1, key] = node
+
         if len(shapeops) == 0:
             return {}
 
@@ -250,17 +336,30 @@ class OnnxSplitting:
         marked = {}
         for idn, shape in loop:
             key = self._key(idn, shape)
-            marked[1, key] = [shape]
-            prop = self._propagate_shape(key, edges)
+            marked[1, key] = [(0, shape)]
+            prop = self._forward_propagate_shape(key, forward_edges)
             for k, v in prop.items():
                 if k not in marked:
                     marked[k] = []
                 marked[k].append((v, shape))
+            # backward propagation, a node is taking a shape result as input,
+            # what about the other inputs?
+            # Concat(shape, result) -> result contributes to the shape
+            for fk, fv in prop.items():
+                if fv == 0 or fk[0] == 0:
+                    # We skip the node Shape.
+                    continue
+                back_prop = self._backward_propagate_shape(
+                    fk[1], backward_edges)
+                for k, v in back_prop.items():
+                    if k not in marked:
+                        marked[k] = []
+                    marked[k].append((v, shape))
         return marked
 
     def _contributing_make_shape_nodes(self, node_list, shape_nodes, shape_results):
         """
-        For all results in shape_results, make the of contributing
+        For all results in shape_results, make the list of contributing
         nodes which are needed to build this result.
         """
         key_node = {self._key(idn, node): node
@@ -272,6 +371,10 @@ class OnnxSplitting:
                 backward[o] = key
         res = {}
         for name in shape_results:
+            if name not in backward:
+                # An initializer
+                res[name] = []
+                continue
             r = []
             stack = [backward[name]]
             while len(stack) > 0:
@@ -281,7 +384,7 @@ class OnnxSplitting:
                     r.append(key)
                     node = key_node[key]
                     for i in node.input:
-                        if i in shape_results:
+                        if i in shape_results and i in backward:
                             stack.append(backward[i])
             res[name] = r
         return res
@@ -437,7 +540,7 @@ class OnnxSplitting:
 
         return cutting_points
 
-    def _segment_names(self, nodes, names, skip_names=None):
+    def _segment_names(self, nodes, names, results, skip_names=None):
         if skip_names is None:
             skip_names = set()
         names = names.copy()
@@ -491,12 +594,14 @@ class OnnxSplitting:
             names = {name2}
 
         subset, shape_results, size, names = self._segment_names(
-            nodes, names, skip_names={name1})
+            nodes, names, results={name2}, skip_names={name1})
         subset.sort()  # original order must be kept
         involved = names if name2 is None else names - {name2}
-        return OnnxSegment(self, begin=name1, end=name2, involved=involved,
-                           size=size, nodes=subset,
-                           shape_results=shape_results)
+        seg = OnnxSegment(self, begin=name1, end=name2,
+                          involved=involved,
+                          size=size, nodes=subset,
+                          shape_results=shape_results)
+        return seg
 
     def _split_2(self, a, b):
         """
@@ -634,7 +739,7 @@ class OnnxSplitting:
                 f"{len(shape_results)}")
 
         subset, shape_results, _, names = self._segment_names(
-            nodes, output_names)
+            nodes, output_names, results=set(output_names))
         graph_nodes = []
         for idn, node in enumerate(self.onnx_model.graph.node):
             graph_nodes.append((idn, node))
@@ -756,7 +861,7 @@ class OnnxSplitting:
             involved |= seg.involved
             shape_results |= seg.shape_results
 
-        # initiliazers
+        # initializers
         new_inits = [init for init in self.onnx_model.graph.initializer
                      if init.name in involved]
         new_sp_inits = [init for init in self.onnx_model.graph.sparse_initializer
@@ -767,6 +872,10 @@ class OnnxSplitting:
         # nodes
         shape_results = set()
         nodes = [(-i - 1, node) for i, node in enumerate(new_constants)]
+        idns = set(n[0] for n in nodes)
+        if len(idns) != len(nodes):
+            raise RuntimeError(
+                f"len(idns)={len(idns)} != len(nodes)={len(nodes)}")
         for iseg, seg in enumerate(segs):
             if self.doc_string:
                 label = (f"seg{iseg + a}-size={seg.size}-"
@@ -781,7 +890,14 @@ class OnnxSplitting:
                         node.doc_string = f"{node.doc_string}-{label}"
                     else:
                         node.doc_string = label
+                if idn in idns:
+                    raise RuntimeError(
+                        f"A node idn={idn!r} was already added.")
+                idns.add(idn)
                 nodes.append((idn, node))
+        if len(idns) != len(nodes):
+            raise RuntimeError(
+                f"len(idns)={len(idns)} != len(nodes)={len(nodes)}")
 
         # inputs, outputs
         existing_inputs = [i for i in self.onnx_model.graph.input
@@ -802,6 +918,9 @@ class OnnxSplitting:
         output_names = set(o.name for o in new_outputs)
         new_nodes, shape_to_add, new_internals = self._process_shape(
             nodes, shape_results, input_names, output_names)
+        if len(idns) != len(nodes):
+            raise RuntimeError(
+                f"len(idns)={len(idns)} != len(nodes)={len(nodes)}")
         if new_internals is not None and len(new_internals) > 0:
             # adding initializer or existing inputs
             for name in new_internals:
@@ -815,6 +934,7 @@ class OnnxSplitting:
                     new_inits.append(self.initializers[name])
                 elif name in self.sparse_initializers:
                     new_sp_inits.append(self.sparse_initializers[name])
+
         extra_inputs = []
         if shape_to_add is not None and len(shape_to_add) > 0:
             # add unresolved shapes as new inputs
@@ -827,8 +947,19 @@ class OnnxSplitting:
                     new_inputs.append(make_tensor_value_info(
                         i, TensorProto.INT64, [None],
                         doc_string="shape-shape"))
+        if len(idns) != len(nodes):
+            raise RuntimeError(
+                f"len(idns)={len(idns)} != len(nodes)={len(nodes)}")
         if new_nodes is not None:
-            nodes.extend(new_nodes)
+            for idn, node in new_nodes:
+                if idn in idns:
+                    raise RuntimeError(
+                        f"A node idn={idn!r} was already added.")
+                idns.add(idn)
+                nodes.append((idn, node))
+        if len(idns) != len(nodes):
+            raise RuntimeError(
+                f"len(idns)={len(idns)} != len(nodes)={len(nodes)}")
         nodes.sort()
 
         # extra inputs
@@ -847,6 +978,40 @@ class OnnxSplitting:
                 # the shape comes from a previous shape
                 new_inputs.append(value_info[name])
                 extra_inputs.append(name)
+                in_this.add(name)
+
+        # verification that all inputs are part of the graph
+        names = set(i.name for i in new_inits)
+        names |= set(i.name for i in new_sp_inits)
+        names |= set(i.name for i in new_inputs)
+        names |= set(extra_inputs)
+        existing_inits = {i.name: i for i in self.onnx_model.graph.initializer}
+        existing_sp_inits = {
+            i.name: i for i in self.onnx_model.graph.sparse_initializer}
+        existing_constants = {
+            n.output[0]: (i, n) for i, n in enumerate(self.onnx_model.graph.node)
+            if n.op_type == 'Constant'}
+        constant_nodes = []
+        for _, node in nodes:
+            for i in node.input:
+                if i not in names:
+                    if i in existing_inits:
+                        new_inits.append(existing_inits[i])
+                    elif i in existing_sp_inits:
+                        new_sp_inits.append(existing_sp_inits[i])
+                    elif i in existing_constants:
+                        constant_nodes.append(existing_constants)
+                    else:
+                        extra_inputs.append(i)
+                    names.add(i)
+                    if self.verbose > 2:
+                        self.fLOG(
+                            f"[OnnxSplitting._make_onnx]   +input-:{i}")
+            names |= set(node.output)
+
+        if constant_nodes:
+            nodes.extend(constant_nodes)
+            nodes.sort()
 
         # remove node index
         nodes = [n for _, n in nodes]

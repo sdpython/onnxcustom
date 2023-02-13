@@ -216,12 +216,6 @@ def fe5m2_to_float32(ival: int) -> float:
     :param ival: byte
     :return: float (float 32)
     """
-    """
-    Casts a float E4M3 encoded as an integer into a float.
-
-    :param ival: byte
-    :return: float (float 32)
-    """
     if ival < 0 or ival > 255:
         raise ValueError(f"{ival} is not a float8.")
     if ival in {253, 254, 255, 125, 126, 127}:
