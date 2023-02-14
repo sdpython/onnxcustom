@@ -260,7 +260,9 @@ class OnnxSplitting:
                 if k not in dist:
                     if k[0] == 1:
                         # node
-                        if node.op_type in ("Reshape", "ConstantOfShape"):
+                        if node.op_type in ("Reshape",
+                                            "ConstantOfShape",
+                                            "Slice"):
                             continue
                     dist[k] = d
                     stack.append(k)
