@@ -218,16 +218,17 @@ class OnnxSplitting:
         self.shapes = shape_inference.infer_shapes(onnx_model)
 
         if self.verbose > 0:
-            sizes = []
+            sizes = [seg.size for seg in self.segments]
+            mx = max(sizes)
+            rows = []
             for i, seg in enumerate(self.segments):
-                sizes.append(seg.size)
-                if seg.size >= 2**20:
-                    print(i, seg.size, seg)
-            import pprint
-            pprint.pprint(list(sorted(sizes)))
+                if seg.size >= mx / 2:
+                    rows.append(f"i={i} size={seg.size} seq={seg}")
+            msg = "\n".join(rows)
             self.fLOG(f"[OnnxSplitting._init] #segments:{len(sizes)}, "
                       f"min,avg,max-size=[{min(sizes)}, "
-                      f"{sum(sizes) / len(sizes)}, {max(sizes)}]")
+                      f"{sum(sizes) / len(sizes)}, {max(sizes)}]\n"
+                      f"{msg}")
 
     def display_shape_node_result(self, nodes=None, shape_nodes=None,
                                   shape_results=None):
