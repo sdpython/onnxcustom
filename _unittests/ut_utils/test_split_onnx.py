@@ -687,7 +687,6 @@ class TestSplitOnnx(ExtTestCase):
                  for p in parts]
         x = numpy.arange(4).reshape((2, 2)).astype(numpy.float32)
         y = x + 1
-        z = (x * 10).reshape((2, 2, 1))
         feeds = {'X': x, 'Y': y}
         expected = sess.run(None, feeds)[0]
         muldis = sesst[0].run(None, feeds)[0]
