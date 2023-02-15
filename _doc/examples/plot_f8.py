@@ -43,13 +43,13 @@ the best ones.
      - :math:`S.11111.00_2`
    * - NaN
      - :math:`S.1111.111_2`
-     - :math:`S.11111.\{01, 10, 11\}_2`
+     - :math:`S.11111.\\{01, 10, 11\\}_2`
    * - Zeros
      - :math:`S.0000.000_2`
      - :math:`S.00000.00_2`
    * - Max
      - :math:`S.1111.110_2`
-     - :math:`1.75 \times 2^{15}= 57344`
+     - :math:`1.75 \\times 2^{15}= 57344`
    * - Min
      - :math:`S.0000.001_2 = 2^{-9}`
      - :math:`S.00000.01_2 = 2^{-16}`
@@ -65,12 +65,12 @@ The float value is defined by the following expressions:
    * - 
      - E4M3
      - E5M2
-   * - exponent :math:`\neq` 0
-     - :math:`(-1)^S 2^{\sum_{i=3}^6 b_i 2^{i-3} - 7} \sum_{i=0}^2 b_i 2^{i-2}`
-     - :math:`(-1)^S 2^{\sum_{i=2}^6 b_i 2^{i-2} - 15} \sum_{i=0}^1 b_i 2^{i-1}`
+   * - exponent :math:`\\neq` 0
+     - :math:`(-1)^S 2^{\\sum_{i=3}^6 b_i 2^{i-3} - 7} \\left( 1 + \\sum_{i=0}^2 b_i 2^{i-3} \\right)`
+     - :math:`(-1)^S 2^{\\sum_{i=2}^6 b_i 2^{i-2} - 15} \\left( 1 + \\sum_{i=0}^1 b_i 2^{i-2} \\right)`
    * - exponent :math:`=` 0
-     - :math:`(-1)^S 2^{-6} \sum_{i=0}^2 b_i 2^{i-3}`
-     - :math:`(-1)^S 2^{-14} \sum_{i=0}^1 b_i 2^{i-2}`
+     - :math:`(-1)^S 2^{-6} \\sum_{i=0}^2 b_i 2^{i-3}`
+     - :math:`(-1)^S 2^{-14} \\sum_{i=0}^1 b_i 2^{i-2}`
 
 Cast from float 8 to
 `float 16 <https://en.wikipedia.org/wiki/Half-precision_floating-point_format>`_ (or E5M10),
