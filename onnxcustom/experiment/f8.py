@@ -194,16 +194,11 @@ def fe4m3_to_float32(ival: int) -> float:
                 mant &= 0x3
                 mant <<= 1
                 expo -= 1
-            if mant & 0x4 == 0:
-                mant &= 0x3
-                mant <<= 1
-                expo -= 1
             res |= (mant & 0x3) << 21
             res |= expo << 23
     else:
         res |= mant << 20
-        expo -= 0x7
-        expo += 0x7F
+        expo += 0x7F - 7
         res |= expo << 23
     f = numpy.uint32(res).view(numpy.float32)  # pylint: disable=E1121
     return f
@@ -236,16 +231,11 @@ def fe5m2_to_float32(ival: int) -> float:
                 mant &= 0x1
                 mant <<= 1
                 expo -= 1
-            if mant & 0x2 == 0:
-                mant &= 0x1
-                mant <<= 1
-                expo -= 1
             res |= (mant & 0x1) << 22
             res |= expo << 23
     else:
         res |= mant << 21
-        expo -= 15
-        expo += 0x7F
+        expo += 0x7F - 15
         res |= expo << 23
     f = numpy.uint32(res).view(numpy.float32)  # pylint: disable=E1121
     return f
@@ -341,7 +331,7 @@ def float32_to_fe4m3(x):
     if e != 0:
         if e < 117:
             pass
-        elif e < 118:
+        if e < 118:
             ret |= 1
             if (m >> 23) & 1:
                 # rounding
