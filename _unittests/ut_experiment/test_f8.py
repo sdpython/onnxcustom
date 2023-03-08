@@ -2,11 +2,13 @@
 @brief      test log(time=3s)
 """
 import os
+import pprint
 import unittest
 import numpy
 import pandas
 from pyquickhelper.pycode import ExtTestCase
 from onnxcustom.experiment.f8 import (
+    CastFloat8,
     display_fe4m3,
     display_fe5m2,
     display_float16,
@@ -170,9 +172,9 @@ class TestF8(ExtTestCase):
         values.sort()
 
         obs = []
-        values += [(1e-8, 0), (-1e-8, 0), (1e8, 448), (-1e-8, -448)]
+        values += [(1e-9, 0), (-1e-9, 0), (1e8, 448), (-1e-8, -448)]
         wrong = 0
-        for value, _ in values:
+        for value, origin in values:
             for add in [0, -0.4, -1e-4, 1e-4, 0.4]:
                 v = value + add
                 b = search_float32_into_fe4m3(v)
@@ -183,12 +185,13 @@ class TestF8(ExtTestCase):
                         continue
                     wrong += 1
                     obs.append(dict(
+                        origin=origin,
                         value=v,
                         bin_value=display_float32(v),
-                        expected=b,
+                        expected_search=b,
                         float_expected=fe4m3_to_float32_float(b),
                         bin_expected=display_fe4m3(b),
-                        got=nf,
+                        got_bit=nf,
                         bin_got=display_fe4m3(nf),
                         float_got=fe4m3_to_float32_float(nf),
                         ok="" if b == nf else "WRONG",
@@ -199,7 +202,8 @@ class TestF8(ExtTestCase):
             output = os.path.join(os.path.dirname(__file__),
                                   "temp_search_float32_into_fe4m3fn.xlsx")
             pandas.DataFrame(obs).to_excel(output)
-            raise AssertionError(f"{wrong} conversion are wrong.")
+            raise AssertionError(
+                f"{wrong} conversion are wrong\n{pprint.pformat(obs[:2])}")
 
     def test_search_float32_into_fe5m2(self):
         values = [(fe5m2_to_float32_float(i), i) for i in range(0, 256)]
@@ -249,7 +253,8 @@ class TestF8(ExtTestCase):
 
         got = v_fe4m3_to_float32(v_float32_to_fe4m3(np_fp32))
         expected = numpy.array([0.46875, 0.46875, 0.5, 0.8125, 0.46875, 0.8125,
-                                0.203125, 0.75, numpy.nan, 448.0, 448.0, -448.0],
+                                0.203125, 0.75, numpy.nan, numpy.nan,
+                                -numpy.nan, -numpy.nan],
                                dtype=numpy.float32)
         self.assertEqualArray(expected, got)
         got = v_fe5m2_to_float32(v_float32_to_fe5m2(np_fp32))
@@ -259,7 +264,135 @@ class TestF8(ExtTestCase):
                                dtype=numpy.float32)
         self.assertEqualArray(expected, got)
 
+    def test_search_e4m3_pow(self):
+        self.assertTrue(hasattr(CastFloat8, "values_e4m3fn"))
+        for p in range(1, 40):
+            v = 2 ** (-p)
+            r1 = search_float32_into_fe4m3(v)
+            r2 = float32_to_fe4m3(v)
+            if r1 != r2:
+                raise AssertionError(
+                    f"p={p}, v={v}, "
+                    f"search={r1}:{display_fe4m3(r1)}={fe4m3_to_float32(r1)} != "
+                    f"bit={r2}:{display_fe4m3(r2)}={fe4m3_to_float32(r2)}")
+        for p in range(1, 40):
+            v = -2 ** (-p)
+            r1 = search_float32_into_fe4m3(v)
+            r2 = float32_to_fe4m3(v)
+            if r1 != r2:
+                raise AssertionError(
+                    f"p={p}, v={v}, "
+                    f"search={r1}:{display_fe4m3(r1)}={fe4m3_to_float32(r1)} != "
+                    f"bit={r2}:{display_fe4m3(r2)}={fe4m3_to_float32(r2)}")
+
+    def test_search_e5m2_pow(self):
+        self.assertTrue(hasattr(CastFloat8, "values_e5m2"))
+        for p in range(1, 40):
+            v = 2 ** (-p)
+            r1 = search_float32_into_fe5m2(v)
+            r2 = float32_to_fe5m2(v)
+            if r1 != r2:
+                raise AssertionError(
+                    f"p={p}, v={v}, "
+                    f"search={r1}:{display_fe5m2(r1)}={fe5m2_to_float32(r1)} != "
+                    f"bit={r2}:{display_fe5m2(r2)}={fe5m2_to_float32(r2)}")
+        for p in range(1, 40):
+            v = -2 ** (-p)
+            r1 = search_float32_into_fe5m2(v)
+            r2 = float32_to_fe5m2(v)
+            if r1 != r2:
+                raise AssertionError(
+                    f"p={p}, v={v}, "
+                    f"search={r1}:{display_fe5m2(r1)}={fe5m2_to_float32(r1)} != "
+                    f"bit={r2}:{display_fe5m2(r2)}={fe5m2_to_float32(r2)}")
+
+    def test_float32_to_fe4m3fn_inf(self):
+        v0 = numpy.float32(numpy.nan)
+        v1 = numpy.float32(numpy.inf)
+        a = search_float32_into_fe4m3(v0)
+        b = search_float32_into_fe4m3(v1)
+        self.assertEqual(a, b)
+
+        v0 = numpy.float32(numpy.nan)
+        v1 = numpy.float32(numpy.inf)
+        a = float32_to_fe4m3(v0)
+        b = float32_to_fe4m3(v1)
+        self.assertEqual(a, b)
+
+        v0 = numpy.float32(-numpy.nan)
+        v1 = numpy.float32(-numpy.inf)
+        a = search_float32_into_fe4m3(v0)
+        b = search_float32_into_fe4m3(v1)
+        self.assertEqual(a, b)
+
+        v0 = numpy.float32(-numpy.nan)
+        v1 = numpy.float32(-numpy.inf)
+        a = float32_to_fe4m3(v0)
+        b = float32_to_fe4m3(v1)
+        self.assertEqual(a, b)
+
+        v0 = numpy.float32(numpy.nan)
+        v1 = numpy.float32(-numpy.nan)
+        a = search_float32_into_fe4m3(v0)
+        b = search_float32_into_fe4m3(v1)
+        self.assertNotEqual(a, b)
+
+        v0 = numpy.float32(numpy.inf)
+        v1 = numpy.float32(-numpy.inf)
+        a = search_float32_into_fe4m3(v0)
+        b = search_float32_into_fe4m3(v1)
+        self.assertNotEqual(a, b)
+
+        v0 = numpy.float32(numpy.nan)
+        v1 = numpy.float32(-numpy.nan)
+        a = float32_to_fe4m3(v0)
+        b = float32_to_fe4m3(v1)
+        self.assertNotEqual(a, b)
+
+        v0 = numpy.float32(numpy.inf)
+        v1 = numpy.float32(-numpy.inf)
+        a = float32_to_fe4m3(v0)
+        b = float32_to_fe4m3(v1)
+        self.assertNotEqual(a, b)
+
+    def test_float32_to_fe5m2_inf(self):
+        v0 = numpy.float32(numpy.nan)
+        v1 = numpy.float32(numpy.inf)
+        a = search_float32_into_fe5m2(v0)
+        b = search_float32_into_fe5m2(v1)
+        self.assertNotEqual(a, b)
+
+        v0 = numpy.float32(numpy.nan)
+        v1 = numpy.float32(numpy.inf)
+        a = float32_to_fe5m2(v0)
+        b = float32_to_fe5m2(v1)
+        self.assertNotEqual(a, b)
+
+        v0 = numpy.float32(numpy.nan)
+        v1 = numpy.float32(-numpy.nan)
+        a = search_float32_into_fe5m2(v0)
+        b = search_float32_into_fe5m2(v1)
+        self.assertNotEqual(a, b)
+
+        v0 = numpy.float32(numpy.inf)
+        v1 = numpy.float32(-numpy.inf)
+        a = search_float32_into_fe5m2(v0)
+        b = search_float32_into_fe5m2(v1)
+        self.assertNotEqual(a, b)
+
+        v0 = numpy.float32(numpy.nan)
+        v1 = numpy.float32(-numpy.nan)
+        a = float32_to_fe5m2(v0)
+        b = float32_to_fe5m2(v1)
+        self.assertNotEqual(a, b)
+
+        v0 = numpy.float32(numpy.inf)
+        v1 = numpy.float32(-numpy.inf)
+        a = float32_to_fe5m2(v0)
+        b = float32_to_fe5m2(v1)
+        self.assertNotEqual(a, b)
+
 
 if __name__ == "__main__":
-    TestF8().test_inf_nan()
+    TestF8().test_search_e5m2_pow()
     unittest.main(verbosity=2)

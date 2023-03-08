@@ -114,10 +114,12 @@ def fe4m3_to_float32_float(ival: int, fn: bool = True, uz: bool = False) -> floa
         return numpy.float32(-numpy.nan)
     if ival == 127:
         return numpy.float32(numpy.nan)
-    if (ival & 0x7F) == 0:
+    if ival == 0:
         return numpy.float32(0)
-
     sign = ival & 0x80
+    if ival == 0 and sign > 0:
+        return -numpy.float32(0)
+
     ival &= 0x7F
     expo = ival >> 3
     mant = ival & 0x07
@@ -308,6 +310,8 @@ class CastFloat8:
             d2 = sorted_values[b][0] - value
             if d1 < d2:
                 return sorted_values[a][1]
+            if d1 == d2:
+                return sorted_values[a][1] if value < 0 else sorted_values[b][1]
             return sorted_values[b][1]
         return sorted_values[a][1]
 
@@ -325,10 +329,13 @@ def search_float32_into_fe4m3(value: float, fn: bool = True, uz: bool = False) -
         raise NotImplementedError(f"fn=False is not implemented.")
     if uz:
         raise NotImplementedError(f"uz=True is not implemented.")
-    if numpy.isnan(value):
-        return 255
+    b = int.from_bytes(struct.pack("<f", numpy.float32(value)), "little")
+    ret = (b & 0x80000000) >> 24  # sign
+    if numpy.isnan(value) or numpy.isinf(value):
+        return 0x7f | ret
     f = numpy.float32(value)
-    return CastFloat8.find_closest_value(f, CastFloat8.values_e4m3fn)
+    i = CastFloat8.find_closest_value(f, CastFloat8.values_e4m3fn)
+    return (i & 0x7f) | ret
 
 
 def search_float32_into_fe5m2(value: float, fn: bool = False, uz: bool = False) -> int:
@@ -344,10 +351,13 @@ def search_float32_into_fe5m2(value: float, fn: bool = False, uz: bool = False) 
         raise NotImplementedError(f"fn=True is not implemented.")
     if uz:
         raise NotImplementedError(f"uz=True is not implemented.")
+    b = int.from_bytes(struct.pack("<f", numpy.float32(value)), "little")
+    ret = (b & 0x80000000) >> 24  # sign
     if numpy.isnan(value):
-        return 255
+        return 0x7f | ret
     f = numpy.float32(value)
-    return CastFloat8.find_closest_value(f, CastFloat8.values_e5m2)
+    i = CastFloat8.find_closest_value(f, CastFloat8.values_e5m2)
+    return (i & 0x7f) | ret
 
 
 def float32_to_fe4m3(x, fn: bool = True, uz: bool = False):
@@ -366,14 +376,16 @@ def float32_to_fe4m3(x, fn: bool = True, uz: bool = False):
     b = int.from_bytes(struct.pack("<f", numpy.float32(x)), "little")
     ret = (b & 0x80000000) >> 24  # sign
     if (b & 0x7fc00000) == 0x7fc00000:
-        return 0xff | ret
+        return 0x7f | ret
+    if numpy.isinf(x):
+        return 0x7f | ret
     e = (b & 0x7F800000) >> 23  # exponent
     m = b & 0x007FFFFF  # mantissa
 
     if e != 0:
         if e < 117:
             pass
-        if e < 118:
+        elif e < 118:
             ret |= 1
             if (m >> 23) & 1:
                 # rounding
@@ -413,11 +425,11 @@ def float32_to_fe5m2(x, fn: bool = False, uz: bool = False):
     if fn:
         raise NotImplementedError(f"fn=True is not implemented.")
     if uz:
-        raise NotImplementedError(f"uz=False is not implemented.")
+        raise NotImplementedError(f"uz=True is not implemented.")
     b = int.from_bytes(struct.pack("<f", numpy.float32(x)), "little")
     ret = (b & 0x80000000) >> 24  # sign
     if (b & 0x7fc00000) == 0x7fc00000:
-        return 0xff | ret
+        return 0x7f | ret
     e = (b & 0x7F800000) >> 23  # exponent
     m = b & 0x007FFFFF  # mantissa
 
