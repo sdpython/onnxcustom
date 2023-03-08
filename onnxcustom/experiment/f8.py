@@ -95,13 +95,19 @@ def display_fe5m2(value, sign=1, exponent=4, mantissa=3):
     return display_fexmx(value, sign=1, exponent=5, mantissa=2)
 
 
-def fe4m3_to_float32_float(ival: int) -> float:
+def fe4m3_to_float32_float(ival: int, fn: bool = True, uz: bool = False) -> float:
     """
     Casts a float 8 encoded as an integer into a float.
 
     :param ival: byte
+    :param fn: no infinite values
+    :param uz: no negative zero
     :return: float (float 32)
     """
+    if not fn:
+        raise NotImplementedError(f"fn=False is not implemented.")
+    if uz:
+        raise NotImplementedError(f"uz=True is not implemented.")
     if ival < 0 or ival > 255:
         raise ValueError(f"{ival} is not a float8.")
     if ival == 255:
@@ -128,13 +134,19 @@ def fe4m3_to_float32_float(ival: int) -> float:
     return numpy.float32(fval)
 
 
-def fe5m2_to_float32_float(ival: int) -> float:
+def fe5m2_to_float32_float(ival: int, fn: bool = False, uz: bool = False) -> float:
     """
     Casts a float 8 encoded as an integer into a float.
 
     :param ival: byte
+    :param fn: no infinite values
+    :param uz: no negative zero
     :return: float (float 32)
     """
+    if fn:
+        raise NotImplementedError(f"fn=True is not implemented.")
+    if uz:
+        raise NotImplementedError(f"uz=True is not implemented.")
     if ival < 0 or ival > 255:
         raise ValueError(f"{ival} is not a float8.")
     if ival in (255, 254, 253):
@@ -165,13 +177,19 @@ def fe5m2_to_float32_float(ival: int) -> float:
     return numpy.float32(fval)
 
 
-def fe4m3_to_float32(ival: int) -> float:
+def fe4m3_to_float32(ival: int, fn: bool = True, uz: bool = False) -> float:
     """
     Casts a float E4M3 encoded as an integer into a float.
 
     :param ival: byte
+    :param fn: no inifinite values
+    :param uz: no negative zero
     :return: float (float 32)
     """
+    if not fn:
+        raise NotImplementedError(f"fn=False is not implemented.")
+    if uz:
+        raise NotImplementedError(f"uz=True is not implemented.")
     if ival < 0 or ival > 255:
         raise ValueError(f"{ival} is not a float8.")
     if ival == 255:
@@ -204,13 +222,19 @@ def fe4m3_to_float32(ival: int) -> float:
     return f
 
 
-def fe5m2_to_float32(ival: int) -> float:
+def fe5m2_to_float32(ival: int, fn: bool = False, uz: bool = False) -> float:
     """
     Casts a float E5M2 encoded as an integer into a float.
 
     :param ival: byte
+    :param fn: no inifinite values
+    :param uz: no negative values
     :return: float (float 32)
     """
+    if fn:
+        raise NotImplementedError(f"fn=True is not implemented.")
+    if uz:
+        raise NotImplementedError(f"uz=True is not implemented.")
     if ival < 0 or ival > 255:
         raise ValueError(f"{ival} is not a float8.")
     if ival in {253, 254, 255, 125, 126, 127}:
@@ -246,8 +270,8 @@ class CastFloat8:
     Helpers to cast float8 into float32 or the other way around.
     """
 
-    values_e4m3 = list(sorted((fe4m3_to_float32_float(i), i)
-                       for i in range(0, 256) if i not in (255, 127)))
+    values_e4m3fn = list(sorted((fe4m3_to_float32_float(i), i)
+                                for i in range(0, 256) if i not in (255, 127)))
 
     values_e5m2 = list(sorted((fe5m2_to_float32_float(i), i)
                        for i in range(0, 256) if i not in {
@@ -288,39 +312,57 @@ class CastFloat8:
         return sorted_values[a][1]
 
 
-def search_float32_into_fe4m3(value: float) -> int:
+def search_float32_into_fe4m3(value: float, fn: bool = True, uz: bool = False) -> int:
     """
     Casts a float 32 into a float E4M3.
 
     :param value: float
+    :param fn: no infinite values
+    :param uz: no negative zero
     :return: byte
     """
+    if not fn:
+        raise NotImplementedError(f"fn=False is not implemented.")
+    if uz:
+        raise NotImplementedError(f"uz=True is not implemented.")
     if numpy.isnan(value):
         return 255
     f = numpy.float32(value)
-    return CastFloat8.find_closest_value(f, CastFloat8.values_e4m3)
+    return CastFloat8.find_closest_value(f, CastFloat8.values_e4m3fn)
 
 
-def search_float32_into_fe5m2(value: float) -> int:
+def search_float32_into_fe5m2(value: float, fn: bool = False, uz: bool = False) -> int:
     """
     Casts a float 32 into a float E4M3.
 
     :param value: float
+    :param fn: no infinite values
+    :param uz: no negative zero
     :return: byte
     """
+    if fn:
+        raise NotImplementedError(f"fn=True is not implemented.")
+    if uz:
+        raise NotImplementedError(f"uz=True is not implemented.")
     if numpy.isnan(value):
         return 255
     f = numpy.float32(value)
     return CastFloat8.find_closest_value(f, CastFloat8.values_e5m2)
 
 
-def float32_to_fe4m3(x):
+def float32_to_fe4m3(x, fn: bool = True, uz: bool = False):
     """
     Converts a float32 into a float E4M3.
 
     :param x: numpy.float32
+    :param fn: no infinite values
+    :param uz: no negative zero
     :return: byte
     """
+    if not fn:
+        raise NotImplementedError(f"fn=False is not implemented.")
+    if uz:
+        raise NotImplementedError(f"uz=True is not implemented.")
     b = int.from_bytes(struct.pack("<f", numpy.float32(x)), "little")
     ret = (b & 0x80000000) >> 24  # sign
     if (b & 0x7fc00000) == 0x7fc00000:
@@ -359,13 +401,19 @@ def float32_to_fe4m3(x):
     return int(ret)
 
 
-def float32_to_fe5m2(x):
+def float32_to_fe5m2(x, fn: bool = False, uz: bool = False):
     """
     Converts a float32 into a float E5M2.
 
     :param x: numpy.float32
+    :param fn: no infinite values
+    :param uz: no negative zero
     :return: byte
     """
+    if fn:
+        raise NotImplementedError(f"fn=True is not implemented.")
+    if uz:
+        raise NotImplementedError(f"uz=False is not implemented.")
     b = int.from_bytes(struct.pack("<f", numpy.float32(x)), "little")
     ret = (b & 0x80000000) >> 24  # sign
     if (b & 0x7fc00000) == 0x7fc00000:

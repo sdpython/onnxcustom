@@ -12,7 +12,7 @@ does not suffer too much.
 `FP8 Formats for Deep Learning <https://arxiv.org/abs/2209.05433>`_
 from NVIDIA introduces two types following
 `IEEE specifciations <https://en.wikipedia.org/wiki/IEEE_754>`_.
-First one is E4M3, 1 bit for the sign, 4 bits for the exponents and 3
+First one is E4M3FN, 1 bit for the sign, 4 bits for the exponents and 3
 bits for the mantissa. Second one is E5M2, 1 bit for the sign,
 3 bits for the exponents and 2 for the mantissa. The first types
 is mostly used for the coefficients, the second one for the gradient.
@@ -23,8 +23,8 @@ similar types. IEEE standard gives the same value
 to `+0` (or integer 0) and `-0` (or integer 128).
 They chose to give distinct float values to these two
 numbers. The paper experiments different split between
-exponent and mantissa and shows and E4M3 and E5M2 are
-the best ones.
+exponent and mantissa and shows and E4M3FN and E5M2 are
+the best ones (FN stands for no infinite values).
 
 :math:`S` stands for the sign. :math:`10_2` describe a number base 2.
 
@@ -32,8 +32,8 @@ the best ones.
    :widths: 10 10 10
    :header-rows: 1
 
-   * - 
-     - E4M3
+   * -
+     - E4M3FN
      - E5M2
    * - Exponent bias
      - 7
@@ -62,7 +62,7 @@ The float value is defined by the following expressions:
    :widths: 10 10 10
    :header-rows: 1
 
-   * - 
+   * -
      - E4M3
      - E5M2
    * - exponent :math:`\\neq` 0
@@ -82,13 +82,13 @@ Cast to float 8 consists in finding the closest float 8
 to the original float 32 value. It is usually done by shifting
 and truncating. The tricky part is to handle rounding.
 
-.. index:: discrepencies, float8, float, E4M3, E5M2
+.. index:: discrepencies, float8, float, E4M3FN, E5M2
 
 .. contents::
     :local:
 
-E4M3
-++++
+E4M3FN
+++++++
 
 List of possibles values:
 """

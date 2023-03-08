@@ -23,7 +23,7 @@ from onnxcustom.experiment.f8 import (
 
 class TestF8(ExtTestCase):
 
-    def test_fe4m3_to_float32_float_paper(self):
+    def test_fe4m3fn_to_float32_float_paper(self):
         self.assertEqual(fe4m3_to_float32_float(int("1111110", 2)), 448)
         self.assertEqual(fe4m3_to_float32_float(int("1000", 2)), 2 ** (-6))
         self.assertEqual(fe4m3_to_float32_float(int("1", 2)), 2 ** (-9))
@@ -31,7 +31,7 @@ class TestF8(ExtTestCase):
             fe4m3_to_float32_float(int("111", 2)), 0.875 * 2 ** (-6))
         self.assertRaise(lambda: fe4m3_to_float32_float(256), ValueError)
 
-    def test_fe4m3_to_float32_paper(self):
+    def test_fe4m3fn_to_float32_paper(self):
         self.assertEqual(fe4m3_to_float32(int("1111110", 2)), 448)
         self.assertEqual(fe4m3_to_float32(int("1000", 2)), 2 ** (-6))
         self.assertEqual(fe4m3_to_float32(int("1", 2)), 2 ** (-9))
@@ -74,7 +74,7 @@ class TestF8(ExtTestCase):
         self.assertEqual(fe5m2_to_float32(int("1111100", 2)), numpy.inf)
         self.assertEqual(fe5m2_to_float32(int("11111100", 2)), -numpy.inf)
 
-    def test_fe4m3_to_float32_all(self):
+    def test_fe4m3fn_to_float32_all(self):
         for i in range(0, 256):
             a = fe4m3_to_float32_float(i)
             b = fe4m3_to_float32(i)
@@ -94,7 +94,7 @@ class TestF8(ExtTestCase):
         s = display_float16(numpy.float16(f))
         self.assertEqual(s, "0.10100.0110100000")
 
-    def test_search_float32_into_fe4m3_simple(self):
+    def test_search_float32_into_fe4m3fn_simple(self):
         values = [
             (0.001953125, 0.001953125),
             (416, 416),
@@ -129,7 +129,7 @@ class TestF8(ExtTestCase):
                 got = fe5m2_to_float32_float(b)
                 self.assertLess(abs(expected - got), 1e-5)
 
-    def test_search_float32_into_fe4m3_equal(self):
+    def test_search_float32_into_fe4m3fn_equal(self):
         values = [(fe4m3_to_float32_float(i), i) for i in range(0, 256)]
         values.sort()
 
@@ -165,7 +165,7 @@ class TestF8(ExtTestCase):
                     self.assertIn(b, (0, 128))
                     self.assertIn(nf, (0, 128))
 
-    def test_search_float32_into_fe4m3(self):
+    def test_search_float32_into_fe4m3fn(self):
         values = [(fe4m3_to_float32_float(i), i) for i in range(0, 256)]
         values.sort()
 
@@ -197,7 +197,7 @@ class TestF8(ExtTestCase):
                     ))
         if wrong > 0:
             output = os.path.join(os.path.dirname(__file__),
-                                  "temp_search_float32_into_fe4m3.xlsx")
+                                  "temp_search_float32_into_fe4m3fn.xlsx")
             pandas.DataFrame(obs).to_excel(output)
             raise AssertionError(f"{wrong} conversion are wrong.")
 
