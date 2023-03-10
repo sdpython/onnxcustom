@@ -66,16 +66,22 @@ The float value is defined by the following expressions:
      - E4M3
      - E5M2
    * - exponent :math:`\\neq` 0
-     - :math:`(-1)^S 2^{\\sum_{i=3}^6 b_i 2^{i-3} - 7} \\left( 1 + \\sum_{i=0}^2 b_i 2^{i-3} \\right)`
-     - :math:`(-1)^S 2^{\\sum_{i=2}^6 b_i 2^{i-2} - 15} \\left( 1 + \\sum_{i=0}^1 b_i 2^{i-2} \\right)`
+     - :math:`(-1)^S 2^{\\sum_{i=3}^6 b_i 2^{i-3}- 7}\\left(1+\\sum_{i=0}^2 b_i 2^{i-3}\\right)`
+     - :math:`(-1)^S 2^{\\sum_{i=2}^6 b_i 2^{i-2}-15}\\left(1+\\sum_{i=0}^1 b_i 2^{i-2}\\right)`
    * - exponent :math:`=` 0
      - :math:`(-1)^S 2^{-6} \\sum_{i=0}^2 b_i 2^{i-3}`
      - :math:`(-1)^S 2^{-14} \\sum_{i=0}^1 b_i 2^{i-2}`
 
 Cast from float 8 to
-`float 16 <https://en.wikipedia.org/wiki/Half-precision_floating-point_format>`_ (or E5M10),
-`bfloat16 <https://en.wikipedia.org/wiki/Bfloat16_floating-point_format>`_ (or E8M7),
-`float32 <https://en.wikipedia.org/wiki/Single-precision_floating-point_format>`_ (or E8M23) is easier.
+`float 16
+<https://en.wikipedia.org/wiki/Half-precision_floating-point_format>`_
+(or E5M10),
+`bfloat16
+<https://en.wikipedia.org/wiki/Bfloat16_floating-point_format>`_
+(or E8M7),
+`float32
+<https://en.wikipedia.org/wiki/Single-precision_floating-point_format>`_
+(or E8M23) is easier.
 The cast is exact. The tricky part is to distinguish between exponent = 0 and :math:`neq 0`.
 
 Cast to float 8 consists in finding the closest float 8

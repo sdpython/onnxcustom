@@ -414,10 +414,39 @@ class TestF8(ExtTestCase):
                 got = fe4m3_to_float32_float(b, uz=True)
                 self.assertEqual(expected, got)
 
+    def test_search_float32_into_fe5m2fnuz_simple(self):
+        values = [
+            (100000000, 57344),
+            (-7, -7),  # 203
+            (4, 4),  # 72
+            (-57344, -57344),
+            (1792.0, 1792.0),
+            (0.046875, 0.046875),  # 46
+        ]
+        for v, expected in values:
+            with self.subTest(v=v, expected=expected):
+                b = search_float32_into_fe5m2(v, fn=True, uz=True)
+                got = fe5m2_to_float32_float(b, fn=True, uz=True)
+                self.assertEqual(expected, got)
+                b = float32_to_fe5m2(v, fn=True, uz=True)
+                self.assertTrue(b >= 0)
+                self.assertTrue(b < 256)
+                got = fe5m2_to_float32_float(b, fn=True, uz=True)
+                self.assertEqual(expected, got)
+
     def test_fe4m3fnuz_to_float32_all(self):
         for i in range(0, 256):
             a = fe4m3_to_float32_float(i, uz=True)
             b = fe4m3_to_float32(i, uz=True)
+            if numpy.isnan(a):
+                self.assertTrue(numpy.isnan(b))
+                continue
+            self.assertEqual(a, b)
+
+    def test_fe5m2fnuz_to_float32_all(self):
+        for i in range(0, 256):
+            a = fe5m2_to_float32_float(i, fn=True, uz=True)
+            b = fe5m2_to_float32(i, fn=True, uz=True)
             if numpy.isnan(a):
                 self.assertTrue(numpy.isnan(b))
                 continue
@@ -437,9 +466,6 @@ class TestF8(ExtTestCase):
                 b = search_float32_into_fe4m3(v, uz=True)
                 nf = float32_to_fe4m3(v, uz=True)
                 if b != nf:
-                    # signed, not signed zero?
-                    if (nf & 0x7F) == 0 and (b & 0x7F) == 0:
-                        continue
                     wrong += 1
                     obs.append(dict(
                         origin=origin,
@@ -462,7 +488,44 @@ class TestF8(ExtTestCase):
             raise AssertionError(
                 f"{wrong} conversion are wrong\n{pprint.pformat(obs[:2])}")
 
+    def test_search_float32_into_fe5m2fnuz(self):
+        values = [(fe5m2_to_float32_float(i, fn=True, uz=True), i)
+                  for i in range(0, 256)]
+        values.sort()
+
+        obs = []
+        values += [(1e-9, 0), (-1e-9, 0), (1e8, 448), (-1e-8, -448)]
+        wrong = 0
+        for value, origin in values:
+            for add in [0, -0.4, -1e-4, 1e-4, 0.4]:
+                v = value + add
+                b = search_float32_into_fe5m2(v, fn=True, uz=True)
+                nf = float32_to_fe5m2(v, fn=True, uz=True)
+                if b != nf:
+                    wrong += 1
+                    obs.append(dict(
+                        origin=origin,
+                        value=v,
+                        bin_value=display_float32(v),
+                        expected_search=b,
+                        float_expected=fe5m2_to_float32_float(
+                            b, fn=True, uz=True),
+                        bin_expected=display_fe4m3(b),
+                        got_bit=nf,
+                        bin_got=display_fe5m2(nf),
+                        float_got=fe5m2_to_float32_float(nf, fn=True, uz=True),
+                        ok="" if b == nf else "WRONG",
+                        true=value,
+                        add=add,
+                    ))
+        if wrong > 0:
+            output = os.path.join(os.path.dirname(__file__),
+                                  "temp_search_float32_into_fe4m3fn.xlsx")
+            pandas.DataFrame(obs).to_excel(output)
+            raise AssertionError(
+                f"{wrong} conversion are wrong\n{pprint.pformat(obs[:2])}")
+
 
 if __name__ == "__main__":
-    TestF8().test_search_float32_into_fe4m3fnuz()
+    # TestF8().test_search_float32_into_fe5m2fnuz()
     unittest.main(verbosity=2)
