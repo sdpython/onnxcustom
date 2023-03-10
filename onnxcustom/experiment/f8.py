@@ -444,7 +444,7 @@ def float32_to_fe4m3(x, fn: bool = True, uz: bool = False):
                 if (m >> (20 + d)) & 1:
                     # rounding
                     ret += 1
-            elif e < 137:  # 127 + 9 + 1
+            elif e < 135:  # 127 + 8
                 ex = e - 119  # 127 - 8
                 if ex == 0:
                     ret |= 0x4

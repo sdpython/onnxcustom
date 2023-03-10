@@ -611,7 +611,27 @@ class TestF8(ExtTestCase):
         b = float32_to_fe5m2(v1, fn=True, uz=True)
         self.assertEqual(a, b)
 
+    def test_simple_fe4m3(self):
+        values = [448]
+        cvt2 = [float32_to_fe4m3(v, uz=True) for v in values]
+        cvt1 = [search_float32_into_fe4m3(v, uz=True) for v in values]
+        back1 = [fe4m3_to_float32(c, uz=True) for c in cvt1]
+        back2 = [fe4m3_to_float32(c, uz=True) for c in cvt2]
+        self.assertEqual(cvt1, cvt2)
+        self.assertEqual(back1, back2)
+
+        values = [0, 0.5, 1, 240, 10]
+        cvt = [search_float32_into_fe4m3(v, uz=True) for v in values]
+        back  = [fe4m3_to_float32(c, uz=True) for c in cvt]
+        self.assertEqual(values, back)
+
+        values = [0, 0.5, 1, 240, 10]
+        cvt = [float32_to_fe4m3(v, uz=True) for v in values]
+        back  = [fe4m3_to_float32(c, uz=True) for c in cvt]
+        self.assertEqual(values, back)
+
+
 
 if __name__ == "__main__":
-    TestF8().test_float32_to_fe5m2fnuz_inf()
+    TestF8().test_simple_fe4m3()
     unittest.main(verbosity=2)
