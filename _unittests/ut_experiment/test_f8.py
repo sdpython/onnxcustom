@@ -525,7 +525,93 @@ class TestF8(ExtTestCase):
             raise AssertionError(
                 f"{wrong} conversion are wrong\n{pprint.pformat(obs[:2])}")
 
+    def test_float32_to_fe4m3fnuz_inf(self):
+        v0 = numpy.float32(numpy.nan)
+        v1 = numpy.float32(numpy.inf)
+        a = search_float32_into_fe4m3(v0, uz=True)
+        b = search_float32_into_fe4m3(v1, uz=True)
+        self.assertEqual(a, b)
+
+        v0 = numpy.float32(numpy.nan)
+        v1 = numpy.float32(numpy.inf)
+        a = float32_to_fe4m3(v0, uz=True)
+        b = float32_to_fe4m3(v1, uz=True)
+        self.assertEqual(a, b)
+
+        v0 = numpy.float32(-numpy.nan)
+        v1 = numpy.float32(-numpy.inf)
+        a = search_float32_into_fe4m3(v0, uz=True)
+        b = search_float32_into_fe4m3(v1, uz=True)
+        self.assertEqual(a, b)
+
+        v0 = numpy.float32(-numpy.nan)
+        v1 = numpy.float32(-numpy.inf)
+        a = float32_to_fe4m3(v0, uz=True)
+        b = float32_to_fe4m3(v1, uz=True)
+        self.assertEqual(a, b)
+
+        v0 = numpy.float32(numpy.nan)
+        v1 = numpy.float32(-numpy.nan)
+        a = search_float32_into_fe4m3(v0, uz=True)
+        b = search_float32_into_fe4m3(v1, uz=True)
+        self.assertEqual(a, b)
+
+        v0 = numpy.float32(numpy.inf)
+        v1 = numpy.float32(-numpy.inf)
+        a = search_float32_into_fe4m3(v0, uz=True)
+        b = search_float32_into_fe4m3(v1, uz=True)
+        self.assertEqual(a, b)
+
+        v0 = numpy.float32(numpy.nan)
+        v1 = numpy.float32(-numpy.nan)
+        a = float32_to_fe4m3(v0, uz=True)
+        b = float32_to_fe4m3(v1, uz=True)
+        self.assertEqual(a, b)
+
+        v0 = numpy.float32(numpy.inf)
+        v1 = numpy.float32(-numpy.inf)
+        a = float32_to_fe4m3(v0, uz=True)
+        b = float32_to_fe4m3(v1, uz=True)
+        self.assertEqual(a, b)
+
+    def test_float32_to_fe5m2fnuz_inf(self):
+        v0 = numpy.float32(numpy.nan)
+        v1 = numpy.float32(numpy.inf)
+        a = search_float32_into_fe5m2(v0, fn=True, uz=True)
+        b = search_float32_into_fe5m2(v1, fn=True, uz=True)
+        self.assertEqual(a, b)
+
+        v0 = numpy.float32(numpy.nan)
+        v1 = numpy.float32(numpy.inf)
+        a = float32_to_fe5m2(v0, fn=True, uz=True)
+        b = float32_to_fe5m2(v1, fn=True, uz=True)
+        self.assertEqual(a, b)
+
+        v0 = numpy.float32(numpy.nan)
+        v1 = numpy.float32(-numpy.nan)
+        a = search_float32_into_fe5m2(v0, fn=True, uz=True)
+        b = search_float32_into_fe5m2(v1, fn=True, uz=True)
+        self.assertEqual(a, b)
+
+        v0 = numpy.float32(numpy.inf)
+        v1 = numpy.float32(-numpy.inf)
+        a = search_float32_into_fe5m2(v0, fn=True, uz=True)
+        b = search_float32_into_fe5m2(v1, fn=True, uz=True)
+        self.assertEqual(a, b)
+
+        v0 = numpy.float32(numpy.nan)
+        v1 = numpy.float32(-numpy.nan)
+        a = float32_to_fe5m2(v0, fn=True, uz=True)
+        b = float32_to_fe5m2(v1, fn=True, uz=True)
+        self.assertEqual(a, b)
+
+        v0 = numpy.float32(numpy.inf)
+        v1 = numpy.float32(-numpy.inf)
+        a = float32_to_fe5m2(v0, fn=True, uz=True)
+        b = float32_to_fe5m2(v1, fn=True, uz=True)
+        self.assertEqual(a, b)
+
 
 if __name__ == "__main__":
-    # TestF8().test_search_float32_into_fe5m2fnuz()
+    TestF8().test_float32_to_fe5m2fnuz_inf()
     unittest.main(verbosity=2)

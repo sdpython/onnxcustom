@@ -538,6 +538,8 @@ def float32_to_fe5m2(x, fn: bool = False, uz: bool = False):
                 if m & 0x100000:
                     # rounding
                     ret += 1
+            elif e == 255 and m == 0:  # inf
+                return 0x80
             else:
                 ret |= 0x7f  # last possible number
         return int(ret)
