@@ -98,6 +98,7 @@ class TestF8(ExtTestCase):
 
     def test_search_float32_into_fe4m3fn_simple(self):
         values = [
+            (480, 448),
             (0.001953125, 0.001953125),
             (416, 416),
             (-447.5, -448),
@@ -116,6 +117,8 @@ class TestF8(ExtTestCase):
 
     def test_search_float32_into_fe5m2_simple(self):
         values = [
+            (73728, 57344),
+            (61440, 57344),
             (0.0017089844, 0.0017089844),
             (20480, 20480),
             (20480.5, 20480),
@@ -124,12 +127,21 @@ class TestF8(ExtTestCase):
         ]
         for v, expected in values:
             with self.subTest(v=v, expected=expected):
-                b = search_float32_into_fe5m2(v)
-                got = fe5m2_to_float32_float(b)
-                self.assertLess(abs(expected - got), 1e-5)
-                b = float32_to_fe5m2(v)
-                got = fe5m2_to_float32_float(b)
-                self.assertLess(abs(expected - got), 1e-5)
+                if v == expected:
+                    b = search_float32_into_fe5m2(v)
+                    got = fe5m2_to_float32_float(b)
+                    self.assertLess(abs(expected - got), 1e-5)
+                    b = float32_to_fe5m2(v)
+                    got = fe5m2_to_float32_float(b)
+                    self.assertLess(abs(expected - got), 1e-5)
+                else:
+                    b1 = search_float32_into_fe5m2(v)
+                    b2 = float32_to_fe5m2(v)
+                    self.assertEqual(b1, b2)
+                    got1 = fe5m2_to_float32_float(b1)
+                    got2 = fe5m2_to_float32(b2)
+                    self.assertEqual(got1, expected)
+                    self.assertEqual(got2, expected)
 
     def test_search_float32_into_fe4m3fn_equal(self):
         values = [(fe4m3_to_float32_float(i), i) for i in range(0, 256)]
@@ -175,8 +187,12 @@ class TestF8(ExtTestCase):
         values += [(1e-9, 0), (-1e-9, 0), (1e8, 448), (-1e-8, -448)]
         wrong = 0
         for value, origin in values:
-            for add in [0, -0.4, -1e-4, 1e-4, 0.4]:
-                v = value + add
+            for add in [0, -0.4, -1e-4, 1e-4, 0.4, (3, "x"), (0.3, "x")]:
+                if isinstance(add, tuple):
+                    v = value * add[0]
+                    add = v - value
+                else:
+                    v = value + add
                 b = search_float32_into_fe4m3(v)
                 nf = float32_to_fe4m3(v)
                 if b != nf:
@@ -213,8 +229,12 @@ class TestF8(ExtTestCase):
         values += [(1e-8, 0), (-1e-8, 0), (1e8, 448), (-1e-8, -448)]
         wrong = 0
         for value, _ in values:
-            for add in [0, -0.4, -1e-4, 1e-4, 0.4]:
-                v = value + add
+            for add in [0, -0.4, -1e-4, 1e-4, 0.4, (3, "x"), (0.3, "x")]:
+                if isinstance(add, tuple):
+                    v = value * add[0]
+                    add = v - value
+                else:
+                    v = value + add
                 b = search_float32_into_fe5m2(v)
                 nf = float32_to_fe5m2(v)
                 if b != nf:
@@ -239,7 +259,8 @@ class TestF8(ExtTestCase):
             output = os.path.join(os.path.dirname(__file__),
                                   "temp_search_float32_into_fe5m2.xlsx")
             pandas.DataFrame(obs).to_excel(output)
-            raise AssertionError(f"{wrong} conversion are wrong.")
+            raise AssertionError(
+                f"{wrong} conversion are wrong\n{pprint.pformat(obs[:2])}")
 
     def test_inf_nan(self):
         np_fp32 = numpy.array([
@@ -416,6 +437,8 @@ class TestF8(ExtTestCase):
 
     def test_search_float32_into_fe5m2fnuz_simple(self):
         values = [
+            (73728, 57344),
+            (61440, 57344),
             (100000000, 57344),
             (-7, -7),  # 203
             (4, 4),  # 72
@@ -461,8 +484,12 @@ class TestF8(ExtTestCase):
         values += [(1e-9, 0), (-1e-9, 0), (1e8, 448), (-1e-8, -448)]
         wrong = 0
         for value, origin in values:
-            for add in [0, -0.4, -1e-4, 1e-4, 0.4]:
-                v = value + add
+            for add in [0, -0.4, -1e-4, 1e-4, 0.4, (3, "x"), (0.3, "x")]:
+                if isinstance(add, tuple):
+                    v = value * add[0]
+                    add = v - value
+                else:
+                    v = value + add
                 b = search_float32_into_fe4m3(v, uz=True)
                 nf = float32_to_fe4m3(v, uz=True)
                 if b != nf:
@@ -497,8 +524,12 @@ class TestF8(ExtTestCase):
         values += [(1e-9, 0), (-1e-9, 0), (1e8, 448), (-1e-8, -448)]
         wrong = 0
         for value, origin in values:
-            for add in [0, -0.4, -1e-4, 1e-4, 0.4]:
-                v = value + add
+            for add in [0, -0.4, -1e-4, 1e-4, 0.4, (3, "x"), (0.3, "x")]:
+                if isinstance(add, tuple):
+                    v = value * add[0]
+                    add = v - value
+                else:
+                    v = value + add
                 b = search_float32_into_fe5m2(v, fn=True, uz=True)
                 nf = float32_to_fe5m2(v, fn=True, uz=True)
                 if b != nf:
@@ -622,16 +653,16 @@ class TestF8(ExtTestCase):
 
         values = [0, 0.5, 1, 240, 10]
         cvt = [search_float32_into_fe4m3(v, uz=True) for v in values]
-        back  = [fe4m3_to_float32(c, uz=True) for c in cvt]
+        back = [fe4m3_to_float32(c, uz=True) for c in cvt]
         self.assertEqual(values, back)
 
         values = [0, 0.5, 1, 240, 10]
         cvt = [float32_to_fe4m3(v, uz=True) for v in values]
-        back  = [fe4m3_to_float32(c, uz=True) for c in cvt]
+        back = [fe4m3_to_float32(c, uz=True) for c in cvt]
         self.assertEqual(values, back)
 
 
-
 if __name__ == "__main__":
-    TestF8().test_simple_fe4m3()
+    TestF8().test_search_float32_into_fe4m3fn_simple()
+    TestF8().test_search_float32_into_fe4m3fn()
     unittest.main(verbosity=2)

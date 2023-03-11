@@ -441,7 +441,7 @@ def float32_to_fe4m3(x, fn: bool = True, uz: bool = False):
                 d = 119 - e
                 ret |= 1 << (2 - d)
                 ret |= m >> (21 + d)
-                if (m >> (20 + d)) & 1:
+                if ((m >> (20 + d)) & 1) and (ret & 0x7F) < 0x7F:
                     # rounding
                     ret += 1
             elif e < 135:  # 127 + 8
@@ -452,7 +452,7 @@ def float32_to_fe4m3(x, fn: bool = True, uz: bool = False):
                 else:
                     ret |= ex << 3
                     ret |= m >> 20
-                if m & 0x80000:
+                if (m & 0x80000) and (ret & 0x7F) < 0x7F:
                     # rounding
                     ret += 1
             else:
@@ -478,7 +478,7 @@ def float32_to_fe4m3(x, fn: bool = True, uz: bool = False):
                 d = 120 - e
                 ret |= 1 << (2 - d)
                 ret |= m >> (21 + d)
-                if (m >> (20 + d)) & 1:
+                if ((m >> (20 + d)) & 1) and (ret & 0x7F) < 0x7E:
                     # rounding
                     ret += 1
             elif e < 136:  # 127 + 8 + 1
@@ -489,7 +489,9 @@ def float32_to_fe4m3(x, fn: bool = True, uz: bool = False):
                 else:
                     ret |= ex << 3
                     ret |= m >> 20
-                if m & 0x80000:
+                    if (ret & 0x7F) == 0x7F:
+                        ret &= 0xFE
+                if (m & 0x80000) and (ret & 0x7F) < 0x7E:
                     # rounding
                     ret += 1
             else:
@@ -528,14 +530,14 @@ def float32_to_fe5m2(x, fn: bool = False, uz: bool = False):
                 d = 111 - e
                 ret |= 1 << (1 - d)
                 ret |= m >> (22 + d)
-                if (m >> (21 + d)) & 1:
+                if (m >> (21 + d)) & 1 and (ret & 0x7F) < 0x7F:
                     # rounding
                     ret += 1
-            elif e < 145:  # 127 + 17 + 1
+            elif e < 143:  # 127 + 15 + 1
                 ex = e - 111  # 127 - 16
                 ret |= ex << 2
                 ret |= m >> 21
-                if m & 0x100000:
+                if (m & 0x100000) and (ret & 0x7F) < 0x7F:
                     # rounding
                     ret += 1
             elif e == 255 and m == 0:  # inf
@@ -554,7 +556,7 @@ def float32_to_fe5m2(x, fn: bool = False, uz: bool = False):
                 pass
             elif e < 111:
                 ret |= 1
-                if (m >> 23) & 1:
+                if (m >> 23) & 1 and (ret & 0x7F) < 0x7B:
                     # rounding
                     # may be unused
                     ret += 1
@@ -562,14 +564,14 @@ def float32_to_fe5m2(x, fn: bool = False, uz: bool = False):
                 d = 112 - e
                 ret |= 1 << (1 - d)
                 ret |= m >> (22 + d)
-                if (m >> (21 + d)) & 1:
+                if (m >> (21 + d)) & 1 and (ret & 0x7F) < 0x7B:
                     # rounding
                     ret += 1
-            elif e < 144:  # 127 + 16 + 1
+            elif e < 143:  # 127 + 15 + 1
                 ex = e - 112  # 127 - 15
                 ret |= ex << 2
                 ret |= m >> 21
-                if m & 0x100000:
+                if (m & 0x100000) and (ret & 0x7F) < 0x7B:
                     # rounding
                     ret += 1
             elif e == 255 and m == 0:  # inf
