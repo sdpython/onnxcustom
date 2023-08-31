@@ -10,6 +10,16 @@ from onnx import (  # pylint: disable=E0611
 from onnx.helper import make_graph, make_model, make_tensor_value_info
 
 
+def str_size(size):
+    if size >= 2**30:
+        return "%1.3fGb" % (size / 2**30)
+    if size >= 2**20:
+        return "%1.3fMb" % (size / 2**30)
+    if size >= 2**10:
+        return "%1.3fKb" % (size / 2**30)
+    return "%1.3f" % size
+
+
 class OnnxSegment:
     """
     A segments of an onnx graph assuming
@@ -201,15 +211,24 @@ class OnnxSplitting:
         segments.append(self._make_segment(self.cutting_points[-1], None))
         self.segments = segments
         if self.verbose > 0:
-            self.fLOG(f"[OnnxSplitting._init] #segments:{len(sizes)}")
+            self.fLOG(
+                f"[OnnxSplitting._init] #segments:{len(sizes)}, "
+                f"min/max(size)={min(sizes)}/{max(sizes)}")
             self.fLOG("[OnnxSplitting._init] run shape_inference")
         self.shapes = shape_inference.infer_shapes(onnx_model)
 
         if self.verbose > 0:
             sizes = [seg.size for seg in self.segments]
+            mx = max(sizes)
+            rows = []
+            for i, seg in enumerate(self.segments):
+                if seg.size >= mx / 2:
+                    rows.append(f"i={i} size={seg.size} seq={seg}")
+            msg = "\n".join(rows)
             self.fLOG(f"[OnnxSplitting._init] #segments:{len(sizes)}, "
                       f"min,avg,max-size=[{min(sizes)}, "
-                      f"{sum(sizes) / len(sizes)}, {max(sizes)}]")
+                      f"{sum(sizes) / len(sizes)}, {max(sizes)}]\n"
+                      f"{msg}")
 
     def display_shape_node_result(self, nodes=None, shape_nodes=None,
                                   shape_results=None):
@@ -260,7 +279,9 @@ class OnnxSplitting:
                 if k not in dist:
                     if k[0] == 1:
                         # node
-                        if node.op_type in ("Reshape", "ConstantOfShape"):
+                        if node.op_type in ("Reshape",
+                                            "ConstantOfShape",
+                                            "Slice"):
                             continue
                     dist[k] = d
                     stack.append(k)
@@ -682,8 +703,8 @@ class OnnxSplitting:
                     size_a = sum(s.size for s in self.segments[a:pos])
                     size_b = sum(s.size for s in self.segments[pos:b])
                     self.fLOG(f"[OnnxSplitting.split_segment] found "
-                              f"pos={pos}, size_1={size_a}, "
-                              f"size_2={size_b}={size_b/size:1.2f}, "
+                              f"pos={pos}, size_1={str_size(size_a)}, "
+                              f"size_2={str_size(size_b)}={size_b/size:1.2f}, "
                               f"split={self.segments[pos].begin!r}")
                 new_ext.extend([pos, b])
             extremities = new_ext
@@ -892,7 +913,7 @@ class OnnxSplitting:
                         node.doc_string = label
                 if idn in idns:
                     raise RuntimeError(
-                        f"A node idn={idn!r} was already added.")
+                        f"A node idn={idn!r} was already added ({node.op_type}).")
                 idns.add(idn)
                 nodes.append((idn, node))
         if len(idns) != len(nodes):
